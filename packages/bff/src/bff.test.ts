@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { safeRedirectPath } from "./safe-redirect.js";
-import { secondsLeft } from "./session.js";
+import { clientHeaders } from "./client";
+import { safeRedirectPath } from "./safe-redirect";
+import { secondsLeft } from "./session";
 
 describe("safeRedirectPath", () => {
   it("keeps same-origin paths with their query", () => {
@@ -32,5 +33,22 @@ describe("secondsLeft", () => {
   it("treats missing or broken tokens as expired", () => {
     expect(secondsLeft(undefined)).toBe(0);
     expect(secondsLeft("garbage")).toBe(0);
+  });
+});
+
+describe("clientHeaders", () => {
+  it("passes the user agent and only the proxy-appended address", () => {
+    const incoming = new Headers({
+      "user-agent": "Mozilla/5.0",
+      "x-forwarded-for": "6.6.6.6, 203.0.113.7",
+    });
+    expect(clientHeaders(incoming)).toEqual({
+      "user-agent": "Mozilla/5.0",
+      "x-forwarded-for": "203.0.113.7",
+    });
+  });
+
+  it("sends nothing it did not receive", () => {
+    expect(clientHeaders(new Headers())).toEqual({});
   });
 });

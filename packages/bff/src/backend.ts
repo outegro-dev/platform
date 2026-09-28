@@ -32,17 +32,24 @@ export type RequestOptions = {
   timeoutMs?: number;
 };
 
-export function createBackend(baseUrl: string) {
+export type BackendOptions = {
+  /** Extra headers for every call, e.g. the browser identity from `clientHeaders`. */
+  headers?: () => Promise<Record<string, string>> | Record<string, string>;
+};
+
+export function createBackend(baseUrl: string, defaults: BackendOptions = {}) {
   return async function call<T>(
     path: string,
     options: RequestOptions = {},
   ): Promise<T> {
+    const shared = (await defaults.headers?.()) ?? {};
     let response: Response;
     try {
       response = await fetch(`${baseUrl}${path}`, {
         method: options.method ?? "GET",
         headers: {
           accept: "application/json",
+          ...shared,
           ...(options.body !== undefined
             ? { "content-type": "application/json" }
             : {}),

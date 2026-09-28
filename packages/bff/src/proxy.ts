@@ -1,4 +1,5 @@
 import type { NextRequest, NextResponse } from "next/server";
+import { clientHeaders } from "./client";
 import {
   ACCESS_COOKIE,
   clearSession,
@@ -7,7 +8,7 @@ import {
   type SessionTokens,
   secondsLeft,
   writeSession,
-} from "./session.js";
+} from "./session";
 
 export type RefreshOutcome =
   | "fresh"
@@ -40,7 +41,10 @@ export async function refreshSession(
   try {
     result = await fetch(`${authApiUrl}/v1/sessions/refresh`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...clientHeaders(request.headers),
+      },
       body: JSON.stringify({ refreshToken: refresh }),
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
