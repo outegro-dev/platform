@@ -27,6 +27,7 @@ minimumReleaseAgeExclude:
   - '@testcontainers/valkey@12.2.0'
   - amqplib@2.2.0
   - '@nestjs/cli@12.0.8'
+  - nodemailer@10.0.12
 onlyBuiltDependencies:
   - sharp
   - '@tailwindcss/oxide'

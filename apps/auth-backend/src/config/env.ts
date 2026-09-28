@@ -18,7 +18,7 @@ export const env = defineEnv(
     .extend({
       AUTH_ISSUER: z.url().default("https://id.outegro.dev"),
       AUTH_AUDIENCE: z.string().min(1).default("outegro"),
-      /** ES256 private key, PKCS#8 PEM (local: `pnpm env:local`). */
+      /** ES256 private key, PKCS#8 PEM (local: `pnpm env:local` at the repo root). */
       JWT_PRIVATE_KEY: secret(100),
       /** Retired public keys (JSON array of JWK) still published during rotation. */
       JWT_PREVIOUS_PUBLIC_KEYS: z.string().default("[]"),

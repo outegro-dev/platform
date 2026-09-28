@@ -19,6 +19,7 @@
     "infra:up": "docker compose -f infra/local/compose.yaml up -d --wait",
     "infra:down": "docker compose -f infra/local/compose.yaml down",
     "infra:reset": "docker compose -f infra/local/compose.yaml down -v",
+    "env:local": "node tools/dev/generate-env.mjs",
     "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm test:e2e"
   },
   "devDependencies": {
