@@ -38,7 +38,7 @@ export class OAuthService {
   /** The registered client, only when the redirect URI matches exactly. */
   client(clientId: string, redirectUri: string) {
     const client = this.config.clients.find((c) => c.id === clientId);
-    if (!client || !client.redirectUris.includes(redirectUri)) {
+    if (!client?.redirectUris.includes(redirectUri)) {
       throw new AppError("UNPROCESSABLE", {
         fieldErrors: { redirectUri: ["unregistered"] },
       });

@@ -70,6 +70,15 @@ describe("SSO authorization code (ID-04)", () => {
       .from(sessions)
       .where(eq(sessions.id, pay.sessionId));
     expect(row).toMatchObject({ authMethod: "sso", clientId: "pay-web" });
+    // The account's session list names the app.
+    const list = await h
+      .http()
+      .get("/v1/me/sessions")
+      .set(h.auth(idSession.accessToken))
+      .expect(200);
+    expect(
+      list.body.items.find((s: { id: string }) => s.id === pay.sessionId),
+    ).toMatchObject({ authMethod: "sso", clientName: "Payments" });
     // Signing out of the app leaves the central session alone.
     await h
       .http()

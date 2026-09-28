@@ -145,6 +145,7 @@ export class SessionsService {
       .select({
         id: sessions.id,
         authMethod: sessions.authMethod,
+        clientId: sessions.clientId,
         userAgent: sessions.userAgent,
         ip: sessions.ip,
         createdAt: sessions.createdAt,

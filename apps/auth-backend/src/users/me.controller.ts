@@ -4,10 +4,12 @@ import {
   Delete,
   Get,
   HttpCode,
+  Inject,
   Param,
   Patch,
   Post,
 } from "@nestjs/common";
+import type { ConfigType } from "@nestjs/config";
 import { localeSchema, permissionsOf } from "@outegro/contracts";
 import {
   AppError,
@@ -16,6 +18,7 @@ import {
 } from "@outegro/nest-common";
 import { z } from "zod";
 import { RolesService } from "../access/roles.service.js";
+import { oauthConfig } from "../config/config.js";
 import { GrantsService } from "../grants/grants.service.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import { UsersService } from "./users.service.js";
@@ -40,6 +43,8 @@ export class MeController {
     private readonly sessions: SessionsService,
     private readonly roles: RolesService,
     private readonly grants: GrantsService,
+    @Inject(oauthConfig.KEY)
+    private readonly oauth: ConfigType<typeof oauthConfig>,
   ) {}
 
   @Get()
@@ -67,6 +72,11 @@ export class MeController {
     return {
       items: items.map((session) => ({
         ...session,
+        // SSO sessions belong to an app; its name reads better than a server user agent.
+        clientName: session.clientId
+          ? (this.oauth.clients.find((c) => c.id === session.clientId)?.name ??
+            session.clientId)
+          : null,
         createdAt: session.createdAt.toISOString(),
         lastActiveAt: session.lastActiveAt.toISOString(),
         current: session.id === current.sessionId,
