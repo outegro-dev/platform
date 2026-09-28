@@ -13,9 +13,13 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "turbo run typecheck",
-    "test": "playwright test",
+    "test": "turbo run test",
+    "test:e2e": "playwright test",
     "test:ui": "playwright test --ui",
-    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test"
+    "infra:up": "docker compose -f infra/local/compose.yaml up -d --wait",
+    "infra:down": "docker compose -f infra/local/compose.yaml down",
+    "infra:reset": "docker compose -f infra/local/compose.yaml down -v",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm test:e2e"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

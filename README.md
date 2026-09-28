@@ -18,7 +18,8 @@ pnpm dev
 Пробы: http://localhost:3000/health и `/health/deep`.
 
 Production preview: `pnpm build`, затем `pnpm start`. Запускается standalone `server.js`, как в контейнере.
-Проверки: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test --workers=2`.
+Проверки: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` (unit + интеграционные на Testcontainers), `pnpm test:e2e --workers=2` (Playwright). Всё сразу: `pnpm verify`.
+Локальная инфраструктура (Postgres 18, Valkey 9, RabbitMQ 4, Mailpit): `pnpm infra:up` / `pnpm infra:down` / `pnpm infra:reset`. Почта — http://localhost:8025, RabbitMQ — http://localhost:15672 (outegro / outegro).
 Перед первым E2E: `pnpm exec playwright install chromium firefox webkit`.
 E2E поднимает отдельную production-сборку на localhost:3100; backend и внешние ключи не нужны.
 Постеры 3D после изменения сцен (нужен запущенный :3000): `node tools/quality/render-posters.mjs`.

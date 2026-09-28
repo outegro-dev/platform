@@ -24,7 +24,7 @@
 ## Результаты проверок
 
 - `pnpm lint` — pass. `pnpm typecheck` — pass (ui, i18n, landing-web). `pnpm build` — pass.
-- `pnpm test` — **58 passed, 2 skipped**. Пропуски: жизненный цикл WebGL проверяется только в Chromium с GPU.
+- `pnpm test:e2e` — **58 passed, 2 skipped**. Пропуски: жизненный цикл WebGL проверяется только в Chromium с GPU.
 - Lighthouse 13 (headless, simulated throttling):
 
 | Профиль | Performance | Accessibility | Best Practices | SEO | FCP | LCP | TBT | CLS |

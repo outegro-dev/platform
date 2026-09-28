@@ -20,6 +20,6 @@ Context7 также подключён как MCP-сервер в `.mcp.json`. �
 
 1. Начинать с `docs/00-start-here/README.md` и карточки задачи: `python tools/documentation/task_context.py <TASK-ID>`.
 2. UI: сначала `DESIGN.md`, затем `apps/landing-web/AGENTS.md` (Next.js 16 отличается от данных обучения — читать `node_modules/next/dist/docs/`).
-3. После изменений: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test --workers=1`, `python tools/documentation/validate.py`.
+3. После изменений: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm test:e2e --workers=2`, `python tools/documentation/validate.py`.
 4. Legacy `C:\Users\working\Desktop\outegro` и VPS `46.37.123.17` — только чтение. Никаких изменений на сервере без явного поручения владельца в чате.
 5. Отчёт по `docs/07-templates/task-report.md`; статус задачи менять только после доказательств.
