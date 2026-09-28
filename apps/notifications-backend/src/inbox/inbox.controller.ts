@@ -53,7 +53,8 @@ const encode = (at: Date, id: string) =>
 const decode = (cursor: string) => {
   const [at, id] = Buffer.from(cursor, "base64url").toString().split("|");
   const date = new Date(at ?? "");
-  if (!id || Number.isNaN(date.getTime()))
+  // The id goes into a uuid comparison; anything else would be a 500.
+  if (!id || !z.uuid().safeParse(id).success || Number.isNaN(date.getTime()))
     throw new AppError("VALIDATION_FAILED");
   return { at: date, id };
 };

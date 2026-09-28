@@ -71,7 +71,10 @@ export class AuthCodesController {
       "auth.login-code",
       body.locale,
       { code: body.code, minutes },
-      this.config.publicWebUrl,
+      {
+        webUrl: this.config.publicWebUrl,
+        accountUrl: this.config.accountUrl,
+      },
     );
     try {
       await Promise.race([

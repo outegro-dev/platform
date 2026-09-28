@@ -28,4 +28,5 @@ export const channelsConfig = registerAs("channels", () => ({
   emailFrom: env().EMAIL_FROM,
   telegramBotToken: env().TELEGRAM_BOT_TOKEN,
   publicWebUrl: env().PUBLIC_WEB_URL,
+  accountUrl: env().ACCOUNT_URL,
 }));

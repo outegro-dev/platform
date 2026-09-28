@@ -201,12 +201,10 @@ export class DeliveryWorker
     if (delivery.channel === "email") {
       if (!recipient.email || !recipient.emailVerified)
         throw new Skip("failed", "no verified email");
-      const rendered = await renderEmail(
-        intent.templateKey,
-        locale,
-        data,
-        this.config.publicWebUrl,
-      );
+      const rendered = await renderEmail(intent.templateKey, locale, data, {
+        webUrl: this.config.publicWebUrl,
+        accountUrl: this.config.accountUrl,
+      });
       return this.email.send({
         to: recipient.email,
         ...rendered,

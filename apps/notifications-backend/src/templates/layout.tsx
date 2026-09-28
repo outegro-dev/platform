@@ -1,5 +1,6 @@
 import {
   Body,
+  Button,
   Container,
   Head,
   Hr,
@@ -19,6 +20,10 @@ const colors = {
   line: "#c7c9c2",
 };
 const sans = "Manrope, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+const settingsLabel = {
+  en: "Notification settings",
+  ru: "Настройки уведомлений",
+};
 
 /** Brand frame for every email: gallery canvas, wordmark, quiet footer. */
 export function Layout(props: {
@@ -26,6 +31,8 @@ export function Layout(props: {
   preview: string;
   footer: string;
   webUrl: string;
+  /** Where the reader can change channels; omitted for sign-in codes. */
+  settingsUrl?: string;
   children: ReactNode;
 }) {
   return (
@@ -76,6 +83,14 @@ export function Layout(props: {
             <Link href={props.webUrl} style={{ color: colors.muted }}>
               outegro.dev
             </Link>
+            {props.settingsUrl && (
+              <>
+                {" · "}
+                <Link href={props.settingsUrl} style={{ color: colors.muted }}>
+                  {settingsLabel[props.locale]}
+                </Link>
+              </>
+            )}
           </Text>
         </Container>
       </Body>
@@ -124,4 +139,30 @@ export const Code = ({ value }: { value: string }) => (
   >
     {value}
   </Text>
+);
+
+/** The one next step of an email, as a button that also survives plain text. */
+export const Action = ({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) => (
+  <Button
+    href={href}
+    style={{
+      display: "inline-block",
+      backgroundColor: colors.ink,
+      color: colors.surface,
+      borderRadius: 999,
+      padding: "14px 24px",
+      fontSize: 14,
+      fontWeight: 600,
+      textDecoration: "none",
+      marginTop: 8,
+    }}
+  >
+    {children}
+  </Button>
 );

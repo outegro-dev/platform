@@ -27,6 +27,8 @@ export const env = defineEnv(
         .default("Nick Lukashik <no-reply@outegro.dev>"),
       TELEGRAM_BOT_TOKEN: z.string().optional(),
       PUBLIC_WEB_URL: z.url().default("https://outegro.dev"),
+      /** id-web: sessions and notification settings linked from emails. */
+      ACCOUNT_URL: z.url().default("https://id.outegro.dev"),
     })
     .refine((e) => e.EMAIL_PROVIDER !== "resend" || !!e.RESEND_API_KEY, {
       message: "RESEND_API_KEY is required when EMAIL_PROVIDER=resend",

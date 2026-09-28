@@ -1,11 +1,11 @@
 import type { ReactElement } from "react";
-import { Code, Layout, Paragraph, Title } from "./layout.js";
+import { Action, Code, Layout, Paragraph, Title } from "./layout.js";
 
 export type Locale = "en" | "ru";
 export type Category = "auth" | "security" | "billing" | "service";
 export type Channel = "email" | "telegram" | "inbox";
 type Data = Record<string, string | number | boolean | null>;
-type Context = { webUrl: string };
+export type Context = { webUrl: string; accountUrl: string };
 
 export type Template = {
   category: Category;
@@ -26,6 +26,7 @@ const footer = {
   en: "You receive this because you have an account at",
   ru: "Вы получили это письмо, потому что у вас есть аккаунт на",
 };
+const settings = (c: Context) => `${c.accountUrl}/account/notifications`;
 const str = (value: unknown) =>
   value === null || value === undefined ? "" : String(value);
 
@@ -86,9 +87,13 @@ const sessionRevoked: Template = {
       preview={sessionRevoked.subject(l, d)}
       footer={footer[l]}
       webUrl={c.webUrl}
+      settingsUrl={settings(c)}
     >
       <Title>{sessionRevoked.title(l, d)}</Title>
       <Paragraph>{sessionRevoked.text(l, d)}</Paragraph>
+      <Action href={`${c.accountUrl}/account/sessions`}>
+        {l === "ru" ? "Проверить сеансы" : "Review your sessions"}
+      </Action>
     </Layout>
   ),
 };
@@ -107,6 +112,7 @@ const serviceMessage: Template = {
       preview={str(d.title)}
       footer={footer[l]}
       webUrl={c.webUrl}
+      settingsUrl={settings(c)}
     >
       <Title>{str(d.title)}</Title>
       <Paragraph>{str(d.body)}</Paragraph>
@@ -134,6 +140,7 @@ const paymentConfirmed: Template = {
       preview={paymentConfirmed.subject(l, d)}
       footer={footer[l]}
       webUrl={c.webUrl}
+      settingsUrl={settings(c)}
     >
       <Title>{paymentConfirmed.title(l, d)}</Title>
       <Paragraph>{paymentConfirmed.text(l, d)}</Paragraph>

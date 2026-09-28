@@ -91,6 +91,12 @@ describe("intents (N-01)", () => {
     expect((await deliveryOf(userId))?.state).toBe("accepted");
     const sent = h.email.sent.find((m) => m.to === email);
     expect(sent?.subject).toContain("Сеанс завершён");
+    // The email leads to the fix and to the channel settings.
+    expect(sent?.html).toContain("https://id.outegro.dev/account/sessions");
+    expect(sent?.text).toContain("https://id.outegro.dev/account/sessions");
+    expect(sent?.html).toContain(
+      "https://id.outegro.dev/account/notifications",
+    );
     const token = await h.tokenFor(userId);
     const inbox = await h
       .http()
@@ -133,6 +139,18 @@ describe("intents (N-01)", () => {
       .get("/v1/me/inbox")
       .set("authorization", `Bearer ${ownerToken}`);
     expect(inbox.body.unreadCount).toBe(0);
+  });
+
+  it("rejects a tampered inbox cursor as a bad request, not a server error", async () => {
+    const { userId } = await newUser();
+    const token = await h.tokenFor(userId);
+    for (const raw of ["2026-01-01T00:00:00.000Z|not-a-uuid", "garbage"]) {
+      await h
+        .http()
+        .get(`/v1/me/inbox?cursor=${Buffer.from(raw).toString("base64url")}`)
+        .set("authorization", `Bearer ${token}`)
+        .expect(400);
+    }
   });
 
   it("rejects login-code templates on the broker path", async () => {

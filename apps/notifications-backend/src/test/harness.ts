@@ -75,6 +75,7 @@ export async function startHarness() {
     AUTH_AUDIENCE: "outegro",
     INTERNAL_API_TOKEN: internalToken,
     PUBLIC_WEB_URL: "https://outegro.dev",
+    ACCOUNT_URL: "https://id.outegro.dev",
   });
 
   const { AppModule } = await import("../app.module.js");
