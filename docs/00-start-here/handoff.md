@@ -14,6 +14,7 @@
 | `packages/bff` | вызовы сервисов из Next.js, httpOnly-cookie сессии, refresh в proxy, безопасный redirect, проброс User-Agent и IP клиента | 11 тестов |
 | `apps/id-web` (порт 3002) | вход по коду, `/authorize` (SSO), профиль, сессии, inbox с пагинацией, настройки уведомлений; EN/RU, CSP с nonce, свои 404 и страница ошибки, раскладка для телефона | 10 e2e (ID-04/09/10, axe, телефон) |
 | Локальная инфраструктура | `pnpm infra:up`: Postgres 18, Valkey 9, RabbitMQ 4, Mailpit | — |
+| Production (`ssh outegro-prod`) | K3s на VPS за прокси Cloudflare: лендинг, id-web, auth, notifications; PostgreSQL с WAL и ежедневными бэкапами в R2, Valkey, RabbitMQ. Выпуск — `infra/deploy/release.sh` | миграции и readiness при выпуске; [production.md](../06-operations/production.md) |
 
 Проверено вручную: вход в id-web по коду из Mailpit, смена языка профиля (письма приходят на новом языке), отзыв чужого сеанса, inbox, настройки уведомлений, SSO-редирект с кодом и обмен кода на токены (повтор отклоняется).
 
@@ -49,7 +50,7 @@
 
 ## Следующие шаги (по порядку)
 
-1. **Bootstrap VPS (OPS-01)** — сервер куплен (5 vCPU, 8 ГБ, 200 ГБ, Ubuntu 24.04, ключ `outegro_vps`), ждём IP: пользователь `deploy`, SSH по ключу, firewall (80/443 только от Cloudflare, до DNAT), K3s, Traefik с `externalTrafficPolicy: Local` и `ipAllowList`, cert-manager с токеном Cloudflare. Сайты за прокси Cloudflare, BFF в режиме `CLIENT_IP_SOURCE=cf-connecting-ip` — [deployment.md](../02-contracts/deployment.md#адрес-клиента).
+1. **Owner и мониторинг прода:** после первого входа владельца — `node dist/cli/grant-owner.js` в поде auth-backend; затем алерты (OPS-05: сертификат, свежесть бэкапов, ресурсы) в Telegram.
 2. **Google OAuth и passkeys** в auth-backend (arctic, @simplewebauthn 14), когда будут Google-ключи. Callback принимает id-web: `/login/google/callback`.
 3. **Привязка Telegram** (N-04): deep-link `/start <token>`, вебхук бота, запись `telegramChatId` в recipients.
 4. **payments-backend + pay-web** (Lava), подписки, выдача грантов → `billing.grant.changed.v1` (Identity уже потребляет). pay-web входит через id-web: `/authorize` → `/auth/callback` → `POST /v1/oauth/token` из своего BFF (с `clientHeaders`), клиентский helper вынести в `@outegro/bff`.
