@@ -30,7 +30,8 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
-USER node
+# Numeric, so Kubernetes can verify runAsNonRoot.
+USER 1000:1000
 
 FROM web AS landing-web
 COPY --from=build --chown=node:node /repo/apps/landing-web/.next/standalone ./
@@ -50,7 +51,7 @@ CMD ["node", "apps/id-web/server.js"]
 FROM node:24-bookworm-slim AS service
 ENV NODE_ENV=production
 WORKDIR /app
-USER node
+USER 1000:1000
 
 FROM service AS auth-backend
 COPY --from=build --chown=node:node /out/auth-backend ./
