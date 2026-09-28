@@ -33,6 +33,9 @@
 |---|---|---|---|
 | identity.user.created.v1 | Identity | userId, locale, status | Admin, Notifications по политике |
 | identity.user.locale.changed.v1 | Identity | userId, locale | Notifications/Admin |
+| identity.user.contact.changed.v1 | Identity | userId, email nullable, emailVerified | Только Notifications (единственная очередь-подписчик; остальные события без PII) |
+| identity.session.revoked.v1 | Identity | userId, sessionId, reason | Admin/audit |
+| notifications.intent.requested.v1 | Любой сервис (в свой exchange) | sourceEventId, templateKey, category, recipient.userId, locale?, channels?, data | Notifications |
 | identity.user.status.changed.v1 | Identity | userId, status, accessVersion | Access projections/Admin |
 | identity.role.binding.changed.v1 | Identity | bindingId, userId, roleKey, scope, state, accessVersion | Admin/cache invalidation |
 | billing.payment.confirmed.v1 | Payments | paymentId, orderId, userId, money, confirmedAt | Notifications/Admin |

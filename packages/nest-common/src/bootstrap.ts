@@ -6,7 +6,10 @@ import { Logger } from "nestjs-pino";
 import { ErrorFilter, validationExceptionFactory } from "./errors.js";
 
 /** Shared HTTP setup: also used by integration tests via `configureApp`. */
-export function configureApp(app: NestExpressApplication) {
+export function configureApp(
+  app: NestExpressApplication,
+  options: { excludeFromPrefix?: string[] } = {},
+) {
   app.use(helmet());
   // One Traefik hop in front of every service.
   app.set("trust proxy", 1);
@@ -16,7 +19,9 @@ export function configureApp(app: NestExpressApplication) {
     }),
   );
   app.useGlobalFilters(new ErrorFilter());
-  app.setGlobalPrefix("v1", { exclude: ["health", "health/deep"] });
+  app.setGlobalPrefix("v1", {
+    exclude: ["health", "health/deep", ...(options.excludeFromPrefix ?? [])],
+  });
   app.enableShutdownHooks();
   return app;
 }
@@ -27,13 +32,13 @@ export function configureApp(app: NestExpressApplication) {
  */
 export async function bootstrapService(
   module: Type,
-  options: { port: number },
+  options: { port: number; excludeFromPrefix?: string[] },
 ) {
   const app = await NestFactory.create<NestExpressApplication>(module, {
     bufferLogs: true,
   });
   app.useLogger(app.get(Logger));
-  configureApp(app);
+  configureApp(app, options);
   await app.listen(options.port, "0.0.0.0");
   return app;
 }

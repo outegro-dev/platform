@@ -14,6 +14,20 @@ export const identityUserCreated = defineEvent(
   }),
 );
 
+/**
+ * Contact data for Notifications only (its queue is the single consumer).
+ * Other events carry ids, not personal data.
+ */
+export const identityUserContactChanged = defineEvent(
+  "identity.user.contact.changed.v1",
+  "identity",
+  z.object({
+    userId: z.uuid(),
+    email: z.email().nullable(),
+    emailVerified: z.boolean(),
+  }),
+);
+
 export const identityUserLocaleChanged = defineEvent(
   "identity.user.locale.changed.v1",
   "identity",
