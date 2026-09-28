@@ -1,0 +1,30 @@
+{
+  "name": "@outegro/landing-web",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "node scripts/start-standalone.mjs",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@outegro/i18n": "workspace:*",
+    "@outegro/ui": "workspace:*",
+    "@phosphor-icons/react": "2.1.10",
+    "@react-three/fiber": "9.8.1",
+    "next": "16.3.6",
+    "next-intl": "4.14.7",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.183.0",
+    "babel-plugin-react-compiler": "1.0.0",
+    "tailwindcss": "4.3.3"
+  }
+}

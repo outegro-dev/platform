@@ -1,0 +1,230 @@
+{
+  "meta": {
+    "title": "Nick Lukashik — Senior full-stack engineer",
+    "description": "Senior full-stack engineer. Fast interfaces, reliable backends and the infrastructure that ships them. TypeScript, React, Next.js, NestJS, PostgreSQL, Kubernetes."
+  },
+  "nav": {
+    "expertise": "Expertise",
+    "approach": "Approach",
+    "platform": "Platform",
+    "projects": "Projects",
+    "contact": "Contact",
+    "menu": "Open navigation",
+    "close": "Close navigation",
+    "home": "Nick Lukashik, back to top",
+    "skip": "Skip to content",
+    "language": "Language",
+    "sections": "Sections"
+  },
+  "hero": {
+    "eyebrow": "Senior full-stack engineer · Tbilisi",
+    "line1": "Depth in",
+    "line2": "every detail.",
+    "description": "I design fast interfaces, build reliable backends and ship them on infrastructure I run myself — from the first pixel to the cluster.",
+    "cta": "See the stack",
+    "contact": "Get in touch",
+    "art": "Liquid silver NL signature",
+    "scroll": "Scroll"
+  },
+  "stack": {
+    "label": "Daily stack"
+  },
+  "expertise": {
+    "index": "01",
+    "label": "Expertise",
+    "title": "Depth across",
+    "titleAccent": "the stack.",
+    "intro": "6+ years in the JavaScript ecosystem. I connect what people see with the systems they rely on — and own it in production.",
+    "art": "Liquid silver knot",
+    "items": [
+      {
+        "title": "Interfaces that feel right",
+        "body": "Fast, accessible products with careful interaction design — from e-commerce journeys to the admin tools behind them.",
+        "stack": ["TypeScript", "React", "Next.js", "Tailwind CSS", "Three.js"],
+        "focus": "Core Web Vitals · accessibility · SEO"
+      },
+      {
+        "title": "Systems that hold up",
+        "body": "Clear service boundaries, reliable data flows and APIs that keep complex products easy to change.",
+        "stack": ["Node.js", "NestJS", "PostgreSQL", "Redis", "RabbitMQ"],
+        "focus": "APIs · queues · data modelling"
+      },
+      {
+        "title": "From code to production",
+        "body": "Reproducible delivery and real visibility after launch. Infrastructure is part of the product.",
+        "stack": [
+          "Docker",
+          "Kubernetes",
+          "ClickHouse",
+          "GitHub Actions",
+          "Grafana"
+        ],
+        "focus": "Delivery · observability · operations"
+      },
+      {
+        "title": "AI-first delivery",
+        "body": "Agents write and review alongside me; contracts, tests and human judgement stay the gate.",
+        "stack": ["Claude Code", "Codex", "MCP", "Playwright"],
+        "focus": "Speed without losing control"
+      }
+    ]
+  },
+  "approach": {
+    "index": "02",
+    "label": "Approach",
+    "title": "The details",
+    "titleAccent": "make the difference.",
+    "items": [
+      {
+        "title": "Think in systems.",
+        "body": "Start with the problem, the constraints and the people involved. Make the architecture serve the product."
+      },
+      {
+        "title": "Build for people.",
+        "body": "A responsive interface, a clear error, a faster page. Small decisions add up to a product people enjoy using."
+      },
+      {
+        "title": "Own the delivery.",
+        "body": "Connect the interface, backend and deployment. Verify the result and keep the system understandable."
+      }
+    ]
+  },
+  "platform": {
+    "index": "03",
+    "label": "Platform",
+    "title": "The platform",
+    "titleAccent": "behind this site.",
+    "intro": "outegro.dev is the first product on a platform I am building from scratch: one sign-in, notifications, payments and an admin console shared by every future app — on a single-node K3s cluster.",
+    "ready": "Ready",
+    "building": "In development",
+    "layers": [
+      {
+        "name": "Experience",
+        "items": [
+          {
+            "name": "Landing",
+            "tech": "Next.js 16 · React 19 · R3F",
+            "status": "ready"
+          },
+          {
+            "name": "Design system",
+            "tech": "Tailwind 4 · Radix · shadcn",
+            "status": "ready"
+          },
+          {
+            "name": "Sign-in",
+            "tech": "Passkeys · OAuth · SSO",
+            "status": "building"
+          },
+          {
+            "name": "Admin console",
+            "tech": "Next.js · audit trail",
+            "status": "building"
+          }
+        ]
+      },
+      {
+        "name": "Services",
+        "items": [
+          {
+            "name": "Identity",
+            "tech": "NestJS 12 · Drizzle · ES256 JWT",
+            "status": "building"
+          },
+          {
+            "name": "Notifications",
+            "tech": "NestJS · RabbitMQ · Email / Telegram",
+            "status": "building"
+          },
+          {
+            "name": "Payments",
+            "tech": "NestJS · Lava · subscriptions",
+            "status": "building"
+          },
+          {
+            "name": "Data",
+            "tech": "PostgreSQL · Redis · outbox",
+            "status": "building"
+          }
+        ]
+      },
+      {
+        "name": "Operations",
+        "items": [
+          {
+            "name": "Cluster",
+            "tech": "K3s · Traefik · cert-manager",
+            "status": "building"
+          },
+          {
+            "name": "Delivery",
+            "tech": "GitHub Actions · GHCR · Argo CD",
+            "status": "building"
+          },
+          {
+            "name": "Observability",
+            "tech": "Prometheus · Loki · Grafana",
+            "status": "building"
+          },
+          {
+            "name": "Recovery",
+            "tech": "CloudNativePG · offsite backups",
+            "status": "building"
+          }
+        ]
+      }
+    ]
+  },
+  "projects": {
+    "index": "04",
+    "label": "Projects",
+    "title": "A space for",
+    "titleAccent": "what’s next.",
+    "name": "Independent projects",
+    "status": "In the making",
+    "description": "Experiments, products and the thinking behind them. Coming here soon.",
+    "art": "Flowing liquid silver bands"
+  },
+  "contact": {
+    "index": "05",
+    "label": "Contact",
+    "title": "Good things start",
+    "titleAccent": "with a conversation.",
+    "description": "Open to B2B contracts, thoughtful products and ambitious teams.",
+    "button": "Contact",
+    "dialogTitle": "Let’s talk.",
+    "dialogDescription": "Pick whatever is easiest. I usually reply within a day.",
+    "email": "Email",
+    "telegram": "Telegram",
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "close": "Close contact details",
+    "location": "Based in Tbilisi. Working in English & Russian."
+  },
+  "footer": {
+    "role": "Senior full-stack engineer",
+    "back": "Back to top"
+  },
+  "gallery": {
+    "title": "The material library.",
+    "intro": "Shared foundations for the landing and every future outegro.dev interface.",
+    "buttons": "Actions",
+    "primary": "Primary action",
+    "secondary": "Secondary action",
+    "outline": "Outline",
+    "glassAction": "Glass",
+    "disabled": "Unavailable",
+    "badges": "Labels",
+    "input": "Email address",
+    "inputHelp": "Demonstration only. Nothing is submitted.",
+    "surfaces": "Surfaces",
+    "glass": "Glass",
+    "solid": "Solid",
+    "inverse": "Inverse",
+    "type": "Typography",
+    "states": "Semantic states",
+    "error": "Check this field",
+    "success": "Saved successfully",
+    "back": "Back to portfolio"
+  }
+}

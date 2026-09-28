@@ -1,0 +1,230 @@
+{
+  "meta": {
+    "title": "Nick Lukashik — Senior full-stack разработчик",
+    "description": "Senior full-stack разработчик. Быстрые интерфейсы, надёжный backend и инфраструктура, на которой всё работает. TypeScript, React, Next.js, NestJS, PostgreSQL, Kubernetes."
+  },
+  "nav": {
+    "expertise": "Экспертиза",
+    "approach": "Подход",
+    "platform": "Платформа",
+    "projects": "Проекты",
+    "contact": "Контакты",
+    "menu": "Открыть навигацию",
+    "close": "Закрыть навигацию",
+    "home": "Nick Lukashik, наверх",
+    "skip": "К содержимому",
+    "language": "Язык",
+    "sections": "Разделы"
+  },
+  "hero": {
+    "eyebrow": "Senior full-stack разработчик · Тбилиси",
+    "line1": "Глубина",
+    "line2": "в каждой детали.",
+    "description": "Проектирую быстрые интерфейсы, строю надёжный backend и сам довожу всё до продакшена — от первого пикселя до кластера.",
+    "cta": "Смотреть стек",
+    "contact": "Связаться",
+    "art": "Жидкая серебряная подпись NL",
+    "scroll": "Вниз"
+  },
+  "stack": {
+    "label": "Стек каждый день"
+  },
+  "expertise": {
+    "index": "01",
+    "label": "Экспертиза",
+    "title": "Весь стек —",
+    "titleAccent": "вглубь.",
+    "intro": "Более 6 лет в экосистеме JavaScript. Связываю то, что видит пользователь, с системами, на которые он полагается, — и отвечаю за них в продакшене.",
+    "art": "Жидкий серебряный узел",
+    "items": [
+      {
+        "title": "Интерфейсы, которые чувствуются",
+        "body": "Быстрые и доступные продукты с продуманным взаимодействием — от пути покупателя в e-commerce до внутренних админок.",
+        "stack": ["TypeScript", "React", "Next.js", "Tailwind CSS", "Three.js"],
+        "focus": "Core Web Vitals · доступность · SEO"
+      },
+      {
+        "title": "Системы, на которые можно положиться",
+        "body": "Понятные границы сервисов, надёжные потоки данных и API, с которыми сложный продукт легко менять.",
+        "stack": ["Node.js", "NestJS", "PostgreSQL", "Redis", "RabbitMQ"],
+        "focus": "API · очереди · модели данных"
+      },
+      {
+        "title": "От кода до продакшена",
+        "body": "Воспроизводимая доставка и реальная видимость после запуска. Инфраструктура — часть продукта.",
+        "stack": [
+          "Docker",
+          "Kubernetes",
+          "ClickHouse",
+          "GitHub Actions",
+          "Grafana"
+        ],
+        "focus": "Доставка · наблюдаемость · эксплуатация"
+      },
+      {
+        "title": "AI-first разработка",
+        "body": "Агенты пишут и ревьюят вместе со мной; контракты, тесты и инженерное решение остаются за мной.",
+        "stack": ["Claude Code", "Codex", "MCP", "Playwright"],
+        "focus": "Скорость без потери контроля"
+      }
+    ]
+  },
+  "approach": {
+    "index": "02",
+    "label": "Подход",
+    "title": "Разница",
+    "titleAccent": "кроется в деталях.",
+    "items": [
+      {
+        "title": "Думать системно.",
+        "body": "Начинать с задачи, ограничений и людей. Строить архитектуру под потребности продукта."
+      },
+      {
+        "title": "Делать для людей.",
+        "body": "Отзывчивый интерфейс, понятная ошибка, быстрая страница. Из небольших решений складывается удобный продукт."
+      },
+      {
+        "title": "Доводить до результата.",
+        "body": "Связывать интерфейс, backend и развёртывание. Проверять результат и сохранять систему понятной."
+      }
+    ]
+  },
+  "platform": {
+    "index": "03",
+    "label": "Платформа",
+    "title": "Платформа,",
+    "titleAccent": "на которой стоит сайт.",
+    "intro": "outegro.dev — первый продукт на платформе, которую я строю с нуля: единый вход, уведомления, платежи и админка, общие для всех будущих приложений, — на одноузловом кластере K3s.",
+    "ready": "Готово",
+    "building": "В разработке",
+    "layers": [
+      {
+        "name": "Интерфейсы",
+        "items": [
+          {
+            "name": "Лендинг",
+            "tech": "Next.js 16 · React 19 · R3F",
+            "status": "ready"
+          },
+          {
+            "name": "Дизайн-система",
+            "tech": "Tailwind 4 · Radix · shadcn",
+            "status": "ready"
+          },
+          {
+            "name": "Вход",
+            "tech": "Passkeys · OAuth · SSO",
+            "status": "building"
+          },
+          {
+            "name": "Админка",
+            "tech": "Next.js · журнал аудита",
+            "status": "building"
+          }
+        ]
+      },
+      {
+        "name": "Сервисы",
+        "items": [
+          {
+            "name": "Identity",
+            "tech": "NestJS 12 · Drizzle · ES256 JWT",
+            "status": "building"
+          },
+          {
+            "name": "Уведомления",
+            "tech": "NestJS · RabbitMQ · Email / Telegram",
+            "status": "building"
+          },
+          {
+            "name": "Платежи",
+            "tech": "NestJS · Lava · подписки",
+            "status": "building"
+          },
+          {
+            "name": "Данные",
+            "tech": "PostgreSQL · Redis · outbox",
+            "status": "building"
+          }
+        ]
+      },
+      {
+        "name": "Эксплуатация",
+        "items": [
+          {
+            "name": "Кластер",
+            "tech": "K3s · Traefik · cert-manager",
+            "status": "building"
+          },
+          {
+            "name": "Доставка",
+            "tech": "GitHub Actions · GHCR · Argo CD",
+            "status": "building"
+          },
+          {
+            "name": "Наблюдаемость",
+            "tech": "Prometheus · Loki · Grafana",
+            "status": "building"
+          },
+          {
+            "name": "Восстановление",
+            "tech": "CloudNativePG · внешние бэкапы",
+            "status": "building"
+          }
+        ]
+      }
+    ]
+  },
+  "projects": {
+    "index": "04",
+    "label": "Проекты",
+    "title": "Место для",
+    "titleAccent": "новых идей.",
+    "name": "Собственные проекты",
+    "status": "В разработке",
+    "description": "Эксперименты, продукты и решения, которые за ними стоят. Скоро здесь.",
+    "art": "Текучие ленты жидкого серебра"
+  },
+  "contact": {
+    "index": "05",
+    "label": "Контакты",
+    "title": "Хорошие проекты",
+    "titleAccent": "начинаются с разговора.",
+    "description": "Открыт к B2B-контрактам, продуманным продуктам и амбициозным командам.",
+    "button": "Контакты",
+    "dialogTitle": "Давайте обсудим.",
+    "dialogDescription": "Выберите удобный канал. Обычно отвечаю в течение дня.",
+    "email": "Почта",
+    "telegram": "Telegram",
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "close": "Закрыть контакты",
+    "location": "Живу в Тбилиси. Работаю на английском и русском."
+  },
+  "footer": {
+    "role": "Senior full-stack разработчик",
+    "back": "Наверх"
+  },
+  "gallery": {
+    "title": "Библиотека материалов.",
+    "intro": "Общая основа лендинга и всех будущих интерфейсов outegro.dev.",
+    "buttons": "Действия",
+    "primary": "Основное действие",
+    "secondary": "Вторичное действие",
+    "outline": "Контурная",
+    "glassAction": "Стекло",
+    "disabled": "Недоступно",
+    "badges": "Метки",
+    "input": "Электронная почта",
+    "inputHelp": "Демонстрация. Данные никуда не отправляются.",
+    "surfaces": "Поверхности",
+    "glass": "Стекло",
+    "solid": "Основа",
+    "inverse": "Инверсия",
+    "type": "Типографика",
+    "states": "Состояния",
+    "error": "Проверьте это поле",
+    "success": "Успешно сохранено",
+    "back": "К портфолио"
+  }
+}
