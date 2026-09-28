@@ -1,7 +1,13 @@
 # ADR-008: доставка login code
 
-Status: proposed, N-02 закрывает spike.
+Status: **accepted** (28.09.2026), вариант B.
 
-Вариант A: отдельная private auth queue с ACL/TTL/encrypted payload. Вариант B: короткий внутренний adapter вызов с закрытым доступом. Выбор по latency, observability, secret lifetime и complexity на одном VPS.
+Identity вызывает `POST /v1/internal/auth-codes` в notifications-backend синхронно, внутри кластера, с общим сервисным токеном (`INTERNAL_API_TOKEN`, сравнение за постоянное время) и NetworkPolicy. Notifications рендерит письмо и отдаёт его провайдеру; идемпотентный ключ `auth-code:<challengeId>`.
 
-В обоих вариантах Identity владеет challenge lifecycle, Notifications delivery. Секрет не попадает в общий event/audit/log. Сообщение после expiresAt не отправляется. Provider acceptance отдельно от фактического получения письма пользователем. Проверить outage/retry/cooldown и redaction до включения реального sender.
+- Секрет не попадает в брокер, outbox, audit, таблицы notifications и логи (в логах только `challengeId`); тест TC-N-02-04 ищет маркер кода во всех таблицах.
+- После `expiresAt` письмо не отправляется (TC-N-02-02).
+- Недоступный провайдер даёт `deliveryStatus: failed` за время таймаута (5 с на отправку, 8 с на вызов), пользователь может запросить код повторно после кулдауна (TC-N-02-03).
+- Шаблоны категории `auth` отвергаются на брокерном пути.
+- `accepted` означает приём провайдером, не получение письма пользователем.
+
+Вариант A (приватная очередь с TTL/шифрованием) отклонён: на одном VPS он добавляет ключи шифрования и задержку, не давая выигрыша в надёжности для кода с TTL 10 минут.
