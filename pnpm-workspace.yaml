@@ -1,0 +1,19 @@
+packages:
+  - apps/*
+  - packages/*
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  sharp: set this to true or false
+minimumReleaseAgeExclude:
+  - '@turbo/darwin-64@2.11.5'
+  - '@turbo/darwin-arm64@2.11.5'
+  - '@turbo/linux-64@2.11.5'
+  - '@turbo/linux-arm64@2.11.5'
+  - '@turbo/windows-64@2.11.5'
+  - '@turbo/windows-arm64@2.11.5'
+  - turbo@2.11.5
+onlyBuiltDependencies:
+  - sharp
+  - '@tailwindcss/oxide'
+

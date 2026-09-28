@@ -1,0 +1,29 @@
+{
+  "name": "outegro-dev-showcase",
+  "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=12"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "pnpm --filter @outegro/landing-web start",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@biomejs/biome": "2.5.14",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.0.0",
+    "sharp": "0.35.4",
+    "turbo": "2.11.5",
+    "typescript": "5.9.3"
+  }
+}
