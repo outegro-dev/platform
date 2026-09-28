@@ -29,6 +29,7 @@ E2E поднимает отдельную production-сборку на localhost
 ## Подробный план платформы
 
 - **[Что дальше: ревью и этапы с чекпоинтами](docs/00-start-here/next-steps.md)**
+- **[Что нужно от владельца: аккаунты, доступы, покупки](docs/00-start-here/owner-checklist.md)**
 - [Начать здесь](docs/00-start-here/README.md)
 - [Контекст проекта](docs/00-start-here/project-context.md)
 - [Порядок исполнения](docs/00-start-here/execution-protocol.md)

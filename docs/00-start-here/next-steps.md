@@ -82,7 +82,7 @@
 - [x] 0.1 Установлены правила Claude Code: `CLAUDE.md`, `.claude/skills/*`, Context7 MCP (`.mcp.json`) и ctx7 CLI. **Сделано 28.09.**
 - [x] 0.2 Починена битая ссылка на отчёт лендинга (validate.py падал). **Сделано 28.09.**
 - [ ] 0.3 Python 3.13 есть (`C:\Users\working\.local\bin\python3.13.exe`), но не в PATH: `python` открывает Microsoft Store. Добавить в PATH или выключить App execution alias. Либо портировать `tools/documentation` на Node.
-- [ ] 0.4 Первый git-коммит, создан приватный GitHub-репозиторий (нужен владелец).
+- [x] 0.4 Локальный git с логической историей коммитов. **28.09** Публикация на GitHub — после создания организации ([owner-checklist](owner-checklist.md)).
 - [ ] 0.5 Убран гостевой режим из D-13 и главы 13. Статусы в README и start-here синхронизированы с фактом.
 
 **Чекпоинт 0:** `git log` показывает коммит; `validate.py` → pass; в документации нет упоминаний guest mode.
@@ -110,10 +110,10 @@
 **Чекпоинт 2:** `https://outegro.dev` открывается с валидным TLS. Коммит в main сам доходит до production через PR в gitops. Откат — revert PR.
 
 ### Этап 3. Backend-фундамент (1 неделя)
-- [ ] 3.1 `packages/nest-common` (config, pino, health, JWKS-verifier, RolesGuard, zod-pipe) и `packages/db` (Drizzle, миграции).
-- [ ] 3.2 AMQP-модуль под Nest 12, outbox/inbox, `packages/contracts`.
-- [ ] 3.3 docker-compose для локальной разработки: Postgres, Redis, RabbitMQ, Mailpit.
-- [ ] 3.4 В кластер: CNPG (1 instance + backup в bucket), Redis, RabbitMQ, Prometheus, Loki, Grafana с лимитами под 8 ГБ.
+- [x] 3.1 `packages/nest-common` (config, pino, health, JWKS-guard, RolesGuard, валидация Standard Schema, rate limit в Valkey) и `packages/db` (Drizzle, миграции, outbox/inbox). **28.09**
+- [x] 3.2 Модуль RabbitMQ под Nest 12 (confirms, TTL-ретраи, DLQ), outbox relay, `packages/contracts`. **28.09**
+- [x] 3.3 docker-compose: Postgres 18, Valkey 9, RabbitMQ 4, Mailpit (`pnpm infra:up`). **28.09**
+- [ ] 3.4 В кластер: CNPG (1 instance + backup в bucket), Valkey, RabbitMQ, Prometheus, Loki, Grafana с лимитами под 8 ГБ — вместе с этапом 2.
 
 **Чекпоинт 3:** шаблонный сервис стартует локально и в кластере. Событие проходит outbox → RabbitMQ → inbox с дедупликацией. Restore БД из бэкапа отрепетирован.
 
