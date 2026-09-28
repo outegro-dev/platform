@@ -49,7 +49,7 @@
 
 ## Следующие шаги (по порядку)
 
-1. **Bootstrap VPS (OPS-01)**, как только будет сервер: пользователь `deploy`, SSH по ключу, firewall, K3s, Traefik с `externalTrafficPolicy: Local`, cert-manager с токеном Cloudflare. Требования к адресу клиента — [deployment.md](../02-contracts/deployment.md#адрес-клиента).
+1. **Bootstrap VPS (OPS-01)** — сервер куплен (5 vCPU, 8 ГБ, 200 ГБ, Ubuntu 24.04, ключ `outegro_vps`), ждём IP: пользователь `deploy`, SSH по ключу, firewall (80/443 только от Cloudflare, до DNAT), K3s, Traefik с `externalTrafficPolicy: Local` и `ipAllowList`, cert-manager с токеном Cloudflare. Сайты за прокси Cloudflare, BFF в режиме `CLIENT_IP_SOURCE=cf-connecting-ip` — [deployment.md](../02-contracts/deployment.md#адрес-клиента).
 2. **Google OAuth и passkeys** в auth-backend (arctic, @simplewebauthn 14), когда будут Google-ключи. Callback принимает id-web: `/login/google/callback`.
 3. **Привязка Telegram** (N-04): deep-link `/start <token>`, вебхук бота, запись `telegramChatId` в recipients.
 4. **payments-backend + pay-web** (Lava), подписки, выдача грантов → `billing.grant.changed.v1` (Identity уже потребляет). pay-web входит через id-web: `/authorize` → `/auth/callback` → `POST /v1/oauth/token` из своего BFF (с `clientHeaders`), клиентский helper вынести в `@outegro/bff`.

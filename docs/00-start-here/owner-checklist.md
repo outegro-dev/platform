@@ -2,9 +2,11 @@
 
 Секреты никогда не отправляются в чат и не коммитятся. До появления кластера они хранятся в менеджере паролей (запись «outegro production»). Для локальной проверки — в `apps/<service>/.env` (игнорируется git). В кластере — в Sealed Secrets: скрипт запечатывания запускает владелец у себя в терминале, значения модель не видит. В документах и отчётах упоминаются только имена переменных.
 
-Порядок на сегодня: **VPS → Cloudflare (зона, NS, токен) → GitHub-организация → Resend → R2 → Google → Telegram**. Lava и Hermes — на своих этапах.
+Порядок: **VPS → Cloudflare (зона, NS, токен) → GitHub-организация → Resend → R2 → Google → Telegram**. Lava и Hermes — на своих этапах.
 
 ## 1. VPS
+
+Куплен 29.09.2026: 5 vCPU, 8 ГБ RAM, 200 ГБ, Ubuntu 24.04, ключ `outegro_vps` добавлен. Ждём IP.
 
 | Параметр | Что выбрать | Почему |
 |---|---|---|
@@ -23,32 +25,39 @@
 
 ## 2. Cloudflare
 
+Решение владельца 29.09.2026: записи идут **через прокси** (оранжевое облако). Аудитория — Европа; замедление у пользователей из России принято. Прокси защищает сайт, только если сервер принимает 80/443 исключительно от Cloudflare, а адрес посетителя берётся из `CF-Connecting-IP` — см. [deployment.md](../02-contracts/deployment.md#адрес-клиента). SSH прокси не касается.
+
 1. Аккаунт и 2FA.
-2. **Add a site** → `outegro.dev`, план Free. Cloudflare выдаст два NS — прописать их у регистратора домена вместо текущих. Если домен куплен в Cloudflare Registrar, шаг уже выполнен.
-3. **DNS → Settings → DNSSEC → Enable**, DS-запись добавить у регистратора (в Cloudflare Registrar — автоматически).
-4. После покупки VPS создать записи. Все — **DNS only (серое облако)**:
+2. **Add a site** → `outegro.dev`, план Free. NS Cloudflare прописать у регистратора. **DNS → Settings → DNSSEC → Enable**, DS-запись — у регистратора.
+3. Удалить записи, импортированные от регистратора (парковка, старый `www`, MX), если они не наши: CNAME не создаётся рядом с другой записью того же имени.
+4. Записи, все **Proxied**:
 
    | Тип | Имя | Значение |
    |---|---|---|
-   | A | `@` | IPv4 сервера |
-   | A | `id`, `pay`, `admin`, `hooks` | IPv4 сервера |
-   | CNAME | `www` | `outegro.dev` |
-   | AAAA | те же имена | IPv6, если есть |
-   | CAA | `@` | `0 issue "letsencrypt.org"` |
+   | A | `@`, `www`, `id`, `pay`, `admin`, `hooks` | IPv4 сервера |
 
-   Почему без прокси. Во-первых, у пользователей из России прокси Cloudflare в 2025 году замедлялся. Во-вторых, через прокси реальный IP клиента приходит в `CF-Connecting-IP`, а последним в `X-Forwarded-For` стоит адрес Cloudflare, и ограничения входа по IP считали бы узлы Cloudflare. Если прокси понадобится (защита от DDoS), то сначала 80/443 закрываются для всех, кроме диапазонов Cloudflare, а BFF переходит на `CF-Connecting-IP`.
-5. **My Profile → API Tokens → Create Token → Custom token** для cert-manager (wildcard-сертификат Let's Encrypt через DNS-01):
-   - Permissions: `Zone → DNS → Edit` и `Zone → Zone → Read`;
-   - Zone Resources: `Include → Specific zone → outegro.dev`;
-   - Client IP Address Filtering: IPv4 сервера;
-   - результат → `CLOUDFLARE_API_TOKEN`.
-6. **R2** (для бэкапов нужна привязанная карта; до 10 ГБ бесплатно):
-   - Create bucket `outegro-backups`, location hint — Europe;
-   - **Manage API tokens → Create Account API token**: `Object Read & Write`, «Apply to specific buckets only» → `outegro-backups`;
-   - сохранить `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (показывается один раз) и endpoint `https://<account-id>.r2.cloudflarestorage.com`.
-7. По желанию **Email Routing**: `hello@outegro.dev` → ваша почта. Cloudflare добавит MX и SPF на корень домена. С Resend не конфликтует: его записи живут на `send.outegro.dev`.
+   AAAA и CAA не нужны: IPv6 для посетителей и сертификаты на своей стороне Cloudflare обеспечивает сам. Для SSH записи нет — подключение по IP.
+5. **Rules → Redirect Rules → Create rule**: шаблон «Redirect from WWW to root» или вручную `https://www.outegro.dev/*` → `https://outegro.dev/${1}`, 301, Preserve query string.
+6. Настройки зоны (удобно через поиск панели, Ctrl+K):
+   - SSL/TLS → Overview: **Full (strict)**. Пока сервер не готов, сайт отдаёт ошибку 52x — это ожидаемо;
+   - SSL/TLS → Edge Certificates: Always Use HTTPS — On, Minimum TLS Version — 1.2;
+   - выключить **Rocket Loader**, **Email Address Obfuscation** и **Web Analytics (RUM)**: они вставляют в страницы скрипты, которые блокирует CSP с nonce;
+   - выключить **Bot Fight Mode**: на Free для него нет исключений по хосту, а он блокирует вебхуки Lava и внешний мониторинг.
+7. **API-токен для cert-manager** (сертификат Let's Encrypt на сервере через DNS-01):
+   1. https://dash.cloudflare.com/profile/api-tokens → **Create Token** → внизу **Custom token → Get started**, имя `cert-manager outegro.dev`.
+   2. Permissions: `Zone · DNS · Edit` и `Zone · Zone · Read` (вторая строка — «+ Add more»).
+   3. Zone Resources: `Include · Specific zone · outegro.dev`.
+   4. Client IP Address Filtering: `Is in` → IPv4 и IPv6 сервера.
+   5. TTL: End Date через год; напоминание в календаре за 2 недели.
+   6. **Continue to summary → Create Token** → в менеджер паролей как `CLOUDFLARE_API_TOKEN`. Токен показывается один раз; команду проверки с curl никуда не вставлять — в ней токен.
 
-Не включать: прокси, Always Use HTTPS, Page Rules и Bot Fight Mode. Без прокси они не работают, а редирект на HTTPS делает Traefik.
+   Ротация: новый токен с теми же правами → скрипт запечатывания обновляет Sealed Secret → cert-manager берёт его при следующей DNS-01 проверке → принудительно продлить один сертификат → удалить старый токен. Просроченный токен не роняет сайт сразу: сертификат живёт 90 дней и продлевается за 30; алерт «сертификат истекает меньше чем через 21 день» ловит это заранее. При смене IP сервера фильтр токена обновляется.
+8. **R2 для бэкапов:**
+   1. Меню аккаунта → **R2 Object Storage**; активировать R2 и привязать карту (до 10 ГБ бесплатно).
+   2. **Create bucket**: `outegro-backups`, Location — Automatic, hint **Western Europe (WEUR)**, Storage class — Standard, jurisdiction не выбирать. Публичный доступ (R2.dev subdomain, custom domains) не включать.
+   3. **Manage API tokens → Create Account API token**: имя `cnpg-backups`, **Object Read & Write**, **Apply to specific buckets only** → `outegro-backups`, TTL — Forever, Client IP filtering — IPv4 и IPv6 сервера (обязательно: в бэкапах данные пользователей).
+   4. Сохранить `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (показывается один раз) и `R2_ENDPOINT` = `https://<account-id>.r2.cloudflarestorage.com`. «Token value» не нужен. При восстановлении на новом сервере выпускается новый ключ под его IP.
+9. По желанию **Email Routing**: `hello@outegro.dev` → ваша почта. MX и SPF — на корне домена, с Resend (`send.outegro.dev`) не конфликтует.
 
 ## 3. GitHub: организация
 
@@ -86,16 +95,15 @@
 
 ## 5. Google: вход через Google (ID-02)
 
-1. console.cloud.google.com → новый проект `outegro`.
-2. **Google Auth Platform → Branding:** имя `outegro`, support email, домашняя страница `https://outegro.dev`, политика `https://outegro.dev/privacy`, authorized domain `outegro.dev`, контакт разработчика.
-3. **Audience:** External → **Publish app**. Для `openid`, `email` и `profile` отдельная проверка Google не нужна. Для показа логотипа Google может попросить подтвердить домен в Search Console (TXT-запись в Cloudflare).
-4. **Data access:** scopes `openid`, `userinfo.email`, `userinfo.profile`.
-5. **Clients → Create client → Web application** (`id-web`), Authorized redirect URIs:
+1. https://console.cloud.google.com → выбор проекта сверху → **New project** → `outegro` → Create; переключиться на него.
+2. Меню → **Google Auth Platform → Get started**: App name `outegro`, User support email — своя почта; Audience — **External**; Contact information — своя почта; согласиться с условиями → Create.
+3. **Branding:** логотип не загружать (с ним Google включает проверку бренда на несколько дней); Application home page `https://outegro.dev`; privacy policy `https://outegro.dev/privacy`; terms of service — пусто; Authorized domains — `outegro.dev` → Save.
+4. **Audience → Publish app** → статус «In production». В режиме Testing войти могут только тестовые пользователи. Для `openid`, `email` и `profile` проверка Google не нужна.
+5. **Data Access → Add or remove scopes:** `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile` → Update → Save.
+6. **Clients → Create client:** Application type — **Web application**, name `id-web`; Authorized JavaScript origins — пусто (обмен кода идёт на сервере id-web); Authorized redirect URIs:
    - `https://id.outegro.dev/login/google/callback`
    - `http://localhost:3002/login/google/callback`
-
-   JavaScript origins не нужны: обмен кода идёт на сервере id-web.
-6. `GOOGLE_CLIENT_ID` и `GOOGLE_CLIENT_SECRET` — секрет сохранить сразу, повторно Google его не покажет.
+7. **Create** → `GOOGLE_CLIENT_ID` и `GOOGLE_CLIENT_SECRET` в менеджер паролей (или Download JSON). Секрет показывается только при создании. Изменения вступают в силу от 5 минут до нескольких часов.
 
 ## 6. Telegram
 
