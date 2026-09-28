@@ -1,0 +1,2720 @@
+{
+  "version": "0.3",
+  "status_note": "All implementation work is planned; docs generated is not task done.",
+  "tasks": [
+    {
+      "id": "BOOT-01",
+      "title": "Независимый корень и Git hygiene",
+      "stage": "00-preparation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/00-preparation/tasks/BOOT-01.md",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/03-platform-architecture.md"
+      ],
+      "test_case_ids": [
+        "TC-BOOT-01-01",
+        "TC-BOOT-01-02",
+        "TC-BOOT-01-03"
+      ]
+    },
+    {
+      "id": "BOOT-02",
+      "title": "Инвентаризация повторного использования",
+      "stage": "00-preparation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/00-preparation/tasks/BOOT-02.md",
+      "dependencies": [
+        "BOOT-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/03-platform-architecture.md"
+      ],
+      "test_case_ids": [
+        "TC-BOOT-02-01",
+        "TC-BOOT-02-02",
+        "TC-BOOT-02-03"
+      ]
+    },
+    {
+      "id": "BOOT-03",
+      "title": "Frontend workspace без backend зависимости",
+      "stage": "00-preparation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/00-preparation/tasks/BOOT-03.md",
+      "dependencies": [
+        "BOOT-02"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/03-platform-architecture.md"
+      ],
+      "test_case_ids": [
+        "TC-BOOT-03-01",
+        "TC-BOOT-03-02",
+        "TC-BOOT-03-03"
+      ]
+    },
+    {
+      "id": "BOOT-04",
+      "title": "Рабочие команды и test harness",
+      "stage": "00-preparation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/00-preparation/tasks/BOOT-04.md",
+      "dependencies": [
+        "BOOT-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/03-platform-architecture.md"
+      ],
+      "test_case_ids": [
+        "TC-BOOT-04-01",
+        "TC-BOOT-04-02",
+        "TC-BOOT-04-03"
+      ]
+    },
+    {
+      "id": "L-01",
+      "title": "Зафиксировать brief и карту секций",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-01.md",
+      "dependencies": [
+        "BOOT-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-01-01",
+        "TC-L-01-02",
+        "TC-L-01-03"
+      ]
+    },
+    {
+      "id": "DS-01",
+      "title": "Выбрать типографику и semantic tokens",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/DS-01.md",
+      "dependencies": [
+        "L-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-DS-01-01",
+        "TC-DS-01-02",
+        "TC-DS-01-03"
+      ]
+    },
+    {
+      "id": "L-02",
+      "title": "Составить EN/RU content skeleton",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-02.md",
+      "dependencies": [
+        "L-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-02-01",
+        "TC-L-02-02",
+        "TC-L-02-03"
+      ]
+    },
+    {
+      "id": "DS-02",
+      "title": "Button/Link/FormField/Input/focus",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/DS-02.md",
+      "dependencies": [
+        "DS-01",
+        "BOOT-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-DS-02-01",
+        "TC-DS-02-02",
+        "TC-DS-02-03"
+      ]
+    },
+    {
+      "id": "L-03",
+      "title": "Сгенерировать/подготовить визуальные варианты hero",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-03.md",
+      "dependencies": [
+        "DS-01",
+        "L-02"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-03-01",
+        "TC-L-03-02",
+        "TC-L-03-03"
+      ]
+    },
+    {
+      "id": "L-06",
+      "title": "Настроить EN-default routing/messages",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-06.md",
+      "dependencies": [
+        "L-02",
+        "BOOT-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-06-01",
+        "TC-L-06-02",
+        "TC-L-06-03"
+      ]
+    },
+    {
+      "id": "DS-03",
+      "title": "Dialog/Menu/LocaleSwitch/feedback",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/DS-03.md",
+      "dependencies": [
+        "DS-02"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-DS-03-01",
+        "TC-DS-03-02",
+        "TC-DS-03-03"
+      ]
+    },
+    {
+      "id": "DS-04",
+      "title": "Table/filters/status/timeline/amount",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/DS-04.md",
+      "dependencies": [
+        "DS-02"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-DS-04-01",
+        "TC-DS-04-02",
+        "TC-DS-04-03"
+      ]
+    },
+    {
+      "id": "L-04",
+      "title": "Реализовать R3F silver prototype",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-04.md",
+      "dependencies": [
+        "L-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-04-01",
+        "TC-L-04-02",
+        "TC-L-04-03"
+      ]
+    },
+    {
+      "id": "L-08",
+      "title": "Реализовать expertise/approach/projects",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-08.md",
+      "dependencies": [
+        "L-02",
+        "DS-02",
+        "L-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-08-01",
+        "TC-L-08-02",
+        "TC-L-08-03"
+      ]
+    },
+    {
+      "id": "DS-05",
+      "title": "Сборка shell id/pay/admin",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/DS-05.md",
+      "dependencies": [
+        "DS-03",
+        "DS-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-DS-05-01",
+        "TC-DS-05-02",
+        "TC-DS-05-03"
+      ]
+    },
+    {
+      "id": "L-05",
+      "title": "Измерить профили качества",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-05.md",
+      "dependencies": [
+        "L-04"
+      ],
+      "external": [
+        "DEVICE-MATRIX"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-05-01",
+        "TC-L-05-02",
+        "TC-L-05-03"
+      ]
+    },
+    {
+      "id": "L-09",
+      "title": "Footer/contact/metadata",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-09.md",
+      "dependencies": [
+        "L-06",
+        "L-08"
+      ],
+      "external": [
+        "PUBLIC-CONTACTS"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-09-01",
+        "TC-L-09-02",
+        "TC-L-09-03"
+      ]
+    },
+    {
+      "id": "L-07",
+      "title": "Реализовать hero/header",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-07.md",
+      "dependencies": [
+        "L-05",
+        "L-06",
+        "DS-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-07-01",
+        "TC-L-07-02",
+        "TC-L-07-03"
+      ]
+    },
+    {
+      "id": "L-10",
+      "title": "Mobile/a11y/performance acceptance",
+      "stage": "01-landing-design",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/01-landing-design/tasks/L-10.md",
+      "dependencies": [
+        "L-07",
+        "L-08",
+        "L-09",
+        "DS-05"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/00-project-charter.md",
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": [
+        "TC-L-10-01",
+        "TC-L-10-02",
+        "TC-L-10-03"
+      ]
+    },
+    {
+      "id": "BE-01",
+      "title": "Матрица Node/Nest/AMQP/Drizzle",
+      "stage": "02-backend-foundation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/02-backend-foundation/tasks/BE-01.md",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-BE-01-01",
+        "TC-BE-01-02",
+        "TC-BE-01-03"
+      ]
+    },
+    {
+      "id": "OPS-01",
+      "title": "Чистый bootstrap и DNS/TLS",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-01.md",
+      "dependencies": [
+        "L-10",
+        "BOOT-02"
+      ],
+      "external": [
+        "VPS-DNS"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-01-01",
+        "TC-OPS-01-02",
+        "TC-OPS-01-03"
+      ]
+    },
+    {
+      "id": "BE-02",
+      "title": "Решить RabbitMQ adapter compatibility",
+      "stage": "02-backend-foundation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/02-backend-foundation/tasks/BE-02.md",
+      "dependencies": [
+        "BE-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-BE-02-01",
+        "TC-BE-02-02",
+        "TC-BE-02-03"
+      ]
+    },
+    {
+      "id": "BE-03",
+      "title": "Схемы новых DB + migrations",
+      "stage": "02-backend-foundation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/02-backend-foundation/tasks/BE-03.md",
+      "dependencies": [
+        "BE-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-BE-03-01",
+        "TC-BE-03-02",
+        "TC-BE-03-03"
+      ]
+    },
+    {
+      "id": "BE-04",
+      "title": "Контракты ошибок/events/IDs",
+      "stage": "02-backend-foundation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/02-backend-foundation/tasks/BE-04.md",
+      "dependencies": [
+        "BE-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-BE-04-01",
+        "TC-BE-04-02",
+        "TC-BE-04-03"
+      ]
+    },
+    {
+      "id": "H-01",
+      "title": "Подтверждены Plus OAuth, runtime, модель и каталог как workload",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-01.md",
+      "dependencies": [
+        "BE-01"
+      ],
+      "external": [
+        "CHATGPT-OAUTH"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-01-01",
+        "TC-H-01-02",
+        "TC-H-01-03"
+      ]
+    },
+    {
+      "id": "BE-05",
+      "title": "Outbox relay с lease и confirms",
+      "stage": "02-backend-foundation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/02-backend-foundation/tasks/BE-05.md",
+      "dependencies": [
+        "BE-02",
+        "BE-03",
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/recipes/outbox-inbox-implementation.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-BE-05-01",
+        "TC-BE-05-02",
+        "TC-BE-05-03"
+      ]
+    },
+    {
+      "id": "BE-07",
+      "title": "Runtime/migration DB roles",
+      "stage": "02-backend-foundation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/02-backend-foundation/tasks/BE-07.md",
+      "dependencies": [
+        "BE-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-BE-07-01",
+        "TC-BE-07-02",
+        "TC-BE-07-03"
+      ]
+    },
+    {
+      "id": "H-02",
+      "title": "Воспроизводимый pinned image/PVC/startup",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-02.md",
+      "dependencies": [
+        "OPS-01",
+        "H-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-02-01",
+        "TC-H-02-02",
+        "TC-H-02-03"
+      ]
+    },
+    {
+      "id": "ID-01",
+      "title": "Email-code lifecycle на Drizzle",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-01.md",
+      "dependencies": [
+        "BE-03",
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-01-01",
+        "TC-ID-01-02",
+        "TC-ID-01-03",
+        "TC-ID-01-04"
+      ]
+    },
+    {
+      "id": "ID-06",
+      "title": "Roles/permissions/bindings",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-06.md",
+      "dependencies": [
+        "BE-03",
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-06-01",
+        "TC-ID-06-02",
+        "TC-ID-06-03",
+        "TC-ID-06-04"
+      ]
+    },
+    {
+      "id": "N-01",
+      "title": "Intent/delivery/inbox/preferences schema",
+      "stage": "04-notifications",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/04-notifications/tasks/N-01.md",
+      "dependencies": [
+        "BE-03",
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/notifications.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/05-notifications.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-N-01-01",
+        "TC-N-01-02",
+        "TC-N-01-03"
+      ]
+    },
+    {
+      "id": "OPS-04",
+      "title": "Метрики/логи/correlation",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-04.md",
+      "dependencies": [
+        "BE-04",
+        "OPS-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-04-01",
+        "TC-OPS-04-02",
+        "TC-OPS-04-03"
+      ]
+    },
+    {
+      "id": "PAY-01",
+      "title": "Provider contract fixture suite",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-01.md",
+      "dependencies": [
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-01-01",
+        "TC-PAY-01-02",
+        "TC-PAY-01-03"
+      ]
+    },
+    {
+      "id": "BE-06",
+      "title": "Consumer inbox/idempotency/retry",
+      "stage": "02-backend-foundation",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/02-backend-foundation/tasks/BE-06.md",
+      "dependencies": [
+        "BE-05"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/recipes/outbox-inbox-implementation.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-BE-06-01",
+        "TC-BE-06-02",
+        "TC-BE-06-03"
+      ]
+    },
+    {
+      "id": "H-03",
+      "title": "Приватный OAuth, auth persistence и reauth",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-03.md",
+      "dependencies": [
+        "H-02"
+      ],
+      "external": [
+        "CHATGPT-OAUTH"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-03-01",
+        "TC-H-03-02",
+        "TC-H-03-03"
+      ]
+    },
+    {
+      "id": "H-04",
+      "title": "Allowlist канала, tools/egress/resource policy",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-04.md",
+      "dependencies": [
+        "H-02"
+      ],
+      "external": [
+        "HERMES-TELEGRAM"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-04-01",
+        "TC-H-04-02",
+        "TC-H-04-03"
+      ]
+    },
+    {
+      "id": "ID-02",
+      "title": "Google/linking + account ownership",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-02.md",
+      "dependencies": [
+        "ID-01"
+      ],
+      "external": [
+        "GOOGLE-OAUTH"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-02-01",
+        "TC-ID-02-02",
+        "TC-ID-02-03"
+      ]
+    },
+    {
+      "id": "ID-03",
+      "title": "Sessions/refresh concurrency",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-03.md",
+      "dependencies": [
+        "ID-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/recipes/refresh-spike.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-03-01",
+        "TC-ID-03-02",
+        "TC-ID-03-03",
+        "TC-ID-03-04"
+      ]
+    },
+    {
+      "id": "N-02",
+      "title": "Email и auth-code priority path",
+      "stage": "04-notifications",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/04-notifications/tasks/N-02.md",
+      "dependencies": [
+        "N-01",
+        "ID-01",
+        "BE-02"
+      ],
+      "external": [
+        "EMAIL-PROVIDER"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/notifications.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/05-notifications.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-N-02-01",
+        "TC-N-02-02",
+        "TC-N-02-03",
+        "TC-N-02-04"
+      ]
+    },
+    {
+      "id": "OPS-02",
+      "title": "PG/Redis/Rabbit PVC/roles/limits",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-02.md",
+      "dependencies": [
+        "OPS-01",
+        "BE-07"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-02-01",
+        "TC-OPS-02-02",
+        "TC-OPS-02-03"
+      ]
+    },
+    {
+      "id": "OPS-05",
+      "title": "Dashboards/alerts/runbooks",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-05.md",
+      "dependencies": [
+        "OPS-04"
+      ],
+      "external": [
+        "OPS-ALERTS"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-05-01",
+        "TC-OPS-05-02",
+        "TC-OPS-05-03"
+      ]
+    },
+    {
+      "id": "PAY-02",
+      "title": "Catalog/price/order/payment schema",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-02.md",
+      "dependencies": [
+        "BE-03",
+        "PAY-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-02-01",
+        "TC-PAY-02-02",
+        "TC-PAY-02-03"
+      ]
+    },
+    {
+      "id": "H-05",
+      "title": "No-spend/auxiliary/quota acceptance",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-05.md",
+      "dependencies": [
+        "H-03",
+        "H-04"
+      ],
+      "external": [
+        "CHATGPT-OAUTH"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-05-01",
+        "TC-H-05-02",
+        "TC-H-05-03"
+      ]
+    },
+    {
+      "id": "H-07",
+      "title": "Topics routing, owner/chat allowlist, versioned rules",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-07.md",
+      "dependencies": [
+        "H-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-07-01",
+        "TC-H-07-02",
+        "TC-H-07-03",
+        "TC-H-07-04"
+      ]
+    },
+    {
+      "id": "ID-04",
+      "title": "SSO client/code/PKCE/BFF",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-04.md",
+      "dependencies": [
+        "ID-03",
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-04-01",
+        "TC-ID-04-02",
+        "TC-ID-04-03",
+        "TC-ID-04-04"
+      ]
+    },
+    {
+      "id": "N-03",
+      "title": "Delivery claim/retry/DLQ",
+      "stage": "04-notifications",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/04-notifications/tasks/N-03.md",
+      "dependencies": [
+        "N-02",
+        "BE-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/notifications.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/05-notifications.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-N-03-01",
+        "TC-N-03-02",
+        "TC-N-03-03",
+        "TC-N-03-04"
+      ]
+    },
+    {
+      "id": "OPS-03",
+      "title": "GitOps chart/migration job",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-03.md",
+      "dependencies": [
+        "OPS-02",
+        "BE-07"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-03-01",
+        "TC-OPS-03-02",
+        "TC-OPS-03-03"
+      ]
+    },
+    {
+      "id": "OPS-06",
+      "title": "Backup/WAL/secret recovery",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-06.md",
+      "dependencies": [
+        "OPS-02"
+      ],
+      "external": [
+        "BACKUP-STORAGE"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-06-01",
+        "TC-OPS-06-02",
+        "TC-OPS-06-03"
+      ]
+    },
+    {
+      "id": "PAY-04",
+      "title": "Durable authenticated webhook inbox",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-04.md",
+      "dependencies": [
+        "PAY-01",
+        "BE-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-04-01",
+        "TC-PAY-04-02",
+        "TC-PAY-04-03",
+        "TC-PAY-04-04"
+      ]
+    },
+    {
+      "id": "H-06",
+      "title": "Backup/restore/alerts и full-stack load test",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-06.md",
+      "dependencies": [
+        "H-05",
+        "OPS-05",
+        "OPS-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-06-01",
+        "TC-H-06-02",
+        "TC-H-06-03"
+      ]
+    },
+    {
+      "id": "H-08",
+      "title": "Assistant-store/Drizzle schema, media ingest, idempotency",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-08.md",
+      "dependencies": [
+        "BE-07",
+        "H-07",
+        "OPS-02"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/recipes/photo-intake.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-08-01",
+        "TC-H-08-02",
+        "TC-H-08-03",
+        "TC-H-08-04"
+      ]
+    },
+    {
+      "id": "ID-05",
+      "title": "Passkeys и RP id.outegro.dev",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-05.md",
+      "dependencies": [
+        "ID-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-05-01",
+        "TC-ID-05-02",
+        "TC-ID-05-03",
+        "TC-ID-05-04"
+      ]
+    },
+    {
+      "id": "PAY-03",
+      "title": "Idempotent checkout state machine",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-03.md",
+      "dependencies": [
+        "PAY-02",
+        "ID-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/recipes/checkout-implementation.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-03-01",
+        "TC-PAY-03-02",
+        "TC-PAY-03-03",
+        "TC-PAY-03-04"
+      ]
+    },
+    {
+      "id": "PAY-05",
+      "title": "Payment processing/journal/outbox",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-05.md",
+      "dependencies": [
+        "PAY-02",
+        "PAY-04",
+        "BE-05"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-05-01",
+        "TC-PAY-05-02",
+        "TC-PAY-05-03",
+        "TC-PAY-05-04"
+      ]
+    },
+    {
+      "id": "H-09",
+      "title": "Фото → item draft → уточнения → сохранённая карточка",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-09.md",
+      "dependencies": [
+        "H-08",
+        "H-05"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/recipes/photo-intake.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-09-01",
+        "TC-H-09-02",
+        "TC-H-09-03",
+        "TC-H-09-04"
+      ]
+    },
+    {
+      "id": "ID-07",
+      "title": "Owner bootstrap и step-up",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-07.md",
+      "dependencies": [
+        "ID-05",
+        "ID-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-07-01",
+        "TC-ID-07-02",
+        "TC-ID-07-03",
+        "TC-ID-07-04"
+      ]
+    },
+    {
+      "id": "PAY-06",
+      "title": "Source grants и expiry",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-06.md",
+      "dependencies": [
+        "PAY-05",
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-06-01",
+        "TC-PAY-06-02",
+        "TC-PAY-06-03"
+      ]
+    },
+    {
+      "id": "A-01",
+      "title": "Admin auth/shell/permissions",
+      "stage": "06-admin",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/06-admin/tasks/A-01.md",
+      "dependencies": [
+        "ID-07",
+        "DS-05",
+        "BE-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/billing.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/07-admin.md",
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/06-payments-subscriptions.md"
+      ],
+      "test_case_ids": [
+        "TC-A-01-01",
+        "TC-A-01-02",
+        "TC-A-01-03"
+      ]
+    },
+    {
+      "id": "H-10",
+      "title": "Черновики объявлений, версии и управляемая публикация",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-10.md",
+      "dependencies": [
+        "H-09"
+      ],
+      "external": [
+        "MARKETPLACE-TARGET"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-10-01",
+        "TC-H-10-02",
+        "TC-H-10-03",
+        "TC-H-10-04"
+      ]
+    },
+    {
+      "id": "ID-08",
+      "title": "Коммерческая grant projection",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-08.md",
+      "dependencies": [
+        "BE-06",
+        "ID-06",
+        "PAY-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-08-01",
+        "TC-ID-08-02",
+        "TC-ID-08-03",
+        "TC-ID-08-04"
+      ]
+    },
+    {
+      "id": "ID-09",
+      "title": "Кабинет/сессии/locale",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-09.md",
+      "dependencies": [
+        "DS-05",
+        "ID-03",
+        "ID-04",
+        "ID-05",
+        "ID-07"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-09-01",
+        "TC-ID-09-02",
+        "TC-ID-09-03"
+      ]
+    },
+    {
+      "id": "PAY-07",
+      "title": "Subscription root/renew/period model",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-07.md",
+      "dependencies": [
+        "PAY-05",
+        "PAY-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-07-01",
+        "TC-PAY-07-02",
+        "TC-PAY-07-03",
+        "TC-PAY-07-04"
+      ]
+    },
+    {
+      "id": "PAY-09",
+      "title": "Refund/dispute inbox и unmatched",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-09.md",
+      "dependencies": [
+        "PAY-04",
+        "PAY-05",
+        "PAY-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-09-01",
+        "TC-PAY-09-02",
+        "TC-PAY-09-03",
+        "TC-PAY-09-04"
+      ]
+    },
+    {
+      "id": "A-02",
+      "title": "User search/profile/session actions",
+      "stage": "06-admin",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/06-admin/tasks/A-02.md",
+      "dependencies": [
+        "A-01",
+        "ID-09"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/billing.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/07-admin.md",
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/06-payments-subscriptions.md"
+      ],
+      "test_case_ids": [
+        "TC-A-02-01",
+        "TC-A-02-02",
+        "TC-A-02-03"
+      ]
+    },
+    {
+      "id": "A-06",
+      "title": "Role/flag/catalog management minimum",
+      "stage": "06-admin",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/06-admin/tasks/A-06.md",
+      "dependencies": [
+        "A-01",
+        "ID-06",
+        "ID-07",
+        "PAY-02"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/billing.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/07-admin.md",
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/06-payments-subscriptions.md"
+      ],
+      "test_case_ids": [
+        "TC-A-06-01",
+        "TC-A-06-02",
+        "TC-A-06-03"
+      ]
+    },
+    {
+      "id": "H-11",
+      "title": "Тесты контекстов/альбомов/restart/restore/no-spend",
+      "stage": "08-hermes",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/08-hermes/tasks/H-11.md",
+      "dependencies": [
+        "H-06",
+        "H-07",
+        "H-08",
+        "H-09",
+        "H-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/assistant.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/deployment.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/11-hermes-agent.md"
+      ],
+      "test_case_ids": [
+        "TC-H-11-01",
+        "TC-H-11-02",
+        "TC-H-11-03",
+        "TC-H-11-04"
+      ]
+    },
+    {
+      "id": "ID-10",
+      "title": "Key rotation/revoke/CSRF tests",
+      "stage": "03-identity",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/03-identity/tasks/ID-10.md",
+      "dependencies": [
+        "ID-04",
+        "ID-05",
+        "ID-07",
+        "ID-08"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-ID-10-01",
+        "TC-ID-10-02",
+        "TC-ID-10-03",
+        "TC-ID-10-04"
+      ]
+    },
+    {
+      "id": "N-04",
+      "title": "Telegram link/channel",
+      "stage": "04-notifications",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/04-notifications/tasks/N-04.md",
+      "dependencies": [
+        "ID-09",
+        "N-01"
+      ],
+      "external": [
+        "PLATFORM-TELEGRAM"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/notifications.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/05-notifications.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-N-04-01",
+        "TC-N-04-02",
+        "TC-N-04-03"
+      ]
+    },
+    {
+      "id": "N-05",
+      "title": "Inbox/settings UI",
+      "stage": "04-notifications",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/04-notifications/tasks/N-05.md",
+      "dependencies": [
+        "DS-05",
+        "N-01",
+        "ID-09"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/notifications.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/05-notifications.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-N-05-01",
+        "TC-N-05-02",
+        "TC-N-05-03"
+      ]
+    },
+    {
+      "id": "N-06",
+      "title": "Billing/security templates EN/RU",
+      "stage": "04-notifications",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/04-notifications/tasks/N-06.md",
+      "dependencies": [
+        "N-02",
+        "BE-04",
+        "PAY-05",
+        "PAY-07"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/notifications.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/05-notifications.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-N-06-01",
+        "TC-N-06-02",
+        "TC-N-06-03"
+      ]
+    },
+    {
+      "id": "PAY-08",
+      "title": "Cancel workflow и paid-until UX",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-08.md",
+      "dependencies": [
+        "PAY-07",
+        "ID-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-08-01",
+        "TC-PAY-08-02",
+        "TC-PAY-08-03",
+        "TC-PAY-08-04"
+      ]
+    },
+    {
+      "id": "PAY-10",
+      "title": "Reconciliation jobs/issues",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-10.md",
+      "dependencies": [
+        "PAY-07",
+        "PAY-08",
+        "PAY-09"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-10-01",
+        "TC-PAY-10-02",
+        "TC-PAY-10-03",
+        "TC-PAY-10-04"
+      ]
+    },
+    {
+      "id": "PAY-11",
+      "title": "Pay web/история/подписки",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-11.md",
+      "dependencies": [
+        "DS-05",
+        "PAY-03",
+        "PAY-07",
+        "PAY-08",
+        "PAY-09",
+        "ID-08"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-11-01",
+        "TC-PAY-11-02",
+        "TC-PAY-11-03",
+        "TC-PAY-11-04"
+      ]
+    },
+    {
+      "id": "A-03",
+      "title": "Orders/subscriptions/journal screens",
+      "stage": "06-admin",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/06-admin/tasks/A-03.md",
+      "dependencies": [
+        "A-01",
+        "PAY-11",
+        "DS-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/billing.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/07-admin.md",
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/06-payments-subscriptions.md"
+      ],
+      "test_case_ids": [
+        "TC-A-03-01",
+        "TC-A-03-02",
+        "TC-A-03-03"
+      ]
+    },
+    {
+      "id": "A-04",
+      "title": "Event chain и reconciliation issues",
+      "stage": "06-admin",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/06-admin/tasks/A-04.md",
+      "dependencies": [
+        "A-01",
+        "PAY-10",
+        "BE-06",
+        "N-06",
+        "ID-08"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/billing.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/07-admin.md",
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/06-payments-subscriptions.md"
+      ],
+      "test_case_ids": [
+        "TC-A-04-01",
+        "TC-A-04-02",
+        "TC-A-04-03"
+      ]
+    },
+    {
+      "id": "OPS-07",
+      "title": "Restore rehearsal",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-07.md",
+      "dependencies": [
+        "OPS-06",
+        "PAY-10",
+        "OPS-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-07-01",
+        "TC-OPS-07-02",
+        "TC-OPS-07-03",
+        "TC-OPS-07-04"
+      ]
+    },
+    {
+      "id": "PAY-12",
+      "title": "Provider account integration test",
+      "stage": "05-payments",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/05-payments/tasks/PAY-12.md",
+      "dependencies": [
+        "PAY-10",
+        "PAY-11"
+      ],
+      "external": [
+        "LAVA-MERCHANT"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/08-data-events.md"
+      ],
+      "test_case_ids": [
+        "TC-PAY-12-01",
+        "TC-PAY-12-02",
+        "TC-PAY-12-03"
+      ]
+    },
+    {
+      "id": "W-01",
+      "title": "Схема wallet и double-entry ledger",
+      "stage": "90-optional-wallet",
+      "status": "deferred",
+      "scope": "optional-wallet",
+      "path": "docs/04-delivery/90-optional-wallet/tasks/W-01.md",
+      "dependencies": [
+        "PAY-05",
+        "PAY-09",
+        "PAY-10"
+      ],
+      "external": [
+        "WALLET-DECISION"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/07-admin.md"
+      ],
+      "test_case_ids": [
+        "TC-W-01-01",
+        "TC-W-01-02",
+        "TC-W-01-03"
+      ]
+    },
+    {
+      "id": "A-05",
+      "title": "Controlled retry/replay commands",
+      "stage": "06-admin",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/06-admin/tasks/A-05.md",
+      "dependencies": [
+        "A-04",
+        "N-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/billing.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/07-admin.md",
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/06-payments-subscriptions.md"
+      ],
+      "test_case_ids": [
+        "TC-A-05-01",
+        "TC-A-05-02",
+        "TC-A-05-03"
+      ]
+    },
+    {
+      "id": "W-02",
+      "title": "Подтверждённое пополнение",
+      "stage": "90-optional-wallet",
+      "status": "deferred",
+      "scope": "optional-wallet",
+      "path": "docs/04-delivery/90-optional-wallet/tasks/W-02.md",
+      "dependencies": [
+        "W-01",
+        "PAY-03"
+      ],
+      "external": [
+        "WALLET-DECISION"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/07-admin.md"
+      ],
+      "test_case_ids": [
+        "TC-W-02-01",
+        "TC-W-02-02",
+        "TC-W-02-03"
+      ]
+    },
+    {
+      "id": "A-07",
+      "title": "Audit view и sensitive actions",
+      "stage": "06-admin",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/06-admin/tasks/A-07.md",
+      "dependencies": [
+        "A-02",
+        "A-03",
+        "A-04",
+        "A-05",
+        "A-06"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/billing.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/07-admin.md",
+        "docs/01-specification/chapters/04-identity-access.md",
+        "docs/01-specification/chapters/06-payments-subscriptions.md"
+      ],
+      "test_case_ids": [
+        "TC-A-07-01",
+        "TC-A-07-02",
+        "TC-A-07-03",
+        "TC-A-07-04"
+      ]
+    },
+    {
+      "id": "W-03",
+      "title": "Reserve, capture и release",
+      "stage": "90-optional-wallet",
+      "status": "deferred",
+      "scope": "optional-wallet",
+      "path": "docs/04-delivery/90-optional-wallet/tasks/W-03.md",
+      "dependencies": [
+        "W-02",
+        "PAY-06"
+      ],
+      "external": [
+        "WALLET-DECISION"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/07-admin.md"
+      ],
+      "test_case_ids": [
+        "TC-W-03-01",
+        "TC-W-03-02",
+        "TC-W-03-03"
+      ]
+    },
+    {
+      "id": "OPS-08",
+      "title": "Ресурсный профиль 8 ГБ",
+      "stage": "07-operations",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/07-operations/tasks/OPS-08.md",
+      "dependencies": [
+        "OPS-03",
+        "OPS-05",
+        "OPS-07",
+        "ID-10",
+        "N-06",
+        "PAY-11",
+        "A-07",
+        "H-11"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/09-observability.md",
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": [
+        "TC-OPS-08-01",
+        "TC-OPS-08-02",
+        "TC-OPS-08-03"
+      ]
+    },
+    {
+      "id": "R-01",
+      "title": "Интеграция landing/service navigation",
+      "stage": "09-release",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/09-release/tasks/R-01.md",
+      "dependencies": [
+        "L-10",
+        "ID-09",
+        "N-04",
+        "N-05",
+        "PAY-11",
+        "A-07"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/invariants.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/12-integration-release.md",
+        "docs/01-specification/chapters/15-decisions-acceptance-sources.md"
+      ],
+      "test_case_ids": [
+        "TC-R-01-01",
+        "TC-R-01-02",
+        "TC-R-01-03"
+      ]
+    },
+    {
+      "id": "W-04",
+      "title": "Возвраты, reversal и debt",
+      "stage": "90-optional-wallet",
+      "status": "deferred",
+      "scope": "optional-wallet",
+      "path": "docs/04-delivery/90-optional-wallet/tasks/W-04.md",
+      "dependencies": [
+        "W-03",
+        "PAY-09"
+      ],
+      "external": [
+        "WALLET-DECISION"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/07-admin.md"
+      ],
+      "test_case_ids": [
+        "TC-W-04-01",
+        "TC-W-04-02",
+        "TC-W-04-03"
+      ]
+    },
+    {
+      "id": "R-02",
+      "title": "E2E матрица и failure scenarios",
+      "stage": "09-release",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/09-release/tasks/R-02.md",
+      "dependencies": [
+        "R-01",
+        "ID-10",
+        "PAY-12",
+        "H-11",
+        "OPS-08"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/invariants.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/12-integration-release.md",
+        "docs/01-specification/chapters/15-decisions-acceptance-sources.md"
+      ],
+      "test_case_ids": [
+        "TC-R-02-01",
+        "TC-R-02-02",
+        "TC-R-02-03",
+        "TC-R-02-04"
+      ]
+    },
+    {
+      "id": "W-05",
+      "title": "Wallet UI и admin commands",
+      "stage": "90-optional-wallet",
+      "status": "deferred",
+      "scope": "optional-wallet",
+      "path": "docs/04-delivery/90-optional-wallet/tasks/W-05.md",
+      "dependencies": [
+        "W-04",
+        "A-03",
+        "DS-04"
+      ],
+      "external": [
+        "WALLET-DECISION"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/07-admin.md"
+      ],
+      "test_case_ids": [
+        "TC-W-05-01",
+        "TC-W-05-02",
+        "TC-W-05-03"
+      ]
+    },
+    {
+      "id": "R-03",
+      "title": "Production readiness review",
+      "stage": "09-release",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/09-release/tasks/R-03.md",
+      "dependencies": [
+        "R-02",
+        "OPS-07",
+        "OPS-08"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/invariants.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/12-integration-release.md",
+        "docs/01-specification/chapters/15-decisions-acceptance-sources.md"
+      ],
+      "test_case_ids": [
+        "TC-R-03-01",
+        "TC-R-03-02",
+        "TC-R-03-03"
+      ]
+    },
+    {
+      "id": "W-06",
+      "title": "Wallet concurrency и reconciliation acceptance",
+      "stage": "90-optional-wallet",
+      "status": "deferred",
+      "scope": "optional-wallet",
+      "path": "docs/04-delivery/90-optional-wallet/tasks/W-06.md",
+      "dependencies": [
+        "W-05"
+      ],
+      "external": [
+        "WALLET-DECISION"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/billing.md",
+        "docs/02-contracts/http-errors.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/06-payments-subscriptions.md",
+        "docs/01-specification/chapters/07-admin.md"
+      ],
+      "test_case_ids": [
+        "TC-W-06-01",
+        "TC-W-06-02",
+        "TC-W-06-03"
+      ]
+    },
+    {
+      "id": "R-04",
+      "title": "Deploy immutable release",
+      "stage": "09-release",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/09-release/tasks/R-04.md",
+      "dependencies": [
+        "R-03"
+      ],
+      "external": [
+        "DEPLOYMENT-AUTHORIZATION"
+      ],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/invariants.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/12-integration-release.md",
+        "docs/01-specification/chapters/15-decisions-acceptance-sources.md"
+      ],
+      "test_case_ids": [
+        "TC-R-04-01",
+        "TC-R-04-02",
+        "TC-R-04-03"
+      ]
+    },
+    {
+      "id": "R-05",
+      "title": "Post-release review/runbooks",
+      "stage": "09-release",
+      "status": "planned",
+      "scope": "base-release",
+      "path": "docs/04-delivery/09-release/tasks/R-05.md",
+      "dependencies": [
+        "R-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/02-contracts/invariants.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/12-integration-release.md",
+        "docs/01-specification/chapters/15-decisions-acceptance-sources.md"
+      ],
+      "test_case_ids": [
+        "TC-R-05-01",
+        "TC-R-05-02",
+        "TC-R-05-03"
+      ]
+    },
+    {
+      "id": "NEXT-01",
+      "title": "Отдельное ТЗ Battleship",
+      "stage": "10-future",
+      "status": "planned",
+      "scope": "future",
+      "path": "docs/04-delivery/10-future/tasks/NEXT-01.md",
+      "dependencies": [
+        "R-05"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/invariants.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/13-future-applications.md"
+      ],
+      "test_case_ids": [
+        "TC-NEXT-01-01",
+        "TC-NEXT-01-02",
+        "TC-NEXT-01-03"
+      ]
+    }
+  ]
+}

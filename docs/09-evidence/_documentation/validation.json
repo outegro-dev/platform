@@ -1,0 +1,46 @@
+{
+  "result": "pass",
+  "tasks": 92,
+  "base_release": 85,
+  "optional_wallet": 6,
+  "future": 1,
+  "test_cases": 302,
+  "dependency_layers": 30,
+  "local_links_checked": 1869,
+  "ready_by_recorded_status": [
+    "BOOT-01"
+  ],
+  "errors": [],
+  "claim_boundary": "Documentation structure only; no application, provider, FPS, resource or deployment tests executed.",
+  "context_helper_checks": [
+    {
+      "case": "bundle BOOT-01",
+      "exit_code": 0,
+      "characters": 22806,
+      "result": "pass"
+    },
+    {
+      "case": "bundle PAY-03",
+      "exit_code": 0,
+      "characters": 34149,
+      "result": "pass"
+    },
+    {
+      "case": "bundle H-09",
+      "exit_code": 0,
+      "characters": 31423,
+      "result": "pass"
+    },
+    {
+      "case": "unknown ID rejected",
+      "exit_code": 1,
+      "result": "pass"
+    },
+    {
+      "case": "oversized bundle rejected without truncation",
+      "exit_code": 1,
+      "result": "pass"
+    }
+  ],
+  "first_party_markdown_files": 174
+}
