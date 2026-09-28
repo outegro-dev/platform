@@ -27,6 +27,11 @@ export type AuthOptions = {
   audience: string;
   /** Remote JWKS URL (every service) or a local key getter (Identity itself, tests). */
   keys: URL | JWTVerifyGetKey;
+  /**
+   * Optional live check (Identity: refresh family still exists), so a revoked
+   * session stops working at once instead of when its access token expires.
+   */
+  isSessionActive?: (user: AuthenticatedUser) => Promise<boolean>;
 };
 
 const AUTH_OPTIONS = Symbol("AUTH_OPTIONS");
@@ -64,12 +69,19 @@ export class AccessTokenVerifier {
         clockTolerance: 5,
       });
       const claims = claimsSchema.parse(payload);
-      return {
+      const user = {
         userId: claims.sub,
         sessionId: claims.sid,
         roles: claims.roles,
         accessVersion: claims.av,
       };
+      if (
+        this.options.isSessionActive &&
+        !(await this.options.isSessionActive(user))
+      ) {
+        throw new Error("session revoked");
+      }
+      return user;
     } catch (error) {
       throw new AppError("UNAUTHENTICATED", { cause: error });
     }
@@ -148,12 +160,14 @@ export class PermissionsGuard implements CanActivate {
 @Module({})
 export class AuthModule {
   static forRootAsync(options: {
+    imports?: DynamicModule["imports"];
     inject?: (string | symbol | (abstract new (...args: never[]) => unknown))[];
     useFactory: (...args: never[]) => AuthOptions;
   }): DynamicModule {
     return {
       module: AuthModule,
       global: true,
+      imports: options.imports ?? [],
       providers: [
         {
           provide: AUTH_OPTIONS,

@@ -1,12 +1,28 @@
 import { Module } from "@nestjs/common";
 import { createConfigModule } from "@outegro/nest-common";
-import { appConfig, dbConfig, rabbitConfig, valkeyConfig } from "./config.js";
+import {
+  appConfig,
+  dbConfig,
+  internalConfig,
+  loginConfig,
+  rabbitConfig,
+  tokenConfig,
+  valkeyConfig,
+} from "./config.js";
 import { env } from "./env.js";
 
-/** Global, validated configuration. Inject groups with `@Inject(dbConfig.KEY)`. */
+/** Global, validated configuration. Inject groups with `@Inject(tokenConfig.KEY)`. */
 @Module({
   imports: [
-    createConfigModule(env, [appConfig, dbConfig, valkeyConfig, rabbitConfig]),
+    createConfigModule(env, [
+      appConfig,
+      dbConfig,
+      valkeyConfig,
+      rabbitConfig,
+      tokenConfig,
+      loginConfig,
+      internalConfig,
+    ]),
   ],
 })
 export class AppConfigModule {}

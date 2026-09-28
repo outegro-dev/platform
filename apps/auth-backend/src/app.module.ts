@@ -3,6 +3,8 @@ import type { ConfigType } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import {
+  AuthModule,
+  ClockModule,
   createLoggerModule,
   DatabaseModule,
   HealthModule,
@@ -11,14 +13,25 @@ import {
   ValkeyModule,
   ValkeyThrottlerStorage,
 } from "@outegro/nest-common";
-import { dbConfig, rabbitConfig, valkeyConfig } from "./config/config.js";
+import {
+  dbConfig,
+  rabbitConfig,
+  tokenConfig,
+  valkeyConfig,
+} from "./config/config.js";
 import { AppConfigModule } from "./config/config.module.js";
 import { env } from "./config/env.js";
 import * as schema from "./db/schema.js";
+import { IdentityModule } from "./identity.module.js";
+import { KeysModule } from "./keys/keys.module.js";
+import { SigningKeys } from "./keys/signing-keys.service.js";
+import { RefreshStore } from "./sessions/refresh-store.js";
+import { SessionStoreModule } from "./sessions/session-store.module.js";
 
 @Module({
   imports: [
     AppConfigModule,
+    ClockModule,
     createLoggerModule({
       service: "auth-backend",
       level: env().LOG_LEVEL,
@@ -43,6 +56,22 @@ import * as schema from "./db/schema.js";
       }),
     }),
     OutboxModule.forRoot(),
+    // Identity verifies its own tokens locally and also requires the session
+    // to be alive, so revocation takes effect immediately here.
+    AuthModule.forRootAsync({
+      imports: [KeysModule, SessionStoreModule],
+      inject: [tokenConfig.KEY, SigningKeys, RefreshStore],
+      useFactory: (
+        tokens: ConfigType<typeof tokenConfig>,
+        keys: SigningKeys,
+        store: RefreshStore,
+      ) => ({
+        issuer: tokens.issuer,
+        audience: tokens.audience,
+        keys: keys.verificationKeys,
+        isSessionActive: (user) => store.isAlive(user.sessionId),
+      }),
+    }),
     ThrottlerModule.forRootAsync({
       inject: [ValkeyThrottlerStorage],
       useFactory: (storage: ValkeyThrottlerStorage) => ({
@@ -50,6 +79,7 @@ import * as schema from "./db/schema.js";
         storage,
       }),
     }),
+    IdentityModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

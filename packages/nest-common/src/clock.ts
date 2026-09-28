@@ -1,3 +1,5 @@
+import { Global, Module } from "@nestjs/common";
+
 /** Injectable time source, so expiry rules are testable without sleeping. */
 export const CLOCK = Symbol("CLOCK");
 
@@ -18,3 +20,11 @@ export class ManualClock implements Clock {
     this.current = new Date(this.current.getTime() + ms);
   }
 }
+
+/** Provides CLOCK (system time); tests override it with ManualClock. */
+@Global()
+@Module({
+  providers: [{ provide: CLOCK, useValue: systemClock }],
+  exports: [CLOCK],
+})
+export class ClockModule {}
