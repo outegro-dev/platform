@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
-    "start": "node scripts/start-standalone.mjs",
+    "start": "node ../../tools/dev/start-standalone.mjs",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

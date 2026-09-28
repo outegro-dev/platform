@@ -5,7 +5,8 @@ import { cpSync, existsSync } from "node:fs";
 import path from "node:path";
 
 const app = process.cwd();
-const standalone = path.join(app, ".next/standalone/apps/landing-web");
+// Standalone output mirrors the monorepo: .next/standalone/apps/<app>/server.js
+const standalone = path.join(app, ".next/standalone/apps", path.basename(app));
 if (!existsSync(path.join(standalone, "server.js"))) {
   console.error("No standalone build. Run `pnpm build` first.");
   process.exit(1);
@@ -13,9 +14,9 @@ if (!existsSync(path.join(standalone, "server.js"))) {
 cpSync(path.join(app, ".next/static"), path.join(standalone, ".next/static"), {
   recursive: true,
 });
-cpSync(path.join(app, "public"), path.join(standalone, "public"), {
-  recursive: true,
-});
+if (existsSync(path.join(app, "public"))) {
+  cpSync(path.join(app, "public"), path.join(standalone, "public"), { recursive: true });
+}
 const port = process.argv[2] ?? process.env.PORT ?? "3000";
 spawn(process.execPath, [path.join(standalone, "server.js")], {
   stdio: "inherit",
