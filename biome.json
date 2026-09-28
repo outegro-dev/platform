@@ -10,7 +10,9 @@
       "!**/.next",
       "!**/dist",
       "!**/node_modules",
-      "!**/next-env.d.ts"
+      "!**/next-env.d.ts",
+      "!**/test-results",
+      "!**/playwright-report"
     ]
   },
   "formatter": {
