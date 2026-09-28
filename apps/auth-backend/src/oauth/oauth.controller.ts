@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import {
+  AppError,
   type AuthenticatedUser,
   CurrentUser,
   Public,
@@ -49,7 +50,8 @@ export class OAuthController {
       redirectUri: string;
     },
   ) {
-    return this.oauth.client(clientId.parse(id), query.redirectUri);
+    if (!clientId.safeParse(id).success) throw new AppError("NOT_FOUND");
+    return this.oauth.client(id, query.redirectUri);
   }
 
   /** Called by the id.outegro.dev BFF for the signed-in user. */
