@@ -19,6 +19,7 @@
     "indentWidth": 2
   },
   "javascript": {
+    "parser": { "unsafeParameterDecoratorsEnabled": true },
     "formatter": {
       "quoteStyle": "double"
     }
@@ -42,6 +43,15 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["packages/nest-common/**", "apps/*-backend/**"],
+      "linter": {
+        "rules": {
+          "style": { "useImportType": "off" },
+          "complexity": { "noStaticOnlyClass": "off" }
+        }
+      }
+    },
     {
       "includes": ["**/*.css"],
       "linter": {

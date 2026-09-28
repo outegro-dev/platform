@@ -19,6 +19,13 @@ minimumReleaseAgeExclude:
   - turbo@2.11.5
   - '@testcontainers/postgresql@12.2.0'
   - testcontainers@12.2.0
+  - '@nestjs/common@12.1.1'
+  - '@nestjs/core@12.1.1'
+  - '@nestjs/platform-express@12.1.1'
+  - '@nestjs/testing@12.1.1'
+  - '@testcontainers/rabbitmq@12.2.0'
+  - '@testcontainers/valkey@12.2.0'
+  - amqplib@2.2.0
 onlyBuiltDependencies:
   - sharp
   - '@tailwindcss/oxide'
