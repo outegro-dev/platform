@@ -1,0 +1,16 @@
+/*
+ * Brand typefaces, self-hosted (SIL Open Font License), Latin + Cyrillic only.
+ * Static weights on purpose: the variable Manrope rendered too thin in Windows WebKit.
+ */
+@import "@fontsource/manrope/latin-400.css";
+@import "@fontsource/manrope/cyrillic-400.css";
+@import "@fontsource/manrope/latin-500.css";
+@import "@fontsource/manrope/cyrillic-500.css";
+@import "@fontsource/manrope/latin-600.css";
+@import "@fontsource/manrope/cyrillic-600.css";
+@import "@fontsource/manrope/latin-700.css";
+@import "@fontsource/manrope/cyrillic-700.css";
+@import "@fontsource/cormorant-garamond/latin-500-italic.css";
+@import "@fontsource/cormorant-garamond/cyrillic-500-italic.css";
+@import "@fontsource/jetbrains-mono/latin-500.css";
+@import "@fontsource/jetbrains-mono/cyrillic-500.css";
