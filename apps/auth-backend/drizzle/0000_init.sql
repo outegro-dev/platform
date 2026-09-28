@@ -10,6 +10,17 @@ CREATE TABLE "audit_log" (
 	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "authorization_codes" (
+	"code_hash" text PRIMARY KEY NOT NULL,
+	"client_id" text NOT NULL,
+	"redirect_uri" text NOT NULL,
+	"code_challenge" text NOT NULL,
+	"user_id" uuid NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"consumed_at" timestamp with time zone,
+	"created_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "grants" (
 	"grant_id" uuid PRIMARY KEY NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -77,6 +88,7 @@ CREATE TABLE "sessions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
 	"auth_method" text NOT NULL,
+	"client_id" text,
 	"user_agent" text,
 	"ip" text,
 	"created_at" timestamp with time zone NOT NULL,
@@ -99,9 +111,11 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+ALTER TABLE "authorization_codes" ADD CONSTRAINT "authorization_codes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "role_bindings" ADD CONSTRAINT "role_bindings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "audit_target_idx" ON "audit_log" USING btree ("target_type","target_id","created_at");--> statement-breakpoint
+CREATE INDEX "authorization_codes_user_idx" ON "authorization_codes" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "grants_user_idx" ON "grants" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "login_challenges_email_idx" ON "login_challenges" USING btree ("email","created_at");--> statement-breakpoint
 CREATE INDEX "outbox_pending_idx" ON "outbox" USING btree ("available_at","created_at") WHERE "outbox"."status" = 'pending';--> statement-breakpoint

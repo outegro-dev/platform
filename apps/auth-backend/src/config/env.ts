@@ -44,5 +44,10 @@ export const env = defineEnv(
         .default(600),
       NOTIFICATIONS_INTERNAL_URL: z.url(),
       INTERNAL_API_TOKEN: secret(32),
+      /**
+       * Registered SSO clients: JSON array of { id, name, redirectUris }.
+       * Redirect URIs match exactly; no wildcards (ID-04).
+       */
+      OAUTH_CLIENTS: z.string().default("[]"),
     }),
 );

@@ -51,8 +51,9 @@ export class SessionsService {
   async create(
     tx: AuthTx,
     userId: string,
-    method: "email" | "google" | "passkey",
+    method: "email" | "google" | "passkey" | "sso",
     client: ClientContext,
+    clientId: string | null = null,
   ) {
     const now = this.clock.now();
     const [session] = await tx
@@ -60,6 +61,7 @@ export class SessionsService {
       .values({
         userId,
         authMethod: method,
+        clientId,
         userAgent: client.userAgent,
         ip: client.ip,
         createdAt: now,

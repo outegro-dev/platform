@@ -198,15 +198,11 @@ export class AdminController {
     @Body({ schema: statusSchema }) body: z.infer<typeof statusSchema>,
   ) {
     if (!idParam.safeParse(id).success) throw new AppError("NOT_FOUND");
-    const user = await this.users.setStatus(
+    return this.users.setStatus(
       { userId: actor.userId },
       id,
       body.status,
       body.reason,
     );
-    if (body.status === "suspended") {
-      await this.sessions.revoke(id, "all", "admin", { userId: actor.userId });
-    }
-    return user;
   }
 }

@@ -1,4 +1,5 @@
 import { registerAs } from "@nestjs/config";
+import { z } from "zod";
 import { env } from "./env.js";
 
 export const appConfig = registerAs("app", () => ({
@@ -40,4 +41,25 @@ export const loginConfig = registerAs("login", () => ({
 export const internalConfig = registerAs("internal", () => ({
   notificationsUrl: env().NOTIFICATIONS_INTERNAL_URL,
   token: env().INTERNAL_API_TOKEN,
+}));
+
+const clientSchema = z
+  .array(
+    z.object({
+      id: z.string().regex(/^[a-z][a-z0-9-]{2,40}$/),
+      name: z.string().min(1),
+      redirectUris: z
+        .array(
+          z.url().refine((uri) => !uri.includes("*") && !new URL(uri).hash, {
+            message: "exact redirect URI without wildcards or fragments",
+          }),
+        )
+        .min(1),
+    }),
+  )
+  .max(50);
+
+export const oauthConfig = registerAs("oauth", () => ({
+  clients: clientSchema.parse(JSON.parse(env().OAUTH_CLIENTS)),
+  codeTtlMs: 60_000,
 }));

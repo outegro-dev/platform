@@ -71,8 +71,10 @@ export const sessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     authMethod: text("auth_method", {
-      enum: ["email", "google", "passkey"],
+      enum: ["email", "google", "passkey", "sso"],
     }).notNull(),
+    /** Registered client for app sessions created through SSO; null on id.outegro.dev. */
+    clientId: text("client_id"),
     userAgent: text("user_agent"),
     ip: text("ip"),
     createdAt: at("created_at").notNull(),
@@ -83,6 +85,27 @@ export const sessions = pgTable(
     }),
   },
   (t) => [index("sessions_user_idx").on(t.userId, t.createdAt)],
+);
+
+/**
+ * One-time authorization codes for SSO (ID-04): bound to the client, the
+ * exact redirect URI and a PKCE S256 challenge; only a hash is stored.
+ */
+export const authorizationCodes = pgTable(
+  "authorization_codes",
+  {
+    codeHash: text("code_hash").primaryKey(),
+    clientId: text("client_id").notNull(),
+    redirectUri: text("redirect_uri").notNull(),
+    codeChallenge: text("code_challenge").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: at("expires_at").notNull(),
+    consumedAt: at("consumed_at"),
+    createdAt: at("created_at").notNull(),
+  },
+  (t) => [index("authorization_codes_user_idx").on(t.userId)],
 );
 
 /** Platform administration roles. Paid grants never live here. */

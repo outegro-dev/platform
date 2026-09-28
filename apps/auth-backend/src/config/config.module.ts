@@ -5,6 +5,7 @@ import {
   dbConfig,
   internalConfig,
   loginConfig,
+  oauthConfig,
   rabbitConfig,
   tokenConfig,
   valkeyConfig,
@@ -22,6 +23,7 @@ import { env } from "./env.js";
       tokenConfig,
       loginConfig,
       internalConfig,
+      oauthConfig,
     ]),
   ],
 })

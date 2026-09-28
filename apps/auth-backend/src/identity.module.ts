@@ -7,6 +7,8 @@ import { KeysModule } from "./keys/keys.module.js";
 import { CODE_DELIVERY, HttpCodeDelivery } from "./login/code-delivery.js";
 import { LoginController } from "./login/login.controller.js";
 import { LoginService } from "./login/login.service.js";
+import { OAuthController } from "./oauth/oauth.controller.js";
+import { OAuthService } from "./oauth/oauth.service.js";
 import { SessionStoreModule } from "./sessions/session-store.module.js";
 import { SessionsController } from "./sessions/sessions.controller.js";
 import { SessionsService } from "./sessions/sessions.service.js";
@@ -20,6 +22,7 @@ import { UsersService } from "./users/users.service.js";
     SessionsController,
     MeController,
     AdminController,
+    OAuthController,
   ],
   providers: [
     RolesService,
@@ -27,6 +30,7 @@ import { UsersService } from "./users/users.service.js";
     SessionsService,
     LoginService,
     GrantsService,
+    OAuthService,
     FreshPermissionsGuard,
     { provide: CODE_DELIVERY, useClass: HttpCodeDelivery },
   ],

@@ -21,6 +21,7 @@ import { RolesService } from "../access/roles.service.js";
 import { audit } from "../common/audit.js";
 import type { AuthDatabase, AuthTx } from "../common/database.js";
 import { users } from "../db/schema.js";
+import { SessionsService } from "../sessions/sessions.service.js";
 
 type User = typeof users.$inferSelect;
 
@@ -30,6 +31,7 @@ export class UsersService {
     @Inject(DATABASE) private readonly database: AuthDatabase,
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly roles: RolesService,
+    private readonly sessions: SessionsService,
     private readonly relay: OutboxRelay,
   ) {}
 
@@ -210,6 +212,12 @@ export class UsersService {
       );
       return row;
     });
+    // A suspended account keeps no live session anywhere (TC-ID-10-04).
+    if (status === "suspended") {
+      await this.sessions.revoke(userId, "all", "admin", {
+        userId: actor.userId,
+      });
+    }
     this.relay.kick();
     return this.toProfile(user);
   }

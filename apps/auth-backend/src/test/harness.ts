@@ -57,6 +57,18 @@ export async function startHarness() {
     NOTIFICATIONS_INTERNAL_URL: "http://notifications.test",
     INTERNAL_API_TOKEN: randomBytes(32).toString("hex"),
     REFRESH_GRACE_MS: "1000",
+    OAUTH_CLIENTS: JSON.stringify([
+      {
+        id: "pay-web",
+        name: "Payments",
+        redirectUris: ["https://pay.outegro.dev/auth/callback"],
+      },
+      {
+        id: "admin-web",
+        name: "Admin",
+        redirectUris: ["https://admin.outegro.dev/auth/callback"],
+      },
+    ]),
   });
 
   const { AppModule } = await import("../app.module.js");
