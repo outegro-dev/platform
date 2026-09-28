@@ -1,11 +1,17 @@
 import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
 import { Surface } from "@outegro/ui/surface";
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { authApi, type SessionItem, withSession } from "@/lib/api";
 import { deviceLabel, formatDate } from "@/lib/format";
 import { revokeSession } from "../actions";
 import { RevokeOthers } from "./revoke-others";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("sessions");
+  return { title: t("title") };
+}
 
 export default async function SessionsPage() {
   const t = await getTranslations("sessions");
@@ -38,7 +44,12 @@ export default async function SessionsPage() {
                 <p className="muted small">
                   {t(`signedInWith.${session.authMethod}`)}
                   {session.clientName && ` · ${session.clientName}`}
-                  {session.ip && <span className="mono"> · {session.ip}</span>}
+                  {session.ip && (
+                    <>
+                      {" · "}
+                      <span className="mono">{session.ip}</span>
+                    </>
+                  )}
                 </p>
                 <p className="muted small">
                   {t("lastActive", {
@@ -62,8 +73,7 @@ export default async function SessionsPage() {
           </li>
         ))}
       </ul>
-      {others === 0 && <p className="muted">{t("empty")}</p>}
-      <RevokeOthers disabled={others === 0} />
+      {others === 0 ? <p className="muted">{t("empty")}</p> : <RevokeOthers />}
     </>
   );
 }

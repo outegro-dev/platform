@@ -1,7 +1,8 @@
 {
   "meta": {
     "title": "Account — outegro",
-    "description": "Sign in to outegro.dev apps and manage your account."
+    "description": "Sign in to outegro.dev apps and manage your account.",
+    "titleTemplate": "%s · outegro"
   },
   "brand": {
     "product": "Account",
@@ -79,7 +80,6 @@
     "started": "Signed in {date}",
     "revoke": "Sign out",
     "revokeOthers": "Sign out of all other sessions",
-    "revokedOthers": "Signed out of {count, plural, =0 {no other sessions} one {# session} other {# sessions}}.",
     "unknownDevice": "Unknown device",
     "empty": "No other sessions."
   },
@@ -89,7 +89,8 @@
     "unread": "{count, plural, =0 {All read} one {# unread} other {# unread}}",
     "markRead": "Mark as read",
     "empty": "Nothing here yet.",
-    "more": "Show more"
+    "older": "Older messages",
+    "latest": "Back to latest"
   },
   "preferences": {
     "title": "Notifications",
@@ -117,5 +118,14 @@
     "title": "Something is temporarily unavailable",
     "body": "Your data is safe. The service did not answer in time.",
     "retry": "Try again"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The address may be mistyped, or the page has moved.",
+    "home": "Go to your account"
+  },
+  "footer": {
+    "privacy": "Privacy",
+    "site": "outegro.dev"
   }
 }

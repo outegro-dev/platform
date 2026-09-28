@@ -17,10 +17,15 @@ export type LoginState = {
   step: "email" | "code";
   email?: string;
   challengeId?: string;
-  resendAfter?: string;
+  /** Seconds until a new code may be sent, measured on the server. */
+  resendIn?: number;
   delivery?: "accepted" | "failed";
   error?: string;
 };
+
+// The browser clock may be off by minutes; only a duration travels to it.
+const secondsUntil = (iso: string) =>
+  Math.max(0, Math.round((Date.parse(iso) - Date.now()) / 1000));
 
 const emailSchema = z.email().max(254);
 const codeSchema = z.string().regex(/^\d{6}$/);
@@ -58,7 +63,7 @@ export async function loginAction(
         step: "code",
         email: email.data,
         challengeId: result.challengeId,
-        resendAfter: result.resendAfter,
+        resendIn: secondsUntil(result.resendAfter),
         delivery: result.deliveryStatus,
       };
     } catch (error) {

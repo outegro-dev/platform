@@ -236,7 +236,13 @@
 
   /* Account. */
   .account-shell {
-    padding-bottom: 96px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  .account-shell .account-grid {
+    flex: 1;
+    padding-bottom: 72px;
   }
   .account-grid {
     display: grid;
@@ -414,6 +420,39 @@
     text-transform: uppercase;
   }
 
+  /* Inbox pages. */
+  .pager {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .pager > :only-child {
+    margin-inline-start: auto;
+  }
+
+  /* Site links under every page. */
+  .app-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding-block: 32px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+  }
+  .app-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-underline-offset: 4px;
+  }
+  .app-footer a:hover {
+    color: var(--foreground);
+    text-decoration-color: currentColor;
+  }
+
   @media (max-width: 900px) {
     .login-main {
       grid-template-columns: minmax(0, 1fr);
@@ -424,14 +463,14 @@
       grid-template-columns: minmax(0, 1fr);
       padding-top: 8px;
     }
+    /* All four sections stay visible: no hidden tab behind a scroll. */
     .account-nav {
       position: static;
-      display: flex;
-      overflow-x: auto;
-      scrollbar-width: none;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .account-nav a {
-      flex-shrink: 0;
+      justify-content: center;
+      padding-inline: 8px;
     }
   }
   @media (max-width: 560px) {
@@ -440,6 +479,61 @@
     }
     .row {
       flex-direction: column;
+    }
+    .account-nav a {
+      flex-direction: column;
+      gap: 4px;
+      min-height: 60px;
+      padding: 8px 4px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      line-height: 1.2;
+      text-align: center;
+    }
+    /* Preferences: one block per category, one row per channel. */
+    .matrix thead {
+      display: none;
+    }
+    .matrix,
+    .matrix tbody,
+    .matrix tr,
+    .matrix th,
+    .matrix td {
+      display: block;
+    }
+    .matrix tr {
+      padding-block: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .matrix tbody tr:last-child {
+      border-bottom: 0;
+    }
+    .matrix th,
+    .matrix td {
+      padding: 0;
+      border-bottom: 0;
+    }
+    .matrix tbody th {
+      padding-block: 8px 4px;
+      font-weight: 600;
+    }
+    .matrix td:empty {
+      display: none;
+    }
+    .matrix td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .matrix td::before {
+      content: attr(data-label);
+      color: var(--muted-foreground);
+      font-size: 15px;
+    }
+    .check {
+      flex-direction: row-reverse;
+      gap: 12px;
     }
   }
 }

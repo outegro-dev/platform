@@ -53,7 +53,7 @@ export function PreferencesForm({ preferences }: { preferences: Preferences }) {
                   const item = cell(category, channel);
                   if (!item) return <td key={channel} />;
                   return (
-                    <td key={channel}>
+                    <td key={channel} data-label={t(`channels.${channel}`)}>
                       <label className="check">
                         <input
                           type="checkbox"

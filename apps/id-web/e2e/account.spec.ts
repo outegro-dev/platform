@@ -1,4 +1,5 @@
 import { randomBytes, randomInt } from "node:crypto";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
 const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
@@ -160,4 +161,77 @@ test("TC-ID-10-02: server actions refuse cross-site posts", async ({
   expect(genuine.status()).toBeLessThan(400);
   await page.goto("/account");
   await expect(page).toHaveURL(/\/login/);
+});
+
+test("the resend timer counts down from the server's cooldown", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(uniqueEmail());
+  await page.getByRole("button", { name: "Send code" }).click();
+  const timer = page.getByRole("button", { name: /New code available in/ });
+  await expect(timer).toBeVisible();
+  const seconds = Number((await timer.textContent())?.match(/\d+/)?.[0]);
+  expect(seconds).toBeGreaterThan(50);
+  expect(seconds).toBeLessThanOrEqual(60);
+});
+
+test("unknown pages get the branded 404", async ({ page }) => {
+  const response = await page.goto("/no-such-page");
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { name: "Page not found" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Privacy" })).toHaveAttribute(
+    "href",
+    /\/privacy$/,
+  );
+});
+
+test("account pages pass an accessibility scan", async ({ page }) => {
+  const scan = async (where: string) => {
+    const { violations } = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(
+      violations.map((v) => `${where}: ${v.id} × ${v.nodes.length}`),
+    ).toEqual([]);
+  };
+  await page.goto("/login");
+  await scan("login");
+  await signIn(page);
+  await expect(page).toHaveURL("/account");
+  for (const path of [
+    "/account",
+    "/account/sessions",
+    "/account/inbox",
+    "/account/notifications",
+  ]) {
+    await page.goto(path);
+    await scan(path);
+  }
+  await page.goto("/no-such-page");
+  await scan("404");
+});
+
+test.describe("phone layout", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("every section and every channel fits on screen", async ({ page }) => {
+    await page.goto("/account/notifications");
+    await signIn(page);
+    await expect(page).toHaveURL("/account/notifications");
+    const width = page.viewportSize()?.width ?? 0;
+    for (const name of ["Profile", "Sessions", "Inbox", "Notifications"]) {
+      const box = await page
+        .getByRole("navigation")
+        .getByRole("link", { name })
+        .boundingBox();
+      expect(box && box.x >= 0 && box.x + box.width <= width).toBe(true);
+    }
+    for (const label of ["Security: Telegram", "Service news: Telegram"]) {
+      const box = await page.getByLabel(label).boundingBox();
+      expect(box && box.x + box.width <= width).toBe(true);
+    }
+  });
 });

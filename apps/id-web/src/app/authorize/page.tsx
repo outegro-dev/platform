@@ -1,8 +1,9 @@
-import { BackendError } from "@outegro/bff/backend";
+import { BackendError, BackendUnavailable } from "@outegro/bff/backend";
 import { Button } from "@outegro/ui/button";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { AppFooter } from "@/components/app-footer";
 import { BrandHeader } from "@/components/brand-header";
 import { accessToken, authApi } from "@/lib/api";
 
@@ -37,7 +38,9 @@ export default async function AuthorizePage({
     await authApi(
       `/v1/oauth/clients/${p.client_id}?redirectUri=${encodeURIComponent(p.redirect_uri)}`,
     );
-  } catch {
+  } catch (error) {
+    // An outage is not a bad link: the error page offers a retry.
+    if (error instanceof BackendUnavailable) throw error;
     return <Invalid />;
   }
 
@@ -89,6 +92,7 @@ async function Invalid() {
           <a href="/account">{t("back")}</a>
         </Button>
       </main>
+      <AppFooter />
     </div>
   );
 }

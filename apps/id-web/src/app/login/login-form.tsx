@@ -8,14 +8,27 @@ import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { type LoginState, loginAction } from "./actions";
 
-function useCountdown(until?: string) {
-  const [now, setNow] = useState(() => Date.now());
+/** Counts a server-measured duration down on the browser clock; restarts per challenge. */
+function useCountdown(
+  seconds: number | undefined,
+  challengeId: string | undefined,
+) {
+  const [left, setLeft] = useState(seconds ?? 0);
   useEffect(() => {
-    if (!until) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    if (!seconds || !challengeId) {
+      setLeft(0);
+      return;
+    }
+    const deadline = Date.now() + seconds * 1000;
+    setLeft(seconds);
+    const id = setInterval(() => {
+      const rest = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setLeft(rest);
+      if (rest === 0) clearInterval(id);
+    }, 1000);
     return () => clearInterval(id);
-  }, [until]);
-  return until ? Math.max(0, Math.ceil((Date.parse(until) - now) / 1000)) : 0;
+  }, [seconds, challengeId]);
+  return left;
 }
 
 export function LoginForm({ continueTo }: { continueTo: string }) {
@@ -27,7 +40,8 @@ export function LoginForm({ continueTo }: { continueTo: string }) {
     },
   );
   const wait = useCountdown(
-    state.step === "code" ? state.resendAfter : undefined,
+    state.step === "code" ? state.resendIn : undefined,
+    state.challengeId,
   );
   const error = state.error
     ? t(`errors.${state.error}` as "errors.invalid_code")

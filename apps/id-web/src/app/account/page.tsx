@@ -1,10 +1,16 @@
 import { Badge } from "@outegro/ui/badge";
 import { Surface } from "@outegro/ui/surface";
 import { SealCheckIcon } from "@phosphor-icons/react/dist/ssr";
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { authApi, type Me, withSession } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { ProfileForm } from "./profile-form";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("profile");
+  return { title: t("title") };
+}
 
 export default async function ProfilePage() {
   const t = await getTranslations("profile");

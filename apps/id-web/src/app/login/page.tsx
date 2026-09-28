@@ -1,5 +1,7 @@
 import { safeRedirectPath } from "@outegro/bff/safe-redirect";
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { AppFooter } from "@/components/app-footer";
 import { BrandHeader } from "@/components/brand-header";
 import { authApi } from "@/lib/api";
 import { LoginForm } from "./login-form";
@@ -19,6 +21,11 @@ async function continuingApp(continueTo: string) {
   } catch {
     return null;
   }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("login");
+  return { title: t("title") };
 }
 
 export default async function LoginPage({
@@ -56,6 +63,7 @@ export default async function LoginPage({
           <LoginForm continueTo={continueTo} />
         </section>
       </main>
+      <AppFooter />
     </div>
   );
 }
