@@ -1,0 +1,28 @@
+{
+  "name": "@outegro/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./config": "./src/config.ts",
+    "./server": "./src/server.ts",
+    "./actions": "./src/actions.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0",
+    "next-intl": "^4.14.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "next": "16.3.6",
+    "next-intl": "4.14.7",
+    "react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}
