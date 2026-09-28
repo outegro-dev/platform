@@ -390,3 +390,38 @@ test("no uncaught errors or failed local assets while scrolling the page", async
   expect(errors).toEqual([]);
   expect(failed).toEqual([]);
 });
+
+for (const locale of ["en", "ru"] as const) {
+  test(`${locale}: privacy policy is linked from the footer and indexable`, async ({
+    page,
+    context,
+    request,
+  }) => {
+    await useLocale(context, locale);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page
+      .getByRole("contentinfo")
+      .getByRole("link", {
+        name: locale === "en" ? "Privacy" : "Конфиденциальность",
+      })
+      .click();
+    await expect(page).toHaveURL(/\/privacy$/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      locale === "en" ? "Your data" : "Ваши данные",
+    );
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      "https://outegro.dev/privacy",
+    );
+    await expect(
+      page.getByRole("link", { name: "coping.barrel@gmail.com" }),
+    ).toHaveAttribute("href", "mailto:coping.barrel@gmail.com");
+    const scan = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(scan.violations).toEqual([]);
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    expect(sitemap).toContain("https://outegro.dev/privacy");
+  });
+}

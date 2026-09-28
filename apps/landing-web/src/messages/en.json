@@ -203,7 +203,8 @@
   },
   "footer": {
     "role": "Senior full-stack engineer",
-    "back": "Back to top"
+    "back": "Back to top",
+    "privacy": "Privacy"
   },
   "gallery": {
     "title": "The material library.",
@@ -226,5 +227,70 @@
     "error": "Check this field",
     "success": "Saved successfully",
     "back": "Back to portfolio"
+  },
+  "privacy": {
+    "meta": {
+      "title": "Privacy — Nick Lukashik",
+      "description": "What data outegro.dev and its apps handle, why, and how you stay in control."
+    },
+    "back": "Back to the site",
+    "eyebrow": "Privacy",
+    "title": "Your data,",
+    "titleAccent": "kept to the minimum.",
+    "updated": "Last updated: 28 September 2026",
+    "intro": "outegro.dev and its apps — the account at id.outegro.dev, payments and future products — are run by Nick Lukashik, an independent engineer. This page explains what data they handle, why, and how you stay in control.",
+    "sections": [
+      {
+        "title": "What is collected and why",
+        "items": [
+          "Account: your email address, an optional display name and your preferred language — to sign you in and to write to you about your account.",
+          "Sign-in and security: one-time codes, stored only as a hash and valid for ten minutes. For each session: browser and operating system, IP address, sign-in time and last activity — to protect the account and to show you where you are signed in.",
+          "Notifications: messages in your account inbox, their delivery status and the channels you chose.",
+          "Payments, once available: orders and subscription status. Card details are entered on the payment provider’s page and never reach this platform.",
+          "This website: no analytics, advertising or tracking. Server logs with IP addresses are kept for a short time for security and troubleshooting."
+        ]
+      },
+      {
+        "title": "Cookies",
+        "items": [
+          "og_locale — your language for all outegro.dev sites, kept for one year.",
+          "og_at and og_rt — your session in an app such as id.outegro.dev. They are HttpOnly, so scripts cannot read them, and live for five minutes and thirty days respectively.",
+          "All of them are needed for the sites to work, so there is no consent banner."
+        ]
+      },
+      {
+        "title": "Who else processes data",
+        "items": [
+          "The hosting provider of the server the platform runs on.",
+          "Cloudflare — domain name system and encrypted backup storage.",
+          "Resend — email delivery.",
+          "Google — only if you choose to sign in with Google. It shares your email address, name and whether the email is verified.",
+          "Telegram — only if you link it for notifications.",
+          "Lava — payment processing, once payments are available."
+        ]
+      },
+      {
+        "title": "How long it is kept",
+        "items": [
+          "Account data stays until you ask to delete the account.",
+          "Sign-in codes expire after ten minutes. Ended sessions and security records are kept for a limited time to investigate misuse.",
+          "Backups are encrypted and replaced on a rolling basis."
+        ]
+      },
+      {
+        "title": "Your choices",
+        "items": [
+          "Change your name and language, end sessions and choose notification channels in your account at id.outegro.dev.",
+          "To get a copy of your data or to delete your account, write to the address below. Requests are answered within 30 days."
+        ]
+      },
+      {
+        "title": "Changes",
+        "items": [
+          "If this policy changes in a meaningful way, signed-in users get a notice in the account inbox before the change takes effect."
+        ]
+      }
+    ],
+    "contact": "Questions and requests"
   }
 }

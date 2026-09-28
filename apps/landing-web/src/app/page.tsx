@@ -1,6 +1,6 @@
 import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
-import { ArrowDownIcon, ArrowUpIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowDownIcon } from "@phosphor-icons/react/dist/ssr";
 import { getTranslations } from "next-intl/server";
 import knotPoster from "@/assets/knot.webp";
 import signaturePoster from "@/assets/signature.webp";
@@ -8,10 +8,10 @@ import wavePoster from "@/assets/wave.webp";
 import { ContactDialog } from "@/components/contact-dialog";
 import { ContactLinks } from "@/components/contact-links";
 import { Header } from "@/components/header";
-import { LocaleSwitcher } from "@/components/locale-switcher";
 import { RevealObserver } from "@/components/reveal-observer";
 import { SectionHeading } from "@/components/section-heading";
 import { SilverStage } from "@/components/silver/silver-stage";
+import { SiteFooter } from "@/components/site-footer";
 import { StackMarquee } from "@/components/stack-marquee";
 
 type Expertise = {
@@ -260,18 +260,7 @@ export default async function Home() {
           </div>
         </section>
       </main>
-      <footer className="site-footer og-container">
-        <a href="#top" className="footer-name">
-          Nick Lukashik
-        </a>
-        <span className="og-eyebrow">{t("footer.role")}</span>
-        <LocaleSwitcher />
-        <span className="og-eyebrow">© {new Date().getFullYear()}</span>
-        <a href="#top" className="footer-top">
-          {t("footer.back")}
-          <ArrowUpIcon />
-        </a>
-      </footer>
+      <SiteFooter />
       <RevealObserver />
     </>
   );
