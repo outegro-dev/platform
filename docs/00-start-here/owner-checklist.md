@@ -39,7 +39,7 @@
    AAAA и CAA не нужны: IPv6 для посетителей и сертификаты на своей стороне Cloudflare обеспечивает сам. Для SSH записи нет — подключение по IP.
 5. **Rules → Redirect Rules → Create rule**: шаблон «Redirect from WWW to root» или вручную `https://www.outegro.dev/*` → `https://outegro.dev/${1}`, 301, Preserve query string.
 6. Настройки зоны (удобно через поиск панели, Ctrl+K):
-   - SSL/TLS → Overview: **Full (strict)**. Пока сервер не готов, сайт отдаёт ошибку 52x — это ожидаемо;
+   - SSL/TLS → Overview → Configure: **Custom SSL/TLS → Full (strict)**. Режим Automatic, пока у сервера нет сертификата, выбирает Flexible и ходит на сервер по HTTP — сайт тогда отвечает 404;
    - SSL/TLS → Edge Certificates: Always Use HTTPS — On, Minimum TLS Version — 1.2;
    - выключить **Rocket Loader**, **Email Address Obfuscation** и **Web Analytics (RUM)**: они вставляют в страницы скрипты, которые блокирует CSP с nonce;
    - выключить **Bot Fight Mode**: на Free для него нет исключений по хосту, а он блокирует вебхуки Lava и внешний мониторинг.
