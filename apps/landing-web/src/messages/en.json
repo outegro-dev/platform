@@ -237,7 +237,7 @@
     "eyebrow": "Privacy",
     "title": "Your data,",
     "titleAccent": "kept to the minimum.",
-    "updated": "Last updated: 28 September 2026",
+    "updated": "Last updated: 29 September 2026",
     "intro": "outegro.dev and its apps — the account at id.outegro.dev, payments and future products — are run by Nick Lukashik, an independent engineer. This page explains what data they handle, why, and how you stay in control.",
     "sections": [
       {
@@ -255,14 +255,14 @@
         "items": [
           "og_locale — your language for all outegro.dev sites, kept for one year.",
           "og_at and og_rt — your session in an app such as id.outegro.dev. They are HttpOnly, so scripts cannot read them, and live for five minutes and thirty days respectively.",
-          "All of them are needed for the sites to work, so there is no consent banner."
+          "Cloudflare, which delivers the sites, may set its own security cookies such as __cf_bm to tell people from bots. All of these are needed for the sites to work, so there is no consent banner."
         ]
       },
       {
         "title": "Who else processes data",
         "items": [
           "The hosting provider of the server the platform runs on.",
-          "Cloudflare — domain name system and encrypted backup storage.",
+          "Cloudflare — every request passes through its network, which protects the sites from attacks and delivers them; it also runs the domain name system and stores encrypted backups.",
           "Resend — email delivery.",
           "Google — only if you choose to sign in with Google. It shares your email address, name and whether the email is verified.",
           "Telegram — only if you link it for notifications.",
