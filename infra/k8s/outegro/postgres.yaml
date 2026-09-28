@@ -9,7 +9,7 @@ metadata:
 spec:
   retentionPolicy: "30d"
   configuration:
-    destinationPath: s3://outegro-backups/postgres
+    destinationPath: s3://outegro-dev-backups/postgres
     endpointURL: ${R2_ENDPOINT}
     s3Credentials:
       accessKeyId:

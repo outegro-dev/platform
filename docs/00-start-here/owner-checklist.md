@@ -54,8 +54,8 @@
    Ротация: новый токен с теми же правами → скрипт запечатывания обновляет Sealed Secret → cert-manager берёт его при следующей DNS-01 проверке → принудительно продлить один сертификат → удалить старый токен. Просроченный токен не роняет сайт сразу: сертификат живёт 90 дней и продлевается за 30; алерт «сертификат истекает меньше чем через 21 день» ловит это заранее. При смене IP сервера фильтр токена обновляется.
 8. **R2 для бэкапов:**
    1. Меню аккаунта → **R2 Object Storage**; активировать R2 и привязать карту (до 10 ГБ бесплатно).
-   2. **Create bucket**: `outegro-backups`, Location — Automatic, hint **Western Europe (WEUR)**, Storage class — Standard, jurisdiction не выбирать. Публичный доступ (R2.dev subdomain, custom domains) не включать.
-   3. **Manage API tokens → Create Account API token**: имя `cnpg-backups`, **Object Read & Write**, **Apply to specific buckets only** → `outegro-backups`, TTL — Forever, Client IP filtering — IPv4 и IPv6 сервера (обязательно: в бэкапах данные пользователей).
+   2. **Create bucket**: `outegro-dev-backups`, Location — Automatic, hint **Western Europe (WEUR)**, Storage class — Standard, jurisdiction не выбирать. Публичный доступ (R2.dev subdomain, custom domains) не включать.
+   3. **Manage API tokens → Create Account API token**: имя `cnpg-backups`, **Object Read & Write**, **Apply to specific buckets only** → `outegro-dev-backups`, TTL — Forever, Client IP filtering — IPv4 и IPv6 сервера (обязательно: в бэкапах данные пользователей).
    4. Сохранить `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (показывается один раз) и `R2_ENDPOINT` = `https://<account-id>.r2.cloudflarestorage.com`. «Token value» не нужен. При восстановлении на новом сервере выпускается новый ключ под его IP.
 9. По желанию **Email Routing**: `hello@outegro.dev` → ваша почта. MX и SPF — на корне домена, с Resend (`send.outegro.dev`) не конфликтует.
 
