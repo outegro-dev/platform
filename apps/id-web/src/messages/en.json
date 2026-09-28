@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "title": "Account — outegro",
+    "description": "Sign in to outegro.dev apps and manage your account."
+  },
+  "brand": {
+    "product": "Account",
+    "home": "outegro account, home"
+  },
+  "login": {
+    "eyebrow": "One account for every outegro.dev app",
+    "title": "Sign in",
+    "titleAccent": "without a password.",
+    "lead": "Enter your email and we will send a six-digit code. New here? The same step creates your account.",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "sendCode": "Send code",
+    "sending": "Sending…",
+    "codeSentTo": "We sent a code to {email}",
+    "code": "Six-digit code",
+    "verify": "Sign in",
+    "verifying": "Checking…",
+    "changeEmail": "Use another email",
+    "resend": "Send a new code",
+    "resendIn": "New code available in {seconds} s",
+    "continuingTo": "You will continue to {app}",
+    "deliveryFailed": "We could not send the email right now. Try again in a minute.",
+    "errors": {
+      "invalid_code": "That code is not right. Check it and try again.",
+      "expired": "The code has expired. Request a new one.",
+      "too_many_attempts": "Too many attempts. Request a new code.",
+      "rate_limited": "Too many requests. Please wait a moment.",
+      "invalid_email": "Enter a valid email address.",
+      "unavailable": "Sign-in is temporarily unavailable. Try again shortly."
+    }
+  },
+  "authorize": {
+    "title": "This link is not valid",
+    "body": "The app that sent you here is not registered or used a wrong return address. Go back and try again.",
+    "back": "Go to your account"
+  },
+  "nav": {
+    "profile": "Profile",
+    "sessions": "Sessions",
+    "inbox": "Inbox",
+    "notifications": "Notifications",
+    "signOut": "Sign out",
+    "language": "Language",
+    "sections": "Account sections"
+  },
+  "profile": {
+    "title": "Profile",
+    "lead": "How you appear across outegro.dev apps.",
+    "email": "Email",
+    "verified": "Verified",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "Your name",
+    "language": "Language for emails and apps",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "conflict": "The profile changed in another tab. Reload to see the latest version.",
+    "roles": "Platform roles",
+    "memberSince": "Member since {date}",
+    "invalid": "Check the fields and try again.",
+    "unavailable": "Could not save right now. Try again shortly."
+  },
+  "sessions": {
+    "title": "Sessions",
+    "lead": "Devices and apps signed in to your account. Signing out here takes effect immediately.",
+    "current": "This device",
+    "signedInWith": {
+      "email": "Email code",
+      "google": "Google",
+      "passkey": "Passkey",
+      "sso": "App sign-in"
+    },
+    "lastActive": "Last active {date}",
+    "started": "Signed in {date}",
+    "revoke": "Sign out",
+    "revokeOthers": "Sign out of all other sessions",
+    "revokedOthers": "Signed out of {count, plural, =0 {no other sessions} one {# session} other {# sessions}}.",
+    "unknownDevice": "Unknown device",
+    "empty": "No other sessions."
+  },
+  "inbox": {
+    "title": "Inbox",
+    "lead": "Security, billing and service messages.",
+    "unread": "{count, plural, =0 {All read} one {# unread} other {# unread}}",
+    "markRead": "Mark as read",
+    "empty": "Nothing here yet.",
+    "more": "Show more"
+  },
+  "preferences": {
+    "title": "Notifications",
+    "lead": "Choose where each kind of message reaches you. Required channels cannot be switched off.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "required": "Required",
+    "categories": {
+      "security": "Security",
+      "billing": "Payments and subscriptions",
+      "service": "Service news"
+    },
+    "channels": {
+      "inbox": "Inbox",
+      "email": "Email",
+      "telegram": "Telegram"
+    },
+    "telegramHint": "Telegram messages start once you link the bot (coming soon).",
+    "conflict": "Settings changed in another tab. Reload to see the latest version.",
+    "invalid": "Some of these settings cannot be changed.",
+    "unavailable": "Could not save right now. Try again shortly."
+  },
+  "errors": {
+    "title": "Something is temporarily unavailable",
+    "body": "Your data is safe. The service did not answer in time.",
+    "retry": "Try again"
+  }
+}
