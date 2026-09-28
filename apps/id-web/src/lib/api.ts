@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { env } from "./env";
 
 // Every call runs inside a request, so the browser identity is always at hand.
-const forward = async () => clientHeaders(await headers());
+const forward = async () =>
+  clientHeaders(await headers(), env.CLIENT_IP_SOURCE);
 export const authApi = createBackend(env.AUTH_API_URL, { headers: forward });
 export const notificationsApi = createBackend(env.NOTIFICATIONS_API_URL, {
   headers: forward,

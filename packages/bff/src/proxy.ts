@@ -1,5 +1,5 @@
 import type { NextRequest, NextResponse } from "next/server";
-import { clientHeaders } from "./client";
+import { type ClientIpSource, clientHeaders } from "./client";
 import {
   ACCESS_COOKIE,
   clearSession,
@@ -27,6 +27,7 @@ export type RefreshOutcome =
 export async function refreshSession(
   request: NextRequest,
   authApiUrl: string,
+  options: { clientIpSource?: ClientIpSource } = {},
 ): Promise<{
   outcome: RefreshOutcome;
   apply: (response: NextResponse) => NextResponse;
@@ -43,7 +44,7 @@ export async function refreshSession(
       method: "POST",
       headers: {
         "content-type": "application/json",
-        ...clientHeaders(request.headers),
+        ...clientHeaders(request.headers, options.clientIpSource),
       },
       body: JSON.stringify({ refreshToken: refresh }),
       cache: "no-store",

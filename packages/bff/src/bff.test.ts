@@ -51,4 +51,21 @@ describe("clientHeaders", () => {
   it("sends nothing it did not receive", () => {
     expect(clientHeaders(new Headers())).toEqual({});
   });
+
+  it("behind the Cloudflare proxy takes the visitor from CF-Connecting-IP", () => {
+    const incoming = new Headers({
+      "cf-connecting-ip": "203.0.113.7",
+      "x-forwarded-for": "203.0.113.7, 172.70.1.1",
+    });
+    expect(clientHeaders(incoming, "cf-connecting-ip")).toEqual({
+      "x-forwarded-for": "203.0.113.7",
+    });
+    // The Cloudflare node at the end of X-Forwarded-For is never used there.
+    expect(
+      clientHeaders(
+        new Headers({ "x-forwarded-for": "172.70.1.1" }),
+        "cf-connecting-ip",
+      ),
+    ).toEqual({});
+  });
 });

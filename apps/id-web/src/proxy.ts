@@ -1,8 +1,7 @@
 import { refreshSession } from "@outegro/bff/proxy";
 import { safeRedirectPath } from "@outegro/bff/safe-redirect";
 import { type NextRequest, NextResponse } from "next/server";
-
-const authApiUrl = process.env.AUTH_API_URL ?? "http://localhost:4001";
+import { env } from "@/lib/env";
 
 /**
  * Every page request: keep the session fresh (refresh rotation happens here,
@@ -10,7 +9,9 @@ const authApiUrl = process.env.AUTH_API_URL ?? "http://localhost:4001";
  * set a nonce-based CSP.
  */
 export async function proxy(request: NextRequest) {
-  const session = await refreshSession(request, authApiUrl);
+  const session = await refreshSession(request, env.AUTH_API_URL, {
+    clientIpSource: env.CLIENT_IP_SOURCE,
+  });
   const signedIn =
     session.outcome === "fresh" || session.outcome === "refreshed";
   const { pathname, search } = request.nextUrl;
