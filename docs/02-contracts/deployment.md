@@ -20,6 +20,17 @@
 
 Images immutable by digest/commit. Migration Job получает отдельную role, lock и deadline. Failed migration блокирует соответствующий rollout. App readiness и migration success различаются. Secrets не хранятся plaintext в Git. Network policies проверены реальными запросами. Liveness не рестартует app только из-за временного provider outage.
 
+## Адрес клиента
+
+От него зависят лимиты входа (`login:ip`) и список сеансов, поэтому цепочка фиксирована:
+
+1. DNS-записи в Cloudflare — DNS only, без прокси.
+2. Service Traefik в K3s — `externalTrafficPolicy: Local`, иначе ServiceLB может подменить адрес клиента адресом узла. Проверяется реальным запросом при OPS-01.
+3. Traefik не доверяет входящему `X-Forwarded-For` и дописывает в него адрес клиента последним.
+4. BFF (`clientHeaders` из `@outegro/bff`) передаёт сервисам только эту последнюю запись и `User-Agent`. Сервисы доверяют одному hop (`trust proxy` = 1).
+
+Включение прокси Cloudflare меняет цепочку: сначала firewall пропускает на 80/443 только диапазоны Cloudflare, затем BFF переходит на `CF-Connecting-IP`. Что подставленный клиентом адрес не принимается, проверяет e2e `TC-ID-09-01`.
+
 ## Backup
 
 PG base backup/WAL вне VPS; consistent K3s SQLite/token backup и отдельные recovery keys. Hermes SQLite/memory плюс assistant DB/media восстанавливаются согласованно. Backup success не означает restore success. Цели RPO 15 минут и RTO 4 часа после предоставления заменяющего сервера проверяются rehearsal. Дубли notification/payment после restore предотвращаются idempotency и reconciliation; внешние деньги не откатываются вместе с PG.
