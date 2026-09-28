@@ -8,6 +8,7 @@
       "*.json",
       "*.ts",
       "!**/.next",
+      "!**/dist",
       "!**/node_modules",
       "!**/next-env.d.ts"
     ]
