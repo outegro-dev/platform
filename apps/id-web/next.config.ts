@@ -18,7 +18,6 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), payment=()",
   },
-  { key: "Cache-Control", value: "private, no-store" },
 ];
 
 const config: NextConfig = {
@@ -30,7 +29,16 @@ const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Pages carry personal data and are never stored. Hashed build assets
+      // (CSS, JS, fonts) keep the immutable caching Next.js gives them;
+      // otherwise every reload refetches the fonts and shifts the layout.
+      {
+        source: "/((?!_next/static|_next/image).*)",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+    ];
   },
 };
 export default createNextIntlPlugin()(config);

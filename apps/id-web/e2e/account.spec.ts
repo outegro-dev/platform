@@ -235,3 +235,19 @@ test.describe("phone layout", () => {
     }
   });
 });
+
+test("pages are never stored, build assets stay cached", async ({
+  page,
+  request,
+}) => {
+  const response = await page.goto("/login");
+  expect(response?.headers()["cache-control"]).toContain("no-store");
+  const css = await page
+    .locator('link[rel="stylesheet"]')
+    .first()
+    .getAttribute("href");
+  expect(css).toMatch(/^\/_next\/static\//);
+  // Refetching CSS and fonts on every reload was the cause of layout jumps.
+  const asset = await request.get(css as string);
+  expect(asset.headers()["cache-control"]).toContain("immutable");
+});
