@@ -1,29 +1,17 @@
-import { Button } from "@outegro/ui/button";
-import { SignOutIcon } from "@phosphor-icons/react/dist/ssr";
-import { getTranslations } from "next-intl/server";
 import { AppFooter } from "@/components/app-footer";
 import { BrandHeader } from "@/components/brand-header";
+import { SignOutForm } from "@/components/sign-out-form";
 import { signOut } from "./actions";
 import { AccountNav } from "./nav";
 
-export default async function AccountLayout({
+export default function AccountLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const t = await getTranslations("nav");
   return (
     <div className="og-container account-shell">
-      <BrandHeader
-        actions={
-          <form action={signOut}>
-            <Button type="submit" variant="outline" size="sm">
-              <SignOutIcon />
-              {t("signOut")}
-            </Button>
-          </form>
-        }
-      />
+      <BrandHeader actions={<SignOutForm action={signOut} />} />
       <div className="account-grid">
         <AccountNav />
         <main id="main" className="account-main">

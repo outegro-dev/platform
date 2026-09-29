@@ -1,6 +1,7 @@
 /*
  * @outegro/ui — shared design system for every outegro.dev frontend.
- * Apps import this file once (plus fonts.css) and add only layout-specific CSS.
+ * Apps import this file once, put `fontVariables` from @outegro/ui/fonts on
+ * <html> and add only layout-specific CSS.
  * Tailwind scans the consuming app automatically; this @source adds the kit itself.
  */
 @import "tailwindcss";
@@ -41,9 +42,20 @@
 /* Light gallery tone — the default for every product. */
 :root {
   color-scheme: light;
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  /*
+   * Families come from next/font (`fontVariables` from @outegro/ui/fonts on
+   * <html>): Cyrillic first, then Latin with its fallback (see fonts.ts).
+   */
+  --font-sans:
+    var(--og-manrope-cyrillic, "Manrope"), var(--og-manrope-latin, "Manrope"),
+    ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--og-cormorant-cyrillic, "Cormorant Garamond"),
+    var(--og-cormorant-latin, "Cormorant Garamond"), ui-serif, Georgia, serif;
+  --font-mono:
+    var(--og-mono-cyrillic, "JetBrains Mono"),
+    var(--og-mono-latin, "JetBrains Mono"), ui-monospace, SFMono-Regular,
+    monospace;
 
   --background: #f2f2ef;
   --surface: #fafaf7;

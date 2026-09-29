@@ -1,6 +1,6 @@
 # @outegro/ui
 
-Общая дизайн-система всех фронтендов outegro.dev: токены, шрифты, стекло и компоненты на Radix + Tailwind 4. Исходники экспортируются напрямую — отдельная сборка не нужна.
+Общая дизайн-система всех фронтендов outegro.dev (Next.js): токены, шрифты, стекло и компоненты на Radix + Tailwind 4. Исходники экспортируются напрямую — отдельная сборка не нужна.
 
 ## Подключение в новом Next.js-приложении
 
@@ -10,12 +10,17 @@
 4. Корневой layout:
 
    ```tsx
-   import "@outegro/ui/fonts.css";
+   import { fontVariables } from "@outegro/ui/fonts"; // next/font/local
    import "@outegro/ui/styles.css"; // Tailwind + токены + base
    import "./globals.css";          // только раскладка приложения
+
+   // …
+   <html lang={locale} className={fontVariables}>
    ```
 
    Tailwind сам сканирует приложение, а `styles.css` добавляет в сканирование исходники пакета.
+
+   Шрифты (`src/fonts.ts`) — файлы Fontsource через `next/font/local`: раздельно Latin и Cyrillic с их `unicode-range`, `display: swap`. Latin предзагружается и получает локальный запасной шрифт с подогнанными метриками (`adjustFontFallback`), поэтому замена шрифта не двигает раскладку; Cyrillic грузится по требованию и до загрузки использует тот же запасной. Исключение — JetBrains Mono: его запасной — системный моноширинный шрифт (та же фиксированная ширина знака), растянутый Arial переносил метки на вторую строку. Классы `fontVariables` задают переменные `--og-*`, из которых собраны токены `--font-sans`, `--font-display`, `--font-mono`.
 5. Компоненты: `import { Button } from "@outegro/ui/button"`, `import { Dialog, DialogContent } from "@outegro/ui/dialog"` и т.д.
 
 ## Правила
@@ -30,10 +35,13 @@
 
 | Компонент | Назначение |
 |---|---|
-| Button | primary / secondary / outline / glass / ghost / destructive / link; размеры sm / md / lg / icon / icon-sm; `asChild` для ссылок |
+| Button | primary / secondary / outline / glass / ghost / destructive / link; размеры sm / md / lg / icon / icon-sm; `asChild` для ссылок; `pending` + `pendingLabel` — спиннер поверх сохранённой подписи: ширина не меняется, `aria-busy`, фокус остаётся (aria-disabled) |
 | Dialog | модальное окно; `closeLabel` — переведённое имя кнопки закрытия |
 | Accordion | раскрывающиеся списки |
-| Input, Label | поля форм |
+| Input, Label | поля форм; фокус и ошибка меняют цвет рамки и тень, не её толщину |
+| FormMessage | подсказка или результат под полем/кнопкой; всегда отрисован и резервирует `lines` строк, поэтому сообщение не сдвигает форму; тоны neutral / pending / success / error |
+| Spinner | индикатор занятости; при reduced motion только пульсирует |
+| Skeleton | заглушка загрузки размером с то, что она заменяет |
 | Badge | моно-метка: outline / solid / glass / muted |
 | Surface | карточка: solid / glass / muted / inverse (inverse включает тёмный тон) |
 | Container | общая ширина страницы |

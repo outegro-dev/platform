@@ -120,6 +120,14 @@
   .choice:has(input:checked) {
     border-color: var(--border-strong);
   }
+  /* The ring goes around the whole pill; an outline never changes its size. */
+  .choice:has(input:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  .choice input:focus-visible {
+    outline: none;
+  }
   .choice input,
   .check input {
     width: 18px;
@@ -127,25 +135,18 @@
     margin: 0;
     accent-color: var(--primary);
   }
-  .form-error {
-    color: var(--destructive);
-    font-size: 14px;
-    line-height: 1.5;
-  }
+  /* Button and result share a row when there is room for both; otherwise the
+     result always takes the next line. Either way its two lines are reserved,
+     so a message never moves the form. */
   .form-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 16px;
+    gap: 12px 16px;
   }
   .form-status {
-    font-size: 14px;
-    color: var(--success);
-  }
-  .form-status[data-status="conflict"],
-  .form-status[data-status="invalid"],
-  .form-status[data-status="error"] {
-    color: var(--destructive);
+    flex: 1 1 240px;
+    align-items: center;
   }
 
   /* Sign-in. */
@@ -154,13 +155,15 @@
     flex-direction: column;
     min-height: 100dvh;
   }
+  /* Top-aligned: the card grows downwards between steps instead of
+     re-centring, so nothing above or beside it moves. */
   .login-main {
     flex: 1;
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-    align-items: center;
+    align-items: start;
     gap: clamp(32px, 6vw, 96px);
-    padding-block: 32px 80px;
+    padding-block: clamp(32px, 12vh, 136px) 80px;
   }
   .login-intro {
     display: grid;
@@ -184,12 +187,17 @@
   }
   .login-card {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     padding: clamp(24px, 4vw, 40px);
     border-radius: var(--radius-xl);
+    container-type: inline-size;
   }
+  /* minmax(0, 1fr): a long unbreakable label may not widen the card. */
+  .login-flow,
   .login-form {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
   }
   .login-sent {
@@ -197,19 +205,33 @@
     line-height: 1.5;
     overflow-wrap: anywhere;
   }
+  .login-sent[data-tone="warning"] {
+    color: var(--destructive);
+  }
   .code-input {
     height: 64px;
     font-family: var(--font-mono);
     font-size: 28px;
+    font-variant-numeric: tabular-nums;
     letter-spacing: 0.5em;
     text-align: center;
     padding-inline-start: calc(16px + 0.5em);
   }
+  /* One layout per card width, never per label: the countdown can change
+     length without wrapping the other link onto a new line. */
   .login-secondary {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: -8px;
+  }
+  @container (min-width: 480px) {
+    .login-secondary {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
   }
 
   /* Full-page notices: invalid SSO request, errors. */
@@ -244,10 +266,13 @@
     flex: 1;
     padding-bottom: 72px;
   }
+  /* align-content: the grid fills the viewport height, and stretched rows
+     would move the page down whenever its content is short. */
   .account-grid {
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     align-items: start;
+    align-content: start;
     gap: clamp(24px, 4vw, 64px);
     padding-top: 24px;
   }
@@ -336,17 +361,51 @@
     display: grid;
     gap: 12px;
   }
+  /* The button or the note below a list: one height for both. */
+  .list-footer {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+  }
   .row {
+    position: relative;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
     padding: 20px 24px;
+    transition: border-color var(--duration-fast) var(--ease-out);
   }
   .row[data-unread] {
     border-color: var(--border-strong);
   }
+  /* A read message keeps the note in the button's place and size. */
+  .row-done {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 40px;
+    padding-inline: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .row-done-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline-start: 20px;
+    color: var(--success);
+  }
+  .row-done-label svg {
+    width: 16px;
+    height: 16px;
+  }
   .row-main {
+    flex: 1;
     display: grid;
     gap: 6px;
     min-width: 0;
@@ -365,21 +424,37 @@
     white-space: pre-line;
     overflow-wrap: anywhere;
   }
+  /* In the row's left gutter, level with the title: it can disappear without
+     moving any text. */
   .unread-dot {
+    position: absolute;
+    top: 28px;
+    left: 9px;
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--live);
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .row[data-unread] .unread-dot {
+    opacity: 1;
   }
 
   /* Notification preferences. */
   .matrix-scroll {
     overflow-x: auto;
   }
+  /* Fixed columns: widths never follow the labels, so nothing shifts when a
+     font or a language changes their length. */
   .matrix {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     font-size: 15px;
+  }
+  .matrix thead td:first-child {
+    width: 34%;
   }
   .matrix th,
   .matrix td {
@@ -407,10 +482,15 @@
     min-width: 44px;
     min-height: 44px;
     justify-content: center;
+    border-radius: var(--radius-md);
     cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out);
   }
   .check:has(input:disabled) {
     cursor: default;
+  }
+  .check:has(input:not(:disabled)):hover {
+    background: var(--secondary);
   }
   .check-note {
     color: var(--muted-foreground);
@@ -453,6 +533,64 @@
     text-decoration-color: currentColor;
   }
 
+  /* Result of a list action: fixed to the viewport, so it moves nothing. */
+  .action-status {
+    position: fixed;
+    inset-inline: 0;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    padding-inline: 16px;
+    pointer-events: none;
+  }
+  .action-status-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(100%, 480px);
+    min-height: 56px;
+    padding: 6px 6px 6px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: 0 12px 32px
+      color-mix(in srgb, var(--foreground) 14%, transparent);
+    opacity: 0;
+    translate: 0 12px;
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      translate var(--duration-base) var(--ease-out);
+  }
+  .action-status[data-open] .action-status-card {
+    opacity: 1;
+    translate: 0 0;
+    pointer-events: auto;
+  }
+  .action-status-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .action-status[data-tone="success"] .action-status-icon {
+    color: var(--success);
+  }
+  .action-status[data-tone="error"] .action-status-icon,
+  .action-status[data-tone="offline"] .action-status-icon {
+    color: var(--destructive);
+  }
+  .action-status-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .action-status-card {
+      translate: none;
+    }
+  }
+
   @media (max-width: 900px) {
     .login-main {
       grid-template-columns: minmax(0, 1fr);
@@ -479,6 +617,11 @@
     }
     .row {
       flex-direction: column;
+    }
+    /* Under the text, a ghost button lines its label up with it. */
+    .row > form,
+    .row > .row-done {
+      margin-inline-start: -20px;
     }
     .account-nav a {
       flex-direction: column;
@@ -534,6 +677,15 @@
     .check {
       flex-direction: row-reverse;
       gap: 12px;
+    }
+  }
+  /* The smallest phones: the header keeps language switch and sign-out on one line. */
+  @media (max-width: 360px) {
+    .brand-header {
+      gap: 8px;
+    }
+    .brand-actions {
+      gap: 2px;
     }
   }
 }
