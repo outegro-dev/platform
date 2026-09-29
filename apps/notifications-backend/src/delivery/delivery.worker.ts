@@ -11,6 +11,7 @@ import { createEvent, notificationDeliveryChanged } from "@outegro/contracts";
 import { enqueueEvent } from "@outegro/db";
 import { CLOCK, type Clock, DATABASE, OutboxRelay } from "@outegro/nest-common";
 import { and, eq, sql } from "drizzle-orm";
+import { SettingsService } from "../admin/settings.service.js";
 import {
   EMAIL_PROVIDER,
   type EmailProvider,
@@ -67,6 +68,7 @@ export class DeliveryWorker
     @Inject(channelsConfig.KEY)
     private readonly config: ConfigType<typeof channelsConfig>,
     private readonly relay: OutboxRelay,
+    private readonly settings: SettingsService,
   ) {}
 
   onApplicationBootstrap() {
@@ -114,14 +116,19 @@ export class DeliveryWorker
     const now = this.clock.now();
     const leaseToken = randomUUID();
     const leaseUntil = new Date(now.getTime() + LEASE_MS);
+    // A paused channel keeps its deliveries pending until an operator resumes it.
+    const paused = await this.settings.pausedChannels();
+    const channelFilter = paused.length
+      ? sql` and channel not in ${paused}`
+      : sql``;
     const result = await this.database.db.execute<{ id: string }>(sql`
       update deliveries
          set state = 'leased', lease_token = ${leaseToken}, lease_until = ${leaseUntil.toISOString()},
              attempts = attempts + 1, updated_at = ${now.toISOString()}
        where id in (
          select id from deliveries
-          where (state in ('pending', 'retry_wait') and next_attempt_at <= ${now.toISOString()})
-             or (state = 'leased' and lease_until < ${now.toISOString()})
+          where ((state in ('pending', 'retry_wait') and next_attempt_at <= ${now.toISOString()})
+             or (state = 'leased' and lease_until < ${now.toISOString()}))${channelFilter}
           order by next_attempt_at
           limit ${limit}
           for update skip locked)

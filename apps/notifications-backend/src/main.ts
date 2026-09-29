@@ -7,5 +7,9 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 const { bootstrapService } = await import("@outegro/nest-common");
 const { AppModule } = await import("./app.module.js");
 const { env } = await import("./config/env.js");
+const { unprefixedRoutes } = await import("./routes.js");
 
-await bootstrapService(AppModule, { port: env().PORT });
+await bootstrapService(AppModule, {
+  port: env().PORT,
+  excludeFromPrefix: unprefixedRoutes,
+});

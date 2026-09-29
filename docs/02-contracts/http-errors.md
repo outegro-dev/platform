@@ -48,6 +48,12 @@ Cursor opaque, page size default 25/max 100 как инженерный default.
 | Notifications | GET /v1/me/inbox | cursor/category | own inbox + unread |
 | Notifications | POST /v1/me/inbox/{id}/read | item ID | idempotent readAt |
 | Notifications | GET/PATCH /v1/me/notification-preferences | version/preferences | saved version |
+| Notifications | GET/DELETE /v1/me/telegram, POST /v1/me/telegram/link | — | статус привязки; одноразовая ссылка `t.me/<bot>?start=…` на 10 минут; отвязка |
+| Notifications | POST /webhooks/telegram | update Telegram; заголовок `X-Telegram-Bot-Api-Secret-Token` | `/start <token>` привязывает чат, `/stop` и блокировка бота отвязывают |
+| Notifications | GET /v1/admin/overview, /deliveries, /deliveries/{id}, /recipients/{userId}, /templates, /templates/{key}/preview, /settings, /telegram | `notifications.read` | сводка, доставки (данные login-кодов и секретов скрыты), карточка получателя (почта замаскирована), превью на примерах |
+| Notifications | POST /v1/admin/deliveries/{id}/retry, POST /v1/admin/test-message | `notifications.retry`; reason; `confirmUnknown` для unknown | повтор только failed/unknown, не auth, не просроченных; проверка канала — только себе |
+| Notifications | PATCH /v1/admin/settings | `services.flags`; expectedVersion, reason | пауза канала: доставки ждут в pending до возобновления |
+| Notifications | GET /v1/admin/audit | `audit.read` | действия операторов с причинами |
 | Payments | GET /v1/catalog | locale | только enabled products |
 | Payments | POST /v1/checkout | priceId; idempotency header | orderId, attemptId, state, checkoutUrl при готовности |
 | Payments | GET /v1/me/orders/{id} | ID | own payment/access state |

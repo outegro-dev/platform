@@ -27,6 +27,9 @@ export const channelsConfig = registerAs("channels", () => ({
   resendApiKey: env().RESEND_API_KEY,
   emailFrom: env().EMAIL_FROM,
   telegramBotToken: env().TELEGRAM_BOT_TOKEN,
+  telegramBotUsername: env().TELEGRAM_BOT_USERNAME,
+  telegramWebhookUrl: env().TELEGRAM_WEBHOOK_URL,
+  telegramWebhookSecret: env().TELEGRAM_WEBHOOK_SECRET,
   publicWebUrl: env().PUBLIC_WEB_URL,
   accountUrl: env().ACCOUNT_URL,
 }));

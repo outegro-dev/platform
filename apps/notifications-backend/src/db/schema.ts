@@ -39,11 +39,47 @@ export const recipients = pgTable("recipients", {
   locale: text("locale", { enum: ["en", "ru"] })
     .notNull()
     .default("en"),
-  telegramChatId: text("telegram_chat_id"),
+  /** Set only by the bot after the user confirms a link from their own account. */
+  telegramChatId: text("telegram_chat_id").unique(),
+  telegramLinkedAt: at("telegram_linked_at"),
   status: text("status").notNull().default("active"),
   preferencesVersion: integer("preferences_version").notNull().default(1),
   updatedAt: at("updated_at").notNull(),
 });
+
+/** One-time Telegram deep-link tokens (stored hashed, 10 minutes). */
+export const telegramLinks = pgTable("telegram_links", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: uuid("user_id").notNull(),
+  expiresAt: at("expires_at").notNull(),
+  consumedAt: at("consumed_at"),
+  createdAt: at("created_at").notNull(),
+});
+
+/** Operator switches (channel pauses); versioned, changed only through the admin API. */
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  version: integer("version").notNull().default(1),
+  updatedBy: uuid("updated_by"),
+  updatedAt: at("updated_at").notNull(),
+});
+
+/** Every operator action with its reason (chapter 7.8). */
+export const adminAudit = pgTable(
+  "admin_audit",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorId: uuid("actor_id").notNull(),
+    action: text("action").notNull(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    reason: text("reason").notNull(),
+    data: jsonb("data").notNull().default({}),
+    createdAt: at("created_at").notNull(),
+  },
+  (t) => [index("admin_audit_created_idx").on(t.createdAt)],
+);
 
 /** What a service asked us to tell a user; unique per source event and template. */
 export const intents = pgTable(

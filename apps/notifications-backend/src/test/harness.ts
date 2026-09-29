@@ -40,6 +40,27 @@ export class FakeTelegram {
   }
 }
 
+/** Bot administration stand-in: records webhook registrations. */
+export class FakeTelegramBot {
+  readonly configured = true;
+  webhooks: { url: string; secret: string }[] = [];
+  async status() {
+    return {
+      configured: true as const,
+      username: "outegro_test_bot",
+      webhook: {
+        url: this.webhooks.at(-1)?.url ?? null,
+        pendingUpdates: 0,
+        lastErrorAt: null,
+        lastError: null,
+      },
+    };
+  }
+  async registerWebhook(url: string, secret: string) {
+    this.webhooks.push({ url, secret });
+  }
+}
+
 export type Harness = Awaited<ReturnType<typeof startHarness>>;
 
 export async function startHarness() {
@@ -63,6 +84,7 @@ export async function startHarness() {
   const jwksPort = (jwksServer.address() as AddressInfo).port;
 
   const internalToken = randomBytes(32).toString("hex");
+  const telegramSecret = randomBytes(32).toString("hex");
   Object.assign(process.env, {
     NODE_ENV: "test",
     PORT: "4998",
@@ -76,15 +98,21 @@ export async function startHarness() {
     INTERNAL_API_TOKEN: internalToken,
     PUBLIC_WEB_URL: "https://outegro.dev",
     ACCOUNT_URL: "https://id.outegro.dev",
+    TELEGRAM_BOT_USERNAME: "outegro_test_bot",
+    TELEGRAM_WEBHOOK_URL: "https://hooks.outegro.test/telegram",
+    TELEGRAM_WEBHOOK_SECRET: telegramSecret,
   });
 
   const { AppModule } = await import("../app.module.js");
   const { EMAIL_PROVIDER, TELEGRAM_PROVIDER } = await import(
     "../channels/providers.js"
   );
+  const { TELEGRAM_BOT } = await import("../telegram/telegram-bot.js");
+  const { unprefixedRoutes } = await import("../routes.js");
   const clock = new ManualClock(new Date());
   const email = new FakeEmail();
   const telegram = new FakeTelegram();
+  const bot = new FakeTelegramBot();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(CLOCK)
     .useValue(clock)
@@ -92,14 +120,17 @@ export async function startHarness() {
     .useValue(email)
     .overrideProvider(TELEGRAM_PROVIDER)
     .useValue(telegram)
+    .overrideProvider(TELEGRAM_BOT)
+    .useValue(bot)
     .compile();
   const app = configureApp(
     moduleRef.createNestApplication<NestExpressApplication>(),
+    { excludeFromPrefix: unprefixedRoutes },
   );
   await app.init();
 
-  const tokenFor = (userId: string) =>
-    new SignJWT({ sid: randomUUID(), roles: [], av: 0 })
+  const tokenFor = (userId: string, roles: string[] = []) =>
+    new SignJWT({ sid: randomUUID(), roles, av: 0 })
       .setProtectedHeader({ alg: "ES256", kid: "test" })
       .setSubject(userId)
       .setIssuer("http://identity.test")
@@ -114,6 +145,8 @@ export async function startHarness() {
     clock,
     email,
     telegram,
+    bot,
+    telegramSecret,
     internalToken,
     rabbitUrl: rabbit.url,
     http: () => request(app.getHttpServer()),

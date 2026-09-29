@@ -15,6 +15,8 @@ export type Template = {
   mandatory: Channel[];
   /** How long an undelivered message is still worth sending. */
   ttlMs: number;
+  /** Example data for admin previews; never real user data. */
+  sample: Data;
   subject(locale: Locale, data: Data): string;
   title(locale: Locale, data: Data): string;
   /** Plain text for Telegram and the in-app inbox. */
@@ -35,6 +37,7 @@ const loginCode: Template = {
   channels: ["email"],
   mandatory: ["email"],
   ttlMs: 10 * 60_000,
+  sample: { code: "482913", minutes: 10 },
   subject: (l, d) =>
     l === "ru"
       ? `Код входа: ${str(d.code)}`
@@ -72,6 +75,7 @@ const sessionRevoked: Template = {
   channels: ["inbox", "email", "telegram"],
   mandatory: ["inbox", "email"],
   ttlMs: 24 * 3600_000,
+  sample: { ip: "203.0.113.7" },
   subject: (l) =>
     l === "ru"
       ? "Сеанс завершён из соображений безопасности"
@@ -103,6 +107,10 @@ const serviceMessage: Template = {
   channels: ["inbox", "email"],
   mandatory: ["inbox"],
   ttlMs: 3 * 24 * 3600_000,
+  sample: {
+    title: "Scheduled maintenance",
+    body: "outegro.dev will be read-only for ten minutes tonight at 23:00 UTC.",
+  },
   subject: (_l, d) => str(d.title),
   title: (_l, d) => str(d.title),
   text: (_l, d) => str(d.body),
@@ -125,6 +133,7 @@ const paymentConfirmed: Template = {
   channels: ["inbox", "email", "telegram"],
   mandatory: ["inbox"],
   ttlMs: 3 * 24 * 3600_000,
+  sample: { product: "Battleship Premium", amount: "50 ₽" },
   subject: (l, d) =>
     l === "ru"
       ? `Оплата получена: ${str(d.product)}`
@@ -148,10 +157,39 @@ const paymentConfirmed: Template = {
   ),
 };
 
+/** Channel check an operator sends to their own address from the admin console. */
+const serviceTest: Template = {
+  category: "service",
+  channels: ["email", "telegram"],
+  mandatory: [],
+  ttlMs: 3600_000,
+  sample: { channel: "email" },
+  subject: (l) =>
+    l === "ru" ? "Проверка канала outegro.dev" : "outegro.dev channel check",
+  title: (l) => (l === "ru" ? "Проверка канала" : "Channel check"),
+  text: (l, d) =>
+    l === "ru"
+      ? `Тестовое сообщение из админки (${str(d.channel)}). Если вы его видите, канал работает.`
+      : `A test message from the admin console (${str(d.channel)}). If you can read it, the channel works.`,
+  email: (l, d, c) => (
+    <Layout
+      locale={l}
+      preview={serviceTest.subject(l, d)}
+      footer={footer[l]}
+      webUrl={c.webUrl}
+      settingsUrl={settings(c)}
+    >
+      <Title>{serviceTest.title(l, d)}</Title>
+      <Paragraph>{serviceTest.text(l, d)}</Paragraph>
+    </Layout>
+  ),
+};
+
 export const templates: Record<string, Template> = {
   "auth.login-code": loginCode,
   "security.session-revoked": sessionRevoked,
   "service.message": serviceMessage,
+  "service.test": serviceTest,
   "billing.payment-confirmed": paymentConfirmed,
 };
 
