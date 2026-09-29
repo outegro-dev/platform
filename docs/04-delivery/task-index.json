@@ -1458,7 +1458,7 @@
       "id": "ID-05",
       "title": "Passkeys и RP id.outegro.dev",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "review",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-05.md",
       "dependencies": [

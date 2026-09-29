@@ -4,6 +4,7 @@
 
 - [Production: сервер, выпуск, секреты](production.md)
 - [Ротация ключа подписи access-токенов](signing-keys.md)
+- [Passkeys: RP, выкатка, потеря устройства](passkeys.md)
 - [Метрики, логи и correlation сервисов](observability.md)
 - [Вход в Grafana через админку](grafana-sso.md)
 - [Выпуск и откат](release-rollback.md)

@@ -1,0 +1,44 @@
+ID-05 test runs, 30.09.2026, Windows 11, Node 26.8.1, pnpm 12.3.4, Docker 29.7.2
+Branch feat/passkeys (worktree C:\Users\working\Desktop\wt-passkeys)
+
+== apps/auth-backend: pnpm test (Vitest 5.0.2, Testcontainers postgres:18.6-alpine, valkey 9.1, rabbitmq 4.3)
+   two consecutive runs of the final code:
+ Test Files  7 passed (7)
+      Tests  81 passed (81)        (before ID-05: 6 files, 59 tests)
+ new: src/passkeys.test.ts (17 tests), src/adversarial.test.ts block "ID-05 passkeys" (5 tests)
+
+== apps/notifications-backend: pnpm test
+ Test Files  5 passed (5)
+      Tests  77 passed (77)        (+1: "passkey notices (ID-05)" in billing-security.test.ts;
+                                    templates snapshot: 4 entries added, nothing else changed)
+
+== apps/id-web: pnpm exec playwright test (Chromium, workers 2; pnpm infra:up, pnpm env:local,
+   migrations of auth-backend and notifications-backend, turbo build of both and id-web standalone)
+  37 passed (48.4s)                (31 existing + 6 in e2e/passkeys.spec.ts)
+  ok  e2e/passkeys.spec.ts > TC-ID-05-01: add a passkey, sign out, sign in with it, rename it and remove it
+  ok  e2e/passkeys.spec.ts > the email field's autofill signs in with a passkey (conditional mediation)
+  ok  e2e/passkeys.spec.ts > a passkey without its fingerprint or PIN check signs nobody in
+  ok  e2e/passkeys.spec.ts > signing in again to confirm it is you replaces the session
+  ok  e2e/passkeys.spec.ts > the pages allow WebAuthn for this origin only and keep a strict CSP
+  ok  e2e/passkeys.spec.ts > on a phone, in Russian > the passkeys section fits and speaks Russian
+
+== Local migration (real PostgreSQL 18.6 of pnpm infra:up)
+  node --env-file=.env dist/db/migrate.js -> "migrations applied"; drizzle.__drizzle_migrations: 3 rows;
+  \d passkeys: unique passkeys_credential_id_uq, passkeys_user_idx, FK user_id -> users ON DELETE CASCADE
+
+== Mutation check: each protection weakened in turn in the final code, passkeys.test.ts +
+   adversarial.test.ts (31 tests), source restored after every run
+no user verification            2 failed | 29 passed   adversarial "a stolen security key...", passkeys "user verification is required..."
+any origin accepted             2 failed | 29 passed   adversarial "a look-alike site...", passkeys "TC-ID-05-02..."
+no user handle check            1 failed | 30 passed   passkeys "a passkey signs in only the account it belongs to"
+no counter compare-and-set      2 failed | 29 passed   adversarial "a cloned security key...", passkeys "a signature counter that does not grow..."
+challenge reusable (GET)        3 failed | 28 passed   adversarial "an assertion captured...", passkeys "TC-ID-05-01 registration challenge...", "TC-ID-05-04..."
+no last-method rule             4 failed | 27 passed   passkeys "TC-ID-05-03" x3 (rule, race, Google), "a passkey of another relying party..."
+no freshness check              2 failed | 29 passed   adversarial "a stolen older session...", passkeys "only a recent sign-in..."
+no session binding              2 failed | 29 passed   adversarial "a stolen older session...", passkeys "TC-ID-05-01 registration challenge..."
+
+== Static checks
+  pnpm exec tsc --noEmit            apps/auth-backend, apps/notifications-backend: exit 0
+  pnpm run typecheck                apps/id-web (next typegen + tsc): exit 0
+  pnpm exec biome check .           850 files, exit 0
+  python tools/documentation/validate.py   result pass

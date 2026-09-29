@@ -94,3 +94,7 @@ ID-10 выполнен до `review`; последний шаг — C4. Для `
 ## Приёмка ведущим (29.09)
 
 Ветка слита в master (`2a95109`), CI зелёный, выкачено в production. После слияния с метриками модуль теста `nest-common/src/auth.test.ts` получил `MetricsModule`, которого теперь требует `configureApp`; тест снова зелёный.
+
+## Дополнение после ID-05 (30.09, ветка `feat/passkeys`)
+
+Ограничение 1 закрыто наполовину: passkeys реализованы (ID-05, evidence в `docs/09-evidence/ID-05/20260930-0310-local/`), в `apps/auth-backend/src/adversarial.test.ts` добавлен блок «ID-05 passkeys» (5 тестов, всего 14): ceremony, пересланная сайтом-двойником (`id.outegro.dev.evil.test` как origin и как RP), — отказ без сессии; перехваченный assertion с тем же challenge, с новым и с подменённым clientData — отказ; копия аппаратного ключа с отставшим счётчиком — отказ и audit `passkey.counter_regression`; старая сессия, сессия приложения, одни cookies и service token не добавляют passkey; ключ без проверки PIN и passkey заблокированного владельца не создают сессию. Step-up из ID-07 по-прежнему не реализован, статус ID-10 — `review`.
