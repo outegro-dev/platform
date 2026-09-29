@@ -28,6 +28,8 @@ export const socketLimits = {
   burst: 40,
   pingEveryMs: 25_000,
   socketsPerUser: 8,
+  /** Replies a client may leave unread (a snapshot is ~4 KB); then it is dropped. */
+  maxBufferedBytes: 1024 * 1024,
 } as const;
 
 const statusText: Record<number, string> = {
@@ -155,6 +157,7 @@ export class GameSocketServer
         socketLimits.burst,
       ),
       this.logger,
+      socketLimits.maxBufferedBytes,
     );
     socket.on("message", (data, isBinary) =>
       this.receive(connection, data, isBinary),

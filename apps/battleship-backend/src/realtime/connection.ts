@@ -25,6 +25,8 @@ export class Connection {
     private readonly socket: WebSocket,
     readonly budget: TokenBucket,
     private readonly log: LogPort,
+    /** Unsent bytes a client may leave on the server before it is dropped. */
+    private readonly maxBufferedBytes: number,
   ) {}
 
   get open(): boolean {
@@ -33,6 +35,17 @@ export class Connection {
 
   send(message: Outgoing): void {
     if (!this.open) return;
+    // A client that stopped reading gets nothing more queued: the replies to
+    // a flood of refused frames would pile up in memory until the heartbeat
+    // noticed, up to 50 seconds later.
+    if (this.socket.bufferedAmount > this.maxBufferedBytes) {
+      this.log.warn(
+        { connection: this.id, buffered: this.socket.bufferedAmount },
+        "Client stopped reading; socket dropped",
+      );
+      this.socket.terminate();
+      return;
+    }
     const parsed = serverMessageSchema.safeParse({
       type: message.type,
       seq: this.seq + 1,

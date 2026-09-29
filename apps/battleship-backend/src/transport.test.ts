@@ -176,6 +176,19 @@ describe("messages", () => {
     expect((await socket.closed).code).toBe(1009);
   });
 
+  it("drops a client that floods and stops reading instead of buffering replies for it", async () => {
+    const socket = await h.connect();
+    const registry = h.get(ConnectionRegistry);
+    // The client stops reading: every refused frame's reply stays queued
+    // on the server (about 75 bytes for each 7-byte frame).
+    (socket.ws as unknown as { _socket: { pause(): void } })._socket.pause();
+    for (let i = 0; i < 40_000; i++) socket.ws.send("x");
+    await expect
+      .poll(() => registry.socketsOf(socket.userId), { timeout: 15_000 })
+      .toBe(0);
+    socket.ws.terminate();
+  });
+
   it("pings every socket and drops the ones that stop answering", async () => {
     const healthy = await h.connect();
     const silent = await new Promise<WebSocket>((resolve, reject) => {
