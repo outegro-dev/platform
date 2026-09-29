@@ -35,6 +35,9 @@ beforeEach(async () => {
 
 type Session = Awaited<ReturnType<Harness["signIn"]>>;
 
+/** An email-code sign-in from a client address of its own. */
+const signIn = (email: string) => h.signIn(email, "en", randomIp());
+
 /** The bearer token, from a client address of its own (route limits are per address). */
 const auth = (session: Session | string) => ({
   ...h.auth(typeof session === "string" ? session : session.accessToken),
@@ -85,7 +88,7 @@ const signInResults = () =>
 
 /** A signed-in user with one passkey on the given authenticator. */
 async function withPasskey(authenticator = new SoftwareAuthenticator()) {
-  const session = await h.signIn(uniqueEmail("pk"));
+  const session = await signIn(uniqueEmail("pk"));
   const added = await h.registerPasskey(session.accessToken, authenticator);
   expect(added.status).toBe(201);
   return { session, authenticator, passkey: added.body };
@@ -134,7 +137,7 @@ describe("relying party configuration (C2.1)", () => {
   });
 
   it("options name the configured RP and require a discoverable, verified credential", async () => {
-    const session = await h.signIn(uniqueEmail("options"));
+    const session = await signIn(uniqueEmail("options"));
     const creation = await h
       .http()
       .post("/v1/me/passkeys/options")
@@ -211,12 +214,13 @@ describe("Passkeys (ID-05)", () => {
     const me = await h
       .http()
       .get("/v1/me")
-      .set(h.auth(signedIn.body.accessToken))
+      .set(auth(signedIn.body.accessToken))
       .expect(200);
     expect(me.body.id).toBe(session.user.id);
     await h
       .http()
       .post("/v1/sessions/refresh")
+      .set({ "x-forwarded-for": randomIp() })
       .send({ refreshToken: signedIn.body.refreshToken })
       .expect(200);
     expect(
@@ -232,7 +236,7 @@ describe("Passkeys (ID-05)", () => {
     const code = await h
       .http()
       .post("/v1/oauth/authorize")
-      .set(h.auth(signedIn.body.accessToken))
+      .set(auth(signedIn.body.accessToken))
       .send({
         clientId: "pay-web",
         redirectUri: "https://pay.outegro.dev/auth/callback",
@@ -245,6 +249,7 @@ describe("Passkeys (ID-05)", () => {
     const app = await h
       .http()
       .post("/v1/oauth/token")
+      .set({ "x-forwarded-for": randomIp() })
       .send({
         grantType: "authorization_code",
         clientId: "pay-web",
@@ -260,8 +265,8 @@ describe("Passkeys (ID-05)", () => {
   });
 
   it("TC-ID-05-01: a registration challenge works once, for its own user and session", async () => {
-    const owner = await h.signIn(uniqueEmail("reg-owner"));
-    const other = await h.signIn(uniqueEmail("reg-other"));
+    const owner = await signIn(uniqueEmail("reg-owner"));
+    const other = await signIn(uniqueEmail("reg-other"));
     const authenticator = new SoftwareAuthenticator();
     const begin = async (session: Session) =>
       (
@@ -287,7 +292,7 @@ describe("Passkeys (ID-05)", () => {
 
     // The same user from another session of theirs cannot finish it either.
     await h.resetLimits();
-    const second = await h.signIn(owner.user.email);
+    const second = await signIn(owner.user.email);
     const again = await begin(owner);
     await finish(
       second,
@@ -571,7 +576,7 @@ describe("Passkeys (ID-05)", () => {
   });
 
   it("user verification is required to add a passkey and to sign in with one", async () => {
-    const session = await h.signIn(uniqueEmail("uv"));
+    const session = await signIn(uniqueEmail("uv"));
     const key = new SoftwareAuthenticator();
     const unverified = await h.registerPasskey(
       session.accessToken,
@@ -592,7 +597,7 @@ describe("Passkeys (ID-05)", () => {
   });
 
   it("only a recent sign-in on id.outegro.dev may add a passkey", async () => {
-    const session = await h.signIn(uniqueEmail("fresh"));
+    const session = await signIn(uniqueEmail("fresh"));
     const begin = (accessToken: string) =>
       h.http().post("/v1/me/passkeys/options").set(auth(accessToken));
     // Five minutes after signing in it is still fresh, a second later not.
@@ -606,7 +611,7 @@ describe("Passkeys (ID-05)", () => {
 
     // Signing in again makes a fresh session.
     await h.resetLimits();
-    const again = await h.signIn(session.user.email);
+    const again = await signIn(session.user.email);
     await begin(again.accessToken).expect(200);
 
     // An app session (SSO) was not signed in here: it never adds a passkey.
@@ -614,7 +619,7 @@ describe("Passkeys (ID-05)", () => {
     const code = await h
       .http()
       .post("/v1/oauth/authorize")
-      .set(h.auth(again.accessToken))
+      .set(auth(again.accessToken))
       .send({
         clientId: "pay-web",
         redirectUri: "https://pay.outegro.dev/auth/callback",
@@ -627,6 +632,7 @@ describe("Passkeys (ID-05)", () => {
     const app = await h
       .http()
       .post("/v1/oauth/token")
+      .set({ "x-forwarded-for": randomIp() })
       .send({
         grantType: "authorization_code",
         clientId: "pay-web",
@@ -765,7 +771,7 @@ describe("Passkeys (ID-05)", () => {
 
     // Adding passkeys: at most twenty ceremonies an hour per account, from
     // any number of addresses.
-    const session = await h.signIn(uniqueEmail("limit"));
+    const session = await signIn(uniqueEmail("limit"));
     const begun: number[] = [];
     for (let i = 0; i < 21; i++) {
       begun.push(
@@ -784,6 +790,8 @@ describe("Passkeys (ID-05)", () => {
   it("a passkey of another relying party (the old domain) is listed as unusable, signs nobody in and counts as no way in", async () => {
     const legacy = new SoftwareAuthenticator();
     const { session, passkey } = await withPasskey(legacy);
+    // A second later, so the list order (oldest first) is fixed.
+    h.clock.advance(1000);
     const current = await h.registerPasskey(
       session.accessToken,
       new SoftwareAuthenticator(),

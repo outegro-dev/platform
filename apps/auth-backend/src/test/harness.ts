@@ -152,15 +152,25 @@ export async function startHarness() {
   const valkeyClient = new Redis(valkey.url);
   const http = () => request(app.getHttpServer());
 
-  /** Full email-code sign-in; returns the token pair and user. */
-  async function signIn(email: string, locale: "en" | "ru" = "en") {
+  /**
+   * Full email-code sign-in; returns the token pair and user. `ip` is the
+   * client address the BFF forwards (default: the test process itself).
+   */
+  async function signIn(
+    email: string,
+    locale: "en" | "ru" = "en",
+    ip?: string,
+  ) {
+    const from = ip ? { "x-forwarded-for": ip } : {};
     const challenge = await http()
       .post("/v1/login/challenges")
+      .set(from)
       .send({ email, locale })
       .expect(201);
     const { code } = delivery.codeFor(email);
     const verified = await http()
       .post("/v1/login/challenges/verify")
+      .set(from)
       .send({ challengeId: challenge.body.challengeId, code })
       .expect(200);
     return verified.body as {

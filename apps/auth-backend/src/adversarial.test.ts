@@ -583,7 +583,7 @@ describe("ID-05 passkeys: phishing, replay, cloned keys, planted keys", () => {
 
   /** A victim who registered a passkey on their own device. */
   async function victim(key = new SoftwareAuthenticator()) {
-    const session = await h.signIn(uniqueEmail("victim"));
+    const session = await h.signIn(uniqueEmail("victim"), "en", randomIp());
     const added = await h.registerPasskey(session.accessToken, key);
     expect(added.status).toBe(201);
     return { session, key };
@@ -671,7 +671,7 @@ describe("ID-05 passkeys: phishing, replay, cloned keys, planted keys", () => {
   });
 
   it("a stolen older session, an app session or a cookie cannot plant a passkey", async () => {
-    const session = await h.signIn(uniqueEmail("planted"));
+    const session = await h.signIn(uniqueEmail("planted"), "en", randomIp());
     const attacker = new SoftwareAuthenticator();
     const cookie = `og_at=${session.accessToken}; og_rt=${session.refreshToken}`;
 
@@ -701,7 +701,7 @@ describe("ID-05 passkeys: phishing, replay, cloned keys, planted keys", () => {
     // And a challenge begun while it was fresh is useless to another session.
     h.clock.set(new Date());
     await h.resetLimits();
-    const fresh = await h.signIn(session.user.email);
+    const fresh = await h.signIn(session.user.email, "en", randomIp());
     const begun = await h
       .http()
       .post("/v1/me/passkeys/options")
