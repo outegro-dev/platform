@@ -6,6 +6,8 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { matches, moves, players, ratingHistory } from "./db/schema.js";
 import { GrantsConsumer } from "./events/grants.consumer.js";
+import { GameService } from "./game/game.service.js";
+import { KeyedMutex } from "./game/keyed-mutex.js";
 import { QueueStore } from "./game/queue.store.js";
 import { ConnectionRegistry } from "./realtime/connection.registry.js";
 import {
@@ -684,5 +686,45 @@ describe("quick matches (TC-BS-07)", () => {
     expect(new Set(claimed).size).toBe(claimed.length);
     expect(claimed.length).toBe(12);
     expect(await queue.size()).toBe(0);
+  });
+
+  it("a player who leaves the queue while a pairing is in flight is not matched", async () => {
+    // startPair locks both players in id order: while it waits for `low`,
+    // `high` is free to leave the queue after the pass claimed the pair.
+    const low = `0${randomUUID().slice(1)}`;
+    const high = `f${randomUUID().slice(1)}`;
+    const leaver = await h.connect(high);
+    const stayer = await h.connect(low);
+    await h.db
+      .update(players)
+      .set({ rating: 1600 })
+      .where(eq(players.userId, low));
+    leaver.send("queue.join", { mode: "quick" });
+    await leaver.next("queue.joined");
+    stayer.send("queue.join", { mode: "quick" });
+    await stayer.next("queue.joined");
+    // 600 points apart: no pair until anyone is acceptable after 30 s.
+    let release: () => void = () => undefined;
+    const busy = h
+      .get(KeyedMutex)
+      .run([low], () => new Promise<void>((resolve) => (release = resolve)));
+    const advancing = h.advance(30_000);
+    const queue = h.get(QueueStore);
+    await expect
+      .poll(async () => [await queue.since(low), await queue.since(high)])
+      .toEqual([null, null]);
+    leaver.send("queue.leave", {});
+    await leaver.next("queue.left");
+    release();
+    await busy;
+    await advancing;
+    await leaver.sync();
+    expect(leaver.pending("queue.matched")).toHaveLength(0);
+    expect(h.get(GameService).active(high)).toBeUndefined();
+    expect(h.get(GameService).active(low)).toBeUndefined();
+    // The other player keeps the original place in the queue.
+    expect(await queue.since(low)).toBe(h.clock.now().getTime() - 30_000);
+    expect(await queue.since(high)).toBeNull();
+    await Promise.all([leaver.close(), stayer.close()]);
   });
 });

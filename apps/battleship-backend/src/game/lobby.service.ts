@@ -69,6 +69,7 @@ export class LobbyService {
         since: since.getTime(),
       });
       if (!joined) throw new GameError("already_queued");
+      this.matchmaker.joined(userId);
       this.registry.send(userId, {
         type: "queue.joined",
         payload: { mode: "quick", since: since.toISOString() },
@@ -81,6 +82,8 @@ export class LobbyService {
   async leaveQueue(userId: string): Promise<void> {
     await this.locks.run([userId], async () => {
       await this.queue.leave(userId);
+      // Also when a pass has already claimed the player for a match.
+      this.matchmaker.left(userId);
       this.registry.send(userId, { type: "queue.left", payload: {} });
     });
   }
@@ -153,6 +156,7 @@ export class LobbyService {
   async userOffline(userId: string): Promise<void> {
     await this.locks.run([userId], async () => {
       await this.queue.leave(userId);
+      this.matchmaker.left(userId);
     });
   }
 
@@ -160,6 +164,7 @@ export class LobbyService {
   async dropUser(userId: string): Promise<void> {
     await this.locks.run([userId], async () => {
       await this.queue.leave(userId);
+      this.matchmaker.left(userId);
       const room = await this.rooms.of(userId);
       if (room) await this.rooms.take(room.code, userId);
       this.disarmRoomExpiry(userId);

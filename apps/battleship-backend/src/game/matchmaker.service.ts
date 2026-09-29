@@ -22,6 +22,12 @@ export class MatchmakerService {
   private running: Promise<void> | null = null;
   private again = false;
   private timer: TimerHandle | null = null;
+  /**
+   * Players of the pass in flight: true while they still want a match. The
+   * claim takes them out of the queue before their locks are held, so a
+   * leave in between is recorded here (see `left`) and honoured by startPair.
+   */
+  private readonly pairing = new Map<string, boolean>();
 
   constructor(
     private readonly queue: QueueStore,
@@ -56,12 +62,36 @@ export class MatchmakerService {
     return this.running;
   }
 
+  /** The player left the queue or went offline (under the player's lock). */
+  left(userId: string) {
+    if (this.pairing.has(userId)) this.pairing.set(userId, false);
+  }
+
+  /** The player joined the queue again (under the player's lock). */
+  joined(userId: string) {
+    if (this.pairing.has(userId)) this.pairing.set(userId, true);
+  }
+
   private async pass() {
     const entries = await this.queue.entries();
     const pairs = this.planner.plan(entries, this.clock.now().getTime());
-    const claimed = await this.queue.claim(pairs);
-    for (const [a, b] of claimed) await this.startPair(a, b);
-    if (entries.length > claimed.length * 2) this.scheduleNext();
+    // Marked before the claim, so no leave can slip between the two.
+    for (const [a, b] of pairs) {
+      this.pairing.set(a.userId, true);
+      this.pairing.set(b.userId, true);
+    }
+    try {
+      const claimed = await this.queue.claim(pairs);
+      let requeued = false;
+      for (const [a, b] of claimed)
+        if (await this.startPair(a, b)) requeued = true;
+      if (requeued || entries.length > claimed.length * 2) this.scheduleNext();
+    } finally {
+      for (const [a, b] of pairs) {
+        this.pairing.delete(a.userId);
+        this.pairing.delete(b.userId);
+      }
+    }
   }
 
   private scheduleNext() {
@@ -72,23 +102,31 @@ export class MatchmakerService {
     });
   }
 
-  private async startPair(a: QueueEntry, b: QueueEntry) {
-    await this.locks.run([a.userId, b.userId], async () => {
-      // Between the claim and here a player may have left or started a bot match.
-      const available = (entry: QueueEntry) =>
-        !this.game.active(entry.userId) && this.registry.isOnline(entry.userId);
-      if (!available(a) || !available(b)) {
-        await this.queue.requeue([a, b].filter(available));
-        return;
+  /** Starts the match; true when a player went back to the queue instead. */
+  private startPair(a: QueueEntry, b: QueueEntry): Promise<boolean> {
+    return this.locks.run([a.userId, b.userId], async () => {
+      // Since the claim a player may have left the queue, gone offline or
+      // started a bot match: only players still waiting take part.
+      const waiting = (entry: QueueEntry) =>
+        this.pairing.get(entry.userId) === true &&
+        !this.game.active(entry.userId) &&
+        this.registry.isOnline(entry.userId);
+      if (!waiting(a) || !waiting(b)) {
+        const back = [a, b].filter(waiting);
+        await this.queue.requeue(back);
+        return back.length > 0;
       }
       try {
         await this.game.start({ mode: "quick", a: a.userId, b: b.userId });
+        return false;
       } catch (error) {
         this.logger.error(
           { err: (error as Error).message },
           "Could not start a quick match",
         );
-        await this.queue.requeue([a, b].filter(available));
+        const back = [a, b].filter(waiting);
+        await this.queue.requeue(back);
+        return back.length > 0;
       }
     });
   }
