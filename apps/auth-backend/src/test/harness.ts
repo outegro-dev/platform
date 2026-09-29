@@ -10,6 +10,11 @@ import {
 } from "@outegro/nest-common/testing";
 import { Redis } from "ioredis";
 import request from "supertest";
+import {
+  type GoogleProfile,
+  GoogleRejected,
+  GoogleUnavailable,
+} from "../identities/google.provider.js";
 import type { CodeMessage, DeliveryStatus } from "../login/code-delivery.js";
 
 /** Captures login codes instead of emailing them. */
@@ -26,6 +31,29 @@ export class FakeCodeDelivery {
       .find((m) => m.email === email.toLowerCase());
     if (!message) throw new Error(`no code for ${email}`);
     return message;
+  }
+}
+
+/** Stands in for Google: each registered code verifies once to its account. */
+export class FakeGoogle {
+  readonly enabled = true;
+  readonly clientId = "google-client.test";
+  readonly redirectUri = "http://localhost:3002/login/google/callback";
+  unavailable = false;
+  private readonly codes = new Map<string, GoogleProfile>();
+
+  code(profile: GoogleProfile) {
+    const code = `google-code-${randomBytes(12).toString("hex")}`;
+    this.codes.set(code, profile);
+    return code;
+  }
+
+  async verify({ code }: { code: string }) {
+    if (this.unavailable) throw new GoogleUnavailable("google down");
+    const profile = this.codes.get(code);
+    if (!profile) throw new GoogleRejected("invalid_grant");
+    this.codes.delete(code);
+    return profile;
   }
 }
 
@@ -73,13 +101,17 @@ export async function startHarness() {
 
   const { AppModule } = await import("../app.module.js");
   const { CODE_DELIVERY } = await import("../login/code-delivery.js");
+  const { GOOGLE_PROVIDER } = await import("../identities/google.provider.js");
   const clock = new ManualClock(new Date());
   const delivery = new FakeCodeDelivery();
+  const google = new FakeGoogle();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(CLOCK)
     .useValue(clock)
     .overrideProvider(CODE_DELIVERY)
     .useValue(delivery)
+    .overrideProvider(GOOGLE_PROVIDER)
+    .useValue(google)
     .compile();
   const app = configureApp(
     moduleRef.createNestApplication<NestExpressApplication>(),
@@ -124,6 +156,7 @@ export async function startHarness() {
     moduleRef,
     clock,
     delivery,
+    google,
     http,
     signIn,
     valkey: valkeyClient,

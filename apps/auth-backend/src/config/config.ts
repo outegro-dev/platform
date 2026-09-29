@@ -63,3 +63,10 @@ export const oauthConfig = registerAs("oauth", () => ({
   clients: clientSchema.parse(JSON.parse(env().OAUTH_CLIENTS)),
   codeTtlMs: 60_000,
 }));
+
+/** Sign-in with Google (ID-02); disabled unless all three are set. */
+export const googleConfig = registerAs("google", () => ({
+  clientId: env().GOOGLE_CLIENT_ID,
+  clientSecret: env().GOOGLE_CLIENT_SECRET,
+  redirectUri: env().GOOGLE_REDIRECT_URI,
+}));

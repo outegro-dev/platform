@@ -45,6 +45,9 @@ Cursor opaque, page size default 25/max 100 как инженерный default.
 | Identity | DELETE /v1/me/sessions/{id} | session ID | revoked; ownership |
 | Identity | POST /v1/me/sessions/revoke-all | commandId | все sessions отозваны |
 | Identity | SSO endpoints | По выбранной protocol library | Не изобретать OIDC wire format в этом документе |
+| Identity | GET /v1/login/google/config | — | `enabled`, `clientId`, `redirectUri` для запроса авторизации в id-web |
+| Identity | POST /v1/login/google | code, codeVerifier, nonce, locale | как verify email-кода; новый Google-аккаунт → новый user; совпавший email → 409 `email: link_required` (без слияния) |
+| Identity | GET /v1/me/identities, POST/DELETE /v1/me/identities/google | code, codeVerifier, nonce для привязки | привязка только из своей сессии; чужой Google → 409 `identity: in_use`; последний способ входа → 409 `identity: last_method` |
 | Notifications | GET /v1/me/inbox | cursor/category | own inbox + unread |
 | Notifications | POST /v1/me/inbox/{id}/read | item ID | idempotent readAt |
 | Notifications | GET/PATCH /v1/me/notification-preferences | version/preferences | saved version |

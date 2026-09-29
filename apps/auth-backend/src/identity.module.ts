@@ -3,6 +3,9 @@ import { AdminController } from "./access/admin.controller.js";
 import { FreshPermissionsGuard } from "./access/fresh-permissions.guard.js";
 import { RolesService } from "./access/roles.service.js";
 import { GrantsService } from "./grants/grants.service.js";
+import { googleProvider } from "./identities/google.provider.js";
+import { IdentitiesController } from "./identities/identities.controller.js";
+import { IdentitiesService } from "./identities/identities.service.js";
 import { KeysModule } from "./keys/keys.module.js";
 import { CODE_DELIVERY, HttpCodeDelivery } from "./login/code-delivery.js";
 import { LoginController } from "./login/login.controller.js";
@@ -23,6 +26,7 @@ import { UsersService } from "./users/users.service.js";
     MeController,
     AdminController,
     OAuthController,
+    IdentitiesController,
   ],
   providers: [
     RolesService,
@@ -31,6 +35,8 @@ import { UsersService } from "./users/users.service.js";
     LoginService,
     GrantsService,
     OAuthService,
+    IdentitiesService,
+    googleProvider,
     FreshPermissionsGuard,
     { provide: CODE_DELIVERY, useClass: HttpCodeDelivery },
   ],

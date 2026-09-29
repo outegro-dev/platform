@@ -8,6 +8,12 @@ import {
 import { z } from "zod";
 
 const secret = (min: number) => z.string().min(min);
+/** Optional settings: an empty value (`KEY=`) means "not configured". */
+const unsetIfEmpty = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    schema.optional(),
+  );
 
 /** Every variable auth-backend reads. Nothing else touches process.env. */
 export const env = defineEnv(
@@ -49,5 +55,9 @@ export const env = defineEnv(
        * Redirect URIs match exactly; no wildcards (ID-04).
        */
       OAUTH_CLIENTS: z.string().default("[]"),
+      /** Google OAuth client (ID-02); the redirect is id-web's /login/google/callback. */
+      GOOGLE_CLIENT_ID: unsetIfEmpty(z.string().min(10)),
+      GOOGLE_CLIENT_SECRET: unsetIfEmpty(z.string().min(10)),
+      GOOGLE_REDIRECT_URI: unsetIfEmpty(z.url()),
     }),
 );

@@ -3,6 +3,7 @@ import { createConfigModule } from "@outegro/nest-common";
 import {
   appConfig,
   dbConfig,
+  googleConfig,
   internalConfig,
   loginConfig,
   oauthConfig,
@@ -24,6 +25,7 @@ import { env } from "./env.js";
       loginConfig,
       internalConfig,
       oauthConfig,
+      googleConfig,
     ]),
   ],
 })

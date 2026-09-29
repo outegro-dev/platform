@@ -48,8 +48,13 @@ export class UsersService {
     };
   }
 
-  /** Called after a correct login code: the email is now proven. */
-  async findOrCreateVerified(tx: AuthTx, email: string, locale: Locale) {
+  /** A new account with a proven email; null when the email is already taken. */
+  async createVerified(
+    tx: AuthTx,
+    email: string,
+    locale: Locale,
+    displayName: string | null = null,
+  ) {
     const now = this.clock.now();
     const [created] = await tx
       .insert(users)
@@ -57,28 +62,35 @@ export class UsersService {
         email,
         emailVerified: true,
         locale,
+        displayName: displayName?.trim().slice(0, 80) || null,
         createdAt: now,
         updatedAt: now,
       })
       .onConflictDoNothing({ target: users.email })
       .returning();
-    if (created) {
-      await enqueueEvent(
-        tx,
-        createEvent(identityUserCreated, {
-          aggregateId: created.id,
-          aggregateVersion: created.version,
-          occurredAt: now,
-          payload: {
-            userId: created.id,
-            locale: created.locale,
-            status: created.status,
-          },
-        }),
-      );
-      await this.contactChanged(tx, created, now);
-      return created;
-    }
+    if (!created) return null;
+    await enqueueEvent(
+      tx,
+      createEvent(identityUserCreated, {
+        aggregateId: created.id,
+        aggregateVersion: created.version,
+        occurredAt: now,
+        payload: {
+          userId: created.id,
+          locale: created.locale,
+          status: created.status,
+        },
+      }),
+    );
+    await this.contactChanged(tx, created, now);
+    return created;
+  }
+
+  /** Called after a correct login code: the email is now proven. */
+  async findOrCreateVerified(tx: AuthTx, email: string, locale: Locale) {
+    const now = this.clock.now();
+    const created = await this.createVerified(tx, email, locale);
+    if (created) return created;
     const [existing] = await tx
       .select()
       .from(users)

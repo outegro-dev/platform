@@ -88,6 +88,28 @@ export const sessions = pgTable(
 );
 
 /**
+ * External sign-in methods (ID-02). A provider account belongs to one user;
+ * the provider email is informational and never used to match accounts.
+ */
+export const identities = pgTable(
+  "identities",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider", { enum: ["google"] }).notNull(),
+    subject: text("subject").notNull(),
+    email: text("email"),
+    createdAt: at("created_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("identities_provider_subject_uq").on(t.provider, t.subject),
+    uniqueIndex("identities_user_provider_uq").on(t.userId, t.provider),
+  ],
+);
+
+/**
  * One-time authorization codes for SSO (ID-04): bound to the client, the
  * exact redirect URI and a PKCE S256 challenge; only a hash is stored.
  */
