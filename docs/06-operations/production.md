@@ -7,7 +7,7 @@
 - Один VPS: Ubuntu 24.04, 5 vCPU, 8 ГБ, 200 ГБ; K3s `v1.36.4+k3s1`.
 - Доступ: `ssh outegro-prod` — запись в `~/.ssh/config` владельца (пользователь `deploy`, ключ `~/.ssh/outegro_vps`). IP сервера в git не хранится: origin спрятан за прокси Cloudflare. root по SSH и пароли выключены; kubectl — на сервере, `sudo k3s kubectl`.
 - Репозитории организации `outegro-dev`: [platform](https://github.com/outegro-dev/platform) — код и CI; [gitops](https://github.com/outegro-dev/gitops) — состояние кластера, скрипты сервера, Sealed Secrets. Основная ветка — `master`.
-- Namespaces: `outegro` — приложения, PostgreSQL `pg` (CloudNativePG), Valkey, RabbitMQ, watchdog; `agents` — Hermes; `argocd`; `cert-manager`; `cnpg-system`; `kube-system` — Traefik, Sealed Secrets.
+- Namespaces: `outegro` — приложения, PostgreSQL `pg` (CloudNativePG), Valkey, RabbitMQ, watchdog; `agents` — Hermes; `monitoring` — Prometheus, Loki, Alloy; `argocd`; `cert-manager`; `cnpg-system`; `kube-system` — Traefik, Sealed Secrets.
 - Трафик: Cloudflare (Full (strict)) → Traefik :443 → Ingress `web` (сайты) и `hooks` (вебхуки). На 80/443 сервер пускает только диапазоны Cloudflare — [deployment.md](../02-contracts/deployment.md#адрес-клиента).
 
 ## Выпуск
@@ -63,9 +63,20 @@ CronJob `outegro/watchdog` раз в 5 минут (образ `alpine/k8s`, то
 - сертификаты: не готов или меньше 14 дней;
 - PostgreSQL: `Ready`, `ContinuousArchiving`, `LastBackupSucceeded`, возраст последнего бэкапа ≥ 26 ч;
 - Argo CD: приложение не Synced/Healthy дольше 15 минут;
-- HTTP: `outegro.dev`, `id.outegro.dev/health` через Cloudflare, `/health/deep` сервисов изнутри (2 провала подряд).
+- HTTP: `outegro.dev`, `id.outegro.dev/health` через Cloudflare, `/health/deep` сервисов изнутри (2 провала подряд);
+- Prometheus: сработавшие правила (см. ниже) — watchdog их почтальон, Alertmanager выключен.
 
 Сообщения: проблема (после льготного периода), напоминание каждые 6 часов, восстановление, дайджест раз в сутки после 07:00 UTC. Состояние: `sudo k3s kubectl -n outegro get configmap watchdog-state -o jsonpath='{.data.state}'`; журнал запуска: `sudo k3s kubectl -n outegro logs job/<последний watchdog-…>`.
+
+## Мониторинг: Prometheus и Loki
+
+Приложение Argo `monitoring` (namespace `monitoring`), значения — `gitops/platform/monitoring`:
+
+- Prometheus (kube-prometheus-stack): узел (node-exporter), Kubernetes (kube-state-metrics, kubelet/cAdvisor, API server, CoreDNS), Traefik, cert-manager, PostgreSQL и Barman Cloud (метрики CNPG), RabbitMQ (плагин Prometheus, в том числе глубина каждой очереди). Хранение 7 дней, не больше 6 ГБ; опрос раз в 30 с.
+- Правила `platform/monitoring/extra/rules.yaml` поверх стандартных: диск < 20 % / < 10 %, давление памяти, OOM, 5xx на входе > 5 %, сертификат < 14 дней, PostgreSQL недоступен, бэкап старше 26 ч, WAL не архивируется, тревога RabbitMQ, сообщения в DLQ. У каждого — summary, последствие и ссылка на runbook. Проверка перед коммитом: `promtool check rules` (тесты правил — `promtool test rules`).
+- Loki: логи всех подов 7 дней (single binary, диск узла 10 ГБ); собирает Alloy через API Kubernetes. Метки: `namespace`, `app`, `container`, `pod`, `level`. Строки проб `/health` отбрасываются; JWT и Bearer-токены маскируются ещё до записи.
+- Наружу ничего не опубликовано; доступ — туннелем (команды в [README gitops](https://github.com/outegro-dev/gitops#мониторинг)).
+- Grafana и Alertmanager выключены: их нужно включить вместе с входом в Grafana (секрет администратора, созданный владельцем, или вход через SSO админки).
 
 ## Бэкапы
 
@@ -82,5 +93,5 @@ CronJob `outegro/watchdog` раз в 5 минут (образ `alpine/k8s`, то
 
 ## Чего ещё нет
 
-- Метрики и графики (Prometheus/Grafana или VictoriaMetrics) — пока только watchdog.
+- Grafana (графики) и метрики самих сервисов (`/metrics`) — Prometheus собирает только инфраструктуру.
 - `NetworkPolicy` внутри кластера.
