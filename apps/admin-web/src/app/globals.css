@@ -309,6 +309,13 @@
     height: 20px;
     flex-shrink: 0;
   }
+  /* Leaves the console (Grafana): a small arrow at the end of the row. */
+  .nav-link .nav-link-out {
+    width: 14px;
+    height: 14px;
+    margin-inline-start: auto;
+    opacity: 0.7;
+  }
   .nav-link:hover {
     color: var(--foreground);
     background: var(--hover);

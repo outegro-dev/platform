@@ -1,6 +1,6 @@
 import { permissionsOf, platformRoles } from "@outegro/contracts";
 import { describe, expect, it } from "vitest";
-import { activeNav } from "./nav";
+import { activeNav, externalNav } from "./nav";
 import {
   can,
   hasConsoleAccess,
@@ -25,6 +25,7 @@ describe("navigation by permission", () => {
       "payments",
       "battleship",
       "audit",
+      "monitoring",
     ]);
   });
 
@@ -46,12 +47,26 @@ describe("navigation by permission", () => {
       "dashboard",
       "payments",
       "audit",
+      "monitoring",
     ]);
   });
 
   it("drops empty groups", () => {
     const groups = navigationFor([...permissionsOf(["service_operator"])]);
-    expect(groups.map((group) => group.key)).toEqual(["overview"]);
+    expect(groups.map((group) => group.key)).toEqual([
+      "overview",
+      "infrastructure",
+    ]);
+  });
+
+  it("shows monitoring to monitoring.read only, as a link to Grafana", () => {
+    expect(itemsOf(["monitoring.read"])).toEqual(["dashboard", "monitoring"]);
+    expect(itemsOf(permissionsOf(["support"]))).not.toContain("monitoring");
+    const monitoring = navigationFor(["monitoring.read"])
+      .flatMap((section) => section.items)
+      .find((item) => item.key === "monitoring");
+    expect(monitoring?.href).toBe("/grafana/");
+    expect(externalNav.has("monitoring")).toBe(true);
   });
 
   it("denies the console to a user without admin permissions", () => {
@@ -84,5 +99,7 @@ describe("navigation by permission", () => {
     expect(activeNav("/users/5b449591")).toBe("users");
     expect(activeNav("/payments/orders/1")).toBe("payments");
     expect(activeNav("/unknown")).toBe("dashboard");
+    // Grafana is another app: the console never marks it as current.
+    expect(activeNav("/grafana/d/abc")).toBe("dashboard");
   });
 });

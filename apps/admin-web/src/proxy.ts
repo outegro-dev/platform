@@ -10,6 +10,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { PATH_HEADER } from "@/lib/constants";
 import { env } from "@/lib/env";
 import { isIdle, nowSeconds, SEEN_COOKIE, seenCookieOptions } from "@/lib/idle";
+import { GRAFANA_AUTH_PATH } from "@/lib/monitoring";
 
 /** Reachable without a session: sign-in, the SSO round trip, sign-out. */
 const isPublic = (pathname: string) =>
@@ -23,6 +24,11 @@ const isPublic = (pathname: string) =>
  */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  // Traefik's ForwardAuth for Grafana only reads the session: its answers
+  // never carry cookies to the browser, so a refresh here would rotate the
+  // refresh token and lose the new one. It sends the browser to
+  // /monitoring for that instead.
+  if (pathname === GRAFANA_AUTH_PATH) return NextResponse.next();
   const open = isPublic(pathname);
   const api = pathname.startsWith("/api/");
   const session = await refreshSession(request, env.AUTH_API_URL, {

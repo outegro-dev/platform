@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  ArrowUpRightIcon,
   BellIcon,
   BoatIcon,
+  ChartLineIcon,
   CreditCardIcon,
   type Icon,
   ScrollIcon,
@@ -12,7 +14,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext } from "react";
-import { activeNav, type NavKey } from "@/lib/nav";
+import { activeNav, externalNav, type NavKey } from "@/lib/nav";
 
 const icons: Record<NavKey, Icon> = {
   dashboard: SquaresFourIcon,
@@ -21,6 +23,7 @@ const icons: Record<NavKey, Icon> = {
   payments: CreditCardIcon,
   battleship: BoatIcon,
   audit: ScrollIcon,
+  monitoring: ChartLineIcon,
 };
 
 export type NavGroup = {
@@ -52,6 +55,26 @@ export function NavLinks({
           <ul aria-labelledby={`nav-${group.key}`}>
             {group.items.map((item) => {
               const Glyph = icons[item.key];
+              // Monitoring is another app on this host (Grafana): a plain
+              // link in the same tab, no client routing or prefetch.
+              if (externalNav.has(item.key)) {
+                return (
+                  <li key={item.key}>
+                    <a
+                      href={item.href}
+                      className="nav-link"
+                      onClick={() => onNavigate?.()}
+                    >
+                      <Glyph aria-hidden="true" />
+                      {item.label}
+                      <ArrowUpRightIcon
+                        aria-hidden="true"
+                        className="nav-link-out"
+                      />
+                    </a>
+                  </li>
+                );
+              }
               return (
                 <li key={item.key}>
                   <Link

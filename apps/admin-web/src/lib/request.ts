@@ -15,12 +15,10 @@ import {
   safeTimeZone,
 } from "./format";
 
+export { signInPath } from "./session";
+
 export async function currentPath(): Promise<string> {
   return (await headers()).get(PATH_HEADER) ?? "/";
-}
-
-export function signInPath(returnTo: string): string {
-  return `/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
 export const operatorTimeZone = cache(async () =>

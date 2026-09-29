@@ -38,8 +38,9 @@ const config: NextConfig = {
       // Pages carry personal data and are never stored. Hashed build assets
       // (CSS, JS, fonts) keep the immutable caching Next.js gives them;
       // otherwise every reload refetches the fonts and shifts the layout.
+      // Grafana's ForwardAuth answer sets its own `no-store` (its contract).
       {
-        source: "/((?!_next/static|_next/image).*)",
+        source: "/((?!_next/static|_next/image|api/grafana/auth).*)",
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
     ];
