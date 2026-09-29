@@ -969,11 +969,12 @@ describe("server bots (TC-BS-05)", () => {
     return wins / games;
   }
 
+  // 200 whole games each: minutes on a shared CI runner, not a hang.
   it("the expert bot beats a random shooter in at least 95% of 200 games", async () => {
     expect(await winRate("expert", 200)).toBeGreaterThanOrEqual(0.95);
-  });
+  }, 240_000);
 
   it("the medium bot beats a random shooter in at least 70% of 200 games", async () => {
     expect(await winRate("medium", 200)).toBeGreaterThanOrEqual(0.7);
-  });
+  }, 240_000);
 });
