@@ -84,7 +84,7 @@ export class DemoLoop {
   }
 
   /** Moves to the next beat (the timer calls it). */
-  advance(): void {
+  private advance(): void {
     this.firstHold = false;
     this.beat = (this.beat + 1) % this.beats.length;
     if (this.beat === 1) this.round++;

@@ -154,6 +154,27 @@ export function ShipArt({ length, skin }: { length: number; skin: ShipSkin }) {
   );
 }
 
+/** The dashed frame around the ship picked on the placement board. */
+export function SelectedFrame({
+  x,
+  y,
+  length,
+  orientation,
+}: {
+  x: number;
+  y: number;
+  length: number;
+  orientation: "horizontal" | "vertical";
+}) {
+  return (
+    <span
+      className="ship-selected"
+      data-orientation={orientation}
+      style={{ "--x": x, "--y": y, "--len": length } as CSSProperties}
+    />
+  );
+}
+
 /** A ship positioned on a board layer (cells from the top-left of the water). */
 export function BoardShip({
   x,

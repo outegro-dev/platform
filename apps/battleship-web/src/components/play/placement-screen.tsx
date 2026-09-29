@@ -20,8 +20,8 @@ import {
 } from "react";
 import type { ShipSlot } from "@/game/stores/placement-store";
 import { BoardFrame, cellName, gridOf } from "../board/board-frame";
-import { BoardLegend, SelectedFrame } from "../board/board-legend";
-import { BoardShip, ShipArt } from "../board/ship";
+import { BoardLegend } from "../board/board-legend";
+import { BoardShip, SelectedFrame, ShipArt } from "../board/ship";
 import { StableLabel } from "../home/modes";
 import { useRoot } from "../providers";
 import { CountdownRing } from "./countdown-ring";

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { type CSSProperties, type ReactNode, useId, useState } from "react";
 import { useRoot } from "../providers";
 import { CellMark, ShotMarker } from "./marks";
-import { BoardShip, type ShipState } from "./ship";
+import { BoardShip, SelectedFrame, type ShipState } from "./ship";
 
 export type LegendMode = "placement" | "battle" | "result" | "replay";
 
@@ -33,27 +33,6 @@ function Swatch({
     >
       {children}
     </span>
-  );
-}
-
-/** The dashed frame around the ship picked on the placement board. */
-export function SelectedFrame({
-  x,
-  y,
-  length,
-  orientation,
-}: {
-  x: number;
-  y: number;
-  length: number;
-  orientation: "horizontal" | "vertical";
-}) {
-  return (
-    <span
-      className="ship-selected"
-      data-orientation={orientation}
-      style={{ "--x": x, "--y": y, "--len": length } as CSSProperties}
-    />
   );
 }
 
