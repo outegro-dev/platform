@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clientHeaders } from "./client";
-import { safeRedirectPath } from "./safe-redirect";
+import { safeRedirectPath, safeReturnUrl } from "./safe-redirect";
 import { secondsLeft } from "./session";
 
 describe("safeRedirectPath", () => {
@@ -19,6 +19,60 @@ describe("safeRedirectPath", () => {
     null,
   ])("rejects %s", (value) => {
     expect(safeRedirectPath(value, "/account")).toBe("/account");
+  });
+});
+
+describe("safeReturnUrl", () => {
+  const platform = [
+    "https://battleship.outegro.dev",
+    "https://id.outegro.dev",
+    "http://localhost:3005",
+  ];
+
+  it("keeps a page of an allowed app with its query, without the fragment", () => {
+    expect(
+      safeReturnUrl("https://battleship.outegro.dev/shop?tab=1#top", platform),
+    ).toBe("https://battleship.outegro.dev/shop?tab=1");
+    expect(safeReturnUrl("https://id.outegro.dev", platform)).toBe(
+      "https://id.outegro.dev/",
+    );
+    expect(safeReturnUrl("http://localhost:3005/profile", platform)).toBe(
+      "http://localhost:3005/profile",
+    );
+  });
+
+  it("normalizes the letter case of the host", () => {
+    expect(safeReturnUrl("HTTPS://Battleship.Outegro.Dev/shop", platform)).toBe(
+      "https://battleship.outegro.dev/shop",
+    );
+  });
+
+  it.each([
+    "https://evil.test/",
+    "https://battleship.outegro.dev.evil.test/shop",
+    "https://evil-battleship.outegro.dev/",
+    "https://battleship.outegro.dev@evil.test/",
+    "https://user:secret@battleship.outegro.dev/",
+    "http://battleship.outegro.dev/",
+    "https://battleship.outegro.dev:8443/",
+    "https://localhost:3005/",
+    "//battleship.outegro.dev/shop",
+    "/shop",
+    "javascript:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "https://battleship.outegro.dev\\@evil.test",
+    "https://battle\tship.outegro.dev/",
+    " https://battleship.outegro.dev/",
+    `https://battleship.outegro.dev/${"a".repeat(2100)}`,
+    "",
+    null,
+    undefined,
+  ])("refuses %s", (value) => {
+    expect(safeReturnUrl(value, platform)).toBeNull();
+  });
+
+  it("refuses everything when no origin is allowed", () => {
+    expect(safeReturnUrl("https://battleship.outegro.dev/", [])).toBeNull();
   });
 });
 
