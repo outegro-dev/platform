@@ -22,6 +22,12 @@ export interface Scheduler {
   cancelAll(): void;
 }
 
+/**
+ * The longest delay setTimeout honours; Node runs a longer one after 1 ms
+ * (TimeoutOverflowWarning), so a Premium ending in 30 days would fire at once.
+ */
+export const MAX_TIMER_DELAY_MS = 2 ** 31 - 1;
+
 /** Production scheduler: real timers aimed at clock deadlines. */
 export class SystemScheduler implements Scheduler {
   private readonly timers = new Set<NodeJS.Timeout>();
@@ -32,16 +38,25 @@ export class SystemScheduler implements Scheduler {
   ) {}
 
   at(at: Date, task: Task): TimerHandle {
-    const delay = Math.max(0, at.getTime() - this.clock.now().getTime());
-    const timer = setTimeout(() => {
-      this.timers.delete(timer);
-      try {
-        Promise.resolve(task()).catch(this.onError);
-      } catch (error) {
-        this.onError(error);
-      }
-    }, delay);
-    this.timers.add(timer);
+    let timer: NodeJS.Timeout;
+    // Longer waits go in steps, each aimed at `at` again.
+    const arm = () => {
+      const delay = Math.max(0, at.getTime() - this.clock.now().getTime());
+      timer = setTimeout(
+        () => {
+          this.timers.delete(timer);
+          if (delay > MAX_TIMER_DELAY_MS) return arm();
+          try {
+            Promise.resolve(task()).catch(this.onError);
+          } catch (error) {
+            this.onError(error);
+          }
+        },
+        Math.min(delay, MAX_TIMER_DELAY_MS),
+      );
+      this.timers.add(timer);
+    };
+    arm();
     return {
       at,
       cancel: () => {
