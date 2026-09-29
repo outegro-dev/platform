@@ -26,7 +26,10 @@ export const env = defineEnv(
       AUTH_AUDIENCE: z.string().min(1).default("outegro"),
       /** ES256 private key, PKCS#8 PEM (local: `pnpm env:local` at the repo root). */
       JWT_PRIVATE_KEY: secret(100),
-      /** Retired public keys (JSON array of JWK) still published during rotation. */
+      /**
+       * Other public keys (JSON array of JWK) published during a rotation: the
+       * retired key and the announced next one (docs/06-operations/signing-keys.md).
+       */
       JWT_PREVIOUS_PUBLIC_KEYS: z.string().default("[]"),
       ACCESS_TTL_SEC: z.coerce.number().int().min(60).max(3600).default(300),
       REFRESH_TTL_SEC: z.coerce

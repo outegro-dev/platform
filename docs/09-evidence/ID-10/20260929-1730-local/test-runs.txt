@@ -1,0 +1,31 @@
+### apps/auth-backend src/adversarial.test.ts
+ ✓ src/adversarial.test.ts > TC-ID-10-01: signing key rotation > the next key signs new tokens; the retired key verifies only while it is published 482ms
+ ✓ src/adversarial.test.ts > TC-ID-10-02: cross-site requests > a session cookie is no credential here: without the bearer header nothing changes 52ms
+ ✓ src/adversarial.test.ts > TC-ID-10-02: cross-site requests > offers no CORS to other origins, so a page cannot add the header itself 5ms
+ ✓ src/adversarial.test.ts > TC-ID-10-03: token confusion > accepts only an ES256 access token for this issuer and audience, even under its own key 81ms
+ ✓ src/adversarial.test.ts > TC-ID-10-03: token confusion > the service token opens no user route; user and refresh tokens open no internal one 148ms
+ ✓ src/adversarial.test.ts > TC-ID-10-04: revoke > a suspended user's unexpired token is refused and changes nothing 205ms
+ ✓ src/adversarial.test.ts > TC-ID-10-04: revoke > a suspended administrator cannot act, even from a session that survived 292ms
+ ✓ src/adversarial.test.ts > TC-ID-10-04: revoke > sessions revoked by support stop an unexpired token at once 130ms
+ ✓ src/adversarial.test.ts > TC-ID-10-04: revoke > a revoked role stops working before the token that carries it expires 219ms
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+### packages/nest-common src/auth.test.ts
+ ✓ src/auth.test.ts > TC-ID-10-01: key rotation seen from another service > picks up a new key on its first unknown kid and drops the retired one with the JWKS 56ms
+ ✓ src/auth.test.ts > TC-ID-10-01: key rotation seen from another service > refetches at most once per cooldown however many unknown kids arrive 34ms
+ ✓ src/auth.test.ts > TC-ID-10-01: key rotation seen from another service > verifies an announced key at once; an unannounced one waits out the cooldown 42ms
+ ✓ src/auth.test.ts > TC-ID-10-03: token confusion > refuses other issuers, audiences, token types and algorithms without fetching keys 22ms
+ ✓ src/auth.test.ts > TC-ID-10-03: token confusion > a service token opens no user route and a user token no internal one 44ms
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+### apps/payments-backend src/suspension.test.ts
+ ✓ src/suspension.test.ts > TC-ID-10-04: a suspended account with an unexpired token > cannot start a purchase 99ms
+ ✓ src/suspension.test.ts > TC-ID-10-04: a suspended account with an unexpired token > cannot change its subscription 105ms
+ ✓ src/suspension.test.ts > TC-ID-10-04: a suspended account with an unexpired token > cannot grant, refund or cancel as an operator 119ms
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+### apps/id-web e2e (Playwright, chromium, real auth-backend + notifications-backend + Mailpit)
+  ok 2 [chromium] › e2e\security.spec.ts:52:5 › a Google callback without a matching request is refused (973ms)
+  ok 1 [chromium] › e2e\account.spec.ts:132:5 › TC-ID-10-02: server actions refuse cross-site posts (2.7s)
+  ok 3 [chromium] › e2e\security.spec.ts:64:5 › TC-ID-10-02: a link callback with a forged state never reaches Identity (1.9s)
+  3 passed (10.0s)

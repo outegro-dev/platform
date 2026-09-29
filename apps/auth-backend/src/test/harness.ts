@@ -1,4 +1,5 @@
 import { generateKeyPairSync, randomBytes } from "node:crypto";
+import type { ConfigType } from "@nestjs/config";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 import { startPostgres, type TestPostgres } from "@outegro/db/testing";
@@ -10,6 +11,7 @@ import {
 } from "@outegro/nest-common/testing";
 import { Redis } from "ioredis";
 import request from "supertest";
+import { tokenConfig } from "../config/config.js";
 import {
   type GoogleProfile,
   GoogleRejected,
@@ -105,21 +107,33 @@ export async function startHarness() {
   const clock = new ManualClock(new Date());
   const delivery = new FakeCodeDelivery();
   const google = new FakeGoogle();
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-    .overrideProvider(CLOCK)
-    .useValue(clock)
-    .overrideProvider(CODE_DELIVERY)
-    .useValue(delivery)
-    .overrideProvider(GOOGLE_PROVIDER)
-    .useValue(google)
-    .compile();
-  const app = configureApp(
-    moduleRef.createNestApplication<NestExpressApplication>(),
-    {
-      excludeFromPrefix: [".well-known/jwks.json"],
-    },
-  );
-  await app.init();
+
+  /**
+   * One auth-backend process on these containers. A second one with other
+   * key settings plays a replica before or after a key rotation.
+   */
+  async function boot(tokens: Partial<ConfigType<typeof tokenConfig>> = {}) {
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CLOCK)
+      .useValue(clock)
+      .overrideProvider(CODE_DELIVERY)
+      .useValue(delivery)
+      .overrideProvider(GOOGLE_PROVIDER)
+      .useValue(google)
+      .overrideProvider(tokenConfig.KEY)
+      .useValue({ ...tokenConfig(), ...tokens })
+      .compile();
+    const app = configureApp(
+      moduleRef.createNestApplication<NestExpressApplication>(),
+      {
+        excludeFromPrefix: [".well-known/jwks.json"],
+      },
+    );
+    await app.init();
+    return { app, moduleRef };
+  }
+
+  const { app, moduleRef } = await boot();
   const valkeyClient = new Redis(valkey.url);
   const http = () => request(app.getHttpServer());
 
@@ -152,6 +166,7 @@ export async function startHarness() {
 
   return {
     app,
+    boot,
     resetLimits,
     moduleRef,
     clock,

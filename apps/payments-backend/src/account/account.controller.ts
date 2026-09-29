@@ -1,10 +1,19 @@
-import { Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import {
   AppError,
   type AuthenticatedUser,
   CurrentUser,
 } from "@outegro/nest-common";
 import { z } from "zod";
+import { CurrentAccessGuard } from "../admin/current-access.guard.js";
 import { CancellationService } from "../billing/cancellation.js";
 import { decodeCursor, pageQuery } from "../common/cursor.js";
 import { AccountService } from "./account.service.js";
@@ -52,9 +61,14 @@ export class AccountController {
     );
   }
 
-  /** Turns renewal off; paid access stays until the period ends. Not a refund. */
+  /**
+   * Turns renewal off; paid access stays until the period ends. Not a refund.
+   * A subscription change checks the account afresh (chapter 4.4): a
+   * suspended one is refused even with an unexpired token.
+   */
   @Post("subscriptions/:id/cancel")
   @HttpCode(200)
+  @UseGuards(CurrentAccessGuard)
   async cancel(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
