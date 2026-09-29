@@ -39,19 +39,16 @@ export class SigningKeys implements OnModuleInit {
     this.privateKey = await importPKCS8(this.config.privateKeyPem, "ES256", {
       extractable: true,
     });
-    const full = await exportJWK(this.privateKey);
-    const publicJwk: JWK = {
-      kty: full.kty,
-      crv: full.crv,
-      x: full.x,
-      y: full.y,
-    };
-    this.kid = await calculateJwkThumbprint(publicJwk);
-    const previous = JSON.parse(this.config.previousPublicKeys) as JWK[];
-    this.published = [
-      { ...publicJwk, kid: this.kid, alg: "ES256", use: "sig" },
-      ...previous.map((key) => ({ ...key, alg: "ES256", use: "sig" })),
-    ];
+    const current = await publicKeyOf(await exportJWK(this.privateKey));
+    this.kid = current.kid;
+    // Retired keys and the next one announced before it signs (rotation
+    // runbook): public part only, kid = its thumbprint, each key once.
+    const keys = new Map([[current.kid, current]]);
+    for (const jwk of JSON.parse(this.config.previousPublicKeys) as JWK[]) {
+      const key = await publicKeyOf(jwk);
+      if (!keys.has(key.kid)) keys.set(key.kid, key);
+    }
+    this.published = [...keys.values()];
     this.localKeys = createLocalJWKSet({ keys: this.published });
   }
 
@@ -80,4 +77,13 @@ export class SigningKeys implements OnModuleInit {
       .sign(this.privateKey);
     return { token, expiresAt: new Date(expiresAt * 1000) };
   }
+}
+
+/** The public members of an ES256 (P-256) key, published under its RFC 7638 thumbprint. */
+async function publicKeyOf(key: JWK) {
+  if (key.kty !== "EC" || key.crv !== "P-256")
+    throw new Error("Signing keys must be ES256 (EC P-256)");
+  const jwk: JWK = { kty: key.kty, crv: key.crv, x: key.x, y: key.y };
+  const kid = await calculateJwkThumbprint(jwk);
+  return { ...jwk, kid, alg: "ES256", use: "sig" };
 }

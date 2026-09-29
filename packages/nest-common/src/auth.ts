@@ -66,6 +66,8 @@ export class AccessTokenVerifier {
         issuer: this.options.issuer,
         audience: this.options.audience,
         algorithms: ["ES256"],
+        // Access tokens only (RFC 9068): any other JWT under the same key is refused.
+        typ: "at+jwt",
         clockTolerance: 5,
       });
       const claims = claimsSchema.parse(payload);

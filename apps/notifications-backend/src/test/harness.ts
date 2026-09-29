@@ -131,7 +131,7 @@ export async function startHarness() {
 
   const tokenFor = (userId: string, roles: string[] = []) =>
     new SignJWT({ sid: randomUUID(), roles, av: 0 })
-      .setProtectedHeader({ alg: "ES256", kid: "test" })
+      .setProtectedHeader({ alg: "ES256", kid: "test", typ: "at+jwt" })
       .setSubject(userId)
       .setIssuer("http://identity.test")
       .setAudience("outegro")

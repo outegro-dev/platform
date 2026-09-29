@@ -61,6 +61,57 @@ test("a Google callback without a matching request is refused", async ({
   ).toBeVisible();
 });
 
+test("TC-ID-10-02: a link callback with a forged state never reaches Identity", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/login?continue=%2Faccount%2Fsecurity");
+  await signIn(page);
+  await expect(page).toHaveURL("/account/security");
+  // This browser's pending link request, as /login/google/start leaves it.
+  const pending = () =>
+    context.addCookies([
+      {
+        name: "og_google",
+        value: Buffer.from(
+          JSON.stringify({
+            state: "state-of-this-browser-000000",
+            nonce: "n".repeat(32),
+            verifier: "v".repeat(64),
+            continueTo: "/account/security",
+            intent: "link",
+          }),
+        ).toString("base64url"),
+        url: "http://localhost:3002",
+      },
+    ]);
+  const pendingLeft = async () =>
+    (await context.cookies()).some((cookie) => cookie.name === "og_google");
+
+  // Someone else's code with their state: refused on the state, request dropped.
+  await pending();
+  await page.goto(
+    "/login/google/callback?state=state-of-the-attacker-00000&code=their-google-code",
+  );
+  await expect(page).toHaveURL("/account");
+  expect(await pendingLeft()).toBe(false);
+
+  // Only the matching state goes on to Identity (which has no Google locally).
+  await pending();
+  await page.goto(
+    "/login/google/callback?state=state-of-this-browser-000000&code=our-google-code",
+  );
+  await expect(page).toHaveURL("/account/security?error=google_unavailable");
+  await expect(
+    page.getByRole("status").filter({
+      hasText:
+        "Google sign-in is unavailable right now. Use the email code instead.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("Not available right now")).toBeVisible();
+  expect(await pendingLeft()).toBe(false);
+});
+
 test("the Telegram card never hides the notification settings", async ({
   page,
 }) => {

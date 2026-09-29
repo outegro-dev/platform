@@ -15,10 +15,11 @@ import type { PaymentsDatabase } from "../common/database.js";
 import { customers } from "../db/schema.js";
 
 /**
- * Admin commands (grants, refunds, cancellations): the token's roles are
- * trusted only if it was issued after the latest role or status change
- * Identity published (`av` ≥ projected accessVersion). A stale token gets
- * 401 and must be refreshed; a suspended actor gets 403.
+ * Admin commands (grants, refunds, cancellations) and the buyer's own
+ * subscription change: the token's roles are trusted only if it was issued
+ * after the latest role or status change Identity published (`av` ≥
+ * projected accessVersion). A stale token gets 401 and must be refreshed;
+ * a suspended actor gets 403.
  */
 @Injectable()
 export class CurrentAccessGuard implements CanActivate {

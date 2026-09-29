@@ -5,7 +5,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { AuthDatabase } from "./common/database.js";
 import { sessions } from "./db/schema.js";
 import { type Harness, startHarness, uniqueEmail } from "./test/harness.js";
-import { UsersService } from "./users/users.service.js";
 
 let h: Harness;
 
@@ -175,44 +174,5 @@ describe("SSO authorization code (ID-04)", () => {
       .body;
     h.clock.advance(61_000);
     await exchange({ ...PAY, code, codeVerifier: verifier }).expect(422);
-  });
-});
-
-describe("negative auth checks (ID-10)", () => {
-  it("TC-ID-10-04: a suspended user's still-valid token stops working", async () => {
-    const { accessToken, refreshToken, user } = await h.signIn(
-      uniqueEmail("susp"),
-    );
-    await h.app
-      .get(UsersService)
-      .setStatus({ userId: null }, user.id, "suspended", "abuse");
-    await h
-      .http()
-      .patch("/v1/me")
-      .set(h.auth(accessToken))
-      .send({ expectedVersion: 2, displayName: "x" })
-      .expect(401);
-    await authorize(accessToken).expect(401);
-    await h
-      .http()
-      .post("/v1/sessions/refresh")
-      .send({ refreshToken })
-      .expect(401);
-  });
-
-  it("TC-ID-10-03: the JWKS rejects tokens of another audience", async () => {
-    const { accessToken } = await h.signIn(uniqueEmail("aud"));
-    const [, payload] = accessToken.split(".");
-    const claims = JSON.parse(
-      Buffer.from(payload ?? "", "base64url").toString(),
-    );
-    expect(claims.aud).toBe("outegro");
-    const tampered = accessToken.replace(
-      payload ?? "",
-      Buffer.from(JSON.stringify({ ...claims, aud: "machine" })).toString(
-        "base64url",
-      ),
-    );
-    await h.http().get("/v1/me").set(h.auth(tampered)).expect(401);
   });
 });

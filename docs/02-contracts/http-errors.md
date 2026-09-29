@@ -62,7 +62,7 @@ Cursor opaque, page size default 25/max 100 как инженерный default.
 | Payments | GET /v1/me/orders | cursor | own orders с checkout и access |
 | Payments | GET /v1/me/orders/{id} | ID | own payment/access state |
 | Payments | GET /v1/me/subscriptions | cursor | own periods/paidUntil/accessUntil |
-| Payments | POST /v1/me/subscriptions/{id}/cancel | — (повтор без нового эффекта) | cancel state; не refund |
+| Payments | POST /v1/me/subscriptions/{id}/cancel | — (повтор без нового эффекта) | cancel state; не refund; свежая проверка аккаунта: suspended → 403 |
 | Payments | POST /webhooks/lava | provider body; X-Api-Key | durable ack; не browser session |
 | Payments | GET /v1/admin/{orders,payments,subscriptions,provider-events,issues,grants,refunds,stats} | фильтры, cursor | billing.read |
 | Payments | POST /v1/admin/grants, /v1/admin/grants/{id}/revoke | userId/service/feature/validUntil?, reason | grants.assign, audit |

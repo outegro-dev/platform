@@ -70,7 +70,7 @@ beforeAll(async () => {
   });
   sign = (claims, options = {}) =>
     new SignJWT(claims)
-      .setProtectedHeader({ alg: "ES256" })
+      .setProtectedHeader({ alg: "ES256", typ: "at+jwt" })
       .setIssuer("https://id.outegro.dev")
       .setAudience("outegro")
       .setIssuedAt()

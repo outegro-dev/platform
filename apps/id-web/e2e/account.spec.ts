@@ -151,8 +151,12 @@ test("TC-ID-10-02: server actions refuse cross-site posts", async ({
       maxRedirects: 0,
     });
 
-  const forged = await post("https://evil.test");
-  expect(forged.status()).toBeGreaterThanOrEqual(400);
+  // A foreign site, a sandboxed frame (opaque origin) and a sibling app on the
+  // same site, whose requests do carry the SameSite=Lax session cookies.
+  for (const origin of ["https://evil.test", "null", "http://localhost:3003"]) {
+    const forged = await post(origin);
+    expect(forged.status(), origin).toBeGreaterThanOrEqual(400);
+  }
   await page.goto("/account/sessions");
   await expect(page).toHaveURL("/account/sessions");
 
