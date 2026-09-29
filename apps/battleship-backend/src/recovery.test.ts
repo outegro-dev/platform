@@ -1,7 +1,7 @@
 import type { MatchSnapshot } from "@outegro/contracts/battleship";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { moves } from "./db/schema.js";
+import { matches, moves, outbox, players, ratingHistory } from "./db/schema.js";
 import { fleets, type Harness, startHarness } from "./test/harness.js";
 import {
   battle,
@@ -154,5 +154,79 @@ describe("restart recovery", () => {
       winner: "you",
       reason: "disconnected",
     });
+  });
+
+  it("when neither player is back within 60 seconds of a restart, the match is cancelled without a result", async () => {
+    const a = await h.connect();
+    const b = await h.connect();
+    a.send("queue.join", { mode: "quick" });
+    await a.next("queue.joined");
+    b.send("queue.join", { mode: "quick" });
+    const { matchId } = (await a.next("queue.matched")).payload;
+    await a.next("match.state");
+    await b.next("match.state");
+    await battle(a, b);
+
+    await h.restart();
+    const row = async () =>
+      (await h.db.select().from(matches).where(eq(matches.id, matchId)))[0];
+    await h.advance(59_999);
+    expect((await row())?.status).toBe("battle");
+    // Both graces end at the same instant: no seat decides the result.
+    await h.advance(1);
+    expect(await row()).toMatchObject({
+      status: "aborted",
+      abortReason: "abandoned",
+      winner: null,
+      reason: null,
+      ratingDelta: null,
+    });
+    const untouched = {
+      rating: 1000,
+      ratedMatches: 0,
+      matches: 0,
+      wins: 0,
+      losses: 0,
+    };
+    expect(
+      await h.db
+        .select({
+          rating: players.rating,
+          ratedMatches: players.ratedMatches,
+          matches: players.matches,
+          wins: players.wins,
+          losses: players.losses,
+        })
+        .from(players)
+        .where(inArray(players.userId, [a.userId, b.userId])),
+    ).toEqual([untouched, untouched]);
+    expect(
+      await h.db
+        .select()
+        .from(ratingHistory)
+        .where(eq(ratingHistory.matchId, matchId)),
+    ).toEqual([]);
+    // Without a result there is nothing to announce.
+    expect(
+      await h.db
+        .select()
+        .from(outbox)
+        .where(sql`${outbox.envelope}->>'aggregateId' = ${matchId}`),
+    ).toEqual([]);
+
+    // Back later: nothing to resume, nothing in the history, free to play.
+    const back = await h.connect(a.userId);
+    expect(back.ready.activeMatchId).toBeNull();
+    const sync = back.send("match.sync", {});
+    expect((await back.error(sync)).payload.code).toBe("no_active_match");
+    const auth = await h.auth(a.userId);
+    const history = await h.http().get("/v1/me/matches").set(auth).expect(200);
+    expect(history.body.items).toEqual([]);
+    const stats = await h.http().get("/v1/me/stats").set(auth).expect(200);
+    expect(stats.body).toMatchObject({ matches: 0, wins: 0, losses: 0 });
+    back.send("bot.start", { level: "easy" });
+    expect((await back.next("match.state")).payload.match.matchId).not.toBe(
+      matchId,
+    );
   });
 });

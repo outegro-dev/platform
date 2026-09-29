@@ -472,6 +472,81 @@ describe("game session", () => {
     ]);
   });
 
+  it("when both players are away as the grace runs out, the match is cancelled without a result", async () => {
+    // After a restart nobody is back yet: both graces end at the same instant.
+    outlet.online.clear();
+    session(online("quick"), [
+      { kind: "place", side: "a", ships: fleets.a },
+      { kind: "place", side: "b", ships: fleets.b },
+    ]);
+    await scheduler.advance(59_999);
+    expect(ends).toHaveLength(0);
+    await scheduler.advance(1);
+    expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+    expect(store.aborted).toEqual([{ reason: "abandoned", audit: null }]);
+    // No result: no rating or statistics change.
+    expect(store.finished).toHaveLength(0);
+    for (const user of [ALICE, BOB])
+      expect(outlet.last(user, "match.aborted")?.payload.reason).toBe(
+        "abandoned",
+      );
+    expect(scheduler.pending).toBe(0);
+  });
+
+  it("a grace that runs out while the opponent is away too cancels the match", async () => {
+    const game = session(online("quick"), [
+      { kind: "place", side: "a", ships: fleets.a },
+      { kind: "place", side: "b", ships: fleets.b },
+    ]);
+    outlet.online.delete(BOB);
+    game.userOffline(BOB);
+    await scheduler.advance(30_000);
+    outlet.online.delete(ALICE);
+    game.userOffline(ALICE);
+    await scheduler.advance(30_000);
+    expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+    expect(store.finished).toHaveLength(0);
+  });
+
+  it("if one of two absent players is back in time, the other loses as before", async () => {
+    outlet.online.clear();
+    const game = session(online("quick"), [
+      { kind: "place", side: "a", ships: fleets.a },
+      { kind: "place", side: "b", ships: fleets.b },
+    ]);
+    await scheduler.advance(20_000);
+    outlet.online.add(BOB);
+    game.userOnline(BOB);
+    await scheduler.advance(40_000);
+    expect(ends).toEqual([
+      expect.objectContaining({
+        kind: "finished",
+        winner: "b",
+        reason: "disconnected",
+      }),
+    ]);
+    expect(store.aborted).toHaveLength(0);
+    expect(
+      outlet.last(BOB, "match.finished")?.payload.rating?.delta,
+    ).toBeGreaterThan(0);
+  });
+
+  it("a snapshot asked for while the match is being cancelled ends with the cancellation", async () => {
+    outlet.online.clear();
+    const game = session(online(), [
+      { kind: "place", side: "a", ships: fleets.a },
+      { kind: "place", side: "b", ships: fleets.b },
+    ]);
+    await scheduler.advance(59_999);
+    const expiry = scheduler.advance(1);
+    const late = game.stateFor(ALICE);
+    await expiry;
+    expect(await late).toEqual([
+      expect.objectContaining({ type: "match.state" }),
+      { type: "match.aborted", payload: { reason: "abandoned" } },
+    ]);
+  });
+
   it("the opponent's live ships never reach a player before the end (TC-BS-03)", async () => {
     const game = session(online(), [
       { kind: "place", side: "a", ships: fleets.a },
@@ -537,6 +612,32 @@ describe("game session", () => {
       expect.objectContaining({ winner: "b", reason: "disconnected" }),
     ]);
     expect(store.finished[0]?.record.rated).toBe(false);
+  });
+
+  it("a bot match has no reconnect grace: an away human loses only after 15 idle minutes", async () => {
+    outlet.online.clear();
+    const game = session(
+      {
+        ...online(),
+        mode: "bot",
+        rated: false,
+        seats: { a: online().seats.a, b: { kind: "bot", level: "easy" } },
+      },
+      [{ kind: "place", side: "b", ships: fleets.b }],
+    );
+    game.userOffline(ALICE);
+    expect(game.inspect().graceUntil).toEqual({});
+    await scheduler.advance(15 * 60_000 - 1);
+    expect(ends).toHaveLength(0);
+    await scheduler.advance(1);
+    expect(ends).toEqual([
+      expect.objectContaining({
+        kind: "finished",
+        winner: "b",
+        reason: "disconnected",
+      }),
+    ]);
+    expect(store.aborted).toHaveLength(0);
   });
 });
 

@@ -85,6 +85,7 @@ export class GameSession {
   private readonly retries = new Set<TimerHandle>();
   private chain: Promise<unknown> = Promise.resolve();
   private ended = false;
+  private abortReason: AbortReason | null = null;
 
   constructor(
     readonly record: MatchRecord,
@@ -183,6 +184,8 @@ export class GameSession {
   /**
    * What a (re)joining player needs, in order with broadcasts: the full
    * snapshot, then the opponent's reconnect deadline when the opponent is away.
+   * A match aborted meanwhile still looks live to the engine, so the abort
+   * follows its snapshot.
    */
   stateFor(userId: string): Promise<Outgoing[]> {
     return this.run(async () => {
@@ -196,6 +199,11 @@ export class GameSession {
             ? this.fleetOf(opponent)
             : null,
       });
+      if (this.abortReason)
+        return [
+          state,
+          { type: "match.aborted", payload: { reason: this.abortReason } },
+        ];
       const away = this.grace.get(opponent);
       return away && !this.ended
         ? [state, this.projector.presence(false, away.until)]
@@ -417,6 +425,7 @@ export class GameSession {
     if (this.ended) throw new GameError("wrong_phase");
     await this.deps.store.abort(this.id, reason, this.deps.clock.now(), audit);
     this.ended = true;
+    this.abortReason = reason;
     this.disarmAll();
     for (const userId of this.userIds)
       this.deps.outlet.send(userId, {
@@ -553,10 +562,17 @@ export class GameSession {
     );
   }
 
+  /**
+   * Not back in time: the player loses, unless the opponent is away too (its
+   * grace still runs, or ends at the same instant after a restart). Then
+   * nobody earned the win, and the match is aborted.
+   */
   private onGraceExpired(side: SideKey): Promise<void> {
     return this.run(async () => {
       if (this.ended || !this.grace.has(side)) return;
-      await this.act({ kind: "abandon", side }, false);
+      if (this.grace.has(otherSide(side)))
+        await this.abortNow("abandoned", null);
+      else await this.act({ kind: "abandon", side }, false);
     }).catch((error) =>
       this.retryLater(error, () => this.onGraceExpired(side)),
     );
