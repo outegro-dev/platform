@@ -52,7 +52,7 @@ import { IntentsService } from "../intents/intents.service.js";
 import { TELEGRAM_BOT, type TelegramBot } from "../telegram/telegram-bot.js";
 import { TelegramLinkService } from "../telegram/telegram-link.service.js";
 import { templateFor, templates } from "../templates/registry.js";
-import { renderEmail } from "../templates/render.js";
+import { contextOf, renderEmail } from "../templates/render.js";
 import { channelSettingsSchema, SettingsService } from "./settings.service.js";
 
 const DAY_MS = 24 * 3600_000;
@@ -422,15 +422,11 @@ export class NotificationsAdminController {
   ) {
     const template = templates[key];
     if (!template) throw new AppError("NOT_FOUND");
-    const context = {
-      webUrl: this.config.publicWebUrl,
-      accountUrl: this.config.accountUrl,
-    };
     const email = await renderEmail(
       key,
       query.locale,
       template.sample,
-      context,
+      contextOf(this.config),
     );
     return {
       key,

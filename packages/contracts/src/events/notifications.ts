@@ -15,13 +15,15 @@ export const notificationChannels = ["email", "telegram", "inbox"] as const;
  * service publishes it to its own `<producer>.events` exchange.
  * Unique per (sourceEventId, templateKey, recipient). Login codes do not
  * travel this way (ADR-008: private short-lived delivery path).
+ * A template whose data changes incompatibly gets a new `.vN` key, so
+ * messages already stored keep rendering with the old one.
  */
 export const notificationRequested = defineEvent(
   "notifications.intent.requested.v1",
   "any",
   z.object({
     sourceEventId: z.uuid(),
-    templateKey: z.string().regex(/^[a-z]+(\.[a-z-]+)+$/),
+    templateKey: z.string().regex(/^[a-z]+(\.[a-z-]+)+(\.v\d+)?$/),
     category: z.enum(notificationCategories),
     recipient: z.object({ userId: z.uuid() }),
     locale: localeSchema.optional(),

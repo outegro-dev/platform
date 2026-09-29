@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
   Inject,
   Injectable,
@@ -16,6 +16,7 @@ import {
 import type { NotificationsDatabase } from "../common/database.js";
 import { channelsConfig } from "../config/config.js";
 import { recipients, telegramLinks } from "../db/schema.js";
+import { IntentsService } from "../intents/intents.service.js";
 import { TELEGRAM_BOT, type TelegramBot } from "./telegram-bot.js";
 
 const LINK_TTL_MS = 10 * 60_000;
@@ -81,6 +82,7 @@ export class TelegramLinkService implements OnApplicationBootstrap {
     @Inject(TELEGRAM_BOT) private readonly bot: TelegramBot,
     @Inject(channelsConfig.KEY)
     private readonly config: ConfigType<typeof channelsConfig>,
+    private readonly intents: IntentsService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -225,6 +227,15 @@ export class TelegramLinkService implements OnApplicationBootstrap {
           },
         })
         .returning({ locale: recipients.locale });
+      // A new channel is a security fact: the owner hears of it by email too.
+      await this.intents.record(tx, {
+        sourceEventId: randomUUID(),
+        producer: "notifications",
+        templateKey: "security.telegram-linked.v1",
+        category: "security",
+        userId: consumed.userId,
+        data: { at: now.toISOString() },
+      });
       return row?.locale ?? "en";
     });
   }

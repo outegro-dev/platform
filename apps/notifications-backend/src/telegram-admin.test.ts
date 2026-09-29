@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { maskEmail, redact } from "./admin/admin.controller.js";
 import {
@@ -8,7 +8,7 @@ import {
   UnknownOutcomeError,
 } from "./channels/providers.js";
 import type { NotificationsDatabase } from "./common/database.js";
-import { adminAudit, deliveries, recipients } from "./db/schema.js";
+import { adminAudit, deliveries, intents, recipients } from "./db/schema.js";
 import { DeliveryWorker } from "./delivery/delivery.worker.js";
 import { IntentsService } from "./intents/intents.service.js";
 import { RecipientsService } from "./recipients/recipients.service.js";
@@ -113,9 +113,55 @@ describe("Telegram linking (N-04)", () => {
     const [delivery] = await db
       .select()
       .from(deliveries)
-      .where(eq(deliveries.userId, userId));
+      .where(
+        and(eq(deliveries.userId, userId), eq(deliveries.channel, "telegram")),
+      );
     expect(delivery?.state).toBe("accepted");
     expect(repliesTo(1001).at(-1)?.text).toContain("session");
+  });
+
+  it("N-06: tells the account owner about a linked chat by email and inbox, once", async () => {
+    const { userId, email } = await newUser("ru");
+    const token = await linkToken(userId);
+    await hook(message(1501, `/start ${token}`)).expect(200);
+    await hook(message(1502, `/start ${token}`)).expect(200); // used up
+    await worker.tick();
+    const sent = h.email.sent.filter((m) => m.to === email);
+    expect(sent.map((m) => m.subject)).toEqual([
+      "К аккаунту подключён Telegram",
+    ]);
+    expect(sent[0]?.html).toContain(
+      'href="https://id.outegro.dev/account/notifications"',
+    );
+    // In the chat itself only the bot's own answer.
+    expect(repliesTo(1501).map((m) => m.text)).toEqual([
+      expect.stringContaining("Готово"),
+    ]);
+    const notices = await db
+      .select()
+      .from(intents)
+      .where(
+        and(
+          eq(intents.userId, userId),
+          eq(intents.templateKey, "security.telegram-linked.v1"),
+        ),
+      );
+    expect(notices).toHaveLength(1);
+    // Neither the chat nor the link token travels with the message.
+    expect(notices[0]).toMatchObject({
+      producer: "notifications",
+      data: { at: h.clock.now().toISOString() },
+    });
+    expect(Object.keys(notices[0]?.data ?? {})).toEqual(["at"]);
+    const inbox = await h
+      .http()
+      .get("/v1/me/inbox")
+      .set("authorization", await auth(userId))
+      .expect(200);
+    expect(inbox.body.items[0]).toMatchObject({
+      category: "security",
+      title: "Telegram подключён",
+    });
   });
 
   it("uses a token once and only for ten minutes", async () => {
@@ -419,6 +465,18 @@ describe("admin console", () => {
       .get("/v1/admin/templates/nope/preview")
       .set("authorization", owner)
       .expect(404);
+    // Every template, in both languages, previews from its own sample.
+    for (const { key } of list.body.items as { key: string }[]) {
+      for (const locale of ["en", "ru"]) {
+        const res = await h
+          .http()
+          .get(`/v1/admin/templates/${key}/preview?locale=${locale}`)
+          .set("authorization", owner)
+          .expect(200);
+        expect(res.body.subject, `${key} ${locale}`).toBeTruthy();
+        expect(res.body.html).toContain(`lang="${locale}"`);
+      }
+    }
   });
 
   it("sends a channel check only to the operator's own address", async () => {

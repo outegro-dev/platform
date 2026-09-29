@@ -98,6 +98,7 @@ export async function startHarness() {
     INTERNAL_API_TOKEN: internalToken,
     PUBLIC_WEB_URL: "https://outegro.dev",
     ACCOUNT_URL: "https://id.outegro.dev",
+    PAY_WEB_URL: "https://pay.outegro.dev",
     TELEGRAM_BOT_USERNAME: "outegro_test_bot",
     TELEGRAM_WEBHOOK_URL: "https://hooks.outegro.test/telegram",
     TELEGRAM_WEBHOOK_SECRET: telegramSecret,
@@ -186,9 +187,10 @@ export function intentEvent(input: {
   data?: Record<string, string | number | boolean | null>;
   sourceEventId?: string;
   channels?: ("email" | "telegram" | "inbox")[];
+  producer?: "identity" | "payments";
 }) {
   return createEvent(notificationRequested, {
-    producer: "identity",
+    producer: input.producer ?? "identity",
     aggregateId: input.userId,
     aggregateVersion: 1,
     payload: {

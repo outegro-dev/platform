@@ -1,6 +1,17 @@
 import { render } from "@react-email/render";
 import { type Context, type Locale, templateFor } from "./registry.js";
 
+/** Sites emails link to, from the channels configuration. */
+export const contextOf = (config: {
+  publicWebUrl: string;
+  accountUrl: string;
+  payWebUrl: string;
+}): Context => ({
+  webUrl: config.publicWebUrl,
+  accountUrl: config.accountUrl,
+  payWebUrl: config.payWebUrl,
+});
+
 /** Renders a template to email parts (HTML and plain text). */
 export async function renderEmail(
   key: string,

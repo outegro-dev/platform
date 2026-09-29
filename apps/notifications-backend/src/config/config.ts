@@ -32,4 +32,5 @@ export const channelsConfig = registerAs("channels", () => ({
   telegramWebhookSecret: env().TELEGRAM_WEBHOOK_SECRET,
   publicWebUrl: env().PUBLIC_WEB_URL,
   accountUrl: env().ACCOUNT_URL,
+  payWebUrl: env().PAY_WEB_URL,
 }));

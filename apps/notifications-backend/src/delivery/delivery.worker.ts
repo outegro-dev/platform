@@ -31,7 +31,7 @@ import {
 } from "../db/schema.js";
 import { channelEnabled } from "../intents/preferences.js";
 import { templateFor } from "../templates/registry.js";
-import { renderEmail } from "../templates/render.js";
+import { contextOf, renderEmail } from "../templates/render.js";
 
 /** Notifications contract: retries after 15 s, 1 min, 5 min, 15 min, then failed. */
 export const RETRY_DELAYS_MS = [15_000, 60_000, 300_000, 900_000];
@@ -208,10 +208,12 @@ export class DeliveryWorker
     if (delivery.channel === "email") {
       if (!recipient.email || !recipient.emailVerified)
         throw new Skip("failed", "no verified email");
-      const rendered = await renderEmail(intent.templateKey, locale, data, {
-        webUrl: this.config.publicWebUrl,
-        accountUrl: this.config.accountUrl,
-      });
+      const rendered = await renderEmail(
+        intent.templateKey,
+        locale,
+        data,
+        contextOf(this.config),
+      );
       return this.email.send({
         to: recipient.email,
         ...rendered,

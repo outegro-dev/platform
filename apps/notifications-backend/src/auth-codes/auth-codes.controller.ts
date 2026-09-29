@@ -19,7 +19,7 @@ import { z } from "zod";
 import { EMAIL_PROVIDER, type EmailProvider } from "../channels/providers.js";
 import { channelsConfig } from "../config/config.js";
 import { env } from "../config/env.js";
-import { renderEmail } from "../templates/render.js";
+import { contextOf, renderEmail } from "../templates/render.js";
 
 const codeSchema = z.object({
   challengeId: z.uuid(),
@@ -71,10 +71,7 @@ export class AuthCodesController {
       "auth.login-code",
       body.locale,
       { code: body.code, minutes },
-      {
-        webUrl: this.config.publicWebUrl,
-        accountUrl: this.config.accountUrl,
-      },
+      contextOf(this.config),
     );
     try {
       await Promise.race([
