@@ -430,7 +430,7 @@ export class SettlementService {
       .returning();
     if (!updated) throw new Error("subscription disappeared");
     await subscriptionChanged(tx, updated, now, order.correlationId);
-    await this.grants.activate(
+    const grant = await this.grants.activate(
       tx,
       {
         userId: subscription.userId,
@@ -446,6 +446,28 @@ export class SettlementService {
       now,
       order.correlationId,
     );
+    // Revoked access stays revoked (above); Lava charged a period it should
+    // not have, so the operator refunds it.
+    if (grant.state === "revoked") {
+      await this.issues.open(
+        tx,
+        {
+          kind: "renewal_after_revoke",
+          severity: "high",
+          subjectKey: `payment:${payment.id}`,
+          related: {
+            subscriptionId: subscription.id,
+            paymentId: payment.id,
+            grantId: grant.id,
+          },
+          evidence: {
+            contractId: fact.contractId,
+            paid: moneyDto(payment.amountMinor, payment.currency),
+          },
+        },
+        now,
+      );
+    }
     await this.announce(tx, payment, order.title, order.correlationId, now);
     return {
       status: "processed",

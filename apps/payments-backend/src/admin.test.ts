@@ -26,6 +26,7 @@ import { catalog } from "./domain/catalog.js";
 import type { Currency } from "./domain/money.js";
 import { customerEvents, type Harness, startHarness } from "./test/harness.js";
 import { lavaPayloads } from "./test/lava-payloads.js";
+import { ReconciliationWorker } from "./workers/reconciliation.worker.js";
 
 const PREMIUM = "battleship-premium";
 const SILVER = "battleship-silver-fleet";
@@ -35,11 +36,13 @@ const SILVER_OFFER =
 let h: Harness;
 let db: PaymentsDatabase["db"];
 let customers: CustomersService;
+let reconciliation: ReconciliationWorker;
 
 beforeAll(async () => {
   h = await startHarness();
   db = h.app.get<PaymentsDatabase>(DATABASE).db;
   customers = h.app.get(CustomersService);
+  reconciliation = h.app.get(ReconciliationWorker);
 });
 afterAll(() => h?.close());
 beforeEach(() => {
@@ -247,9 +250,12 @@ describe("manual grants (A-05, INV-22)", () => {
       .from(grants)
       .where(eq(grants.userId, user.userId));
     const purchase = rows.find((g) => g.sourceType === "purchase");
+    const calls = h.lava.cancelCalls.length;
     await post(`/v1/admin/grants/${purchase?.id}/revoke`, owner, {
       reason: "fraud check",
     }).expect(200);
+    // A one-time purchase has no renewal to stop.
+    expect(h.lava.cancelCalls).toHaveLength(calls);
     const after = await db
       .select()
       .from(grants)
@@ -258,6 +264,170 @@ describe("manual grants (A-05, INV-22)", () => {
       "revoked",
     );
     expect(after.find((g) => g.sourceType === "manual")?.state).toBe("active");
+  });
+});
+
+describe("revoking a subscription grant stops its renewal at Lava", () => {
+  const subscriptionOf = (orderId: string) =>
+    db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.orderId, orderId))
+      .then((rows) => rows[0]);
+  const grantOf = (userId: string) =>
+    db
+      .select()
+      .from(grants)
+      .where(eq(grants.userId, userId))
+      .then((rows) => rows[0]);
+  const issueOf = (subjectKey: string) =>
+    db
+      .select()
+      .from(reconciliationIssues)
+      .where(eq(reconciliationIssues.subjectKey, subjectKey))
+      .then((rows) => rows[0]);
+  const cancelCallsFor = (contractId: string) =>
+    h.lava.cancelCalls.filter((call) => call.parentContractId === contractId);
+
+  async function revokedPremium(currency: Currency = "USD") {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const { orderId, invoiceId } = await buy(user, PREMIUM, currency);
+    const grant = await grantOf(user.userId);
+    const res = await post(`/v1/admin/grants/${grant?.id}/revoke`, owner, {
+      reason: "abuse of the ranked queue",
+    }).expect(200);
+    // The revoke stands whatever Lava answered.
+    expect(res.body).toMatchObject({ id: grant?.id, state: "revoked" });
+    const subscription = await subscriptionOf(orderId);
+    if (!subscription || !grant) throw new Error("no subscription");
+    return { owner, user, orderId, invoiceId, grant, subscription };
+  }
+
+  it("revoke cancels the renewal at Lava exactly once", async () => {
+    const { owner, user, invoiceId, grant, subscription } =
+      await revokedPremium();
+    expect(cancelCallsFor(invoiceId)).toEqual([
+      { parentContractId: invoiceId, email: user.email },
+    ]);
+    expect(subscription).toMatchObject({
+      state: "cancelling",
+      autoRenew: false,
+      nextCancelAttemptAt: null,
+    });
+    const [entry] = await auditOf(grant.id);
+    expect(entry).toMatchObject({
+      action: "grant.revoked",
+      data: { sourceType: "subscription", stopsRenewal: true },
+    });
+    // Nothing is sent twice: the revoke is refused, the worker has nothing due.
+    await post(`/v1/admin/grants/${grant.id}/revoke`, owner, {
+      reason: "second click",
+    }).expect(422);
+    h.clock.advance(10 * 60_000);
+    await reconciliation.tick();
+    expect(cancelCallsFor(invoiceId)).toHaveLength(1);
+  });
+
+  it("a cancel Lava does not answer keeps the revoke, opens renewal_cancel_failed and is retried", async () => {
+    h.lava.cancelMode = "timeout";
+    const { user, invoiceId, subscription } = await revokedPremium("EUR");
+    expect(await grantOf(user.userId)).toMatchObject({ state: "revoked" });
+    expect(subscription).toMatchObject({
+      state: "cancel_requested",
+      autoRenew: true,
+      cancelAttempts: 1,
+    });
+    expect(await issueOf(`cancel:${subscription.id}`)).toMatchObject({
+      kind: "renewal_cancel_failed",
+      severity: "high",
+      status: "open",
+      related: { subscriptionId: subscription.id },
+      evidence: { reason: "timeout", attempts: 1 },
+    });
+    // The next try gets through: renewal is off and the issue closes itself.
+    h.lava.cancelMode = "ok";
+    h.clock.advance(61_000);
+    await reconciliation.tick();
+    expect(cancelCallsFor(invoiceId)).toHaveLength(2);
+    expect(await subscriptionOf(subscription.orderId)).toMatchObject({
+      state: "cancelling",
+      autoRenew: false,
+    });
+    expect(await issueOf(`cancel:${subscription.id}`)).toMatchObject({
+      status: "resolved",
+      resolution: "renewal cancelled at the provider",
+    });
+  });
+
+  it("a cancel Lava refuses waits for an operator, who can send it again", async () => {
+    h.lava.cancelMode = "reject";
+    const { invoiceId, subscription } = await revokedPremium();
+    expect(subscription).toMatchObject({
+      state: "cancel_requested",
+      autoRenew: true,
+      nextCancelAttemptAt: null,
+    });
+    expect(await issueOf(`cancel:${subscription.id}`)).toMatchObject({
+      kind: "renewal_cancel_failed",
+      status: "open",
+      evidence: { reason: "lava_400" },
+    });
+    h.lava.cancelMode = "ok";
+    const operator = await newCustomer({ roles: ["billing_operator"] });
+    const res = await post(
+      `/v1/admin/subscriptions/${subscription.id}/cancel`,
+      operator,
+      { reason: "Lava support fixed the contract" },
+    ).expect(200);
+    expect(res.body).toMatchObject({ state: "cancelling", autoRenew: false });
+    expect(cancelCallsFor(invoiceId)).toHaveLength(2);
+    expect(await issueOf(`cancel:${subscription.id}`)).toMatchObject({
+      status: "resolved",
+    });
+    // Confirmed off: sending again calls nobody.
+    await post(`/v1/admin/subscriptions/${subscription.id}/cancel`, operator, {
+      reason: "once more",
+    }).expect(200);
+    expect(cancelCallsFor(invoiceId)).toHaveLength(2);
+  });
+
+  it("a renewal Lava charges after the revoke grants nothing and asks for a refund", async () => {
+    h.lava.cancelMode = "timeout";
+    const { user, orderId, invoiceId, grant } = await revokedPremium();
+    const res = await h
+      .http()
+      .post("/webhooks/lava")
+      .set("x-api-key", h.webhookSecret)
+      .send(
+        lavaPayloads.renewalSuccess({
+          parentContractId: invoiceId,
+          email: user.email,
+          amount: 0.59,
+          currency: "USD",
+          at: h.clock.now(),
+        }),
+      )
+      .expect(200);
+    expect(res.body.status).toBe("processed");
+    expect(await grantOf(user.userId)).toMatchObject({
+      state: "revoked",
+      version: 2,
+    });
+    expect(
+      (await grantEvents(grant.id)).map((e) => e.payload.state).sort(),
+    ).toEqual(["active", "revoked"]);
+    const renewal = (
+      await db.select().from(payments).where(eq(payments.orderId, orderId))
+    ).find((payment) => payment.kind === "subscription_renewal");
+    expect(renewal).toMatchObject({ state: "confirmed", amountMinor: 59n });
+    expect(await issueOf(`payment:${renewal?.id}`)).toMatchObject({
+      kind: "renewal_after_revoke",
+      severity: "high",
+      status: "open",
+      related: { paymentId: renewal?.id, grantId: grant.id },
+      evidence: { paid: { minor: "59", currency: "USD", scale: 2 } },
+    });
   });
 });
 

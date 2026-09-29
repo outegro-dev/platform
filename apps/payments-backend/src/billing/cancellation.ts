@@ -13,7 +13,12 @@ import type {
   PaymentsDatabase,
   SubscriptionRow,
 } from "../common/database.js";
-import { payments, providerEvents, subscriptions } from "../db/schema.js";
+import {
+  grants,
+  payments,
+  providerEvents,
+  subscriptions,
+} from "../db/schema.js";
 import type { CancellationFact } from "../domain/facts.js";
 import { subscriptionLifecycle } from "../domain/lifecycle.js";
 import {
@@ -21,7 +26,7 @@ import {
   type PaymentProvider,
   ProviderRejectedError,
 } from "../lava/provider.js";
-import { IssueRegistry } from "./issues.js";
+import { type IssueKind, IssueRegistry } from "./issues.js";
 import { subscriptionChanged } from "./outbox-events.js";
 import type { Outcome } from "./outcome.js";
 
@@ -41,6 +46,7 @@ const DAY_MS = 86_400_000;
  * Turning renewal off (chapter 6.7, PAY-08). Cancel is not a refund: paid
  * time is kept. The provider call happens outside any transaction; until it
  * is confirmed the subscription stays `cancel_requested` and is retried.
+ * Revoking a subscription's grant turns renewal off the same way.
  */
 @Injectable()
 export class CancellationService {
@@ -56,7 +62,9 @@ export class CancellationService {
 
   /**
    * Cancel command from the owner (`ownerId`) or an operator (`reason`).
-   * Repeating it has no new effect; someone else's subscription is 404.
+   * Repeating it has no new effect, except that an operator can send the
+   * call again while Lava has not confirmed (the retry path of a failed
+   * cancel); someone else's subscription is 404.
    */
   async cancel(
     subscriptionId: string,
@@ -87,27 +95,61 @@ export class CancellationService {
         });
       }
       const next = subscriptionLifecycle.cancelRequested(current.state);
-      if (!next) return { row: current, call: false };
-      const [updated] = await tx
-        .update(subscriptions)
-        .set({
-          state: next,
-          cancelRequestedAt: now,
-          cancelAttempts: 0,
-          // If this process dies before the provider answers, the worker retries.
-          nextCancelAttemptAt: new Date(now.getTime() + FIRST_RETRY_MS),
-          updatedAt: now,
-          version: sql`${subscriptions.version} + 1`,
-        })
-        .where(eq(subscriptions.id, current.id))
-        .returning();
-      if (!updated) throw new Error("subscription disappeared");
-      await subscriptionChanged(tx, updated, now);
+      const again = !next && input.operator !== undefined && current.autoRenew;
+      if (!next && !again) return { row: current, call: false };
+      const updated = await this.request(
+        tx,
+        current,
+        next ?? current.state,
+        now,
+      );
       return { row: updated, call: true };
     });
     this.relay.kick();
     if (!call) return row;
     return this.callProvider(row);
+  }
+
+  /**
+   * Access of this subscription was revoked: Lava must stop charging for it.
+   * Runs in the revoke's transaction and returns the subscription whose call
+   * is to be sent after the commit (callProvider), or null when renewal is
+   * already off.
+   */
+  async stopRenewal(tx: Executor, subscriptionId: string, now: Date) {
+    const current = await this.lock(tx, subscriptionId);
+    if (!current.autoRenew) return null;
+    return this.request(
+      tx,
+      current,
+      subscriptionLifecycle.cancelRequested(current.state) ?? current.state,
+      now,
+    );
+  }
+
+  /** Records the request; if this process dies before the provider answers, the worker retries. */
+  private async request(
+    tx: Executor,
+    current: SubscriptionRow,
+    state: SubscriptionRow["state"],
+    now: Date,
+  ) {
+    const changed = state !== current.state;
+    const [updated] = await tx
+      .update(subscriptions)
+      .set({
+        state,
+        cancelRequestedAt: now,
+        cancelAttempts: 0,
+        nextCancelAttemptAt: new Date(now.getTime() + FIRST_RETRY_MS),
+        updatedAt: now,
+        ...(changed ? { version: sql`${subscriptions.version} + 1` } : {}),
+      })
+      .where(eq(subscriptions.id, current.id))
+      .returning();
+    if (!updated) throw new Error("subscription disappeared");
+    if (changed) await subscriptionChanged(tx, updated, now);
+    return updated;
   }
 
   /**
@@ -132,7 +174,8 @@ export class CancellationService {
     return due.length;
   }
 
-  private async callProvider(subscription: SubscriptionRow) {
+  /** The cancel call, outside any transaction: confirmed, refused, or retried later. */
+  async callProvider(subscription: SubscriptionRow) {
     try {
       const result = await this.provider.cancelSubscription({
         parentContractId: subscription.providerParentContractId,
@@ -175,7 +218,7 @@ export class CancellationService {
       await this.issues.open(
         tx,
         {
-          kind: "cancel_failed",
+          kind: await this.failureKind(tx, subscriptionId),
           severity: "high",
           subjectKey: `cancel:${subscriptionId}`,
           related: { subscriptionId },
@@ -202,15 +245,22 @@ export class CancellationService {
       // attempts counts failed calls: after the first one, wait the first delay.
       const attempts = current.cancelAttempts + 1;
       const delay = RETRY_DELAYS_MS[attempts - 1];
-      if (delay === undefined) {
+      const next = delay === undefined ? null : new Date(now.getTime() + delay);
+      const kind = await this.failureKind(tx, subscriptionId);
+      // Revoked access is charged for nothing: the operator hears at once.
+      if (delay === undefined || kind === "renewal_cancel_failed") {
         await this.issues.open(
           tx,
           {
-            kind: "cancel_failed",
+            kind,
             severity: "high",
             subjectKey: `cancel:${subscriptionId}`,
             related: { subscriptionId },
-            evidence: { reason, attempts },
+            evidence: {
+              reason,
+              attempts,
+              nextAttemptAt: next?.toISOString() ?? null,
+            },
           },
           now,
         );
@@ -219,8 +269,7 @@ export class CancellationService {
         .update(subscriptions)
         .set({
           cancelAttempts: attempts,
-          nextCancelAttemptAt:
-            delay === undefined ? null : new Date(now.getTime() + delay),
+          nextCancelAttemptAt: next,
           updatedAt: now,
         })
         .where(eq(subscriptions.id, current.id))
@@ -283,6 +332,13 @@ export class CancellationService {
       .returning();
     if (!updated) throw new Error("subscription disappeared");
     await subscriptionChanged(tx, updated, now);
+    // Renewal is off at Lava: a failed cancel needs no operator any more.
+    await this.issues.resolve(
+      tx,
+      `cancel:${updated.id}`,
+      { actorId: null, resolution: "renewal cancelled at the provider" },
+      now,
+    );
     // Our paid end is kept; a provider date far from it goes to an operator.
     if (
       input.willExpireAt &&
@@ -364,5 +420,27 @@ export class CancellationService {
       .for("update");
     if (!row) throw new Error("subscription disappeared");
     return row;
+  }
+
+  /**
+   * A cancel that fails after the access was revoked (by an operator, or a
+   * duplicate purchase) is its own kind: Lava may charge for nothing.
+   */
+  private async failureKind(
+    tx: Executor,
+    subscriptionId: string,
+  ): Promise<IssueKind> {
+    const [grant] = await tx
+      .select({ state: grants.state })
+      .from(grants)
+      .where(
+        and(
+          eq(grants.sourceType, "subscription"),
+          eq(grants.sourceId, subscriptionId),
+        ),
+      );
+    return grant?.state === "revoked"
+      ? "renewal_cancel_failed"
+      : "cancel_failed";
   }
 }

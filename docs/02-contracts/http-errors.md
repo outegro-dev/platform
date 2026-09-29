@@ -71,8 +71,8 @@ Cursor opaque, page size default 25/max 100 как инженерный default.
 | Payments | POST /v1/me/subscriptions/{id}/cancel | — (повтор без нового эффекта) | cancel state; не refund |
 | Payments | POST /webhooks/lava | provider body; X-Api-Key | durable ack; не browser session |
 | Payments | GET /v1/admin/{orders,payments,subscriptions,provider-events,issues,grants,refunds,stats} | фильтры, cursor | billing.read |
-| Payments | POST /v1/admin/grants, /v1/admin/grants/{id}/revoke | userId/service/feature/validUntil?, reason | grants.assign, audit |
-| Payments | POST /v1/admin/subscriptions/{id}/cancel | reason | subscriptions.cancel, audit |
+| Payments | POST /v1/admin/grants, /v1/admin/grants/{id}/revoke | userId/service/feature/validUntil?, reason | grants.assign, audit; отзыв grant подписки отменяет и продление в Lava, отзыв стоит при любом ответе Lava |
+| Payments | POST /v1/admin/subscriptions/{id}/cancel | reason | subscriptions.cancel, audit; пока Lava не подтвердила отмену, повтор отправляет её снова |
 | Payments | POST /v1/admin/payments/{id}/refund-request, /v1/admin/refunds/{id}/match | reason (+paymentId) | refunds.request, audit |
 | Admin | POST /v1/commands/{allowedAction} | resourceId, reason, commandId, expectedVersion | typed result/jobId; action allowlist |
 | Assistant | POST /v1/items | typed fields + source | itemId/version; machine scope + owner gate |
