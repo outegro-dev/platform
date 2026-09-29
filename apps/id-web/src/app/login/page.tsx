@@ -5,9 +5,10 @@ import { getTranslations } from "next-intl/server";
 import { AppFooter } from "@/components/app-footer";
 import { BrandHeader } from "@/components/brand-header";
 import { GoogleMark } from "@/components/google-mark";
-import { authApi } from "@/lib/api";
+import { authApi, loadMe } from "@/lib/api";
 import type { GoogleConfig } from "@/lib/google";
 import { LoginForm } from "./login-form";
+import { PasskeySignIn } from "./passkey-sign-in";
 
 const googleErrors = new Set([
   "google_failed",
@@ -52,14 +53,18 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ continue?: string; error?: string }>;
+  searchParams: Promise<{ continue?: string; error?: string; reauth?: string }>;
 }) {
   const t = await getTranslations("login");
   const params = await searchParams;
   const continueTo = safeRedirectPath(params.continue, "/account");
-  const [app, google] = await Promise.all([
+  // Signed in already and asked to confirm it is you (e.g. before adding a
+  // passkey): the new session replaces the current one.
+  const reauth = params.reauth === "1";
+  const [app, google, me] = await Promise.all([
     continuingApp(continueTo),
     googleEnabled(),
+    reauth ? loadMe() : null,
   ]);
   const error =
     params.error && googleErrors.has(params.error) ? params.error : null;
@@ -84,17 +89,24 @@ export default async function LoginPage({
           {app && (
             <p className="og-eyebrow login-app">{t("continuingTo", { app })}</p>
           )}
+          {reauth && me && (
+            <p className="og-eyebrow login-app">{t("reauth")}</p>
+          )}
           {error && (
             <p className="login-notice" role="alert">
               {t(`googleErrors.${error}`)}
             </p>
           )}
-          <LoginForm continueTo={continueTo} />
-          {google && (
-            <div className="login-alt">
-              <p className="login-divider">
-                <span>{t("or")}</span>
-              </p>
+          <LoginForm
+            continueTo={continueTo}
+            defaultEmail={reauth ? me?.email : undefined}
+          />
+          <div className="login-alt">
+            <p className="login-divider">
+              <span>{t("or")}</span>
+            </p>
+            <PasskeySignIn continueTo={continueTo} />
+            {google && (
               <Button asChild variant="outline" className="login-google">
                 <a
                   href={`/login/google/start?continue=${encodeURIComponent(continueTo)}`}
@@ -103,8 +115,8 @@ export default async function LoginPage({
                   {t("google")}
                 </a>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </section>
       </main>
       <AppFooter />

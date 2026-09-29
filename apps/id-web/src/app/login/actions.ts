@@ -2,16 +2,12 @@
 
 import { BackendError, BackendUnavailable } from "@outegro/bff/backend";
 import { safeRedirectPath } from "@outegro/bff/safe-redirect";
-import {
-  isSecureRequest,
-  type SessionTokens,
-  writeSession,
-} from "@outegro/bff/session";
-import { cookies, headers } from "next/headers";
+import type { SessionTokens } from "@outegro/bff/session";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { authApi } from "@/lib/api";
+import { startSession } from "@/lib/session";
 
 export type LoginState = {
   step: "email" | "code";
@@ -89,11 +85,6 @@ export async function loginAction(
   } catch (error) {
     return { ...state, error: errorKey(error) };
   }
-  const requestHeaders = await headers();
-  writeSession(
-    await cookies(),
-    tokens,
-    isSecureRequest(requestHeaders, requestHeaders.get("origin") ?? ""),
-  );
+  await startSession(tokens);
   redirect(safeRedirectPath(String(form.get("continue") ?? ""), "/account"));
 }

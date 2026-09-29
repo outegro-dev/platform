@@ -2,13 +2,16 @@ import { Button } from "@outegro/ui/button";
 import { Surface } from "@outegro/ui/surface";
 import { EnvelopeSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { GoogleMark } from "@/components/google-mark";
 import { PageHead } from "@/components/page-head";
 import { authApi, type Me, withSession } from "@/lib/api";
-import { formatDate } from "@/lib/format";
+import { deviceLabel, formatDate } from "@/lib/format";
 import type { GoogleConfig } from "@/lib/google";
+import type { PasskeyItem } from "@/lib/passkeys";
 import { unlinkGoogle } from "./actions";
+import { PasskeysPanel } from "./passkeys-panel";
 
 type Identity = { provider: "google"; email: string | null; linkedAt: string };
 
@@ -37,7 +40,7 @@ export default async function SecurityPage({
   const tl = await getTranslations("login");
   const locale = await getLocale();
   const params = await searchParams;
-  const [me, identities, config] = await withSession(
+  const [me, identities, config, passkeys] = await withSession(
     "/account/security",
     (token) =>
       Promise.all([
@@ -52,8 +55,19 @@ export default async function SecurityPage({
             redirectUri: null,
           }),
         ),
+        authApi<{ items: PasskeyItem[] }>("/v1/me/passkeys", {
+          accessToken: token,
+        }),
       ]),
   );
+  // Written out here, in the page's language, so the browser shows the same.
+  const passkeyRows = passkeys.items.map((item) => ({
+    ...item,
+    added: formatDate(item.createdAt, locale),
+    lastUsed: item.lastUsedAt ? formatDate(item.lastUsedAt, locale) : null,
+  }));
+  const suggestedName =
+    deviceLabel((await headers()).get("user-agent"))?.slice(0, 60) ?? "";
   const google = identities.items.find((item) => item.provider === "google");
   const error = params.error && notices.has(params.error) ? params.error : null;
   const status = error
@@ -117,6 +131,9 @@ export default async function SecurityPage({
             )}
           </li>
         </ul>
+      </Surface>
+      <Surface className="panel" data-testid="passkeys">
+        <PasskeysPanel items={passkeyRows} suggestedName={suggestedName} />
       </Surface>
     </>
   );

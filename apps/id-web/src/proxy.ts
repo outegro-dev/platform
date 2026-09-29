@@ -5,8 +5,9 @@ import { env } from "@/lib/env";
 
 /**
  * Every page request: keep the session fresh (refresh rotation happens here,
- * before rendering), guard /account, skip /login for signed-in users, and
- * set a nonce-based CSP.
+ * before rendering), guard /account, skip /login for signed-in users unless
+ * they are asked to sign in again (`reauth=1`, e.g. before adding a
+ * passkey), and set a nonce-based CSP.
  */
 export async function proxy(request: NextRequest) {
   const session = await refreshSession(request, env.AUTH_API_URL, {
@@ -25,7 +26,11 @@ export async function proxy(request: NextRequest) {
     login.searchParams.set("continue", `${pathname}${search}`);
     return session.apply(NextResponse.redirect(login));
   }
-  if (pathname === "/login" && signedIn) {
+  if (
+    pathname === "/login" &&
+    signedIn &&
+    request.nextUrl.searchParams.get("reauth") !== "1"
+  ) {
     const next = safeRedirectPath(
       request.nextUrl.searchParams.get("continue"),
       "/account",

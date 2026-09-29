@@ -59,7 +59,14 @@ const FIELD_ERRORS = new Set([
   "incomplete_code",
 ]);
 
-export function LoginForm({ continueTo }: { continueTo: string }) {
+export function LoginForm({
+  continueTo,
+  defaultEmail = "",
+}: {
+  continueTo: string;
+  /** The signed-in account's address when it is asked to sign in again. */
+  defaultEmail?: string;
+}) {
   const t = useTranslations("login");
   const [state, action, busy] = useActionState<LoginState, FormData>(
     loginAction,
@@ -67,7 +74,7 @@ export function LoginForm({ continueTo }: { continueTo: string }) {
   );
   const online = useOnline();
   // Controlled, so React's form reset after each action keeps what was typed.
-  const [email, setEmail] = useState(state.email ?? "");
+  const [email, setEmail] = useState(state.email ?? defaultEmail);
   const [code, setCode] = useState("");
   const [resent, setResent] = useState(false);
   const [backToEmail, setBackToEmail] = useState(false);
@@ -178,7 +185,8 @@ export function LoginForm({ continueTo }: { continueTo: string }) {
               name="email"
               type="email"
               inputMode="email"
-              autoComplete="email"
+              // "webauthn": the browser offers passkeys here too (autofill).
+              autoComplete="email webauthn"
               enterKeyHint="go"
               spellCheck={false}
               placeholder={t("emailPlaceholder")}

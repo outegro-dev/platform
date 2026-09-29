@@ -30,6 +30,6 @@ export async function signIn(page: Page, email = uniqueEmail()) {
   await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Send code" }).click();
   await page.getByLabel("Six-digit code").fill(await codeFor(email, since));
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   return email;
 }
