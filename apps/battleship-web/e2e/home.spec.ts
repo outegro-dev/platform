@@ -16,24 +16,73 @@ function runningAnimations(page: Page): Promise<number> {
 const beatOf = async (demo: Locator) =>
   Number(await demo.getAttribute("data-beat"));
 
+type Beat = {
+  beat: number;
+  phase: string | null;
+  marks: number;
+  tracers: number;
+  ships: number;
+};
+
+/**
+ * Logs every beat of the home board from the first paint on (a beat can
+ * be shorter than an assertion's polling interval under load).
+ */
+async function recordBeats(page: Page) {
+  await page.addInitScript(() => {
+    const log: unknown[] = [];
+    (window as unknown as { __beats: unknown[] }).__beats = log;
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const el = record.target as Element;
+        if (!el.matches?.("[data-testid=demo-board]")) continue;
+        log.push({
+          beat: Number(el.getAttribute("data-beat")),
+          phase: el.getAttribute("data-phase"),
+          marks: el.querySelectorAll(".mark").length,
+          tracers: el.querySelectorAll(".fx-tracer").length,
+          ships: el.querySelectorAll(".demo-piece[data-shown]").length,
+        });
+      }
+    }).observe(document, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-beat"],
+    });
+  });
+  return () =>
+    page.evaluate(() => (window as unknown as { __beats: Beat[] }).__beats);
+}
+
 test.describe("home board", () => {
   test("plays a looping battle, holds still off screen and never moves the page", async ({
     page,
   }) => {
+    const beats = await recordBeats(page);
     await page.goto("/");
     const demo = page.getByRole("img", {
       name: "Example battle: a fleet under fire",
     });
     await expect(demo).toHaveAttribute("data-testid", "demo-board");
-    // It opens on the full picture, then clears the water for a round.
-    await expect(demo.locator(".mark")).toHaveCount(20);
     await expect(demo).toHaveAttribute("data-playing");
-    await expect(demo).toHaveAttribute("data-phase", "reset");
-    await expect(demo).toHaveAttribute("data-phase", "fire");
-    await expect(demo.locator(".fx-tracer")).toHaveCount(1);
-    await expect(demo).toHaveAttribute("data-phase", "land");
-    await expect(demo.locator(".mark")).toHaveCount(1);
-    await expect(demo.locator(".mark")).not.toHaveCount(1);
+    await expect
+      .poll(async () => (await beats()).some((b) => b.marks === 2), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+    // From the full picture the water clears (the fleet dives), then the
+    // sight aims, a shell flies, and each landing leaves its mark.
+    const log = await beats();
+    const at = (test: (beat: Beat) => boolean) => log.findIndex(test);
+    const steps = [
+      at((b) => b.phase === "reset" && b.marks === 20 && b.ships === 0),
+      at((b) => b.phase === "aim" && b.marks === 0),
+      at((b) => b.phase === "fire" && b.tracers === 1),
+      at((b) => b.phase === "land" && b.marks === 1),
+      at((b) => b.phase === "land" && b.marks === 2),
+    ];
+    expect(steps.every((index) => index >= 0)).toBe(true);
+    expect([...steps].sort((a, b) => a - b)).toEqual(steps);
     expect(await runningAnimations(page)).toBeGreaterThan(0);
     expect(await layoutShift(page)).toBeLessThan(0.02);
 
