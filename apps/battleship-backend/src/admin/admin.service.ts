@@ -212,7 +212,11 @@ export class AdminService {
     };
   }
 
-  /** Both fleets and every move, live state included for running matches. */
+  /**
+   * Every move and the live state; both fleets once the match is over. While
+   * it runs, fleets stay hidden even from staff: an operator who also plays
+   * could otherwise read an opponent's ships (TC-BS-03).
+   */
   async matchDetail(matchId: string) {
     if (!z.uuid().safeParse(matchId).success) throw new AppError("NOT_FOUND");
     const a = alias(players, "pa");
@@ -230,10 +234,12 @@ export class AdminService {
       .where(eq(moves.matchId, matchId))
       .orderBy(asc(moves.n));
     const session = this.sessions.byMatch(matchId);
+    const running =
+      row.match.status === "placement" || row.match.status === "battle";
     return {
       ...this.matchItem(row.match, row.nicknameA, row.nicknameB),
       firstTurn: row.match.firstTurn,
-      fleets: { a: row.match.fleetA, b: row.match.fleetB },
+      fleets: running ? null : { a: row.match.fleetA, b: row.match.fleetB },
       moves: history.map((move) => ({
         n: move.n,
         side: move.side,

@@ -711,7 +711,8 @@ describe("admin", () => {
     expect(detail).toMatchObject({
       matchId,
       status: "placement",
-      fleets: { a: fleets.a, b: null },
+      // A running match never shows fleets, not even to staff.
+      fleets: null,
       players: { a: { userId: a.userId }, b: { userId: b.userId } },
       live: { phase: "placement", connected: { a: true, b: true } },
     });
