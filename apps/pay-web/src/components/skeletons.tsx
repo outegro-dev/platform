@@ -1,5 +1,6 @@
+import { Skeleton } from "@outegro/ui/skeleton";
+import { Spinner } from "@outegro/ui/spinner";
 import type { CSSProperties } from "react";
-import { Spinner } from "./spinner";
 
 /*
  * Loading placeholders with the exact boxes of the content they stand for.
@@ -8,7 +9,7 @@ import { Spinner } from "./spinner";
  */
 
 const block = (width: CSSProperties["width"], height: number) => (
-  <span className="skeleton" style={{ width, height }} />
+  <Skeleton style={{ width, height }} />
 );
 
 function LoadingNote({ text }: { text: string }) {

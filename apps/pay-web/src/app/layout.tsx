@@ -1,10 +1,10 @@
+import { fontVariables } from "@outegro/ui/fonts";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import "@outegro/ui/styles.css";
 import "./globals.css";
 import { TimeZoneSync } from "@/components/time-zone-sync";
-import { fontVariables } from "./fonts";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("meta");

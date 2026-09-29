@@ -4,12 +4,12 @@
 "use no memo";
 
 import { Button } from "@outegro/ui/button";
+import { FormMessage } from "@outegro/ui/form-message";
 import {
   ArrowsClockwiseIcon,
   CheckCircleIcon,
   LockSimpleIcon,
   SealCheckIcon,
-  WarningCircleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { observer } from "mobx-react-lite";
 import Link from "next/link";
@@ -17,8 +17,6 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 import { startCheckout } from "@/app/actions";
-import { BusyButton } from "@/components/busy-button";
-import { Spinner } from "@/components/spinner";
 import { pick } from "@/lib/i18n";
 import { useFormat } from "@/lib/i18n-client";
 import type { Product } from "@/lib/payments/model";
@@ -82,52 +80,42 @@ export const ProductCard = observer(function ProductCard({
     product.prices[0];
   const subscription = product.kind === "subscription";
 
+  // One reserved line under the button: progress, a problem, or the hint.
   let line: React.ReactNode = null;
-  let lineTone: "danger" | undefined;
+  let lineTone: "neutral" | "pending" | "error" = "neutral";
+  let lineIcon: React.ReactNode;
   if (store.status !== "idle") {
-    line = (
-      <>
-        <Spinner />
-        {t(`status.${store.status}`)}
-      </>
-    );
+    lineTone = "pending";
+    line = t(`status.${store.status}`);
   } else if (store.problem) {
-    lineTone = "danger";
-    line = (
-      <>
-        <WarningCircleIcon aria-hidden="true" />
-        {store.problem === "signedOut" ? (
-          <span>
-            {t("problem.signedOut")}{" "}
-            <a
-              className="underline underline-offset-4"
-              href={signInPath("/catalog")}
-            >
-              {t("problem.signIn")}
-            </a>
-          </span>
-        ) : store.problem === "slow" && store.orderId ? (
-          <span>
-            {t("problem.slow")}{" "}
-            <Link
-              className="underline underline-offset-4"
-              href={`/orders/${store.orderId}`}
-            >
-              {t("problem.openOrder")}
-            </Link>
-          </span>
-        ) : (
-          t(`problem.${store.problem}`)
-        )}
-      </>
-    );
-  } else if (!ownership) {
-    line = (
-      <>
-        <LockSimpleIcon aria-hidden="true" />
-        {t("secure")}
-      </>
-    );
+    lineTone = "error";
+    line =
+      store.problem === "signedOut" ? (
+        <span>
+          {t("problem.signedOut")}{" "}
+          <a
+            className="underline underline-offset-4"
+            href={signInPath("/catalog")}
+          >
+            {t("problem.signIn")}
+          </a>
+        </span>
+      ) : store.problem === "slow" && store.orderId ? (
+        <span>
+          {t("problem.slow")}{" "}
+          <Link
+            className="underline underline-offset-4"
+            href={`/orders/${store.orderId}`}
+          >
+            {t("problem.openOrder")}
+          </Link>
+        </span>
+      ) : (
+        t(`problem.${store.problem}`)
+      );
+  } else {
+    lineIcon = <LockSimpleIcon />;
+    line = t("secure");
   }
 
   return (
@@ -200,23 +188,28 @@ export const ProductCard = observer(function ProductCard({
               </Link>
             </Button>
           ) : (
-            <BusyButton
+            <Button
               size="lg"
-              busy={store.busy}
-              busyLabel={t(
+              pending={store.busy}
+              pendingLabel={t(
                 `status.${store.status === "idle" ? "starting" : store.status}`,
               )}
               disabled={!salesOpen}
               onClick={() => void store.buy()}
             >
               {subscription ? t("subscribe") : t("buy")}
-            </BusyButton>
+            </Button>
           )}
         </div>
         {!ownership && (
-          <p className="live-line" data-tone={lineTone} aria-live="polite">
+          <FormMessage
+            tone={lineTone}
+            icon={lineIcon}
+            lines={2}
+            aria-live="polite"
+          >
             {line}
-          </p>
+          </FormMessage>
         )}
       </div>
     </article>

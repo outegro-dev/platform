@@ -12,16 +12,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@outegro/ui/dialog";
-import {
-  CheckCircleIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { FormMessage } from "@outegro/ui/form-message";
+import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { observer } from "mobx-react-lite";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { cancelSubscription } from "@/app/actions";
-import { BusyButton } from "@/components/busy-button";
 import { ServiceMark } from "@/components/service-mark";
 import { SubscriptionStatusBadge } from "@/components/status-badge";
 import { pick } from "@/lib/i18n";
@@ -201,12 +198,12 @@ const CancelDialog = observer(function CancelDialog({
             </div>
           </dl>
           <p>{t("notRefund")}</p>
-          <p
-            className="live-line"
-            data-tone={problem ? "danger" : undefined}
+          {/* Two lines reserved: an error appears without moving the buttons. */}
+          <FormMessage
+            tone={problem ? "error" : "neutral"}
+            lines={2}
             aria-live="polite"
           >
-            {problem && <WarningCircleIcon aria-hidden="true" />}
             {problem === "signed-out" ? (
               <span>
                 {t("signedOut")}{" "}
@@ -220,7 +217,7 @@ const CancelDialog = observer(function CancelDialog({
             ) : problem ? (
               t(problem)
             ) : null}
-          </p>
+          </FormMessage>
         </div>
         <div className="dialog-actions">
           <Button
@@ -231,15 +228,15 @@ const CancelDialog = observer(function CancelDialog({
           >
             {t("keep")}
           </Button>
-          <BusyButton
+          <Button
             variant="destructive"
             size="lg"
-            busy={store.pending}
-            busyLabel={t("confirming")}
+            pending={store.pending}
+            pendingLabel={t("confirming")}
             onClick={() => void store.confirm()}
           >
             {t("confirm")}
-          </BusyButton>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,3 +1,4 @@
+import { Skeleton } from "@outegro/ui/skeleton";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
@@ -13,9 +14,9 @@ export default async function Loading() {
           {t("back")}
         </Link>
         <div className="order-head-meta">
-          <span className="skeleton" style={{ width: 180, height: 12 }} />
+          <Skeleton style={{ width: 180, height: 12 }} />
         </div>
-        <span className="skeleton order-head-skeleton" />
+        <Skeleton className="order-head-skeleton" />
       </div>
       <OrderDetailSkeleton label={t("loading")} />
     </>

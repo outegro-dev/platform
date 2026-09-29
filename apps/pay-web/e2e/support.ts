@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { test as base, expect, type Page } from "@playwright/test";
 
@@ -65,7 +65,9 @@ export async function persona(
   page: Page,
   options: PersonaOptions = {},
 ): Promise<Persona> {
-  const ip = `198.18.${randomInt(0, 256)}.${randomInt(1, 255)}`;
+  // A documentation-range IPv6 address per persona: collisions are out of
+  // the question, so parallel tests never see each other's catalog.
+  const ip = `2001:db8::${randomBytes(6).toString("hex").match(/.{4}/g)?.join(":")}`;
   const created = await control<Persona>("/__control/personas", {
     scenario: "rich",
     ...options,

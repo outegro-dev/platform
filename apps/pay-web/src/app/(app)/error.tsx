@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@outegro/ui/button";
 import {
   ArrowClockwiseIcon,
   CloudSlashIcon,
@@ -7,7 +8,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
-import { BusyButton } from "@/components/busy-button";
 
 /**
  * Anything unexpected inside the signed-in pages: the shell stays, the page
@@ -31,10 +31,10 @@ export default function AppError({
       <h2>{t("title")}</h2>
       <p>{t("body")}</p>
       <div className="state-actions">
-        <BusyButton
+        <Button
           size="lg"
-          busy={pending}
-          busyLabel={states("retrying")}
+          pending={pending}
+          pendingLabel={states("retrying")}
           onClick={() =>
             startTransition(() => {
               router.refresh();
@@ -44,7 +44,7 @@ export default function AppError({
         >
           <ArrowClockwiseIcon aria-hidden="true" />
           {t("retry")}
-        </BusyButton>
+        </Button>
       </div>
     </section>
   );

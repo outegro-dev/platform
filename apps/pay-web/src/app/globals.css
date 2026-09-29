@@ -4,22 +4,8 @@
  * for tints). Motion uses transform and opacity only.
  */
 
-/*
- * Brand families from next/font (fontVariables on <html>, see fonts.ts):
- * Cyrillic first, then Latin with its metric-matched fallback.
- */
+/* Status tints and a soft card shadow, mixed from the kit's tokens. */
 :root {
-  --font-sans:
-    var(--og-manrope-cyrillic, "Manrope"), var(--og-manrope-latin, "Manrope"),
-    ui-sans-serif, system-ui, sans-serif;
-  --font-display:
-    var(--og-cormorant-cyrillic, "Cormorant Garamond"),
-    var(--og-cormorant-latin, "Cormorant Garamond"), ui-serif, Georgia, serif;
-  --font-mono:
-    var(--og-mono-cyrillic, "JetBrains Mono"),
-    var(--og-mono-latin, "JetBrains Mono"), ui-monospace, SFMono-Regular,
-    monospace;
-
   --tint-success: color-mix(in srgb, var(--success) 11%, var(--surface));
   --tint-danger: color-mix(in srgb, var(--destructive) 9%, var(--surface));
   --tint-warning: color-mix(in srgb, var(--destructive) 5%, var(--surface));
@@ -550,17 +536,7 @@
     }
   }
 
-  /* Loading placeholders keep the size of what they stand for. */
-  .skeleton {
-    display: block;
-    border-radius: var(--radius-sm);
-    background: var(--secondary);
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .skeleton {
-      animation: skeleton-pulse 1.6s ease-in-out infinite;
-    }
-  }
+  /* The visible "Loading …" line inside the first placeholder. */
   .loading-note {
     display: flex;
     align-items: center;
@@ -653,54 +629,6 @@
   }
   .notice p {
     color: var(--muted-foreground);
-  }
-
-  /* A line reserved for a status or error: appearing text moves nothing. */
-  .live-line {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    min-height: 40px;
-    color: var(--muted-foreground);
-    font-size: 13px;
-    line-height: 20px;
-  }
-  .live-line svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-  .live-line[data-tone="danger"] {
-    color: var(--destructive);
-  }
-  .live-line[data-tone="success"] {
-    color: var(--success);
-  }
-
-  .spinner {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .spinner {
-      animation: spin 0.9s linear infinite;
-    }
-  }
-
-  /* Button whose label keeps its width while a spinner covers it. */
-  .busy-button {
-    position: relative;
-  }
-  .busy-button[data-busy] > .busy-label {
-    visibility: hidden;
-  }
-  .busy-button > .busy-indicator {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
   }
 
   /* ─── Orders list ───────────────────────────────────────── */
@@ -1781,15 +1709,6 @@
   100% {
     transform: scale(2.6);
     opacity: 0;
-  }
-}
-@keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
   }
 }
 @keyframes ring-breathe {

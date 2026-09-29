@@ -1,4 +1,5 @@
 import { Button } from "@outegro/ui/button";
+import { Skeleton } from "@outegro/ui/skeleton";
 import { SignOutIcon } from "@phosphor-icons/react/dist/ssr";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
@@ -67,7 +68,7 @@ function AccountChipPlaceholder() {
     <span className="account-chip og-glass" aria-hidden="true">
       <span className="account-avatar" />
       <span className="account-name">
-        <span className="skeleton" style={{ height: 12, width: 120 }} />
+        <Skeleton style={{ height: 12, width: 120 }} />
       </span>
     </span>
   );

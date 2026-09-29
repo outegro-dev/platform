@@ -12,9 +12,6 @@
     "screenshots": "playwright test --project=screens"
   },
   "dependencies": {
-    "@fontsource/cormorant-garamond": "5.3.0",
-    "@fontsource/jetbrains-mono": "5.3.0",
-    "@fontsource/manrope": "5.3.0",
     "@outegro/bff": "workspace:*",
     "@outegro/i18n": "workspace:*",
     "@outegro/ui": "workspace:*",

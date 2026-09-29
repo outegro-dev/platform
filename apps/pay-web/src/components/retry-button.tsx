@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@outegro/ui/button";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/ssr";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
-import { BusyButton } from "./busy-button";
 
 /** Asks the server again for this page's data, in place. */
 export function RetryButton() {
@@ -12,14 +12,14 @@ export function RetryButton() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
-    <BusyButton
+    <Button
       size="lg"
-      busy={pending}
-      busyLabel={t("retrying")}
+      pending={pending}
+      pendingLabel={t("retrying")}
       onClick={() => startTransition(() => router.refresh())}
     >
       <ArrowClockwiseIcon aria-hidden="true" />
       {t("retry")}
-    </BusyButton>
+    </Button>
   );
 }

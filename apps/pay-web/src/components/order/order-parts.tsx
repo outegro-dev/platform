@@ -1,12 +1,12 @@
 "use client";
 
 import { Button } from "@outegro/ui/button";
+import { FormMessage } from "@outegro/ui/form-message";
 import {
   ArrowSquareOutIcon,
   ArrowUUpLeftIcon,
   CheckIcon,
   QuestionIcon,
-  WarningCircleIcon,
   WifiSlashIcon,
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
@@ -14,7 +14,6 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { ServiceMark } from "@/components/service-mark";
-import { Spinner } from "@/components/spinner";
 import { pick } from "@/lib/i18n";
 import { useFormat } from "@/lib/i18n-client";
 import type { Localized, Order, Periodicity } from "@/lib/payments/model";
@@ -252,66 +251,48 @@ function HeroFootLine({
   const t = useTranslations("watch");
   const states = useTranslations("states");
   let content: ReactNode = null;
-  let tone: "danger" | undefined;
+  let tone: "neutral" | "pending" | "error" = "neutral";
+  let icon: ReactNode;
   switch (foot) {
     case "checking":
-      content = (
-        <>
-          <span className="status-dot" aria-hidden="true" />
-          {t("checking")}
-        </>
-      );
+      icon = <span className="status-dot" />;
+      content = t("checking");
       break;
     case "retrying":
-      content = (
-        <>
-          <Spinner className="spinner" />
-          {t("retrying")}
-        </>
-      );
+      tone = "pending";
+      content = t("retrying");
       break;
     case "offline":
-      tone = "danger";
-      content = (
-        <>
-          <WifiSlashIcon aria-hidden="true" />
-          {t("offline")}
-        </>
-      );
+      tone = "error";
+      icon = <WifiSlashIcon />;
+      content = t("offline");
       break;
     case "signed-out":
-      tone = "danger";
+      tone = "error";
       content = (
-        <>
-          <WarningCircleIcon aria-hidden="true" />
-          <span>
-            {t("signedOut")}{" "}
-            <a className="underline underline-offset-4" href={signInHref}>
-              {states("signIn")}
-            </a>
-          </span>
-        </>
+        <span>
+          {t("signedOut")}{" "}
+          <a className="underline underline-offset-4" href={signInHref}>
+            {states("signIn")}
+          </a>
+        </span>
       );
       break;
     case "gone":
-      tone = "danger";
-      content = (
-        <>
-          <WarningCircleIcon aria-hidden="true" />
-          {t("gone")}
-        </>
-      );
+      tone = "error";
+      content = t("gone");
       break;
   }
   return (
-    <p
-      className="live-line hero-foot"
-      data-tone={tone}
+    <FormMessage
+      className="hero-foot"
+      tone={tone}
+      icon={icon}
       data-empty={content ? undefined : true}
       aria-live="polite"
     >
       {content}
-    </p>
+    </FormMessage>
   );
 }
 

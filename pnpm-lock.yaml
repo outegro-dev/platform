@@ -461,15 +461,6 @@ importers:
 
   apps/pay-web:
     dependencies:
-      '@fontsource/cormorant-garamond':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/jetbrains-mono':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/manrope':
-        specifier: 5.3.0
-        version: 5.3.0
       '@outegro/bff':
         specifier: workspace:*
         version: link:../../packages/bff
