@@ -17,7 +17,7 @@
 | [ID-07](tasks/ID-07.md) | Owner bootstrap и step-up | [ID-05](tasks/ID-05.md), [ID-06](tasks/ID-06.md) | planned |
 | [ID-08](tasks/ID-08.md) | Коммерческая grant projection | [BE-06](../02-backend-foundation/tasks/BE-06.md), [ID-06](tasks/ID-06.md), [PAY-06](../05-payments/tasks/PAY-06.md) | planned |
 | [ID-09](tasks/ID-09.md) | Кабинет/сессии/locale | [DS-05](../01-landing-design/tasks/DS-05.md), [ID-03](tasks/ID-03.md), [ID-04](tasks/ID-04.md), [ID-05](tasks/ID-05.md), [ID-07](tasks/ID-07.md) | planned |
-| [ID-10](tasks/ID-10.md) | Key rotation/revoke/CSRF tests | [ID-04](tasks/ID-04.md), [ID-05](tasks/ID-05.md), [ID-07](tasks/ID-07.md), [ID-08](tasks/ID-08.md) | planned |
+| [ID-10](tasks/ID-10.md) | Key rotation/revoke/CSRF tests | [ID-04](tasks/ID-04.md), [ID-05](tasks/ID-05.md), [ID-07](tasks/ID-07.md), [ID-08](tasks/ID-08.md) | review |
 
 ## Выход
 

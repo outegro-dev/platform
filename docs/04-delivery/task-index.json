@@ -1917,7 +1917,7 @@
       "id": "ID-10",
       "title": "Key rotation/revoke/CSRF tests",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "review",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-10.md",
       "dependencies": [

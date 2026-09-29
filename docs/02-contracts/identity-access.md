@@ -16,6 +16,7 @@ Identity отвечает за человека, способы входа, sess
 | Admin step-up | 5 минут и привязка к action/resource | ID-07 |
 | Refresh retry window | Не задан числом до rotation threat model | ID-03: не увеличивать наугад |
 | Protocol library | Открытый технический ADR, не самописный OIDC по умолчанию | ID-04 |
+| Ключ подписи access | ES256, `kid` — отпечаток RFC 7638, проверяющие требуют `typ: at+jwt`; ротация: анонс, переключение, изъятие ([runbook](../06-operations/signing-keys.md)) | ID-10 |
 
 Defaults — не утверждение о текущих runtime settings. Один список config keys и tests должны использовать одинаковые значения; не дублировать TTL литералы в UI и server.
 
