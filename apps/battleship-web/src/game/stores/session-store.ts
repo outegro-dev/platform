@@ -31,6 +31,8 @@ export class SessionStore {
   nextRetryAt: number | null = null;
   rtt: number | null = null;
   profileState: "idle" | "loading" | "error" = "idle";
+  /** The match the server says is running; undefined until the first session.ready. */
+  activeMatchId: string | null | undefined = undefined;
 
   constructor(
     initial: { signedIn: boolean; profile: PlayerProfile | null },
@@ -123,6 +125,7 @@ export class SessionStore {
   handle(message: ServerMessage): void {
     if (message.type === "session.ready") {
       this.summary = message.payload.player;
+      this.activeMatchId = message.payload.activeMatchId;
     } else if (message.type === "player.updated") {
       this.summary = message.payload.player;
       // Features (e.g. a one-time purchase) are only in the full profile.

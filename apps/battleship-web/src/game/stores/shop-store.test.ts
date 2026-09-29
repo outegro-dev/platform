@@ -1,9 +1,19 @@
 import { battleshipFeatures } from "@outegro/contracts/battleship";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Catalog, CatalogProduct, CheckoutOutcome } from "@/lib/catalog";
+import type {
+  Catalog,
+  CatalogProduct,
+  CheckoutOutcome,
+  OrderStatus,
+} from "@/lib/catalog";
 import { profile, server } from "../testing/fakes";
 import { SessionStore } from "./session-store";
-import { type ShopApi, ShopStore } from "./shop-store";
+import {
+  type PendingPurchase,
+  type PendingPurchases,
+  type ShopApi,
+  ShopStore,
+} from "./shop-store";
 
 const silver: CatalogProduct = {
   key: "battleship-silver-fleet",
@@ -31,6 +41,21 @@ const catalog = (overrides: Partial<Catalog> = {}): Catalog => ({
   ...overrides,
 });
 
+/** In-memory stand-in for sessionStorage. */
+function memoryPending(): PendingPurchases & { value: PendingPurchase | null } {
+  return {
+    value: null,
+    save(purchase) {
+      this.value = purchase;
+    },
+    take() {
+      const value = this.value;
+      this.value = null;
+      return value;
+    },
+  };
+}
+
 function setup(api: Partial<ShopApi> = {}, initial: Partial<Catalog> = {}) {
   let features: string[] = [];
   const fetchProfile = vi.fn(async () => ({ ...profile, features }));
@@ -39,19 +64,28 @@ function setup(api: Partial<ShopApi> = {}, initial: Partial<Catalog> = {}) {
     { fetchProfile },
   );
   const navigate = vi.fn();
+  const pending = memoryPending();
   const startCheckout = vi.fn(
     async (): Promise<CheckoutOutcome> => ({
       kind: "redirect",
       url: "https://checkout.test/pay/1",
     }),
   );
+  const orderStatus = vi.fn(
+    async (): Promise<OrderStatus | null> => ({
+      status: "pending",
+      feature: null,
+    }),
+  );
   const shop = new ShopStore(
     {
       session,
       navigate,
+      pending,
       newReference: () => "bs-reference-0001",
       api: {
         startCheckout,
+        orderStatus,
         equip: vi.fn(async () => ({ ok: true as const, profile })),
         fetchProfile,
         ...api,
@@ -63,13 +97,25 @@ function setup(api: Partial<ShopApi> = {}, initial: Partial<Catalog> = {}) {
     shop,
     session,
     navigate,
+    pending,
     fetchProfile,
     startCheckout,
+    orderStatus,
     grant: (feature: string) => {
       features = [...features, feature];
     },
   };
 }
+
+const playerUpdated = () =>
+  server("player.updated", {
+    player: {
+      nickname: "Sailor 4821",
+      rating: 1016,
+      premium: false,
+      cosmetics: { ships: "classic", hitEffect: "flame", theme: "day" },
+    },
+  });
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -79,19 +125,22 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("ShopStore", () => {
-  it("sends the buyer to the payment page in the chosen currency", async () => {
-    const { shop, navigate, startCheckout } = setup();
+describe("ShopStore: checkout", () => {
+  it("sends the buyer to the payment page and remembers what was bought", async () => {
+    const { shop, navigate, startCheckout, pending } = setup();
     shop.setCurrency("USD");
     await shop.buy(silver);
     expect(startCheckout).toHaveBeenCalledWith({
       productKey: "battleship-silver-fleet",
       currency: "USD",
-      feature: battleshipFeatures.silverFleet,
       reference: "bs-reference-0001",
     });
     expect(shop.phase).toBe("redirecting");
     expect(navigate).toHaveBeenCalledWith("https://checkout.test/pay/1");
+    expect(pending.value).toEqual({
+      productKey: "battleship-silver-fleet",
+      feature: battleshipFeatures.silverFleet,
+    });
   });
 
   it("keeps the same reference while the payment page is being prepared", async () => {
@@ -155,30 +204,25 @@ describe("ShopStore", () => {
     await shop.buy(silver);
     expect(startCheckout).not.toHaveBeenCalled();
   });
+});
 
-  it("after checkout, succeeds when player.updated brings the feature", async () => {
-    const { shop, session, grant } = setup();
-    shop.awaitFeature(silver.feature);
+describe("ShopStore: back from the provider", () => {
+  it("processes until player.updated brings the feature", async () => {
+    const { shop, session, grant, pending } = setup();
+    pending.save({ productKey: silver.key, feature: silver.feature });
+    shop.returnFromCheckout("order-0001", "success");
     expect(shop.phase).toBe("processing");
+    expect(shop.awaiting).toBe(silver.feature);
     grant(silver.feature);
-    session.handle(
-      server("player.updated", {
-        player: {
-          nickname: "Sailor 4821",
-          rating: 1016,
-          premium: false,
-          cosmetics: { ships: "classic", hitEffect: "flame", theme: "day" },
-        },
-      }),
-    );
+    session.handle(playerUpdated());
     await vi.advanceTimersByTimeAsync(0);
-    expect(shop.owns(silver.feature)).toBe(true);
     expect(shop.phase).toBe("success");
   });
 
   it("falls back to polling the profile every 3 s", async () => {
-    const { shop, fetchProfile, grant } = setup();
-    shop.awaitFeature(silver.feature);
+    const { shop, fetchProfile, grant, pending } = setup();
+    pending.save({ productKey: silver.key, feature: silver.feature });
+    shop.returnFromCheckout("order-0001", "success");
     await vi.advanceTimersByTimeAsync(3000);
     expect(fetchProfile).toHaveBeenCalledTimes(1);
     expect(shop.phase).toBe("processing");
@@ -189,9 +233,71 @@ describe("ShopStore", () => {
     expect(fetchProfile).toHaveBeenCalledTimes(2);
   });
 
+  it("learns the feature from the order when this tab forgot it", async () => {
+    const { shop, grant, orderStatus } = setup();
+    orderStatus.mockResolvedValue({
+      status: "pending",
+      feature: silver.feature,
+    });
+    shop.returnFromCheckout("order-0001", "success");
+    expect(shop.awaiting).toBeNull();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(shop.awaiting).toBe(silver.feature);
+    grant(silver.feature);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(shop.phase).toBe("success");
+  });
+
+  it("a cancelled payment is calm and final, and the product can be bought again", async () => {
+    const { shop, fetchProfile, startCheckout } = setup();
+    shop.returnFromCheckout("order-0001", "cancel");
+    expect(shop.phase).toBe("cancelled");
+    expect(shop.busy).toBe(false);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(fetchProfile).not.toHaveBeenCalled();
+    await shop.buy(silver);
+    expect(startCheckout).toHaveBeenCalled();
+  });
+
+  it("a failure hint is checked with the order: not paid means failed", async () => {
+    const { shop, orderStatus } = setup();
+    orderStatus.mockResolvedValue({
+      status: "failed",
+      feature: silver.feature,
+    });
+    shop.returnFromCheckout("order-0001", "failure");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(shop.phase).toBe("failed");
+  });
+
+  it("a failure hint on an order that was paid keeps waiting for the grant", async () => {
+    const { shop, orderStatus, grant, pending } = setup();
+    pending.save({ productKey: silver.key, feature: silver.feature });
+    orderStatus.mockResolvedValue({ status: "paid", feature: silver.feature });
+    shop.returnFromCheckout("order-0001", "failure");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(shop.phase).toBe("processing");
+    grant(silver.feature);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(shop.phase).toBe("success");
+  });
+
+  it("an order reported failed while processing ends the wait", async () => {
+    const { shop, orderStatus, pending } = setup();
+    pending.save({ productKey: silver.key, feature: silver.feature });
+    shop.returnFromCheckout("order-0001", "success");
+    orderStatus.mockResolvedValue({
+      status: "failed",
+      feature: silver.feature,
+    });
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(shop.phase).toBe("failed");
+  });
+
   it("stops polling after 2 minutes and says it is still processing", async () => {
-    const { shop, fetchProfile } = setup();
-    shop.awaitFeature(silver.feature);
+    const { shop, fetchProfile, pending } = setup();
+    pending.save({ productKey: silver.key, feature: silver.feature });
+    shop.returnFromCheckout("order-0001", "success");
     await vi.advanceTimersByTimeAsync(120_000);
     expect(shop.phase).toBe("slow");
     const calls = fetchProfile.mock.calls.length;
@@ -202,12 +308,26 @@ describe("ShopStore", () => {
   });
 
   it("is done at once when the feature is already there", () => {
-    const { shop, session } = setup();
+    const { shop, session, pending } = setup();
     session.setProfile({ ...profile, features: [silver.feature] });
-    shop.awaitFeature(silver.feature);
+    pending.save({ productKey: silver.key, feature: silver.feature });
+    shop.returnFromCheckout("order-0001", "success");
     expect(shop.phase).toBe("success");
   });
 
+  it("a checkout without a page to visit waits for the grant directly", async () => {
+    const { shop, grant } = setup({
+      startCheckout: async () => ({ kind: "pending" }),
+    });
+    await shop.buy(silver);
+    expect(shop.phase).toBe("processing");
+    grant(silver.feature);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(shop.phase).toBe("success");
+  });
+});
+
+describe("ShopStore: cosmetics and currencies", () => {
   it("lists the currencies products are priced in", () => {
     const { shop } = setup();
     expect(shop.currencies).toEqual(["RUB", "USD"]);

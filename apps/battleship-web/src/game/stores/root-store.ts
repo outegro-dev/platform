@@ -4,7 +4,7 @@ import type {
   PlayerStats,
 } from "@outegro/contracts/battleship";
 import { runInAction } from "mobx";
-import type { Catalog, Currency } from "@/lib/catalog";
+import type { Catalog, CheckoutResult, Currency } from "@/lib/catalog";
 import {
   type Environment,
   GameSocket,
@@ -19,7 +19,7 @@ import { MatchStore } from "./match-store";
 import { PlacementStore } from "./placement-store";
 import { type KeyValueStorage, PreferencesStore } from "./preferences-store";
 import { type ProfileSource, SessionStore } from "./session-store";
-import { type ShopApi, ShopStore } from "./shop-store";
+import { type PendingPurchases, type ShopApi, ShopStore } from "./shop-store";
 import type { SoundPlayer } from "./sound";
 import {
   type HistoryPage,
@@ -38,6 +38,8 @@ export type RootDeps = {
   shopApi: ShopApi;
   statsApi: StatsApi;
   navigate: (url: string) => void;
+  /** Where a purchase in flight is remembered across the provider's page. */
+  pendingPurchases?: PendingPurchases | null;
   timers?: Timers;
   environment?: Environment;
   storage?: KeyValueStorage | null;
@@ -104,12 +106,17 @@ export class RootStore {
   }
 
   /** The shop page's store: catalog from the server render, purchases, cosmetics. */
-  createShop(initial: { catalog: Catalog; currency: Currency }): ShopStore {
+  createShop(initial: {
+    catalog: Catalog;
+    currency: Currency;
+    returned?: { orderId: string; result: CheckoutResult | null } | null;
+  }): ShopStore {
     return new ShopStore(
       {
         session: this.session,
         api: this.deps.shopApi,
         navigate: this.deps.navigate,
+        pending: this.deps.pendingPurchases ?? null,
         timers: this.timers,
       },
       initial,
@@ -132,6 +139,7 @@ export class RootStore {
   start(): void {
     if (this.started) return;
     this.started = true;
+    this.preferences.restore();
     this.wire();
     if (this.session.signedIn) this.socket.start();
   }

@@ -21,6 +21,7 @@ function setup() {
     profileSource: { fetchProfile: async () => profile },
     shopApi: {
       startCheckout: vi.fn(),
+      orderStatus: vi.fn(),
       equip: vi.fn(),
       fetchProfile: async () => profile,
     },
@@ -132,6 +133,7 @@ describe("RootStore", () => {
       profileSource: { fetchProfile: async () => null },
       shopApi: {
         startCheckout: vi.fn(),
+        orderStatus: vi.fn(),
         equip: vi.fn(),
         fetchProfile: vi.fn(),
       },

@@ -14,6 +14,15 @@ describe("formatMoney", () => {
     );
   });
 
+  it("uses the currency sign in any language", () => {
+    expect(
+      formatMoney({ minor: "5000", currency: "RUB", scale: 2 }, "en"),
+    ).toBe("₽50");
+    expect(
+      plain(formatMoney({ minor: "52", currency: "EUR", scale: 2 }, "ru")),
+    ).toBe("0,52 €");
+  });
+
   it("drops a zero fraction", () => {
     expect(
       plain(formatMoney({ minor: "29900", currency: "RUB", scale: 2 }, "ru")),

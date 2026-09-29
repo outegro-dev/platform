@@ -32,11 +32,19 @@ export type Catalog = {
 export type CheckoutRequest = {
   productKey: string;
   currency: Currency;
-  /** What the shop waits for after the provider sends the buyer back. */
-  feature: string;
   /** Idempotency-Key: the same for every retry of one purchase. */
   reference: string;
 };
+
+/** How payments reports an order the buyer came back from. */
+export type OrderStatus = {
+  status: "paid" | "failed" | "pending";
+  /** The feature the order grants, when payments says. */
+  feature: string | null;
+};
+
+/** What the provider appended to the return URL (a hint, not a proof). */
+export type CheckoutResult = "success" | "failure" | "cancel";
 
 export type CheckoutOutcome =
   | { kind: "redirect"; url: string }

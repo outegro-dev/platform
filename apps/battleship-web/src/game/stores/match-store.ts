@@ -25,6 +25,7 @@ export type Opponent = MatchSnapshot["opponent"];
 export type MatchMode = MatchSnapshot["mode"];
 export type MatchPhase = MatchSnapshot["phase"];
 export type FinishReason = NonNullable<MatchSnapshot["reason"]>;
+export type AbortReason = ServerPayload<"match.aborted">["reason"];
 export type RatingChange = NonNullable<
   ServerPayload<"match.finished">["rating"]
 >;
@@ -101,6 +102,11 @@ export class MatchStore {
   deadline: string | null = null;
   winner: Side | null = null;
   reason: FinishReason | null = null;
+  /**
+   * The match ended without a result (no winner, no rating change): why,
+   * or "unknown" when only a finished snapshot without a winner told us.
+   */
+  aborted: AbortReason | "unknown" | null = null;
   moves = 0;
   yourFleetPlaced = false;
   opponentFleetPlaced = false;
@@ -261,6 +267,7 @@ export class MatchStore {
     this.clearShotTimer();
     this.matchId = null;
     this.phase = null;
+    this.aborted = null;
     this.endedWhileAway = false;
     this.effects = [];
     this.notice = null;
@@ -283,8 +290,23 @@ export class MatchStore {
       case "fleet.placed": {
         const { side } = message.payload;
         this.enqueue(0, () => {
-          if (side === "you") this.yourFleetPlaced = true;
-          else this.opponentFleetPlaced = true;
+          if (side === "opponent") {
+            this.opponentFleetPlaced = true;
+            return;
+          }
+          this.yourFleetPlaced = true;
+          // The server accepted exactly the fleet we sent: show it in our waters.
+          if (this.ownShips.length === 0) {
+            this.ownShips = this.deps.placement.fleet.map((ship) => ({
+              x: ship.x,
+              y: ship.y,
+              length: ship.length,
+              orientation: ship.orientation,
+              hits: [],
+              sunk: false,
+            }));
+            this.ownShots = emptyGrid();
+          }
         });
         return;
       }
@@ -335,6 +357,24 @@ export class MatchStore {
           this.opponentGraceUntil = null;
           this.resignSeq = null;
           this.sound.play(payload.winner === "you" ? "win" : "lose");
+        });
+        return;
+      }
+      case "match.aborted": {
+        const { reason } = message.payload;
+        this.clearShotTimer();
+        this.pendingShot = null;
+        this.enqueue(timing.finish, () => {
+          this.phase = "finished";
+          this.turn = null;
+          this.deadline = null;
+          this.winner = null;
+          this.reason = null;
+          this.rating = null;
+          this.aborted = reason;
+          this.opponentConnected = true;
+          this.opponentGraceUntil = null;
+          this.resignSeq = null;
         });
         return;
       }
@@ -415,6 +455,8 @@ export class MatchStore {
     this.deadline = match.deadline;
     this.winner = match.winner;
     this.reason = match.reason;
+    this.aborted =
+      match.phase === "finished" && match.winner === null ? "unknown" : null;
     this.moves = match.moves;
     this.yourFleetPlaced = match.yourFleetPlaced;
     this.opponentFleetPlaced = match.opponentFleetPlaced;

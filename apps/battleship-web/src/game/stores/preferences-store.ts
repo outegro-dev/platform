@@ -16,8 +16,15 @@ export class PreferencesStore {
 
   constructor(private readonly storage: KeyValueStorage | null = null) {
     makeAutoObservable<PreferencesStore, "storage">(this, { storage: false });
+  }
+
+  /**
+   * Reads the saved choices. Called after the first render, so the page
+   * hydrates exactly as the server rendered it (sound off).
+   */
+  restore(): void {
     try {
-      this.sound = storage?.getItem(SOUND_KEY) === "on";
+      this.sound = this.storage?.getItem(SOUND_KEY) === "on";
     } catch {
       this.sound = false;
     }

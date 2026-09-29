@@ -22,6 +22,8 @@ export function formatMoney(money: Money, locale: string): string {
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: money.currency,
+    // "₽50" rather than "RUB 50" in English; codes stay where no sign exists.
+    currencyDisplay: "narrowSymbol",
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(`${negative ? "-" : ""}${decimal}` as Intl.StringNumericLiteral);

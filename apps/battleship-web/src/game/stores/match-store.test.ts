@@ -297,6 +297,64 @@ describe("MatchStore", () => {
     expect(sound.play).toHaveBeenCalledWith("win");
   });
 
+  it("ends without a result when the match is aborted", async () => {
+    const { match } = setup();
+    match.handle(
+      server("match.state", {
+        match: snapshot({ phase: "placement", turn: null }),
+      }),
+    );
+    match.handle(server("match.aborted", { reason: "placement_timeout" }));
+    await vi.runAllTimersAsync();
+    expect(match.active).toBe(false);
+    expect(match.finished).toBe(true);
+    expect(match.aborted).toBe("placement_timeout");
+    expect(match.won).toBeNull();
+    expect(match.rating).toBeNull();
+  });
+
+  it("reads a finished snapshot without a winner as cancelled", () => {
+    const { match } = setup();
+    match.handle(
+      server("match.state", {
+        match: snapshot({
+          phase: "finished",
+          turn: null,
+          winner: null,
+          reason: null,
+        }),
+      }),
+    );
+    expect(match.aborted).toBe("unknown");
+    expect(match.active).toBe(false);
+  });
+
+  it("shows the fleet the server accepted in your waters", async () => {
+    const { match, placement } = setup();
+    match.handle(
+      server("match.state", {
+        match: snapshot({
+          phase: "placement",
+          turn: null,
+          own: null,
+          target: null,
+          yourFleetPlaced: false,
+          opponentFleetPlaced: false,
+        }),
+      }),
+    );
+    placement.randomize();
+    placement.submit();
+    placement.handle(server("fleet.placed", { side: "you" }));
+    match.handle(server("fleet.placed", { side: "you" }));
+    await vi.runAllTimersAsync();
+    expect(match.ownShips).toHaveLength(10);
+    expect(match.ownShips.map((ship) => ship.length).sort()).toEqual(
+      [...placement.fleet.map((ship) => ship.length)].sort(),
+    );
+    expect(match.yourFleetPlaced).toBe(true);
+  });
+
   it("notes a skipped turn", async () => {
     const { match } = setup();
     match.handle(server("match.state", { match: snapshot() }));

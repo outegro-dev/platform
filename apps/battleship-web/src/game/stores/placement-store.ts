@@ -66,6 +66,8 @@ export class PlacementStore {
   drag: { id: number; grab: number } | null = null;
   /** Why the last attempt to place a ship failed. */
   issue: PlacementIssue | null = null;
+  /** The last ship put on the board, for the live announcement. */
+  lastPlaced: ShipPlacement | null = null;
   submitSeq: number | null = null;
   submitted = false;
   serverError: GameErrorCode | null = null;
@@ -216,6 +218,7 @@ export class PlacementStore {
     this.pointer = null;
     this.drag = null;
     this.issue = null;
+    this.lastPlaced = null;
     this.submitSeq = null;
     this.submitted = false;
     this.serverError = null;
@@ -272,6 +275,7 @@ export class PlacementStore {
       return false;
     }
     slot.placement = placement;
+    this.lastPlaced = placement;
     this.issue = null;
     this.serverError = null;
     this.selectedId = this.hand[0]?.id ?? null;
