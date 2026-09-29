@@ -10,7 +10,7 @@
 
 ## Типографика
 
-Все шрифты self-hosted через Fontsource, SIL Open Font License, только подмножества Latin + Cyrillic, `font-display: swap`, без runtime CDN.
+Все шрифты self-hosted: файлы Fontsource (SIL Open Font License) подключены через `next/font/local` (`@outegro/ui/fonts`), только подмножества Latin + Cyrillic со своими `unicode-range`, `font-display: swap`, без runtime CDN. Latin предзагружается и получает запасной шрифт с подогнанными метриками (`adjustFontFallback`; для JetBrains Mono — системный моноширинный), Cyrillic грузится по требованию — замена шрифта не сдвигает раскладку (CLS < 0.02).
 
 | Роль | Шрифт | Начертания |
 |---|---|---|
