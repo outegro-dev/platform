@@ -2010,7 +2010,7 @@
       "id": "N-06",
       "title": "Billing/security templates EN/RU",
       "stage": "04-notifications",
-      "status": "planned",
+      "status": "review",
       "scope": "base-release",
       "path": "docs/04-delivery/04-notifications/tasks/N-06.md",
       "dependencies": [
