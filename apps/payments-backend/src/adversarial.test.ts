@@ -15,6 +15,7 @@ import { CustomersService } from "./customers/customers.service.js";
 import {
   auditLog,
   billingPeriods,
+  checkoutAttempts,
   financialEntries,
   grants,
   orders,
@@ -836,6 +837,37 @@ describe("operator visibility of money problems", () => {
       lastSeenAt: later,
       occurrences: 3,
     });
+  });
+});
+
+describe("reconciliation races", () => {
+  it("an attempt that its own call resolved while the worker looked keeps its schedule", async () => {
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, SILVER, "USD");
+    const [attempt] = await db
+      .select()
+      .from(checkoutAttempts)
+      .where(eq(checkoutAttempts.orderId, orderId));
+    const order = await orderRow(orderId);
+    if (!attempt || !order) throw new Error("no attempt");
+    expect(attempt).toMatchObject({ state: "ready" });
+    expect(attempt.nextCheckAt).not.toBeNull();
+    // The worker read the row as `requesting` just before the call answered.
+    const worker = reconciliation as unknown as {
+      check(a: typeof attempt, o: typeof order): Promise<void>;
+    };
+    await worker.check({ ...attempt, state: "requesting" }, order);
+    const [after] = await db
+      .select()
+      .from(checkoutAttempts)
+      .where(eq(checkoutAttempts.id, attempt.id));
+    expect(after).toMatchObject({ state: "ready" });
+    expect(after?.nextCheckAt).toEqual(attempt.nextCheckAt);
+    // So a lost webhook is still found: the buyer pays, reconciliation settles.
+    h.lava.complete(invoice.id);
+    h.clock.advance(61_000);
+    await reconciliation.tick();
+    expect(await orderRow(orderId)).toMatchObject({ status: "paid" });
   });
 });
 

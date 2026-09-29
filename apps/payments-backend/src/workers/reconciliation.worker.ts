@@ -94,7 +94,11 @@ export class ReconciliationWorker extends PeriodicWorker {
     let current = attempt;
     if (attempt.state === "requesting") {
       // Our own call never recorded an answer (the process stopped): unknown.
-      current = (await this.markUnknown(attempt)) ?? attempt;
+      const marked = await this.markUnknown(attempt);
+      // Its call answered after we read the row and set the next check
+      // itself; this stale row must not clear that schedule.
+      if (!marked) return;
+      current = marked;
     }
     try {
       if (current.state === "ready" && current.providerInvoiceId) {
