@@ -1,17 +1,19 @@
 {
   "meta": {
     "title": "Nick Lukashik — Senior full-stack engineer",
-    "description": "Senior full-stack engineer. Fast interfaces, reliable backends and the infrastructure that ships them. TypeScript, React, Next.js, NestJS, PostgreSQL, Kubernetes."
+    "description": "Senior full-stack engineer. Web products built turnkey — interface design, frontend, backend, payments, infrastructure and monitoring, from the idea to launch and support."
   },
   "nav": {
-    "expertise": "Expertise",
-    "approach": "Approach",
-    "platform": "Platform",
     "projects": "Projects",
+    "platform": "Platform",
+    "services": "Services",
+    "process": "Process",
+    "stack": "Stack",
     "contact": "Contact",
     "menu": "Open navigation",
     "close": "Close navigation",
     "home": "Nick Lukashik, back to top",
+    "homePage": "Nick Lukashik, main page",
     "skip": "Skip to content",
     "language": "Language",
     "sections": "Sections"
@@ -20,178 +22,293 @@
     "eyebrow": "Senior full-stack engineer · Tbilisi",
     "line1": "Depth in",
     "line2": "every detail.",
-    "description": "I design fast interfaces, build reliable backends and ship them on infrastructure I run myself — from the first pixel to the cluster.",
-    "cta": "See the stack",
+    "description": "I build web products turnkey — from the idea and interface design through frontend, backend, payments and infrastructure to launch and support.",
+    "cta": "See the work",
     "contact": "Get in touch",
     "art": "Liquid silver NL signature",
     "scroll": "Scroll"
   },
-  "stack": {
-    "label": "Daily stack"
-  },
-  "expertise": {
-    "index": "01",
-    "label": "Expertise",
-    "title": "Depth across",
-    "titleAccent": "the stack.",
-    "intro": "6+ years in the JavaScript ecosystem. I connect what people see with the systems they rely on — and own it in production.",
-    "art": "Liquid silver knot",
-    "items": [
-      {
-        "title": "Interfaces that feel right",
-        "body": "Fast, accessible products with careful interaction design — from e-commerce journeys to the admin tools behind them.",
-        "stack": ["TypeScript", "React", "Next.js", "Tailwind CSS", "Three.js"],
-        "focus": "Core Web Vitals · accessibility · SEO"
-      },
-      {
-        "title": "Systems that hold up",
-        "body": "Clear service boundaries, reliable data flows and APIs that keep complex products easy to change.",
-        "stack": ["Node.js", "NestJS", "PostgreSQL", "Redis", "RabbitMQ"],
-        "focus": "APIs · queues · data modelling"
-      },
-      {
-        "title": "From code to production",
-        "body": "Reproducible delivery and real visibility after launch. Infrastructure is part of the product.",
-        "stack": [
-          "Docker",
-          "Kubernetes",
-          "ClickHouse",
-          "GitHub Actions",
-          "Grafana"
-        ],
-        "focus": "Delivery · observability · operations"
-      },
-      {
-        "title": "AI-first delivery",
-        "body": "Agents write and review alongside me; contracts, tests and human judgement stay the gate.",
-        "stack": ["Claude Code", "Codex", "MCP", "Playwright"],
-        "focus": "Speed without losing control"
-      }
-    ]
-  },
-  "approach": {
-    "index": "02",
-    "label": "Approach",
-    "title": "The details",
-    "titleAccent": "make the difference.",
-    "items": [
-      {
-        "title": "Think in systems.",
-        "body": "Start with the problem, the constraints and the people involved. Make the architecture serve the product."
-      },
-      {
-        "title": "Build for people.",
-        "body": "A responsive interface, a clear error, a faster page. Small decisions add up to a product people enjoy using."
-      },
-      {
-        "title": "Own the delivery.",
-        "body": "Connect the interface, backend and deployment. Verify the result and keep the system understandable."
-      }
-    ]
-  },
-  "platform": {
-    "index": "03",
-    "label": "Platform",
-    "title": "The platform",
-    "titleAccent": "behind this site.",
-    "intro": "outegro.dev is the first product on a platform I am building from scratch: one sign-in, notifications, payments and an admin console shared by every future app — on a single-node K3s cluster.",
-    "ready": "Ready",
-    "building": "In development",
-    "layers": [
-      {
-        "name": "Experience",
-        "items": [
-          {
-            "name": "Landing",
-            "tech": "Next.js 16 · React 19 · R3F",
-            "status": "ready"
-          },
-          {
-            "name": "Design system",
-            "tech": "Tailwind 4 · Radix · shadcn",
-            "status": "ready"
-          },
-          {
-            "name": "Sign-in",
-            "tech": "Email code · Google · SSO",
-            "status": "ready"
-          },
-          {
-            "name": "Admin console",
-            "tech": "Next.js · audit trail",
-            "status": "ready"
-          }
-        ]
-      },
-      {
-        "name": "Services",
-        "items": [
-          {
-            "name": "Identity",
-            "tech": "NestJS 12 · Drizzle · ES256 JWT",
-            "status": "ready"
-          },
-          {
-            "name": "Notifications",
-            "tech": "NestJS · RabbitMQ · Email / Telegram",
-            "status": "ready"
-          },
-          {
-            "name": "Payments",
-            "tech": "NestJS · Lava · subscriptions",
-            "status": "ready"
-          },
-          {
-            "name": "Data",
-            "tech": "PostgreSQL · Valkey · outbox",
-            "status": "ready"
-          }
-        ]
-      },
-      {
-        "name": "Operations",
-        "items": [
-          {
-            "name": "Cluster",
-            "tech": "K3s · Traefik · cert-manager",
-            "status": "ready"
-          },
-          {
-            "name": "Delivery",
-            "tech": "GitHub Actions · GHCR · Argo CD",
-            "status": "ready"
-          },
-          {
-            "name": "Observability",
-            "tech": "Prometheus · Loki · Grafana",
-            "status": "building"
-          },
-          {
-            "name": "Recovery",
-            "tech": "CloudNativePG · offsite backups",
-            "status": "building"
-          }
-        ]
-      }
+  "turnkey": {
+    "label": "Turnkey: every stage, one engineer",
+    "steps": [
+      "Idea",
+      "Interface design",
+      "Frontend",
+      "Backend",
+      "Payments & integrations",
+      "Infrastructure",
+      "CI/CD",
+      "Monitoring",
+      "Launch",
+      "Support"
     ]
   },
   "projects": {
-    "index": "04",
+    "index": "01",
     "label": "Projects",
-    "title": "A space for",
-    "titleAccent": "what’s next.",
+    "title": "Built, shipped",
+    "titleAccent": "and live.",
     "name": "Battleship",
     "status": "Live",
-    "description": "An online game on my own platform: matches with friends, four bot levels, an Elo rating and purchases through Lava. One account for every outegro.dev app.",
-    "art": "Flowing liquid silver bands",
-    "cta": "Play"
+    "summary": "Classic Battleship, online — the first product on my platform. Designed, built and run end to end: interface, game server, payments and infrastructure.",
+    "play": "Play Battleship",
+    "howBuilt": "How it is built",
+    "featuresTitle": "What it does",
+    "features": [
+      "Real-time matches over WebSocket that survive a dropped connection",
+      "Four bots, from random shots to a probability map",
+      "Quick matches by Elo rating and private rooms by link",
+      "Leaderboard, player stats, a shot heatmap and match replays",
+      "A Premium subscription and a one-time Silver Fleet, paid through Lava",
+      "English and Russian, on a desktop and on a phone"
+    ],
+    "account": "One account at <id>id.outegro.dev</id> works across every outegro.dev app; purchases and subscriptions are managed at <pay>pay.outegro.dev</pay>.",
+    "stackTitle": "Runs on",
+    "stack": [
+      "Next.js 16",
+      "React 19",
+      "MobX",
+      "NestJS 12",
+      "WebSocket",
+      "PostgreSQL",
+      "Valkey",
+      "RabbitMQ",
+      "K3s"
+    ],
+    "note": "Screens from a local build with test data.",
+    "shots": {
+      "battle": {
+        "caption": "A match against the Expert bot",
+        "alt": "Battleship in a desktop browser: a match against the Expert bot. Your fleet on the left has taken two hits; in enemy waters on the right two ships are sunk and a third is hit."
+      },
+      "lobby": {
+        "caption": "The lobby on a phone",
+        "alt": "Battleship on a phone: the lobby with the player’s rating card and the first way to play, a match against a bot."
+      },
+      "placement": {
+        "caption": "Fleet placement: drag, tap or keyboard",
+        "alt": "Fleet placement: four ships on the board, the next one shown in green where it will land, and the rest of the fleet in the tray."
+      },
+      "leaderboard": {
+        "caption": "Elo leaderboard, all time or this week",
+        "alt": "The leaderboard: rank, rating, wins, matches and win rate of the top players, with your own place next to the table."
+      },
+      "profile": {
+        "caption": "Profile: stats and a shot heatmap",
+        "alt": "A player profile: matches, wins, win rate, accuracy, best streak and moves to win, a shot heatmap and wins against each bot level."
+      }
+    }
+  },
+  "platform": {
+    "index": "02",
+    "label": "Platform",
+    "title": "One platform",
+    "titleAccent": "under every app.",
+    "intro": "Battleship runs on a platform I built and operate: one account, notifications, payments and an operator console shared by every outegro.dev app — on a single K3s node behind Cloudflare.",
+    "live": "Running in production",
+    "layers": [
+      {
+        "name": "For users",
+        "items": [
+          {
+            "name": "Sign-in",
+            "result": "One account for every app: an email code or Google, active sessions, a security page and Telegram linking.",
+            "tech": "id.outegro.dev · SSO · ES256 JWT"
+          },
+          {
+            "name": "Notifications",
+            "result": "Email and Telegram in English and Russian, with billing and security templates.",
+            "tech": "Resend · grammY · RabbitMQ"
+          },
+          {
+            "name": "Payments",
+            "result": "One-time purchases and subscriptions through Lava, with receipts, refunds, reconciliation and protection from paying twice.",
+            "tech": "Lava · webhooks · reconciliation"
+          }
+        ]
+      },
+      {
+        "name": "For operators",
+        "items": [
+          {
+            "name": "Operator console",
+            "result": "Users, roles, payments, notifications and game moderation, with an audit log of operator actions.",
+            "tech": "admin.outegro.dev · Next.js · MobX"
+          },
+          {
+            "name": "Monitoring",
+            "result": "Metrics and logs from every service, with Telegram alerts for failing pods, expiring certificates, stale backups and stuck queues.",
+            "tech": "Prometheus · Loki · Telegram"
+          },
+          {
+            "name": "Delivery",
+            "result": "Every change is linted, type-checked, tested and built; Argo CD rolls it out from Git, and a rollback is a revert.",
+            "tech": "GitHub Actions · GHCR · Argo CD"
+          }
+        ]
+      },
+      {
+        "name": "Underneath",
+        "items": [
+          {
+            "name": "Data",
+            "result": "PostgreSQL with a database per service, continuous WAL archiving and daily backups to Cloudflare R2. Restore is tested: all four databases rebuilt from backup in 81 seconds.",
+            "tech": "CloudNativePG · Drizzle · R2"
+          },
+          {
+            "name": "Messaging",
+            "result": "Events between services go through an outbox and an inbox: none are lost, none are applied twice.",
+            "tech": "RabbitMQ · outbox · inbox"
+          },
+          {
+            "name": "Cluster",
+            "result": "One K3s node behind Cloudflare, with TLS certificates renewed automatically and secrets sealed in Git.",
+            "tech": "K3s · Traefik · cert-manager"
+          }
+        ]
+      }
+    ]
+  },
+  "services": {
+    "index": "03",
+    "label": "Services",
+    "title": "What I can build",
+    "titleAccent": "for you.",
+    "intro": "6+ years in the JavaScript ecosystem. You bring an idea or an existing product; I take it through design, code, payments and infrastructure to launch, and stay for support. One engineer for the whole chain: no handoffs, one person answerable for the result.",
+    "art": "Liquid silver knot",
+    "items": [
+      {
+        "title": "Web products and SaaS",
+        "body": "Customer-facing apps with accounts, subscriptions, notifications and an admin panel behind them.",
+        "stack": ["Next.js", "React", "NestJS", "PostgreSQL"],
+        "proof": "Live: battleship.outegro.dev",
+        "href": "https://battleship.outegro.dev"
+      },
+      {
+        "title": "Payments and subscriptions",
+        "body": "Checkout, one-time purchases and subscriptions, receipts and refunds — reconciled with the provider, so money and access never drift apart.",
+        "stack": ["Lava", "Webhooks", "Outbox", "RabbitMQ"],
+        "proof": "Live: the Battleship shop",
+        "href": "https://battleship.outegro.dev/shop"
+      },
+      {
+        "title": "Accounts and sign-in",
+        "body": "Single sign-on across your apps with email codes and Google, plus active sessions and a security page for your users.",
+        "stack": ["SSO", "OAuth 2.0 · PKCE", "JWT", "Valkey"],
+        "proof": "Live: id.outegro.dev",
+        "href": "https://id.outegro.dev"
+      },
+      {
+        "title": "Real-time and interactive",
+        "body": "WebSocket apps and games, fast and accessible interfaces, and 3D in the browser where it serves the product.",
+        "stack": ["WebSocket", "MobX", "Three.js", "React Three Fiber"],
+        "proof": "Live: Battleship and this site"
+      },
+      {
+        "title": "Internal tools and integrations",
+        "body": "Admin consoles with roles and an audit log, Telegram and email notifications, integrations with payment and email providers.",
+        "stack": ["Next.js", "Telegram", "Resend", "RabbitMQ"],
+        "proof": "Live: the outegro.dev operator console"
+      },
+      {
+        "title": "Infrastructure and DevOps",
+        "body": "Kubernetes, CI/CD with GitOps, monitoring, alerts and backups with a tested restore — set up so a release is a merge and a rollback is a revert.",
+        "stack": ["K3s", "Argo CD", "GitHub Actions", "Prometheus", "Loki"],
+        "proof": "Live: every outegro.dev app"
+      }
+    ]
+  },
+  "process": {
+    "index": "04",
+    "label": "Process",
+    "title": "Clear steps,",
+    "titleAccent": "visible progress.",
+    "intro": "Every stage ends with something you can open and check, not a status report.",
+    "youSee": "You see",
+    "steps": [
+      {
+        "title": "Discovery",
+        "body": "Goals, users, constraints and the smallest version worth launching.",
+        "see": "A written scope, milestones and an estimate."
+      },
+      {
+        "title": "Design",
+        "body": "Key flows and screens first, then the architecture and the data model.",
+        "see": "Screens to review and a short architecture note."
+      },
+      {
+        "title": "Build",
+        "body": "Short iterations: frontend, backend, payments, integrations and tests together.",
+        "see": "A staging version to click through after every iteration."
+      },
+      {
+        "title": "Launch",
+        "body": "Production setup — domain, CI/CD, monitoring, alerts and backups — then the release.",
+        "see": "The product live on your domain, with alerts already wired."
+      },
+      {
+        "title": "Support",
+        "body": "Fixes, improvements and new features, with an eye on metrics and alerts.",
+        "see": "Regular releases and a clear list of what comes next."
+      }
+    ],
+    "ai": "AI coding agents take the routine; contracts, tests and my review decide what ships."
+  },
+  "engagement": {
+    "index": "05",
+    "label": "Working together",
+    "title": "Yours to keep,",
+    "titleAccent": "from day one.",
+    "deliverablesTitle": "What you get",
+    "deliverables": [
+      {
+        "title": "Source code in your repository",
+        "body": "Your account and the full history, from the first commit."
+      },
+      {
+        "title": "Tests",
+        "body": "Unit, integration and end-to-end tests that run on every change."
+      },
+      {
+        "title": "Documentation",
+        "body": "Architecture, setup, operations and the decisions behind them."
+      },
+      {
+        "title": "CI/CD",
+        "body": "Every change checked, built and deployed automatically."
+      },
+      {
+        "title": "Monitoring",
+        "body": "Metrics, logs and alerts, in place before launch."
+      },
+      {
+        "title": "Handover",
+        "body": "A walkthrough for your team, with every account and access in your name."
+      }
+    ],
+    "formatsTitle": "Ways to work",
+    "formats": [
+      {
+        "title": "A project",
+        "body": "A product or a feature from idea to launch, with an agreed scope, plan and estimate."
+      },
+      {
+        "title": "Long-term work",
+        "body": "Ongoing development, infrastructure and support, as part of your team."
+      },
+      {
+        "title": "Audit or rescue",
+        "body": "A review of an existing product — code, performance, security, infrastructure — with a prioritised plan, and hands-on fixes if you need them."
+      }
+    ],
+    "cta": "Discuss your project"
   },
   "contact": {
-    "index": "05",
+    "index": "06",
     "label": "Contact",
     "title": "Good things start",
     "titleAccent": "with a conversation.",
-    "description": "Open to B2B contracts, thoughtful products and ambitious teams.",
+    "description": "Tell me what you want to build or fix — a few lines are enough. Open to projects, long-term contracts and ambitious teams.",
     "button": "Contact",
     "dialogTitle": "Let’s talk.",
     "dialogDescription": "Pick whatever is easiest. I usually reply within a day.",
@@ -205,7 +322,119 @@
   "footer": {
     "role": "Senior full-stack engineer",
     "back": "Back to top",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "stack": "Stack",
+    "platform": "Platform",
+    "site": "This site",
+    "links": {
+      "battleship": "Battleship",
+      "account": "Account",
+      "purchases": "Purchases & subscriptions"
+    }
+  },
+  "stackPage": {
+    "meta": {
+      "title": "Stack — Nick Lukashik",
+      "description": "The technologies behind outegro.dev and how each one is used in production: frontend, backend, data, messaging, infrastructure and delivery, observability, testing and AI-assisted development."
+    },
+    "eyebrow": "Stack",
+    "title": "The stack",
+    "titleAccent": "behind the platform.",
+    "intro": "Everything here runs in production at outegro.dev today — grouped by job, with what each piece does in the platform and where you can see it live.",
+    "groupsLabel": "Groups",
+    "art": "Flowing liquid silver bands",
+    "live": "See it live",
+    "groups": {
+      "frontend": {
+        "title": "Frontend",
+        "lead": "Five web apps on one design system: this site, sign-in, payments, the game and the operator console."
+      },
+      "backend": {
+        "title": "Backend",
+        "lead": "Four services — identity, notifications, payments and the game server — and the providers they talk to."
+      },
+      "data": {
+        "title": "Data",
+        "lead": "Every service owns its data; nothing reads another service’s database."
+      },
+      "messaging": {
+        "title": "Messaging",
+        "lead": "Services react to each other through events, not direct calls."
+      },
+      "delivery": {
+        "title": "Infrastructure and delivery",
+        "lead": "From a merge to production without manual steps, on one server."
+      },
+      "observability": {
+        "title": "Observability",
+        "lead": "Metrics, logs and alerts, so problems are seen before users report them."
+      },
+      "quality": {
+        "title": "Quality and testing",
+        "lead": "Checks that run on every change, against real databases and real browsers."
+      },
+      "ai": {
+        "title": "AI-assisted development",
+        "lead": "Agents speed up the work; the gates stay the same."
+      }
+    },
+    "names": {
+      "bff": "Backend for frontend",
+      "google": "Google sign-in",
+      "outbox": "Outbox and inbox",
+      "watchdog": "Watchdog → Telegram",
+      "gate": "Contracts and tests as the gate"
+    },
+    "items": {
+      "next": "Every web app of the platform. Server rendering, standalone builds and a strict content security policy with a nonce per request.",
+      "react": "Components in all five apps, compiled by the React Compiler everywhere except the game, whose MobX observers opt out.",
+      "typescript": "One language across the monorepo — apps, services and the contracts between them.",
+      "ui": "The shared @outegro/ui kit: tokens, components and self-hosted fonts for every app; Radix takes care of keyboard and focus.",
+      "intl": "English and Russian in every app; the choice lives in a cookie shared by all outegro.dev subdomains.",
+      "mobx": "State of the game, the payment pages and the operator console, in small stores with one job each.",
+      "three": "The liquid-silver scenes on this site, rendered only while visible, with pre-rendered posters for reduced motion and slow GPUs.",
+      "node": "The runtime of every service and web app, shipped in slim container images.",
+      "nest": "The four services: identity, notifications, payments and the game server.",
+      "zod": "The same schemas validate requests and define the contracts shared by apps and services.",
+      "jwt": "Short-lived access tokens signed by identity and verified by every service against the keys identity publishes.",
+      "ws": "The live game: turns, shots and reconnects, opened with a one-time ticket.",
+      "bff": "Web apps call the services from the server; the browser holds only HttpOnly cookies, never tokens.",
+      "lava": "Checkout, subscriptions and refunds; webhooks are verified, stored and applied once, even when they arrive again.",
+      "email": "Sign-in codes, receipts and security notices by email, in English and Russian.",
+      "telegram": "The Telegram bot for notifications and linking a Telegram account.",
+      "google": "Sign-in with Google next to email codes, linked to the same account.",
+      "postgres": "A database and a role per service, continuous WAL archiving and a daily backup to Cloudflare R2, kept for 30 days. Restore is tested: all four databases were rebuilt from the backups in 81 seconds, with the same row counts and constraints.",
+      "drizzle": "Typed schemas and SQL migrations; migrations run before every rollout.",
+      "valkey": "Refresh-token rotation, rate limits, the matchmaking queue, game rooms and socket tickets.",
+      "rabbitmq": "A payment grants Premium in the game and sends a receipt; failed deliveries retry through delay queues, and those that keep failing wait in dead-letter queues.",
+      "outbox": "An event leaves a service only if its transaction committed, and is applied once even when it arrives twice.",
+      "k3s": "Single-node Kubernetes running every app, service and database.",
+      "cloudflare": "DNS, TLS and protection in front; the server accepts web traffic only from Cloudflare.",
+      "traefik": "Ingress and TLS certificates, issued and renewed automatically.",
+      "argo": "GitOps: the cluster follows a Git repository; migrations run before each rollout, and a rollback is a git revert.",
+      "actions": "Lint, type checks, tests against real PostgreSQL, Valkey and RabbitMQ, and builds on every pull request and merge; images go to GitHub’s registry.",
+      "docker": "One build graph for every app and service image.",
+      "sealed": "Secrets are kept in Git encrypted; plain values never leave the cluster.",
+      "monorepo": "One repository: apps, services and shared packages build in dependency order, with caching.",
+      "prometheus": "Metrics from the node, Kubernetes, Traefik, PostgreSQL, RabbitMQ and every service, with alert rules for disks, errors, queues, backups and payments.",
+      "loki": "Logs of every pod for a week, searchable by request and correlation id; tokens are masked before they are stored.",
+      "pino": "Structured JSON logs; one correlation id follows a request through every service it touches.",
+      "watchdog": "Every five minutes: pods, the node, certificates, backups, Argo CD and HTTP checks, with alerts and a daily digest in Telegram.",
+      "vitest": "Unit and integration tests for the services, shared packages and app stores.",
+      "testcontainers": "Integration tests against real PostgreSQL, Valkey and RabbitMQ, locally and in CI.",
+      "playwright": "End-to-end tests for every web app; this site runs them in Chromium, Firefox and WebKit.",
+      "axe": "Accessibility scans inside the end-to-end tests.",
+      "biome": "One linter and formatter for the whole monorepo.",
+      "agents": "Coding agents work in parallel, each in its own git worktree; I set the task, review the result and merge.",
+      "context7": "Current library documentation for the agents, instead of stale memory.",
+      "gate": "Agents are fast; typed contracts, tests, lint and review decide what ships."
+    },
+    "cta": {
+      "title": "Need this for your product?",
+      "body": "The same stack, set up and run for your product — turnkey.",
+      "button": "Get in touch",
+      "work": "See the work"
+    }
   },
   "gallery": {
     "title": "The material library.",

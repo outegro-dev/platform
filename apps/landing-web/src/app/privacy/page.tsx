@@ -1,18 +1,25 @@
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SiteFooter } from "@/components/site-footer";
 import { contacts } from "@/lib/contact";
+import { openGraph } from "@/lib/metadata";
 
 type Section = { title: string; items: string[] };
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("privacy.meta");
-  return {
+  const page = {
     title: t("title"),
     description: t("description"),
-    alternates: { canonical: "/privacy" },
+    url: "/privacy",
+  };
+  return {
+    title: page.title,
+    description: page.description,
+    alternates: { canonical: page.url },
+    openGraph: openGraph(await getLocale(), page),
   };
 }
 

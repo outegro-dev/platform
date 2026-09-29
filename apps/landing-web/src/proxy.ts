@@ -35,7 +35,9 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: "/((?!_next/static|_next/image|health|og|icon|.*..*).*)",
+      // Every page, but not build assets, probes, generated images or
+      // files. The dot is escaped: a bare "." matched any path but "/".
+      source: "/((?!_next/static|_next/image|health|og|icon|.*\\..*).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },
