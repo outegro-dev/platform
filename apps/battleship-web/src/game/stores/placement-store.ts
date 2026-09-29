@@ -182,17 +182,22 @@ export class PlacementStore {
     return null;
   }
 
-  /** The selected ship where it would land now (pointer, drag or cursor). */
+  /**
+   * The selected ship where it would land now: where a drag would drop it,
+   * or where a click (Enter) on the cell under the pointer (cursor) would
+   * put it. A click on a placed ship picks that ship up or turns it instead,
+   * so there it has no spot to show: right after a click places a ship, the
+   * next one is not drawn over it as refused.
+   */
   get preview(): Preview | null {
     const slot = this.selected;
     if (!slot || this.submitted) return null;
     let anchor: Cell | null = null;
     if (this.drag && this.pointer) {
       anchor = this.anchorFor(this.pointer, this.drag.grab);
-    } else if (this.pointer) {
-      anchor = this.pointer;
-    } else if (this.cursorActive) {
-      anchor = this.cursor;
+    } else {
+      const cell = this.pointer ?? (this.cursorActive ? this.cursor : null);
+      if (cell && !this.slotAt(cell.x, cell.y)) anchor = cell;
     }
     if (!anchor) return null;
     const placement: ShipPlacement = {
