@@ -3,9 +3,13 @@ import { test as base, expect, type Page } from "@playwright/test";
 import { type FakeGame, GameHarness } from "./fake-game.ts";
 import type { Persona } from "./personas.ts";
 
-export const PLATFORM = "http://localhost:4195";
-export const APP = "http://localhost:3195";
+// Same defaults and overrides as playwright.config.ts.
+export const PLATFORM = `http://localhost:${process.env.E2E_PLATFORM_PORT ?? 4195}`;
+export const APP = `http://localhost:${process.env.E2E_APP_PORT ?? 3195}`;
 export const CHECKOUT = "https://checkout.fake.test";
+/** PAY_URL and ADMIN_URL of the app under test: linked, never opened. */
+export const PAY = "https://pay.fake.test";
+export const ADMIN = "https://admin.fake.test";
 
 type Fixtures = {
   game: GameHarness;

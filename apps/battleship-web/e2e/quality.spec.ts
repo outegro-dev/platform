@@ -6,6 +6,7 @@ import {
   expectAccessible,
   fireAt,
   layoutShift,
+  PLATFORM,
   signIn,
   signInAndConnect,
   startBotGame,
@@ -279,7 +280,9 @@ test.describe("delivery", () => {
   }) => {
     const response = await page.goto("/");
     const csp = response?.headers()["content-security-policy"] ?? "";
-    expect(csp).toContain("connect-src 'self' ws://localhost:4195");
+    expect(csp).toContain(
+      `connect-src 'self' ${PLATFORM.replace("http:", "ws:")}`,
+    );
     expect(csp).toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/);
     expect(csp).toContain("frame-ancestors 'none'");
     expect(response?.headers()["cache-control"]).toContain("no-store");

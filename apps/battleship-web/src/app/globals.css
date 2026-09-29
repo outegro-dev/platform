@@ -1844,9 +1844,12 @@
     .player-chip {
       padding-right: 4px;
     }
-    .player-chip-text,
-    .header-signout {
+    .player-chip-text {
       display: none;
+    }
+    /* Language, player and account fit next to the wordmark at 360 px. */
+    .header-actions {
+      gap: 6px;
     }
     .modes {
       grid-template-columns: minmax(0, 1fr);

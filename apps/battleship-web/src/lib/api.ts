@@ -18,7 +18,7 @@ import {
 } from "@outegro/contracts/battleship";
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
-import type { z } from "zod";
+import { z } from "zod";
 import type { HistoryPage, MatchReplay } from "@/game/stores/stats-store";
 import { env } from "./env";
 import { PaymentsClient } from "./payments-client";
@@ -29,6 +29,33 @@ const forward = async () =>
 
 export const battleshipApi = createBackend(env.BATTLESHIP_API_URL, {
   headers: forward,
+});
+
+const authApi = createBackend(env.AUTH_API_URL, { headers: forward });
+
+const accountSchema = z.object({
+  email: z.string().nullable().catch(null),
+  displayName: z.string().nullable().catch(null),
+  roles: z.array(z.string()).catch([]),
+});
+export type Account = z.infer<typeof accountSchema>;
+
+/**
+ * Who is signed in to the platform (Identity `/v1/me`), for the account
+ * menu only: the name and email are shown to the player and never passed
+ * to the game server. Optional: when Identity is slow or down the menu
+ * falls back to a generic "Your account" and the game keeps working.
+ */
+export const loadAccount = cache(async (): Promise<Account | null> => {
+  const token = await accessToken();
+  if (!token) return null;
+  try {
+    return accountSchema.parse(
+      await authApi<unknown>("/v1/me", { accessToken: token, timeoutMs: 3000 }),
+    );
+  } catch {
+    return null;
+  }
 });
 
 /** All calls to the payments service go through this one client. */

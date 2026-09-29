@@ -1,3 +1,4 @@
+import type { PlatformUrls } from "@outegro/ui/lib/platform";
 import { z } from "zod";
 
 const blankAsMissing = (value: unknown) =>
@@ -39,6 +40,10 @@ export const env = z
     ID_URL: z.url().default("http://localhost:3002"),
     /** Public site with the privacy policy. */
     SITE_URL: z.url().default("https://outegro.dev"),
+    /** Public payments frontend: purchases, subscriptions, renewal and cancel. */
+    PAY_URL: z.url().default("https://pay.outegro.dev"),
+    /** Public admin console, linked for users with a platform role. */
+    ADMIN_URL: z.url().default("https://admin.outegro.dev"),
     /** Unset: the shop shows the products as "coming soon". */
     PAYMENTS_API_URL: z.preprocess(blankAsMissing, z.url().optional()),
     /** https origins a checkout redirect may lead to. */
@@ -52,3 +57,12 @@ export const env = z
 
 /** The game WebSocket endpoint the browser connects to. */
 export const gameSocketUrl = `${new URL(env.GAME_WS_URL).origin}/ws`;
+
+/** Public addresses of the platform apps, for cross-app links. */
+export const platformUrls: PlatformUrls = {
+  site: env.SITE_URL,
+  id: env.ID_URL,
+  pay: env.PAY_URL,
+  battleship: env.APP_URL,
+  admin: env.ADMIN_URL,
+};

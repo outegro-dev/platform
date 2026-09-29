@@ -21,7 +21,7 @@ import {
   RandomPlacement,
   SeededRandom,
 } from "@outegro/battleship-engine";
-import { pageSchema } from "@outegro/contracts";
+import { pageSchema, permissionsOf } from "@outegro/contracts";
 import {
   cosmeticUnlocked,
   effectiveCosmetics,
@@ -35,6 +35,8 @@ import {
 } from "@outegro/contracts/battleship";
 import { z } from "zod";
 import {
+  accounts,
+  emailOf,
   encodeTicket,
   isPersona,
   type Persona,
@@ -460,10 +462,32 @@ const checkoutBodySchema = z
 
 async function handle(req: IncomingMessage, res: ServerResponse) {
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
-  const path = url.pathname;
+  // Identity's API (AUTH_API_URL) lives under /identity: its /v1/me must not
+  // collide with the game server's /v1/me on this one port.
+  const identity = url.pathname.startsWith("/identity/");
+  const path = identity ? url.pathname.slice("/identity".length) : url.pathname;
   const method = req.method ?? "GET";
 
   if (path === "/health") return send(res, 200, { status: "ok" });
+
+  // Identity: who is signed in, for the account menu.
+  if (identity && path === "/v1/me" && method === "GET") {
+    const user = userFrom(req);
+    if (!user) return error(res, 401, "UNAUTHENTICATED");
+    const account = accounts[user.persona];
+    return send(res, 200, {
+      id: user.id,
+      email: emailOf(user.persona),
+      emailVerified: true,
+      displayName: account.displayName,
+      locale: "en",
+      status: "active",
+      version: 1,
+      createdAt: "2026-06-01T10:00:00.000Z",
+      roles: account.roles,
+      permissions: [...permissionsOf(account.roles)].sort(),
+    });
+  }
 
   // Identity: the SSO entry id.outegro.dev would show; here it signs in at once.
   if (path === "/authorize" && method === "GET") {

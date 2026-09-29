@@ -8,7 +8,8 @@ export type Persona =
   | "stale-premium"
   | "silver"
   | "rookie"
-  | "unlucky";
+  | "unlucky"
+  | "operator";
 
 export const personas: Record<
   Persona,
@@ -75,11 +76,40 @@ export const personas: Record<
     features: [],
     equipped: { ships: "classic", hitEffect: "flame", theme: "day" },
   },
+  // Holds a platform role (support): the account menu links the admin console.
+  operator: {
+    nickname: "Harbour Master",
+    rating: 1100,
+    matches: 5,
+    wins: 3,
+    features: [],
+    equipped: { ships: "classic", hitEffect: "flame", theme: "day" },
+  },
 };
 
 export function isPersona(value: unknown): value is Persona {
   return typeof value === "string" && value in personas;
 }
+
+/**
+ * The platform account behind each persona, as Identity's /v1/me tells it.
+ * Personas without a display name are known by their email only.
+ */
+export const accounts: Record<
+  Persona,
+  { displayName: string | null; roles: string[] }
+> = {
+  free: { displayName: "Nick Lukashik", roles: [] },
+  premium: { displayName: null, roles: [] },
+  "stale-premium": { displayName: "Late Captain", roles: [] },
+  silver: { displayName: "Mira Silver", roles: [] },
+  unlucky: { displayName: null, roles: [] },
+  rookie: { displayName: null, roles: [] },
+  operator: { displayName: "Olga Petrova", roles: ["support"] },
+};
+
+/** The account's email: the persona's name on the test domain. */
+export const emailOf = (persona: Persona) => `${persona}@outegro.test`;
 
 /** What a WebSocket ticket carries in this fake world (the real one is opaque). */
 export type TicketClaims = { uid: string; persona: Persona; n: number };
