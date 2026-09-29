@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { issueKinds } from "@/lib/adapters/payments";
 import en from "./en.json";
 import ru from "./ru.json";
 
@@ -43,5 +44,17 @@ describe("messages", () => {
       (key) => (at(en as Tree, key) ?? at(ru as Tree, key)) === "",
     );
     expect(empty).toEqual([]);
+  });
+
+  it("name every payment issue kind in both languages", () => {
+    for (const messages of [en, ru]) {
+      expect(Object.keys(messages.labels.issueKind).sort()).toEqual(
+        [...issueKinds].sort(),
+      );
+    }
+    for (const kind of issueKinds)
+      expect(ru.labels.issueKind[kind], kind).not.toBe(
+        en.labels.issueKind[kind],
+      );
   });
 });

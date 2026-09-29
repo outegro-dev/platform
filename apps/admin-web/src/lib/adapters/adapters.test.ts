@@ -10,7 +10,7 @@ import { withQuery } from "./base";
 import { BattleshipAdmin } from "./battleship";
 import { IdentityAdmin } from "./identity";
 import { NotificationsAdmin } from "./notifications";
-import { PaymentsAdmin } from "./payments";
+import { canStopRenewal, PaymentsAdmin } from "./payments";
 
 type Recorded = { path: string; options: RequestOptions | undefined };
 
@@ -178,6 +178,18 @@ describe("payments adapter", () => {
       feature: "premium",
       reason: "Compensation",
     });
+  });
+
+  it("offers stop renewal while Lava may still charge, also to send it again", () => {
+    const stoppable = (state: string, autoRenew = true) =>
+      canStopRenewal({ state, autoRenew });
+    expect(stoppable("active")).toBe(true);
+    expect(stoppable("past_due")).toBe(true);
+    // Not confirmed by Lava yet (a failed cancel, a revoke): the retry path.
+    expect(stoppable("cancel_requested")).toBe(true);
+    expect(stoppable("cancel_requested", false)).toBe(false);
+    expect(stoppable("cancelling", false)).toBe(false);
+    expect(stoppable("expired", false)).toBe(false);
   });
 });
 

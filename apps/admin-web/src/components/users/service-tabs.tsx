@@ -205,6 +205,9 @@ export async function AccessTab({
                             })}
                             consequences={[
                               t("revokeEffect"),
+                              ...(grant.sourceType === "subscription"
+                                ? [t("revokeRenewal")]
+                                : []),
                               t("revokeOthers"),
                               t("audited"),
                             ]}

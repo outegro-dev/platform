@@ -17,7 +17,7 @@ import { Panel, Status } from "@/components/ui/layout";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
-import { cancellableStates, subscriptionStates } from "@/lib/adapters/payments";
+import { canStopRenewal, subscriptionStates } from "@/lib/adapters/payments";
 import { shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
 import { one, oneOf, type SearchParams, uuidParam } from "@/lib/params";
@@ -146,9 +146,7 @@ async function SubscriptionsTable({
               </td>
               {canCancel && (
                 <td data-label={t("colActions")} className="num">
-                  {(cancellableStates as readonly string[]).includes(
-                    subscription.state,
-                  ) && (
+                  {canStopRenewal(subscription) && (
                     <span className="above">
                       <ActionDialog
                         action={cancelSubscription}
@@ -160,6 +158,9 @@ async function SubscriptionsTable({
                           until: f.date(subscription.accessUntil),
                         })}
                         consequences={[
+                          ...(subscription.state === "cancel_requested"
+                            ? [t("cancelAgain")]
+                            : []),
                           t("cancelEffect"),
                           t("cancelKeeps"),
                           t("cancelNoRefund"),

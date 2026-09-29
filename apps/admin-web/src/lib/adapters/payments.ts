@@ -57,8 +57,37 @@ export const refundStates = [
 ] as const;
 export const refundKinds = ["refund", "chargeback"] as const;
 export const paymentStates = ["confirmed", "refunded", "disputed"] as const;
+/** What reconciliation issues are about (`labels.issueKind`). */
+export const issueKinds = [
+  "amount_mismatch",
+  "renewal_without_parent",
+  "unmatched_event",
+  "event_failed",
+  "checkout_unknown",
+  "invoice_missing",
+  "cancel_failed",
+  "renewal_cancel_failed",
+  "period_mismatch",
+  "refund_unmatched",
+  "refund_review",
+  "chargeback_opened",
+  "duplicate_purchase",
+  "renewal_after_revoke",
+] as const;
 /** Subscriptions an operator can still stop (the provider may charge again). */
 export const cancellableStates = ["active", "past_due"] as const;
+
+/**
+ * Stop renewal is offered while Lava may still charge: an active or past
+ * due subscription, or one whose cancel Lava has not confirmed yet (the
+ * command sends it again).
+ */
+export const canStopRenewal = (subscription: {
+  state: string;
+  autoRenew: boolean;
+}) =>
+  (cancellableStates as readonly string[]).includes(subscription.state) ||
+  (subscription.state === "cancel_requested" && subscription.autoRenew);
 
 const money = z.object({
   minor: z.string().regex(/^-?\d+$/),

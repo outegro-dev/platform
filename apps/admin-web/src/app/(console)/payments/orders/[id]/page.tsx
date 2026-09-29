@@ -18,7 +18,7 @@ import { DataTable, Time } from "@/components/ui/data";
 import { Facts, Panel, Status } from "@/components/ui/layout";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
-import { cancellableStates } from "@/lib/adapters/payments";
+import { canStopRenewal } from "@/lib/adapters/payments";
 import { shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
 import { orderTimeline } from "@/lib/order-timeline";
@@ -284,9 +284,7 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
                   ]}
                 />
                 {granted.has("subscriptions.cancel") &&
-                  (cancellableStates as readonly string[]).includes(
-                    subscription.state,
-                  ) && (
+                  canStopRenewal(subscription) && (
                     <div className="row-gap">
                       <ActionDialog
                         action={cancelSubscription}
@@ -297,6 +295,9 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
                           until: f.date(subscription.accessUntil),
                         })}
                         consequences={[
+                          ...(subscription.state === "cancel_requested"
+                            ? [t("cancelAgain")]
+                            : []),
                           t("cancelEffect"),
                           t("cancelKeeps"),
                           t("cancelNoRefund"),
@@ -357,6 +358,9 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
                             })}
                             consequences={[
                               t("revokeGrantEffect"),
+                              ...(grant.sourceType === "subscription"
+                                ? [t("revokeGrantRenewal")]
+                                : []),
                               t("revokeGrantOthers"),
                               t("audited"),
                             ]}
