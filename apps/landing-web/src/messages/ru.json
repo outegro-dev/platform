@@ -113,13 +113,13 @@
           },
           {
             "name": "Вход",
-            "tech": "Passkeys · OAuth · SSO",
-            "status": "building"
+            "tech": "Код на почту · Google · SSO",
+            "status": "ready"
           },
           {
             "name": "Админка",
             "tech": "Next.js · журнал аудита",
-            "status": "building"
+            "status": "ready"
           }
         ]
       },
@@ -129,22 +129,22 @@
           {
             "name": "Identity",
             "tech": "NestJS 12 · Drizzle · ES256 JWT",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Уведомления",
             "tech": "NestJS · RabbitMQ · Email / Telegram",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Платежи",
             "tech": "NestJS · Lava · подписки",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Данные",
-            "tech": "PostgreSQL · Redis · outbox",
-            "status": "building"
+            "tech": "PostgreSQL · Valkey · outbox",
+            "status": "ready"
           }
         ]
       },
@@ -154,12 +154,12 @@
           {
             "name": "Кластер",
             "tech": "K3s · Traefik · cert-manager",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Доставка",
             "tech": "GitHub Actions · GHCR · Argo CD",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Наблюдаемость",

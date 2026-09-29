@@ -113,13 +113,13 @@
           },
           {
             "name": "Sign-in",
-            "tech": "Passkeys · OAuth · SSO",
-            "status": "building"
+            "tech": "Email code · Google · SSO",
+            "status": "ready"
           },
           {
             "name": "Admin console",
             "tech": "Next.js · audit trail",
-            "status": "building"
+            "status": "ready"
           }
         ]
       },
@@ -129,22 +129,22 @@
           {
             "name": "Identity",
             "tech": "NestJS 12 · Drizzle · ES256 JWT",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Notifications",
             "tech": "NestJS · RabbitMQ · Email / Telegram",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Payments",
             "tech": "NestJS · Lava · subscriptions",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Data",
-            "tech": "PostgreSQL · Redis · outbox",
-            "status": "building"
+            "tech": "PostgreSQL · Valkey · outbox",
+            "status": "ready"
           }
         ]
       },
@@ -154,12 +154,12 @@
           {
             "name": "Cluster",
             "tech": "K3s · Traefik · cert-manager",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Delivery",
             "tech": "GitHub Actions · GHCR · Argo CD",
-            "status": "building"
+            "status": "ready"
           },
           {
             "name": "Observability",
