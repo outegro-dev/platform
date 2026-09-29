@@ -21,7 +21,7 @@ Defaults — не утверждение о текущих runtime settings. О�
 
 ## Admin permissions
 
-Owner имеет системные административные полномочия, но проходит sensitivity/step-up/audit. Support по умолчанию users.read(redacted), sessions.revoke, notifications.read/retry обычных сообщений. Billing operator billing.read, subscriptions.cancel; refunds.request отдельное назначение. Auditor только чтение audit/финансов в scope. Service operator services.read/allowlisted flags и operational replay без произвольного финансового command.
+Owner имеет системные административные полномочия, но проходит sensitivity/step-up/audit. Support по умолчанию users.read(redacted), sessions.revoke, notifications.read/retry обычных сообщений. Billing operator billing.read, subscriptions.cancel; refunds.request отдельное назначение. Ручные коммерческие grants (выдать или отозвать доступ без оплаты) — grants.assign, по умолчанию только owner. Auditor только чтение audit/финансов в scope. Service operator services.read/allowlisted flags и operational replay без произвольного финансового command.
 
 У unknown permission отказ. RoleBinding включает scope/expiry; последнее owner binding защищено транзакционно. Критичный доступ перепроверяется свежо, stale JWT role не основание для возврата или назначения owner. Самопроизвольный impersonation отсутствует.
 

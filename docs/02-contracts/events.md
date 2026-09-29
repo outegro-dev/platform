@@ -31,13 +31,13 @@
 
 | Event | Producer | Required payload | Consumers |
 |---|---|---|---|
-| identity.user.created.v1 | Identity | userId, locale, status | Admin, Notifications по политике |
-| identity.user.locale.changed.v1 | Identity | userId, locale | Notifications/Admin |
-| identity.user.contact.changed.v1 | Identity | userId, email nullable, emailVerified | Только Notifications (единственная очередь-подписчик; остальные события без PII) |
+| identity.user.created.v1 | Identity | userId, locale, status | Admin, Notifications по политике, Payments |
+| identity.user.locale.changed.v1 | Identity | userId, locale | Notifications/Admin/Payments |
+| identity.user.contact.changed.v1 | Identity | userId, email nullable, emailVerified | Notifications и Payments (email покупателя для invoice и отмены подписки в Lava); остальные события без PII |
 | identity.session.revoked.v1 | Identity | userId, sessionId, reason | Admin/audit |
 | notifications.intent.requested.v1 | Любой сервис (в свой exchange) | sourceEventId, templateKey, category, recipient.userId, locale?, channels?, data | Notifications |
-| identity.user.status.changed.v1 | Identity | userId, status, accessVersion | Access projections/Admin |
-| identity.role.binding.changed.v1 | Identity | bindingId, userId, roleKey, scope, state, accessVersion | Admin/cache invalidation |
+| identity.user.status.changed.v1 | Identity | userId, status, accessVersion | Access projections/Admin/Payments |
+| identity.role.binding.changed.v1 | Identity | bindingId, userId, roleKey, scope, state, accessVersion | Admin/cache invalidation/Payments (accessVersion для admin-команд) |
 | billing.payment.confirmed.v1 | Payments | paymentId, orderId, userId, money, confirmedAt | Notifications/Admin |
 | billing.subscription.changed.v1 | Payments | subscriptionId, userId, state, paidUntil, autoRenew | Notifications/Admin |
 | billing.grant.changed.v1 | Payments | См. пример | Identity/Admin/future apps |
