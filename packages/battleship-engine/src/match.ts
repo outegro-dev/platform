@@ -197,6 +197,14 @@ export class Match {
     return this.forfeit(player, "resigned");
   }
 
+  /**
+   * A clock outside the turn ran out for `player` (the placement window):
+   * the player forfeits on time. Missed turns in battle go through skipTurn.
+   */
+  timeOut(player: PlayerId): MatchEvent[] {
+    return this.forfeit(player, "timeout");
+  }
+
   /** The player left and did not come back in time. */
   abandon(player: PlayerId): MatchEvent[] {
     return this.forfeit(player, "disconnected");
