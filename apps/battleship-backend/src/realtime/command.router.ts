@@ -27,10 +27,14 @@ export function decodeFrame(data: RawData, isBinary: boolean): unknown {
   }
 }
 
-/** The `seq` of a rejected message, when it has a usable one. */
+/**
+ * The `seq` of a rejected message, when it has a usable one. It must fit the
+ * contract (a safe integer): otherwise the error itself would break it, be
+ * dropped and logged, once per frame.
+ */
 export function seqOf(message: unknown): number | null {
   const seq = (message as { seq?: unknown } | null)?.seq;
-  return typeof seq === "number" && Number.isInteger(seq) && seq > 0
+  return typeof seq === "number" && Number.isSafeInteger(seq) && seq > 0
     ? seq
     : null;
 }

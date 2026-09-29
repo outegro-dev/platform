@@ -121,6 +121,28 @@ describe("messages", () => {
     await socket.close();
   });
 
+  it("answers a seq beyond the safe-integer range with ref null instead of dropping the reply", async () => {
+    const socket = await h.connect();
+    const frame = (seq: number) =>
+      JSON.stringify({ type: "ping", seq, payload: { t: 1 } });
+    socket.sendRaw(frame(2 ** 53));
+    expect((await socket.next("error")).payload).toEqual({
+      code: "bad_message",
+      ref: null,
+    });
+    // Past the budget too: the rate_limited answers are not lost either.
+    for (let i = 0; i < 45; i++) socket.sendRaw(frame(1e300));
+    await expect.poll(() => socket.pending("error").length).toBe(45);
+    const errors = socket.pending("error").map((m) => m.payload);
+    expect(new Set(errors.map((e) => e.ref))).toEqual(new Set([null]));
+    expect(new Set(errors.map((e) => e.code))).toEqual(
+      new Set(["bad_message", "rate_limited"]),
+    );
+    await h.advance(2_000);
+    await socket.sync();
+    await socket.close();
+  });
+
   it("allows bursts of 40 commands, then 20 per second", async () => {
     const socket = await h.connect();
     const seqs = Array.from({ length: 45 }, (_, i) =>
