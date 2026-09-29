@@ -29,6 +29,7 @@ const OUTCOMES: Partial<Record<State, string>> = {
 @Injectable()
 export class NotificationsMetrics {
   private readonly deliveries: Counter<"channel" | "outcome">;
+  private readonly droppedLinks: Counter<"template">;
 
   constructor(
     metrics: Metrics,
@@ -39,6 +40,11 @@ export class NotificationsMetrics {
       name: "notifications_deliveries_total",
       help: "Delivery attempts by channel and outcome (sent, retried, failed, expired, unknown).",
       labelNames: ["channel", "outcome"],
+    });
+    this.droppedLinks = metrics.counter({
+      name: "notifications_action_links_dropped_total",
+      help: "Action links outside our sites dropped at intake, by template key; the notice goes out with the template's own page.",
+      labelNames: ["template"],
     });
     const queued = metrics.gauge({
       name: "notifications_deliveries_queued",
@@ -76,5 +82,10 @@ export class NotificationsMetrics {
   delivery(channel: Channel, state: State) {
     const outcome = OUTCOMES[state];
     if (outcome) this.deliveries.inc({ channel, outcome });
+  }
+
+  /** `template` is a key of the registry, checked before this is counted. */
+  actionLinkDropped(template: string) {
+    this.droppedLinks.inc({ template });
   }
 }

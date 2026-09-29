@@ -47,6 +47,7 @@ Gauges из БД (outbox, очереди, checkout, provider inbox) читают
 | `notifications_deliveries_total` | counter | channel (email, telegram), outcome | Записанный исход попытки: sent (принято провайдером, не «прочитано»), retried, failed, expired, unknown |
 | `notifications_deliveries_queued` | gauge | channel | Ждут отправки: pending, retry_wait, leased |
 | `notifications_delivery_oldest_queued_age_seconds` | gauge | channel | Возраст самой старой ожидающей доставки |
+| `notifications_action_links_dropped_total` | counter | template (ключ шаблона из реестра) | Ссылка `actionUrl` не на наш сайт отброшена при приёме; сообщение ушло со ссылкой шаблона. Считается после записи intent, повторная доставка события не считается |
 
 Канал, приостановленный оператором, держит доставки в очереди — возраст растёт намеренно. Коды входа идут не через очередь, а синхронно: их видно в `identity_login_codes_total`.
 
@@ -101,6 +102,7 @@ HTTP 200 на вебхук — durable acceptance, а не обработанн�
 | Потерянный ответ Lava | `payments_checkout_oldest_pending_age_seconds{state="unknown"} > 1800` |
 | Коды входа не доставляются | `increase(identity_login_codes_total{result="failed"}[10m]) > 0` |
 | Письма стоят в очереди | `notifications_delivery_oldest_queued_age_seconds{channel="email"} > 900` |
+| Ссылки producer-а не на наш сайт (например, разный `PAY_WEB_URL`) | `increase(notifications_action_links_dropped_total[15m]) > 0` |
 | DLQ растёт | `increase(messaging_events_consumed_total{outcome="dead_lettered"}[15m]) > 0` |
 | 5xx | `sum by (service, route) (rate(http_server_requests_total{status_class="5xx"}[5m])) > 0` 10 минут |
 | Медленная приёмка вебхука | `histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service="payments-backend", route="/webhooks/lava"}[10m]))) > 0.5` |

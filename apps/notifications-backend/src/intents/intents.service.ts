@@ -1,6 +1,7 @@
 import {
   Inject,
   Injectable,
+  Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
@@ -19,6 +20,7 @@ import {
   PermanentError,
 } from "@outegro/nest-common";
 import type { NotificationsDatabase } from "../common/database.js";
+import { NotificationsMetrics } from "../common/metrics.js";
 import { channelsConfig } from "../config/config.js";
 import { deliveries, inboxItems, intents } from "../db/schema.js";
 import { DeliveryWorker } from "../delivery/delivery.worker.js";
@@ -48,12 +50,23 @@ export type IntentRequest = {
   data: Record<string, string | number | boolean | null>;
 };
 
+/** Scheme and host of a link, for the log; never its path or query. */
+function originOf(link: string) {
+  try {
+    return new URL(link).origin;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Turns `notifications.intent.requested` into one intent, an inbox item and
  * one delivery per external channel, atomically and once per source event.
  */
 @Injectable()
 export class IntentsService implements OnApplicationBootstrap {
+  private readonly logger = new Logger("Intents");
+
   constructor(
     @Inject(DATABASE) private readonly database: NotificationsDatabase,
     @Inject(CLOCK) private readonly clock: Clock,
@@ -61,6 +74,7 @@ export class IntentsService implements OnApplicationBootstrap {
     private readonly config: ConfigType<typeof channelsConfig>,
     private readonly messaging: Messaging,
     private readonly worker: DeliveryWorker,
+    private readonly metrics: NotificationsMetrics,
   ) {}
 
   async onApplicationBootstrap() {
@@ -73,6 +87,7 @@ export class IntentsService implements OnApplicationBootstrap {
 
   async accept(event: EventOf<typeof notificationRequested>) {
     const p = event.payload;
+    let droppedLink = null as string | null;
     const result = await processOnce(
       this.database.db,
       {
@@ -80,8 +95,8 @@ export class IntentsService implements OnApplicationBootstrap {
         eventId: event.eventId,
         type: event.type,
       },
-      (tx) =>
-        this.record(tx, {
+      async (tx) => {
+        ({ droppedLink } = await this.record(tx, {
           sourceEventId: p.sourceEventId,
           producer: event.producer,
           templateKey: p.templateKey,
@@ -90,18 +105,38 @@ export class IntentsService implements OnApplicationBootstrap {
           locale: p.locale,
           channels: p.channels,
           data: p.data,
-        }),
+        }));
+      },
     );
-    if (result === "processed") this.worker.kick();
+    if (result === "processed") {
+      // Reported once stored: a rolled-back attempt is not counted.
+      if (droppedLink !== null) {
+        this.logger.warn(
+          {
+            templateKey: p.templateKey,
+            producer: event.producer,
+            origin: originOf(droppedLink),
+          },
+          "Action link outside our sites dropped; the notice goes out without it",
+        );
+        this.metrics.actionLinkDropped(p.templateKey);
+      }
+      this.worker.kick();
+    }
     return result;
   }
 
   /**
    * Stores the intent in the caller's transaction; the same source event,
    * template and recipient only once. A request that can never be shown
-   * correctly is refused before anything is written.
+   * correctly is refused before anything is written. An `actionUrl` outside
+   * our sites never reaches the user: it is dropped (and returned), and the
+   * notice goes out with the template's own page instead.
    */
-  async record(tx: Executor, request: IntentRequest) {
+  async record(
+    tx: Executor,
+    request: IntentRequest,
+  ): Promise<{ droppedLink: string | null }> {
     const template = templates[request.templateKey];
     if (!template)
       throw new PermanentError(`unknown template ${request.templateKey}`);
@@ -116,12 +151,7 @@ export class IntentsService implements OnApplicationBootstrap {
     // The reason stays generic: data values may be personal.
     if (!parsed.success)
       throw new PermanentError(`invalid data for ${request.templateKey}`);
-    const data = parsed.data;
-    if (
-      data.actionUrl != null &&
-      !allowedLink(data.actionUrl, contextOf(this.config))
-    )
-      throw new PermanentError("action link not allowed");
+    const { data, droppedLink } = this.ownLinkOnly(parsed.data);
     const wanted = (request.channels ?? template.channels).filter((c) =>
       template.channels.includes(c),
     );
@@ -142,7 +172,8 @@ export class IntentsService implements OnApplicationBootstrap {
       })
       .onConflictDoNothing()
       .returning({ id: intents.id });
-    if (!intent) return; // same source event and template already accepted
+    // Same source event and template already accepted.
+    if (!intent) return { droppedLink: null };
     if (wanted.includes("inbox")) {
       await tx.insert(inboxItems).values({
         userId: request.userId,
@@ -168,5 +199,19 @@ export class IntentsService implements OnApplicationBootstrap {
         })),
       );
     }
+    return { droppedLink };
+  }
+
+  /**
+   * `data` with its `actionUrl` only when that points to one of our sites.
+   * Without it the renderer links the template's own page, so a producer
+   * whose site address differs from ours (PAY_WEB_URL) loses no notice.
+   */
+  private ownLinkOnly(data: IntentRequest["data"]) {
+    const link = data.actionUrl;
+    if (link == null || allowedLink(link, contextOf(this.config)))
+      return { data, droppedLink: null };
+    const { actionUrl: _foreign, ...rest } = data;
+    return { data: rest, droppedLink: String(link) };
   }
 }
