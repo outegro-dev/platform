@@ -40,9 +40,13 @@ test("Google sign-in explains itself when it is not configured", async ({
   await expect(page).toHaveURL(
     /\/login\?error=google_unavailable&continue=%2Faccount%2Fsessions$/,
   );
-  await expect(page.getByRole("alert")).toHaveText(
-    "Google sign-in is unavailable right now. Use the email code instead.",
-  );
+  // Next.js keeps its own (empty) route announcer as an alert region.
+  await expect(
+    page.getByRole("alert").filter({
+      hasText:
+        "Google sign-in is unavailable right now. Use the email code instead.",
+    }),
+  ).toBeVisible();
 });
 
 test("a Google callback without a matching request is refused", async ({
@@ -50,9 +54,11 @@ test("a Google callback without a matching request is refused", async ({
 }) => {
   await page.goto("/login/google/callback?state=forged-state&code=fake-code");
   await expect(page).toHaveURL(/\/login\?error=google_failed$/);
-  await expect(page.getByRole("alert")).toHaveText(
-    "Google sign-in did not complete. Please try again.",
-  );
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Google sign-in did not complete. Please try again.",
+    }),
+  ).toBeVisible();
 });
 
 test("the Telegram card never hides the notification settings", async ({

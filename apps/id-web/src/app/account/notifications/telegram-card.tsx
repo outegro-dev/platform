@@ -109,7 +109,11 @@ export function TelegramCard({ initial }: { initial: TelegramStatus }) {
       <TelegramLogoIcon aria-hidden="true" />
       <div className="method-text">
         <strong>{t("title")}</strong>
-        <span className="channel-status" data-tone={line.tone} role="status">
+        <span
+          className="channel-status"
+          data-tone={line.tone}
+          aria-live="polite"
+        >
           {line.text}
           {mode.kind === "waiting" && (
             <>

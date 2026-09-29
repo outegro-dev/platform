@@ -5,7 +5,7 @@ import {
   type SessionTokens,
   writeSession,
 } from "@outegro/bff/session";
-import { type NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { authApi } from "@/lib/api";
 import {
   GOOGLE_COOKIE,
@@ -15,6 +15,7 @@ import {
   readPending,
   sameState,
 } from "@/lib/google";
+import { redirectTo } from "@/lib/redirect";
 
 /**
  * Google redirects here (registered redirect URI). The state must match the
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   const pending = readPending(request.cookies.get(GOOGLE_COOKIE)?.value);
 
   const go = (target: string) => {
-    const response = NextResponse.redirect(new URL(target, request.url));
+    const response = redirectTo(target);
     response.cookies.delete(GOOGLE_COOKIE);
     return response;
   };
@@ -85,7 +86,8 @@ export async function GET(request: NextRequest) {
       return go(`/login?continue=${encodeURIComponent("/account/security")}`);
     return fail("link", googleErrorKey(error));
   }
-  const target = new URL(pending.continueTo, request.url);
+  // Only to append a parameter; the base never leaves this function.
+  const target = new URL(pending.continueTo, "http://id-web.local");
   target.searchParams.set("linked", "google");
   return go(`${target.pathname}${target.search}`);
 }

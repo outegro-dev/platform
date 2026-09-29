@@ -9,6 +9,7 @@ import {
   type GoogleIntent,
   startGoogle,
 } from "@/lib/google";
+import { redirectTo } from "@/lib/redirect";
 
 /** Sends the browser to Google; `intent=link` connects Google to the signed-in account. */
 export async function GET(request: NextRequest) {
@@ -20,13 +21,10 @@ export async function GET(request: NextRequest) {
     intent === "link" ? "/account/security" : "/account",
   );
   const unavailable = () =>
-    NextResponse.redirect(
-      new URL(
-        intent === "link"
-          ? "/account/security?error=google_unavailable"
-          : `/login?error=google_unavailable&continue=${encodeURIComponent(continueTo)}`,
-        request.url,
-      ),
+    redirectTo(
+      intent === "link"
+        ? "/account/security?error=google_unavailable"
+        : `/login?error=google_unavailable&continue=${encodeURIComponent(continueTo)}`,
     );
 
   let config: GoogleConfig;
