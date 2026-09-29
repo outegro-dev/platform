@@ -1,14 +1,7 @@
 import type { TargetView } from "../board.js";
 import type { Coordinate } from "../coordinate.js";
 import { pick, type Random } from "../random.js";
-import { placementCells, type ShipPlacement } from "../ship.js";
-import {
-  type BotLevel,
-  openHits,
-  type ShotStrategy,
-  stateAt,
-  unknownCells,
-} from "./strategy.js";
+import { type BotLevel, type ShotStrategy, unknownCells } from "./strategy.js";
 import { TargetingPolicy } from "./targeting.js";
 
 /** Easy: random shots at cells not tried yet. */
@@ -78,7 +71,7 @@ export class ProbabilityHunter implements ShotStrategy {
     let best = -1;
     let bestCells: Coordinate[] = [];
     for (const cell of unknownCells(view)) {
-      const score = scores.get(cell.key) ?? 0;
+      const score = scores[cell.y * view.size + cell.x] ?? 0;
       if (score > best) {
         best = score;
         bestCells = [cell];
@@ -89,45 +82,58 @@ export class ProbabilityHunter implements ShotStrategy {
     return pick(this.random, bestCells);
   }
 
-  private density(view: TargetView): Map<string, number> {
-    const wounded = openHits(view).length > 0;
-    const scores = new Map<string, number>();
-    for (const length of new Set(view.remaining)) {
-      const copies = view.remaining.filter((l) => l === length).length;
-      for (const placement of this.positions(view.size, length)) {
-        const cells = placementCells(placement);
+  /** Scores per cell, indexed y * size + x. Runs on every shot, so it stays allocation-light. */
+  private density(view: TargetView): Float64Array {
+    const flat = view.cells.flat();
+    const wounded = flat.includes("hit");
+    const scores = new Float64Array(view.size * view.size);
+    const copies = new Map<number, number>();
+    for (const length of view.remaining)
+      copies.set(length, (copies.get(length) ?? 0) + 1);
+    for (const [length, count] of copies) {
+      for (const cells of positionsOf(view.size, length)) {
         let hits = 0;
         let possible = true;
-        for (const cell of cells) {
-          const state = stateAt(view, cell);
-          if (state === "miss" || state === "sunk" || state === null) {
+        for (const index of cells) {
+          const state = flat[index];
+          if (state === "miss" || state === "sunk" || state === undefined) {
             possible = false;
             break;
           }
           if (state === "hit") hits++;
         }
         if (!possible || (wounded && hits === 0)) continue;
-        const weight = copies * (hits > 0 ? 50 ** hits : 1);
-        for (const cell of cells) {
-          if (stateAt(view, cell) === "unknown") {
-            scores.set(cell.key, (scores.get(cell.key) ?? 0) + weight);
-          }
+        const weight = count * (hits > 0 ? 50 ** hits : 1);
+        for (const index of cells) {
+          if (flat[index] === "unknown")
+            scores[index] = (scores[index] ?? 0) + weight;
         }
       }
     }
     return scores;
   }
+}
 
-  private *positions(size: number, length: number): Generator<ShipPlacement> {
+const positionCache = new Map<string, readonly (readonly number[])[]>();
+
+/** Every straight position of a ship as flat cell indexes, computed once per board size. */
+function positionsOf(size: number, length: number) {
+  const key = `${size}:${length}`;
+  let positions = positionCache.get(key);
+  if (!positions) {
+    const list: number[][] = [];
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         if (x + length <= size)
-          yield { x, y, length, orientation: "horizontal" };
+          list.push(Array.from({ length }, (_, i) => y * size + x + i));
         if (length > 1 && y + length <= size)
-          yield { x, y, length, orientation: "vertical" };
+          list.push(Array.from({ length }, (_, i) => (y + i) * size + x));
       }
     }
+    positions = list;
+    positionCache.set(key, positions);
   }
+  return positions;
 }
 
 /** The strategy for a difficulty level. */

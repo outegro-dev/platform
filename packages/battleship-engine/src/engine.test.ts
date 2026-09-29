@@ -277,7 +277,8 @@ function winRate(level: BotLevel, against: BotLevel, games: number): number {
   return wins / games;
 }
 
-describe("bot strength (TC-BS-05)", () => {
+// Hundreds of full games: seconds locally, much longer on a busy CI runner.
+describe("bot strength (TC-BS-05)", { timeout: 180_000 }, () => {
   it("expert beats easy in at least 95% of 200 games", () => {
     expect(winRate("expert", "easy", 200)).toBeGreaterThanOrEqual(0.95);
   });
