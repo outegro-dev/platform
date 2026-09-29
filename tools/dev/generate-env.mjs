@@ -13,6 +13,7 @@ const apps = [
   { dir: "apps/auth-backend", file: ".env" },
   { dir: "apps/notifications-backend", file: ".env" },
   { dir: "apps/payments-backend", file: ".env" },
+  { dir: "apps/battleship-backend", file: ".env" },
   { dir: "apps/id-web", file: ".env.local" },
   { dir: "apps/battleship-web", file: ".env.local" },
 ];

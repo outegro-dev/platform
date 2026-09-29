@@ -135,12 +135,36 @@ class ValkeyLifecycle implements OnModuleInit, OnApplicationShutdown {
   }
 }
 
+export type ValkeyOptions = {
+  url: string;
+  /**
+   * Prepended to every key by the client, including the rate limiter's and
+   * the KEYS of Lua scripts (a shared Valkey: `battleship:`).
+   */
+  keyPrefix?: string;
+};
+
+/** A Valkey client for a URL or options; also used by tests. */
+export function createValkeyClient(options: string | ValkeyOptions) {
+  const { url, keyPrefix } =
+    typeof options === "string"
+      ? { url: options, keyPrefix: undefined }
+      : options;
+  return new Redis(url, {
+    maxRetriesPerRequest: 2,
+    enableAutoPipelining: true,
+    connectionName: "outegro",
+    ...(keyPrefix ? { keyPrefix } : {}),
+  });
+}
+
 @Global()
 @Module({})
 export class ValkeyModule {
   static forRootAsync(options: {
     inject?: (string | symbol | (abstract new (...args: never[]) => unknown))[];
-    useFactory: (...args: never[]) => string;
+    /** The URL, or options with a key prefix. */
+    useFactory: (...args: never[]) => string | ValkeyOptions;
   }): DynamicModule {
     return {
       module: ValkeyModule,
@@ -149,11 +173,7 @@ export class ValkeyModule {
           provide: VALKEY,
           inject: options.inject ?? [],
           useFactory: (...args: never[]) =>
-            new Redis(options.useFactory(...args), {
-              maxRetriesPerRequest: 2,
-              enableAutoPipelining: true,
-              connectionName: "outegro",
-            }),
+            createValkeyClient(options.useFactory(...args)),
         },
         ValkeyLifecycle,
         ValkeyThrottlerStorage,

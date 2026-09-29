@@ -233,6 +233,20 @@ describe("timeouts and resignation", () => {
     expect(match.currentPhase).toBe("battle");
   });
 
+  it("running out of placement time forfeits on time", () => {
+    const match = new Match("m1", ["alice", "bob"]);
+    match.placeFleet("alice", validFleet);
+    expect(match.timeOut("bob")[0]).toMatchObject({
+      type: "finished",
+      winner: "alice",
+      loser: "bob",
+      reason: "timeout",
+    });
+    expect(match.currentPhase).toBe("finished");
+    rejects(() => match.timeOut("alice"), "wrong_phase");
+    rejects(() => match.timeOut("carol"), "not_a_player");
+  });
+
   it("resigning hands the win to the opponent", () => {
     const match = newMatch();
     expect(match.resign("bob")[0]).toMatchObject({
