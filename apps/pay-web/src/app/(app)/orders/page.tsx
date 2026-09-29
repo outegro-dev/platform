@@ -127,7 +127,7 @@ export default async function OrdersPage({
       <section aria-label={t("listLabel")} className="order-list">
         <div className="list-head og-eyebrow" aria-hidden="true">
           <span />
-          <span>{t("listLabel")}</span>
+          <span>{t("product")}</span>
           <span>{t("date")}</span>
           <span>{t("amount")}</span>
           <span>{t("status")}</span>

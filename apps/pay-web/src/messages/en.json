@@ -45,6 +45,7 @@
     "titleAccent": "purchases.",
     "lead": "Everything you've bought with your outegro account, newest first. Access opens as soon as Lava confirms the payment.",
     "listLabel": "Purchases",
+    "product": "Product",
     "date": "Date",
     "amount": "Amount",
     "status": "Status",
