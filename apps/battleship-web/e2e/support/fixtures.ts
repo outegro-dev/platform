@@ -110,6 +110,17 @@ export async function signInAndConnect(
 
 /** No serious or critical accessibility violations (WCAG 2.2 AA rules). */
 export async function expectAccessible(page: Page, where: string) {
+  // Contrast is measured on final colours: fades and zooms (dialogs, the
+  // status pill, the account menu) end first. Endless ones never do.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (animation) =>
+          animation.playState !== "running" ||
+          animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY,
+      ),
+  );
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
