@@ -712,6 +712,47 @@ const googleUnlinked = notice({
   },
 });
 
+/*
+ * Passkeys (ID-05). Only the time travels: the passkey's name is text the
+ * user (or whoever held the session) typed, so a notice never repeats it.
+ */
+const reviewMethods = {
+  label: { en: "Review sign-in methods", ru: "Проверить способы входа" },
+  href: (_d: Data, c: Context) => `${c.accountUrl}/account/security`,
+};
+
+const passkeyAdded = notice({
+  ...security,
+  schema: whenSchema,
+  sample: securitySample,
+  subject: (l) =>
+    l === "ru"
+      ? "К аккаунту добавлен ключ доступа"
+      : "A passkey was added to your account",
+  title: (l) => (l === "ru" ? "Добавлен ключ доступа" : "Passkey added"),
+  text: (l, d) =>
+    l === "ru"
+      ? `К вашему аккаунту outegro.dev добавлен ключ доступа (${at(l, d.at)}), теперь с ним можно входить. Если это были не вы, удалите его в разделе «Безопасность» и завершите остальные сеансы.`
+      : `A passkey was added to your outegro.dev account on ${at(l, d.at)} and can now be used to sign in. If this was not you, remove it under Security and end your other sessions.`,
+  action: reviewMethods,
+});
+
+const passkeyRemoved = notice({
+  ...security,
+  schema: whenSchema,
+  sample: securitySample,
+  subject: (l) =>
+    l === "ru"
+      ? "Ключ доступа удалён из аккаунта"
+      : "A passkey was removed from your account",
+  title: (l) => (l === "ru" ? "Ключ доступа удалён" : "Passkey removed"),
+  text: (l, d) =>
+    l === "ru"
+      ? `Из вашего аккаунта outegro.dev удалён ключ доступа (${at(l, d.at)}), входить с ним больше нельзя. Если это были не вы, войдите по коду из письма и проверьте способы входа и сеансы.`
+      : `A passkey was removed from your outegro.dev account on ${at(l, d.at)} and can no longer be used to sign in. If this was not you, sign in with an email code and review your sign-in methods and sessions.`,
+  action: reviewMethods,
+});
+
 /** Told by email, not in the chat that was just linked. */
 const telegramLinked = notice({
   ...security,
@@ -738,6 +779,8 @@ export const templates: Record<string, Template> = {
   "security.session-revoked": sessionRevoked,
   "security.google-linked.v1": googleLinked,
   "security.google-unlinked.v1": googleUnlinked,
+  "security.passkey-added.v1": passkeyAdded,
+  "security.passkey-removed.v1": passkeyRemoved,
   "security.telegram-linked.v1": telegramLinked,
   "service.message": serviceMessage,
   "service.test": serviceTest,
