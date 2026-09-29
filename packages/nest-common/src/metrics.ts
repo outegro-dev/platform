@@ -27,6 +27,8 @@ import {
   Registry,
 } from "@prometheus-io/client";
 
+export type { Counter, Gauge, Histogram } from "@prometheus-io/client";
+
 export type MetricsOptions = {
   /** The `service` label of every series. */
   service: string;

@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AdminController } from "./access/admin.controller.js";
 import { FreshPermissionsGuard } from "./access/fresh-permissions.guard.js";
 import { RolesService } from "./access/roles.service.js";
+import { IdentityMetrics } from "./common/metrics.js";
 import { GrantsService } from "./grants/grants.service.js";
 import { googleProvider } from "./identities/google.provider.js";
 import { IdentitiesController } from "./identities/identities.controller.js";
@@ -40,6 +41,7 @@ import { UsersService } from "./users/users.service.js";
     IdentitiesService,
     googleProvider,
     FreshPermissionsGuard,
+    IdentityMetrics,
     { provide: CODE_DELIVERY, useClass: HttpCodeDelivery },
   ],
   exports: [RolesService, UsersService],

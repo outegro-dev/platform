@@ -1,4 +1,6 @@
-import { DATABASE } from "@outegro/nest-common";
+import { randomUUID } from "node:crypto";
+import { DATABASE, MetricsServer } from "@outegro/nest-common";
+import { idLikeLabelValues, metricValue } from "@outegro/nest-common/testing";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { AuthDatabase } from "./common/database.js";
@@ -154,5 +156,93 @@ describe("verifying a code", () => {
       "challengeId",
       "code",
     ]);
+  });
+});
+
+describe("metrics and correlation (OPS-04)", () => {
+  const signIns = (result: string) =>
+    h.metric("identity_sign_in_attempts_total", { method: "email", result });
+  const codes = (result: string) =>
+    h.metric("identity_login_codes_total", { result });
+
+  it("counts sign-ins and login codes by result", async () => {
+    const before = await Promise.all([
+      signIns("success"),
+      signIns("invalid_code"),
+      codes("accepted"),
+      codes("failed"),
+    ]);
+    const email = uniqueEmail();
+    const { challengeId } = await challenge(email);
+    const { code } = h.delivery.codeFor(email);
+    await verify(challengeId, code === "000000" ? "111111" : "000000").expect(
+      422,
+    );
+    await verify(challengeId, code).expect(200);
+    h.delivery.status = "failed";
+    await challenge(uniqueEmail());
+    expect(
+      await Promise.all([
+        signIns("success"),
+        signIns("invalid_code"),
+        codes("accepted"),
+        codes("failed"),
+      ]),
+    ).toEqual(before.map((count) => count + 1));
+  });
+
+  it("the events a sign-in writes carry its request id", async () => {
+    const email = uniqueEmail();
+    const { challengeId } = await challenge(email);
+    const signedIn = await h
+      .http()
+      .post("/v1/login/challenges/verify")
+      .set("x-request-id", "req-signin-00000001")
+      .send({ challengeId, code: h.delivery.codeFor(email).code })
+      .expect(200);
+    const events = await database.db
+      .select({ envelope: outbox.envelope })
+      .from(outbox)
+      .where(
+        sql`${outbox.envelope}->>'aggregateId' = ${signedIn.body.user.id}`,
+      );
+    expect(events).toHaveLength(2);
+    for (const { envelope } of events)
+      expect(envelope).toMatchObject({
+        correlationId: "req-signin-00000001",
+        causationId: "req-signin-00000001",
+      });
+  });
+
+  it("routes are recorded by template, without probes, ids or emails", async () => {
+    const session = await h.signIn(uniqueEmail());
+    const sessionId = randomUUID();
+    await h
+      .http()
+      .delete(`/v1/me/sessions/${sessionId}`)
+      .set(h.auth(session.accessToken))
+      .expect(404);
+    await h.http().get(`/v1/nope/${sessionId}`).expect(404);
+    await h.http().get("/health").expect(200);
+    await h.http().get("/health/deep").expect(200);
+    const scrape = await h.scrape();
+    const requests = (labels: Record<string, string>) =>
+      metricValue(scrape, "http_server_requests_total", labels);
+    expect(
+      requests({
+        method: "DELETE",
+        route: "/v1/me/sessions/:id",
+        status_class: "4xx",
+      }),
+    ).toBe(1);
+    expect(requests({ route: "/v1/login/challenges/verify" })).toBeGreaterThan(
+      0,
+    );
+    expect(requests({ route: "unmatched" })).toBeGreaterThan(0);
+    expect(scrape).not.toContain('route="/health');
+    expect(scrape).not.toContain(sessionId);
+    expect(idLikeLabelValues(scrape)).toEqual([]);
+    // METRICS_PORT=0 in tests: nothing listens.
+    expect(h.app.get(MetricsServer).port).toBeNull();
   });
 });

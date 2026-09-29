@@ -121,6 +121,16 @@ describe("Google sign-in (ID-02)", () => {
   });
 
   it("refuses unverified emails, bad codes, and says so when Google is down", async () => {
+    const results = () =>
+      Promise.all(
+        ["success", "rejected", "unavailable"].map((result) =>
+          h.metric("identity_sign_in_attempts_total", {
+            method: "google",
+            result,
+          }),
+        ),
+      );
+    const before = await results();
     const unverified = account(uniqueEmail("u"), { emailVerified: false });
     const res = await signIn(h.google.code(unverified)).expect(422);
     expect(res.body.error.fieldErrors).toEqual({ email: ["unverified"] });
@@ -135,6 +145,13 @@ describe("Google sign-in (ID-02)", () => {
 
     h.google.unavailable = true;
     await signIn(h.google.code(account())).expect(503);
+    // One success, two refusals (unverified email, used code), one outage.
+    const [success = 0, rejected = 0, unavailable = 0] = before;
+    expect(await results()).toEqual([
+      success + 1,
+      rejected + 2,
+      unavailable + 1,
+    ]);
   });
 
   it("TC-ID-02-03: the last way to sign in cannot be removed", async () => {

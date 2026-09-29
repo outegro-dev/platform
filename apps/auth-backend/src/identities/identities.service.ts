@@ -12,6 +12,7 @@ import { and, eq } from "drizzle-orm";
 import { audit } from "../common/audit.js";
 import type { ClientContext } from "../common/client-context.js";
 import type { AuthDatabase, AuthTx } from "../common/database.js";
+import { IdentityMetrics } from "../common/metrics.js";
 import { identities, users } from "../db/schema.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import { UsersService } from "../users/users.service.js";
@@ -39,6 +40,7 @@ export class IdentitiesService {
     private readonly sessions: SessionsService,
     private readonly relay: OutboxRelay,
     private readonly limiter: RateLimiter,
+    private readonly metrics: IdentityMetrics,
   ) {}
 
   /** What id-web needs to build the Google authorization request. */
@@ -51,7 +53,14 @@ export class IdentitiesService {
   }
 
   /** An existing link signs in; an unknown Google account gets a new user. */
-  async signIn(input: GoogleCode & { locale: Locale }, client: ClientContext) {
+  signIn(input: GoogleCode & { locale: Locale }, client: ClientContext) {
+    return this.metrics.signIn("google", this.authenticate(input, client));
+  }
+
+  private async authenticate(
+    input: GoogleCode & { locale: Locale },
+    client: ClientContext,
+  ) {
     if (client.ip) {
       const limit = await this.limiter.consume(
         `login:google-ip:${client.ip}`,

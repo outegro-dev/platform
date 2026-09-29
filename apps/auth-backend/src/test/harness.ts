@@ -2,8 +2,14 @@ import { generateKeyPairSync, randomBytes } from "node:crypto";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 import { startPostgres, type TestPostgres } from "@outegro/db/testing";
-import { CLOCK, configureApp, ManualClock } from "@outegro/nest-common";
 import {
+  CLOCK,
+  configureApp,
+  ManualClock,
+  Metrics,
+} from "@outegro/nest-common";
+import {
+  metricValue,
   startRabbit,
   startValkey,
   type TestService,
@@ -162,6 +168,12 @@ export async function startHarness() {
     signIn,
     valkey: valkeyClient,
     auth: (token: string) => ({ authorization: `Bearer ${token}` }),
+    /** What Prometheus would scrape now. */
+    scrape: () => app.get(Metrics).scrape(),
+    /** Sum of the series of `name` with these labels in a fresh scrape. */
+    async metric(name: string, labels: Record<string, string> = {}) {
+      return metricValue(await app.get(Metrics).scrape(), name, labels);
+    },
     async close() {
       await app.close();
       await valkeyClient.quit();
