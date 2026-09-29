@@ -2,6 +2,7 @@ import type { MatchSnapshot } from "@outegro/contracts/battleship";
 import { asc, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { matches, moves, outbox, players, ratingHistory } from "./db/schema.js";
+import { ConnectionRegistry } from "./realtime/connection.registry.js";
 import { fleets, type Harness, startHarness } from "./test/harness.js";
 import {
   battle,
@@ -153,6 +154,73 @@ describe("restart recovery", () => {
     expect((await back.next("match.finished")).payload).toMatchObject({
       winner: "you",
       reason: "disconnected",
+    });
+  });
+
+  /**
+   * a leaves, b leaves 50 s later, and a's grace runs out while b's runs:
+   * a's forfeit waits for b when the service restarts.
+   */
+  async function forfeitWaitingAtRestart() {
+    const { a, b, matchId } = await room(h);
+    await battle(a, b);
+    await a.close();
+    await b.next("opponent.presence", (m) => !m.payload.connected);
+    await h.advance(50_000);
+    await b.close();
+    await expect
+      .poll(() => h.get(ConnectionRegistry).socketsOf(b.userId))
+      .toBe(0);
+    await h.advance(10_000);
+    const row = async () =>
+      (await h.db.select().from(matches).where(eq(matches.id, matchId)))[0];
+    expect(await row()).toMatchObject({
+      status: "battle",
+      pendingForfeit: "a",
+    });
+    await h.restart();
+    return { a, b, matchId, row };
+  }
+
+  it("a forfeit waiting at a restart still waits: the late player gets no new grace, and nobody wins if the opponent stays away", async () => {
+    const { a, matchId, row } = await forfeitWaitingAtRestart();
+    const late = await h.connect(a.userId);
+    expect(late.ready.activeMatchId).toBe(matchId);
+    // No clock runs while the forfeit waits; the opponent has its 60 seconds.
+    const state = (await late.next("match.state")).payload.match;
+    expect(state.deadline).toBeNull();
+    expect((await late.next("opponent.presence")).payload).toEqual({
+      connected: false,
+      graceUntil: new Date(h.clock.now().getTime() + 60_000).toISOString(),
+    });
+    const shot = late.send("shot.fire", { x: 9, y: 9 });
+    expect((await late.error(shot)).payload.code).toBe("wrong_phase");
+    await h.advance(59_999);
+    expect((await row())?.status).toBe("battle");
+    await h.advance(1);
+    expect((await late.next("match.aborted")).payload.reason).toBe("abandoned");
+    expect(await row()).toMatchObject({
+      status: "aborted",
+      abortReason: "abandoned",
+      winner: null,
+      pendingForfeit: null,
+    });
+  });
+
+  it("a forfeit waiting at a restart is decided as soon as the opponent is back", async () => {
+    const { b, row } = await forfeitWaitingAtRestart();
+    const back = await h.connect(b.userId);
+    const state = (await back.next("match.state")).payload.match;
+    expect(state).toMatchObject({ phase: "finished", winner: "you" });
+    expect((await back.next("match.finished")).payload).toMatchObject({
+      winner: "you",
+      reason: "disconnected",
+    });
+    expect(await row()).toMatchObject({
+      status: "finished",
+      winner: "b",
+      reason: "disconnected",
+      pendingForfeit: null,
     });
   });
 

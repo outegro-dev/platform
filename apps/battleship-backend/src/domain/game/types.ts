@@ -94,7 +94,8 @@ export type FinishResult = {
 
 /**
  * Persistence of a live match. `finish` stores the result, statistics,
- * rating changes and the outbox event in one transaction.
+ * rating changes and the outbox event in one transaction; `finish` and
+ * `abort` also clear a waiting forfeit.
  */
 export interface MatchStore {
   savePlacement(
@@ -105,6 +106,8 @@ export interface MatchStore {
     at: Date,
   ): Promise<void>;
   saveMove(matchId: string, move: StoredMove, at: Date): Promise<void>;
+  /** The side's forfeit waits for its opponent; recovery restores it. */
+  saveWaitingForfeit(matchId: string, side: SideKey): Promise<void>;
   finish(input: FinishInput): Promise<FinishResult>;
   abort(
     matchId: string,

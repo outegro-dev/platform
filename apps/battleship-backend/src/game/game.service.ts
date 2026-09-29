@@ -22,6 +22,7 @@ import type {
   MatchAction,
   MatchRecord,
   SessionEnd,
+  SideKey,
 } from "../domain/game/types.js";
 import { RatingPolicy } from "../domain/rating.js";
 import type { Scheduler } from "../domain/scheduler.js";
@@ -105,8 +106,15 @@ export class GameService implements OnModuleDestroy {
     return session;
   }
 
-  /** Registers a session for a stored match and arms its clocks (also recovery). */
-  resume(record: MatchRecord, history: readonly MatchAction[]): GameSession {
+  /**
+   * Registers a session for a stored match and arms its clocks (also
+   * recovery, with the forfeit that was waiting when the service stopped).
+   */
+  resume(
+    record: MatchRecord,
+    history: readonly MatchAction[],
+    waitingForfeit: SideKey | null = null,
+  ): GameSession {
     const session = new GameSession(
       record,
       {
@@ -120,6 +128,7 @@ export class GameService implements OnModuleDestroy {
         onEnd: (ended, end) => this.ended(ended, end),
       },
       history,
+      waitingForfeit,
     );
     this.sessions.add(session);
     session.start();

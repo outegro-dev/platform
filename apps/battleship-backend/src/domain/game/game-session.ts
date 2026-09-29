@@ -97,7 +97,10 @@ export class GameSession {
     readonly record: MatchRecord,
     private readonly deps: SessionDeps,
     history: readonly MatchAction[] = [],
+    /** A forfeit that was waiting when the service stopped (recovery). */
+    waitingForfeit: SideKey | null = null,
   ) {
+    this.forfeiting = waitingForfeit;
     this.actions = [...history];
     this.match = replay(record, this.actions);
     this.projector = new SideProjector(record);
@@ -132,23 +135,39 @@ export class GameSession {
     return this.bot === null;
   }
 
-  /** Arms the clocks of a new or recovered match. */
+  /**
+   * Arms the clocks of a new or recovered match. A recovered forfeit keeps
+   * waiting: no clock, no new grace for its side; the opponent gets the
+   * grace every absent player gets after a restart.
+   */
   start(): void {
     const now = this.deps.clock.now().getTime();
     if (this.online) {
-      if (this.match.currentPhase === "placement") {
-        this.armClock(new Date(now + this.deps.timings.placementMs), (token) =>
-          this.onPlacementTimeout(token),
-        );
-      } else if (this.match.currentPhase === "battle") {
-        this.armTurnClock();
+      // The clocks stay stopped while a forfeit waits.
+      if (this.forfeiting === null) {
+        if (this.match.currentPhase === "placement") {
+          this.armClock(
+            new Date(now + this.deps.timings.placementMs),
+            (token) => this.onPlacementTimeout(token),
+          );
+        } else if (this.match.currentPhase === "battle") {
+          this.armTurnClock();
+        }
       }
       // Nobody is told yet: `stateFor` reports an absent opponent after the snapshot.
       for (const side of SIDES) {
         const userId = userIdOf(this.record, side);
-        if (userId && !this.deps.outlet.isOnline(userId))
+        if (
+          userId &&
+          side !== this.forfeiting &&
+          !this.deps.outlet.isOnline(userId)
+        )
           this.beginGrace(side, false);
       }
+      // The opponent of a recovered forfeit is here already: it takes effect.
+      const waiting = this.forfeiting;
+      if (waiting && !this.grace.has(otherSide(waiting)))
+        void this.onOpponentBack(waiting);
     } else {
       this.armIdle();
       this.armBot();
@@ -602,12 +621,31 @@ export class GameSession {
         this.grace.delete(side);
         this.forfeiting = side;
         this.stopClock();
+        await this.saveForfeit(side);
       } else {
         await this.act({ kind: "abandon", side }, false);
       }
     }).catch((error) =>
       this.retryLater(error, () => this.onGraceExpired(side)),
     );
+  }
+
+  /**
+   * Stores a waiting forfeit, so that it survives a restart. It is kept in
+   * memory first, so nothing else decides meanwhile; a failed store is
+   * retried for as long as the forfeit waits.
+   */
+  private async saveForfeit(side: SideKey): Promise<void> {
+    try {
+      await this.deps.store.saveWaitingForfeit(this.id, side);
+    } catch (error) {
+      this.retryLater(error, () =>
+        this.run(async () => {
+          if (!this.ended && this.forfeiting === side)
+            await this.saveForfeit(side);
+        }),
+      );
+    }
   }
 
   /** The opponent of a waiting forfeit is back in time: the side loses now. */

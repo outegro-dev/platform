@@ -26,6 +26,7 @@ import {
   type MatchAction,
   type MatchRecord,
   type SessionEnd,
+  type SideKey,
 } from "./game/types.js";
 import { PairingPlanner, SearchWindow } from "./matchmaking.js";
 import { defaultNickname, generateRoomCode } from "./names.js";
@@ -322,7 +323,11 @@ describe("game session", () => {
     createdAt: clock.now(),
   });
 
-  const session = (record: MatchRecord, history: MatchAction[] = []) => {
+  const session = (
+    record: MatchRecord,
+    history: MatchAction[] = [],
+    waitingForfeit: SideKey | null = null,
+  ) => {
     const created = new GameSession(
       record,
       {
@@ -336,6 +341,7 @@ describe("game session", () => {
         onEnd: (_s, end) => ends.push(end),
       },
       history,
+      waitingForfeit,
     );
     created.start();
     return created;
@@ -675,6 +681,70 @@ describe("game session", () => {
     });
     await scheduler.advance(50_000);
     expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+  });
+
+  const placed: MatchAction[] = [
+    { kind: "place", side: "a", ships: fleets.a },
+    { kind: "place", side: "b", ships: fleets.b },
+  ];
+
+  it("a waiting forfeit is stored, so that a restart keeps it", async () => {
+    await staggered();
+    expect(store.waitingForfeits).toEqual(["a"]);
+  });
+
+  it("a waiting forfeit the database missed is stored on retry, and waits meanwhile", async () => {
+    const game = session(online("quick"), placed);
+    outlet.online.delete(ALICE);
+    game.userOffline(ALICE);
+    await scheduler.advance(50_000);
+    outlet.online.delete(BOB);
+    game.userOffline(BOB);
+    store.failNext = true;
+    await scheduler.advance(10_000);
+    expect(store.waitingForfeits).toEqual([]);
+    expect(game.inspect().deadline).toBeNull();
+    await scheduler.advance(defaultTimings.retryMs);
+    expect(store.waitingForfeits).toEqual(["a"]);
+    expect(ends).toHaveLength(0);
+  });
+
+  it("a recovered waiting forfeit keeps waiting: no clock, and no new grace for its side", async () => {
+    outlet.online.clear();
+    const game = session(online("quick"), placed, "a");
+    expect(game.inspect().deadline).toBeNull();
+    expect(game.inspect().graceUntil).toEqual({
+      b: "2026-09-29T10:01:00.000Z",
+    });
+    outlet.online.add(ALICE);
+    game.userOnline(ALICE);
+    await rejects(game.fire(ALICE, 9, 9), "wrong_phase");
+    await scheduler.advance(59_999);
+    expect(ends).toHaveLength(0);
+    await scheduler.advance(1);
+    expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+  });
+
+  it("a recovered waiting forfeit is decided when the opponent is back, or already here", async () => {
+    outlet.online.clear();
+    const game = session(online("quick"), placed, "a");
+    await scheduler.advance(30_000);
+    outlet.online.add(BOB);
+    game.userOnline(BOB);
+    await scheduler.advance(0);
+    expect(ends).toEqual([
+      expect.objectContaining({ winner: "b", reason: "disconnected" }),
+    ]);
+
+    // Bob's forfeit waited; Alice is connected when the match is resumed.
+    ends = [];
+    outlet.online.clear();
+    outlet.online.add(ALICE);
+    session(online("quick"), placed, "b");
+    await scheduler.advance(0);
+    expect(ends).toEqual([
+      expect.objectContaining({ winner: "a", reason: "disconnected" }),
+    ]);
   });
 
   it("the player back in time gets the result right after the snapshot", async () => {
