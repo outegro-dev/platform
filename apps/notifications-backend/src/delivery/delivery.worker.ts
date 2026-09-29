@@ -21,6 +21,7 @@ import {
   UnknownOutcomeError,
 } from "../channels/providers.js";
 import type { NotificationsDatabase } from "../common/database.js";
+import { NotificationsMetrics } from "../common/metrics.js";
 import { channelsConfig } from "../config/config.js";
 import {
   deliveries,
@@ -69,6 +70,7 @@ export class DeliveryWorker
     private readonly config: ConfigType<typeof channelsConfig>,
     private readonly relay: OutboxRelay,
     private readonly settings: SettingsService,
+    private readonly metrics: NotificationsMetrics,
   ) {}
 
   onApplicationBootstrap() {
@@ -284,8 +286,10 @@ export class DeliveryWorker
       }
       return true;
     });
-    if (updated) this.relay.kick();
-    else
+    if (updated) {
+      this.metrics.delivery(delivery.channel, state);
+      this.relay.kick();
+    } else
       this.logger.warn(
         { deliveryId: delivery.id },
         "Lease lost before recording outcome",

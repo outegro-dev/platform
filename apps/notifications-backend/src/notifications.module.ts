@@ -3,6 +3,7 @@ import { NotificationsAdminController } from "./admin/admin.controller.js";
 import { SettingsService } from "./admin/settings.service.js";
 import { AuthCodesController } from "./auth-codes/auth-codes.controller.js";
 import { providers } from "./channels/providers.js";
+import { NotificationsMetrics } from "./common/metrics.js";
 import { DeliveryWorker } from "./delivery/delivery.worker.js";
 import { InboxController } from "./inbox/inbox.controller.js";
 import { IntentsService } from "./intents/intents.service.js";
@@ -21,6 +22,7 @@ import { TelegramLinkService } from "./telegram/telegram-link.service.js";
   providers: [
     ...providers,
     telegramBotProvider,
+    NotificationsMetrics,
     DeliveryWorker,
     IntentsService,
     RecipientsService,

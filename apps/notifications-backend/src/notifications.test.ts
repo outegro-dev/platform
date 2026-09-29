@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DATABASE, HealthRegistry, Messaging } from "@outegro/nest-common";
+import { idLikeLabelValues, metricValue } from "@outegro/nest-common/testing";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PermanentDeliveryError } from "./channels/providers.js";
@@ -59,6 +60,48 @@ const security = (
     data: { reason: "reuse_detected", ip: "203.0.113.7" },
     ...extra,
   });
+
+// First, while no other test has left deliveries behind.
+describe("delivery metrics (OPS-04)", () => {
+  it("counts outcomes by channel and shows the queue and its oldest delivery", async () => {
+    const outcomes = () =>
+      Promise.all(
+        ["sent", "retried", "failed"].map((outcome) =>
+          h.metric("notifications_deliveries_total", {
+            channel: "email",
+            outcome,
+          }),
+        ),
+      );
+    const queue = (channel: string) =>
+      Promise.all([
+        h.metric("notifications_deliveries_queued", { channel }),
+        h.metric("notifications_delivery_oldest_queued_age_seconds", {
+          channel,
+        }),
+      ]);
+    const [sent = 0, retried = 0, failed = 0] = await outcomes();
+    const { userId } = await newUser();
+    await intentsService.accept(security(userId, { channels: ["email"] }));
+    h.clock.advance(30_000);
+    expect(await queue("email")).toEqual([1, 30]);
+    expect(await queue("telegram")).toEqual([0, 0]);
+
+    h.email.fail = new Error("503 from provider");
+    await worker.tick();
+    h.email.fail = null;
+    h.clock.advance(15_001);
+    await worker.tick();
+    const other = await newUser();
+    await intentsService.accept(
+      security(other.userId, { channels: ["email"] }),
+    );
+    h.email.fail = new PermanentDeliveryError("invalid_to_address");
+    await worker.tick();
+    expect(await outcomes()).toEqual([sent + 1, retried + 1, failed + 1]);
+    expect(await queue("email")).toEqual([0, 0]);
+  });
+});
 
 describe("intents (N-01)", () => {
   it("TC-N-01-01: the same source event twice creates one notification", async () => {
@@ -346,5 +389,26 @@ describe("broker integration", () => {
     }
     expect(h.email.sent.some((m) => m.to === email)).toBe(true);
     await publisher.onApplicationShutdown();
+  });
+});
+
+describe("scrape after every flow above (OPS-04)", () => {
+  it("labels routes by template and never carries ids or emails", async () => {
+    const scrape = await h.scrape();
+    expect(
+      metricValue(scrape, "http_server_requests_total", {
+        method: "POST",
+        route: "/v1/me/inbox/:id/read",
+      }),
+    ).toBeGreaterThan(0);
+    expect(
+      metricValue(scrape, "messaging_events_consumed_total", {
+        queue: "notifications.intents",
+        outcome: "processed",
+      }),
+    ).toBeGreaterThan(0);
+    expect(scrape).toContain("outbox_pending_events{");
+    expect(scrape).not.toContain("@example.test");
+    expect(idLikeLabelValues(scrape)).toEqual([]);
   });
 });
