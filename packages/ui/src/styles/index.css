@@ -24,6 +24,7 @@
   --color-accent-foreground: var(--foreground);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--border);
   --color-ring: var(--ring);
@@ -71,6 +72,8 @@
   --ring: #4b5748;
   --destructive: #b42318;
   --success: #36652d;
+  /* Needs attention (paused channel, backlog, open issue): AA on surface. */
+  --warning: #8a5a00;
   --live: #2f8f46;
   --selection: #c9d1c1;
 
@@ -118,6 +121,7 @@
   --border-strong: #5c6056;
   --ring: #c9d1c1;
   --live: #8fd694;
+  --warning: #e0b25c;
   --selection: #4b5748;
   --glass-bg: linear-gradient(135deg, #ffffff1f, #ffffff08);
   --glass-border: #ffffff2e;
