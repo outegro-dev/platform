@@ -34,8 +34,10 @@ export default defineConfig({
       },
     },
     {
+      // Pictures, not checks: one retry absorbs a slow machine.
       name: "screens",
       testMatch: /screens\.spec\.ts/,
+      retries: 1,
       use: { ...devices["Desktop Chrome"] },
     },
   ],

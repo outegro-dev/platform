@@ -111,6 +111,25 @@ const screens: Screen[] = [
     },
   },
   {
+    name: "order-not-completed",
+    persona: { scenario: "returning" },
+    open: async (page, buyer) => {
+      await page.goto(
+        `/checkout/result?orderId=${pending(buyer)}&result=cancel`,
+      );
+      await expect(page.locator(".orb")).toBeVisible();
+    },
+  },
+  {
+    name: "order-unpaid",
+    persona: { scenario: "returning" },
+    open: async (page, buyer) => {
+      const abandoned = buyer.orders.filter((o) => o.status === "pending")[1];
+      await page.goto(`/orders/${abandoned?.id}`);
+      await expect(page.locator(".hero-card")).toBeVisible();
+    },
+  },
+  {
     name: "order-activating",
     persona: { scenario: "returning" },
     open: async (page, buyer) => {
