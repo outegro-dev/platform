@@ -77,6 +77,17 @@ for (const layout of layouts) {
       await deployRandomFleet(page);
       await playSomeShots(page, fake);
       await capture(page, `${layout.name}-battle`);
+      fake.script.readyDelayMs = 60_000;
+      await fake.drop();
+      await expect(page.getByTestId("banner-reconnecting")).toBeVisible();
+      await page.waitForTimeout(400);
+      await page.screenshot({
+        path: path.join(dir, `${layout.name}-battle-reconnecting.png`),
+        animations: "disabled",
+      });
+      fake.script.readyDelayMs = 0;
+      await page.evaluate(() => window.dispatchEvent(new Event("online")));
+      await expect(page.getByTestId("banner-reconnecting")).toBeHidden({ timeout: 20_000 });
       for (const cell of fake.enemyCells()) {
         const button = page
           .getByTestId("target-board")

@@ -1362,14 +1362,30 @@
     }
   }
   @media (max-width: 767px) {
-    /* Phones: boards edge to edge, cells stay at least 32 px. */
+    /* Phones: boards nearly edge to edge so cells stay at least 32 px
+       down to 360 px wide screens. */
     .match {
-      margin-inline: -8px;
+      margin-inline: -14px;
     }
     .board {
       --label: 16px;
-      padding: 8px 8px 10px 4px;
-      border-radius: 18px;
+      padding: 6px 6px 8px 4px;
+      border-radius: 16px;
+    }
+    /* Banners float over the top of the screen instead of taking a slot:
+       a two-line message can never push the boards, and it stays in view
+       while scrolling between the boards. */
+    .banner-slot {
+      position: sticky;
+      top: 8px;
+      z-index: 6;
+      min-height: 0;
+      height: 0;
+    }
+    .banner {
+      position: absolute;
+      inset: 0 0 auto;
+      box-shadow: var(--shadow-lift);
     }
     .turn {
       min-width: 0;

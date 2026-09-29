@@ -667,7 +667,8 @@
     flex: 1;
   }
   .field-hint {
-    min-height: 20px;
+    /* Two lines reserved: a hint turning into a longer error moves nothing. */
+    min-height: 39px;
     font-size: 13px;
     line-height: 1.5;
     color: var(--muted-foreground);

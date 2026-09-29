@@ -77,6 +77,22 @@ export function RootStoreProvider({
     root.setSession(signedIn, profile);
   }, [root, signedIn, profile]);
 
+  // Browsers start audio only from a gesture: the first tap or key after a
+  // reload (sound restored as "on") wakes the synthesizer up.
+  useEffect(() => {
+    const unlock = () => {
+      if (root.preferences.sound && root.sound instanceof SoundEngine) {
+        root.sound.unlock();
+      }
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [root]);
+
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => root.preferences.setReducedMotion(query.matches);

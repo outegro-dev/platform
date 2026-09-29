@@ -218,6 +218,45 @@ test.describe("languages and phones", () => {
       }
     });
 
+    test("at 360 px, the smallest supported width, cells are still 32 px", async ({
+      page,
+      game,
+    }) => {
+      await page.setViewportSize({ width: 360, height: 780 });
+      await signInAndConnect(page, game, "free");
+      await startBotGame(page);
+      await deployRandomFleet(page);
+      for (const board of ["target-board", "own-board"]) {
+        const cell = await page
+          .getByTestId(board)
+          .locator(".cell")
+          .first()
+          .boundingBox();
+        expect(cell?.width ?? 0, board).toBeGreaterThanOrEqual(32);
+      }
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(360);
+    });
+
+    test("a long banner floats over the boards instead of pushing them", async ({
+      page,
+      game,
+    }) => {
+      const fake = await signInAndConnect(page, game, "free");
+      await startBotGame(page);
+      await deployRandomFleet(page);
+      const boards = page.locator(".boards");
+      const before = await boards.boundingBox();
+      fake.script.readyDelayMs = 1500;
+      await fake.drop();
+      await expect(page.getByTestId("banner-reconnecting")).toBeVisible();
+      expect(await boards.boundingBox()).toEqual(before);
+      await expect(page.getByTestId("banner-reconnecting")).toBeHidden({
+        timeout: 15_000,
+      });
+    });
+
     test("every page fits the screen", async ({ page, game }) => {
       await signInAndConnect(page, game, "premium");
       for (const path of ["/", "/leaderboard", "/profile", "/shop"]) {
