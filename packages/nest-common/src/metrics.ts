@@ -78,17 +78,17 @@ export class Metrics {
     });
   }
 
-  counter<T extends string>(config: Own<CounterConfiguration<T>>) {
+  counter<T extends string = never>(config: Own<CounterConfiguration<T>>) {
     return new Counter<T>({ ...config, registers: [this.registry] });
   }
 
-  gauge<T extends string>(config: Own<GaugeConfiguration<T>>) {
+  gauge<T extends string = never>(config: Own<GaugeConfiguration<T>>) {
     const gauge = new Gauge<T>({ ...config, registers: [this.registry] });
     if (!config.labelNames?.length) this.unlabelled.add(gauge);
     return gauge;
   }
 
-  histogram<T extends string>(config: Own<HistogramConfiguration<T>>) {
+  histogram<T extends string = never>(config: Own<HistogramConfiguration<T>>) {
     return new Histogram<T>({ ...config, registers: [this.registry] });
   }
 

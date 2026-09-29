@@ -11,6 +11,7 @@ import {
   type OrderRow,
   type PaymentsDatabase,
 } from "../common/database.js";
+import { PaymentsMetrics } from "../common/metrics.js";
 import { workersConfig } from "../config/config.js";
 import { checkoutAttempts, orders } from "../db/schema.js";
 import { type PaymentFact, paymentFactSchema } from "../domain/facts.js";
@@ -50,6 +51,7 @@ export class ReconciliationWorker extends PeriodicWorker {
     private readonly events: ProviderEvents,
     private readonly cancellation: CancellationService,
     private readonly issues: IssueRegistry,
+    private readonly metrics: PaymentsMetrics,
     @Inject(workersConfig.KEY) config: ConfigType<typeof workersConfig>,
   ) {
     super(config.autoStart, config.reconcileIntervalMs);
@@ -59,6 +61,7 @@ export class ReconciliationWorker extends PeriodicWorker {
     let handled = await this.checkAttempts();
     handled += await this.events.retryDue();
     if (this.provider.configured) handled += await this.cancellation.retryDue();
+    this.metrics.reconciliationFinished();
     return handled;
   }
 

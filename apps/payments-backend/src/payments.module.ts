@@ -15,6 +15,7 @@ import { CatalogController } from "./catalog/catalog.controller.js";
 import { CatalogService } from "./catalog/catalog.service.js";
 import { CheckoutController } from "./checkout/checkout.controller.js";
 import { CheckoutService } from "./checkout/checkout.service.js";
+import { PaymentsMetrics } from "./common/metrics.js";
 import { lavaConfig } from "./config/config.js";
 import { CustomersService } from "./customers/customers.service.js";
 import {
@@ -49,6 +50,7 @@ import { ReconciliationWorker } from "./workers/reconciliation.worker.js";
             })
           : new UnconfiguredPaymentProvider(),
     },
+    PaymentsMetrics,
     CatalogService,
     CustomersService,
     GrantLedger,

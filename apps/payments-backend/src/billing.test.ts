@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
+import { idLikeLabelValues, metricValue } from "@outegro/nest-common/testing";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { CatalogService } from "./catalog/catalog.service.js";
@@ -1444,5 +1445,139 @@ describe("ownership (INV-10)", () => {
     expect(res.body.checkout.paymentUrl).toMatch(
       /^https:\/\/app\.lava\.top\/pay\//,
     );
+  });
+});
+
+describe("metrics and correlation (OPS-04)", () => {
+  const webhooks = (type: string, outcome: string) =>
+    h.metric("payments_webhooks_total", { type, outcome });
+
+  it("a purchase keeps its checkout's correlation through the webhook into its events", async () => {
+    const user = await newCustomer();
+    const started = await h
+      .http()
+      .post("/v1/checkout")
+      .set(user.auth)
+      .set("idempotency-key", newKey())
+      .set("x-request-id", "req-checkout-0001")
+      .send({ productKey: SILVER, currency: "USD" })
+      .expect(200);
+    const orderId = started.body.orderId as string;
+    const invoice = h.lava.find(
+      started.body.paymentUrl.split("/").at(-1) as string,
+    );
+    const counters = () =>
+      Promise.all([
+        webhooks("payment.success", "accepted"),
+        h.metric("payments_grants_activated_total", { source: "purchase" }),
+      ]);
+    const [accepted = 0, activated = 0] = await counters();
+    await h
+      .http()
+      .post("/webhooks/lava")
+      .set("x-api-key", h.webhookSecret)
+      .set("x-request-id", "req-webhook-0001")
+      .send(paidWebhook(user, invoice))
+      .expect(200);
+    expect(await counters()).toEqual([accepted + 1, activated + 1]);
+    const chain = {
+      correlationId: "req-checkout-0001",
+      causationId: "req-webhook-0001",
+    };
+    expect(
+      await eventsOf("billing.payment.confirmed.v1", "orderId", orderId),
+    ).toEqual([expect.objectContaining(chain)]);
+    expect(
+      await eventsOf("billing.grant.changed.v1", "sourceId", orderId),
+    ).toEqual([expect.objectContaining(chain)]);
+  });
+
+  it("webhooks count by known type and outcome at the door", async () => {
+    const user = await newCustomer();
+    const { invoice } = await startPurchase(user, SILVER, "USD");
+    const payload = paidWebhook(user, invoice);
+    const outcomes = () =>
+      Promise.all([
+        webhooks("payment.success", "rejected_auth"),
+        webhooks("payment.success", "rejected_schema"),
+        webhooks("payment.success", "accepted"),
+        webhooks("payment.success", "duplicate"),
+        webhooks("other", "accepted"),
+      ]);
+    const before = await outcomes();
+    await webhook(payload, "wrong").expect(401);
+    await webhook({ ...payload, amount: "lots" }).expect(200);
+    await webhook(payload).expect(200);
+    await webhook(payload).expect(200);
+    await webhook({
+      eventType: "payout.created",
+      contractId: randomUUID(),
+    }).expect(200);
+    expect(await outcomes()).toEqual(before.map((count) => count + 1));
+  });
+
+  it("reconciliation records when its last pass finished", async () => {
+    h.clock.advance(3_600_000);
+    await reconciliation.tick();
+    expect(
+      await h.metric("payments_reconciliation_last_success_timestamp_seconds"),
+    ).toBe(h.clock.now().getTime() / 1000);
+  });
+
+  it("pending checkouts and unapplied provider events show how old the oldest is", async () => {
+    const user = await newCustomer();
+    h.lava.mode = "timeout";
+    await checkout(user, { productKey: SILVER, currency: "USD" }).expect(200);
+    h.lava.mode = "ok";
+    await webhook(
+      lavaPayloads.paymentSuccess({
+        contractId: randomUUID(),
+        email: user.email,
+        amount: 0.59,
+        currency: "USD",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    h.clock.advance(45_000);
+    const scrape = await h.scrape();
+    expect(
+      metricValue(scrape, "payments_checkouts_pending", { state: "unknown" }),
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      metricValue(scrape, "payments_checkout_oldest_pending_age_seconds", {
+        state: "unknown",
+      }),
+    ).toBeGreaterThanOrEqual(45);
+    expect(
+      metricValue(scrape, "payments_provider_events_unprocessed", {
+        status: "unmatched",
+      }),
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      metricValue(
+        scrape,
+        "payments_provider_event_oldest_unprocessed_age_seconds",
+        { status: "unmatched" },
+      ),
+    ).toBeGreaterThanOrEqual(45);
+  });
+
+  it("labels carry route templates and fixed values, never ids or emails", async () => {
+    const scrape = await h.scrape();
+    expect(
+      metricValue(scrape, "http_server_requests_total", {
+        method: "GET",
+        route: "/v1/me/orders/:id",
+      }),
+    ).toBeGreaterThan(0);
+    expect(
+      metricValue(scrape, "http_server_requests_total", {
+        method: "POST",
+        route: "/webhooks/lava",
+        status_class: "4xx",
+      }),
+    ).toBeGreaterThan(0);
+    expect(scrape).not.toContain("@example.test");
+    expect(idLikeLabelValues(scrape)).toEqual([]);
   });
 });
