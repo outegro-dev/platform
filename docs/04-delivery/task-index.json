@@ -871,7 +871,7 @@
       "id": "OPS-04",
       "title": "Метрики/логи/correlation",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "in_progress",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-04.md",
       "dependencies": [
