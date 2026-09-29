@@ -1705,6 +1705,10 @@
   .level > span:first-of-type {
     font-size: 15px;
   }
+  .level .segment-hint {
+    white-space: normal;
+    line-height: 1.3;
+  }
   .setting-label {
     font-size: 15px;
     font-weight: 600;

@@ -87,7 +87,9 @@ for (const layout of layouts) {
       });
       fake.script.readyDelayMs = 0;
       await page.evaluate(() => window.dispatchEvent(new Event("online")));
-      await expect(page.getByTestId("banner-reconnecting")).toBeHidden({ timeout: 20_000 });
+      await expect(page.getByTestId("banner-reconnecting")).toBeHidden({
+        timeout: 20_000,
+      });
       for (const cell of fake.enemyCells()) {
         const button = page
           .getByTestId("target-board")
@@ -138,5 +140,31 @@ test.describe("screens ru", () => {
     await capture(page, "ru-battle-night-sea");
     await page.goto("/shop");
     await capture(page, "ru-shop");
+  });
+});
+
+test.describe("screens ru mobile", () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test("lobby, placement, battle and shop in Russian on a small phone", async ({
+    page,
+    game,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "og_locale", value: "ru", domain: "localhost", path: "/" },
+    ]);
+    const fake = await signInAndConnect(page, game, "free");
+    await capture(page, "ru-mobile-lobby");
+    await startBotGame(page, "Лёгкий");
+    await capture(page, "ru-mobile-placement");
+    await deployRandomFleet(page);
+    await playSomeShots(page, fake);
+    await capture(page, "ru-mobile-battle");
+    await page.goto("/shop");
+    await capture(page, "ru-mobile-shop");
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(360);
   });
 });
