@@ -27,6 +27,8 @@ export class EntitlementWatch {
     this.unwatch(userId);
     if (!this.registry.isOnline(userId)) return;
     const next = await this.entitlements.nextChange(userId);
+    // Another watch may have armed a timer meanwhile: keep only this one.
+    this.unwatch(userId);
     if (!next || !this.registry.isOnline(userId)) return;
     this.timers.set(
       userId,
