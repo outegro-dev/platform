@@ -5,10 +5,12 @@ import {
   deadLetterQueueName,
   defineEvent,
   defineQueue,
+  hasPlatformRole,
   identityUserCreated,
   messageKeyFor,
   notificationRequested,
   permissionsOf,
+  platformRoles,
   retryQueueName,
 } from "./index.js";
 
@@ -122,6 +124,19 @@ describe("access", () => {
     expect(permissionsOf(["pro", "subscriber"]).size).toBe(0);
     expect(permissionsOf(["support"]).has("roles.assign")).toBe(false);
     expect(permissionsOf(["owner"]).has("roles.assign")).toBe(true);
+  });
+
+  it("tells whether someone holds a platform role (admin console link)", () => {
+    for (const role of Object.keys(platformRoles))
+      expect(hasPlatformRole([role]), role).toBe(true);
+    expect(hasPlatformRole(["subscriber", "billing_operator"])).toBe(true);
+    expect(hasPlatformRole([])).toBe(false);
+    expect(hasPlatformRole(null)).toBe(false);
+    expect(hasPlatformRole(undefined)).toBe(false);
+    // Paid access and made-up or inherited names never count as a role.
+    expect(hasPlatformRole(["premium", "constructor", "__proto__"])).toBe(
+      false,
+    );
   });
 });
 
