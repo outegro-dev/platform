@@ -84,7 +84,8 @@ export class GameSession {
   >();
   /**
    * A side whose grace ran out while the opponent was away too: it loses if
-   * the opponent is back in time, and nobody wins if not.
+   * the opponent is back in time, and nobody wins if not. Meanwhile the
+   * placement and turn clocks are stopped: no timeout decides this match.
    */
   private forfeiting: SideKey | null = null;
   private readonly retries = new Set<TimerHandle>();
@@ -225,6 +226,8 @@ export class GameSession {
   userOffline(userId: string): void {
     const side = sideOfUser(this.record, userId);
     if (!side || this.ended || !this.online || this.grace.has(side)) return;
+    // Its grace already ran out: the waiting forfeit decides, not a new one.
+    if (side === this.forfeiting) return;
     this.beginGrace(side);
   }
 
@@ -464,7 +467,7 @@ export class GameSession {
   // Clocks
 
   private rearm(events: MatchEvent[]) {
-    if (this.match.currentPhase !== "battle") return;
+    if (this.match.currentPhase !== "battle" || this.forfeiting) return;
     if (!this.online) {
       this.armBot();
       return;
@@ -530,11 +533,16 @@ export class GameSession {
       this.deps.outlet.send(opponent, this.projector.presence(false, until));
   }
 
-  private disarmAll() {
+  /** No placement or turn clock; a firing already queued is stale. */
+  private stopClock() {
     this.clockTimer?.cancel();
     this.clockTimer = null;
     this.clockToken++;
     this.deadline = null;
+  }
+
+  private disarmAll() {
+    this.stopClock();
     this.idleTimer?.cancel();
     this.idleTimer = null;
     this.botTimer?.cancel();
@@ -578,9 +586,11 @@ export class GameSession {
 
   /**
    * Not back in time: the player loses. While the opponent is away too but
-   * still within its grace, the forfeit waits for it (`onOpponentBack`). When
-   * the opponent's grace runs out as well (after a restart both end at the
-   * same instant), nobody earned the win, and the match is aborted.
+   * still within its grace, the forfeit waits for it (`onOpponentBack`), and
+   * the clocks stop: a timeout must not hand the match to the player whose
+   * grace already ran out. When the opponent's grace runs out as well (after
+   * a restart both can end at the same instant), nobody earned the win, and
+   * the match is aborted.
    */
   private onGraceExpired(side: SideKey): Promise<void> {
     return this.run(async () => {
@@ -591,6 +601,7 @@ export class GameSession {
       } else if (this.grace.has(opponent)) {
         this.grace.delete(side);
         this.forfeiting = side;
+        this.stopClock();
       } else {
         await this.act({ kind: "abandon", side }, false);
       }
