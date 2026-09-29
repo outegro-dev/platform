@@ -93,10 +93,10 @@ jobs:
       - if: steps.key.outputs.present == 'true'
         env:
           TAG: ${{ needs.images.outputs.tag }}
+        # Every app gitops lists gets this build; an app joins by adding its
+        # images entry there (and its target to docker-bake.hcl).
         run: |
-          for app in landing-web id-web auth-backend notifications-backend; do
-            yq -i "(.images[] | select(.name == \"outegro/$app\")) |= (.newName = \"ghcr.io/outegro-dev/$app\" | .newTag = \"$TAG\")" apps/production/kustomization.yaml
-          done
+          yq -i '(.images[] | select(.name | test("^outegro/"))) |= (.newName = "ghcr.io/outegro-dev/" + (.name | sub("^outegro/"; "")) | .newTag = strenv(TAG))' apps/production/kustomization.yaml
           git config user.name "Nick Lukashik"
           git config user.email "coping.barrel@gmail.com"
           git commit -am "deploy(platform): $TAG"
