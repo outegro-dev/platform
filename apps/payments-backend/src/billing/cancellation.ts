@@ -6,14 +6,15 @@ import {
   DATABASE,
   OutboxRelay,
 } from "@outegro/nest-common";
-import { and, eq, isNotNull, lte, sql } from "drizzle-orm";
-import { type Actor, audit } from "../common/audit.js";
+import { and, asc, eq, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import { type Actor, audit, SYSTEM } from "../common/audit.js";
 import type {
   Executor,
   PaymentsDatabase,
   SubscriptionRow,
 } from "../common/database.js";
 import {
+  customers,
   grants,
   payments,
   providerEvents,
@@ -47,7 +48,8 @@ const DAY_MS = 86_400_000;
  * Turning renewal off (chapter 6.7, PAY-08). Cancel is not a refund: paid
  * time is kept. The provider call happens outside any transaction; until it
  * is confirmed the subscription stays `cancel_requested` and is retried.
- * Revoking a subscription's grant turns renewal off the same way.
+ * Revoking a subscription's grant turns renewal off the same way, and so
+ * does Identity suspending or deleting the buyer's account.
  */
 @Injectable()
 export class CancellationService {
@@ -129,12 +131,67 @@ export class CancellationService {
     );
   }
 
-  /** Records the request; if this process dies before the provider answers, the worker retries. */
+  /**
+   * The buyer's account was suspended or deleted (Identity): every renewal
+   * Lava may still charge is stopped in the transaction of that status
+   * change, and the worker sends the calls at once. Paid time and grants
+   * stay. A subscription whose cancel was requested before (by the buyer,
+   * an operator or an earlier status event) is left as it is, so a repeated
+   * event cancels nothing twice. Returns how many were stopped.
+   */
+  async stopRenewalsOfClosedAccount(
+    tx: Executor,
+    input: {
+      userId: string;
+      status: "suspended" | "deleted";
+      eventId: string;
+    },
+    now: Date,
+  ) {
+    const renewing = await tx
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.userId, input.userId),
+          eq(subscriptions.autoRenew, true),
+          isNull(subscriptions.cancelRequestedAt),
+        ),
+      )
+      .orderBy(asc(subscriptions.createdAt))
+      .for("update");
+    for (const current of renewing) {
+      await audit(tx, {
+        actor: SYSTEM,
+        action: "subscription.cancel",
+        targetType: "subscription",
+        targetId: current.id,
+        reason: `account ${input.status}`,
+        data: { state: current.state, identityEventId: input.eventId },
+        at: now,
+      });
+      await this.request(
+        tx,
+        current,
+        subscriptionLifecycle.cancelRequested(current.state) ?? current.state,
+        now,
+        now,
+      );
+    }
+    return renewing.length;
+  }
+
+  /**
+   * Records the request; if this process dies before the provider answers,
+   * the worker retries. `firstCallAt` is when the worker calls first: by
+   * default after the caller's own call has had its chance.
+   */
   private async request(
     tx: Executor,
     current: SubscriptionRow,
     state: SubscriptionRow["state"],
     now: Date,
+    firstCallAt = new Date(now.getTime() + FIRST_RETRY_MS),
   ) {
     const changed = state !== current.state;
     const [updated] = await tx
@@ -143,7 +200,7 @@ export class CancellationService {
         state,
         cancelRequestedAt: now,
         cancelAttempts: 0,
-        nextCancelAttemptAt: new Date(now.getTime() + FIRST_RETRY_MS),
+        nextCancelAttemptAt: firstCallAt,
         updatedAt: now,
         ...(changed ? { version: sql`${subscriptions.version} + 1` } : {}),
       })
@@ -427,22 +484,27 @@ export class CancellationService {
 
   /**
    * A cancel that fails after the access was revoked (by an operator, or a
-   * duplicate purchase) is its own kind: Lava may charge for nothing.
+   * duplicate purchase) or the buyer's account was suspended or deleted is
+   * its own kind: Lava may charge for nothing, so an operator hears at once.
    */
   private async failureKind(
     tx: Executor,
     subscriptionId: string,
   ): Promise<IssueKind> {
-    const [grant] = await tx
-      .select({ state: grants.state })
-      .from(grants)
-      .where(
+    const [row] = await tx
+      .select({ grant: grants.state, account: customers.status })
+      .from(subscriptions)
+      .leftJoin(
+        grants,
         and(
           eq(grants.sourceType, "subscription"),
-          eq(grants.sourceId, subscriptionId),
+          eq(grants.sourceId, subscriptions.id),
         ),
-      );
-    return grant?.state === "revoked"
+      )
+      .leftJoin(customers, eq(customers.userId, subscriptions.userId))
+      .where(eq(subscriptions.id, subscriptionId));
+    const closed = row?.account === "suspended" || row?.account === "deleted";
+    return row?.grant === "revoked" || closed
       ? "renewal_cancel_failed"
       : "cancel_failed";
   }
