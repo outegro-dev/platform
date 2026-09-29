@@ -716,6 +716,120 @@
     }
   }
 
+  /* ─── Home demo: a battle on a loop ─────────────────── */
+  /* Shells come in from below and stay inside the frame. */
+  .demo-live .board {
+    overflow: hidden;
+  }
+  /* Ships wait under water; the fleet surfaces at the end of a round. */
+  .demo-piece {
+    position: absolute;
+    inset: 0;
+  }
+  .demo-piece:not([data-shown]) {
+    opacity: 0;
+    transform: translateY(calc(var(--cell) * 0.14));
+  }
+  .demo-live .demo-piece {
+    transition:
+      opacity 800ms var(--ease-out),
+      transform 800ms var(--ease-out);
+  }
+  .demo-live[data-phase="reset"] .demo-piece {
+    transition-duration: 450ms;
+  }
+  /* A sunk ship shows at once: its sinking is the reveal. */
+  .demo-live .demo-piece[data-wreck][data-shown] {
+    transition: none;
+  }
+  .demo-live .ship[data-sinking] {
+    animation-name: demo-sink;
+  }
+  @keyframes demo-sink {
+    0% {
+      transform: translateY(-8%) scale(1.08);
+      opacity: 1;
+    }
+    35% {
+      transform: translateY(-3%) scale(1.03) rotate(-1deg);
+      opacity: 1;
+    }
+    100% {
+      transform: none;
+      opacity: 0.62;
+    }
+  }
+  .demo-marks {
+    position: absolute;
+    inset: 0;
+  }
+  .demo-mark {
+    display: contents;
+  }
+  /* The water around a ship just sunk is marked in a ripple. */
+  .demo-live .mark-dot {
+    animation-delay: var(--delay, 0ms);
+  }
+  .demo-live[data-phase="reset"] .demo-marks {
+    opacity: 0;
+    transition: opacity 450ms var(--ease-out);
+  }
+  /* The sight glides from shot to shot. */
+  .demo-live .aim-line,
+  .demo-live .aim-reticle {
+    transition:
+      opacity 220ms var(--ease-out),
+      transform 440ms cubic-bezier(0.45, 0, 0.2, 1);
+  }
+  .demo-live[data-aim] .aim-line,
+  .demo-live[data-aim] .aim-reticle {
+    opacity: 1;
+  }
+  /* Sonar: two pings spread over the empty water before each round. */
+  .demo-sonar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 150%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+  }
+  .demo-sonar::before,
+  .demo-sonar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--mark-miss) 60%, transparent);
+    background: radial-gradient(
+      closest-side,
+      transparent 82%,
+      color-mix(in srgb, var(--sea-glint) 70%, transparent) 97%,
+      transparent
+    );
+    animation: demo-ping 1300ms cubic-bezier(0.2, 0.6, 0.35, 1) both;
+  }
+  .demo-sonar::after {
+    animation-delay: 300ms;
+  }
+  @keyframes demo-ping {
+    from {
+      transform: scale(0.04);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+  /* Splash and shock ring read on the pale day sea too. */
+  .demo-live .fx-splash i {
+    border-color: color-mix(in srgb, var(--mark-miss) 45%, var(--sea-glint));
+  }
+  .demo-live .fx-hit[data-effect="flame"] .fx-ring {
+    border-color: var(--flame-mid);
+  }
+
   /* ─── Match screens ─────────────────────────────────── */
   .match {
     display: grid;
@@ -1448,7 +1562,10 @@
     .aim-line,
     .aim-reticle,
     .board::before,
-    .tray-ship {
+    .tray-ship,
+    .demo-live .demo-piece,
+    .demo-live .aim-line,
+    .demo-live .aim-reticle {
       transition-duration: 1ms;
     }
   }
@@ -1456,5 +1573,18 @@
     from {
       opacity: 0;
     }
+  }
+}
+
+/*
+ * Off screen or in a hidden tab the home demo holds where it is: every
+ * animation inside it pauses, whatever the specificity of the rule that
+ * started it (a layer after "components" wins without !important).
+ */
+@layer paused {
+  .demo-live[data-paused] *,
+  .demo-live[data-paused] *::before,
+  .demo-live[data-paused] *::after {
+    animation-play-state: paused;
   }
 }

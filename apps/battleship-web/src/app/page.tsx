@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { DemoBoard } from "@/components/board/demo-board";
+import { LiveDemoBoard } from "@/components/board/live-demo-board";
 import { FleetRules } from "@/components/home/fleet-rules";
 import { MiniLeaderboard } from "@/components/home/mini-leaderboard";
 import { Modes } from "@/components/home/modes";
@@ -85,7 +85,7 @@ async function Guest() {
           </div>
         </div>
         <div className="demo-stage">
-          <DemoBoard label={t("demoLabel")} skin="silver" />
+          <LiveDemoBoard label={t("demoLabel")} skin="silver" />
         </div>
       </section>
       <h2 className="sr-only">{t("modesTitle")}</h2>
