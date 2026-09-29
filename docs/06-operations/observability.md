@@ -80,7 +80,7 @@ HTTP 200 на вебхук — durable acceptance, а не обработанн�
 - Id запроса — `x-request-id` вызывающего (BFF, другой сервис) или новый UUID. Он возвращается в заголовке ответа и в теле ошибки. Каждая строка внутри запроса несёт `requestId`, `req.id` и `correlationId` (для HTTP-запроса он равен requestId). Access-лог `/health` не пишется.
 - Событие обрабатывается в контексте своего `correlationId`; событие без него начинает цепочку со своего `eventId`. Consumer пишет на каждое событие `Event handled` (queue, eventId, type, correlationId, attempt, lagMs) или `Event handling failed` (плюс target и err); все строки обработчика несут `correlationId`.
 - Событие, записанное в outbox во время запроса или обработки события, получает `correlationId` цепочки и `causationId` — id запроса или id потреблённого события. Явные значения сервиса сильнее: payments ставит в события оплаты correlationId заказа, то есть id запроса checkout.
-- Фоновые проходы (outbox relay, delivery worker) идут вне контекста запроса или события, которые их разбудили, и не наследуют их id.
+- Фоновые проходы (outbox relay, delivery worker) и таймер окончания grant в battleship-backend (`player.updated` в момент `validUntil`) идут вне контекста запроса или события, которые их запустили, и не наследуют их id.
 - Редактируются заголовки authorization, cookie, set-cookie и поля password, code, token, accessToken, refreshToken, secret. Тела запросов не логируются.
 
 ### Как найти цепочку покупки
