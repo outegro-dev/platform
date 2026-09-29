@@ -949,21 +949,36 @@
   .presence[data-away] {
     background: var(--flame-mid);
   }
+  .presence-away {
+    color: var(--warning);
+    font-weight: 600;
+    white-space: nowrap;
+  }
 
-  /* Turn indicator: a glass pill with the countdown ring. */
+  /* Turn indicator: a glass pill with the countdown ring, whose turn,
+     what to do now and the clock's rule (three lines, a fixed height). */
   .turn {
     display: flex;
     align-items: center;
     gap: 14px;
     min-width: 260px;
-    min-height: 68px;
+    min-height: 76px;
     padding: 8px 22px 8px 8px;
     border-radius: var(--radius-pill);
   }
   .turn-text {
     position: relative;
     display: grid;
+    gap: 3px;
     min-width: 170px;
+  }
+  .turn-lines {
+    display: grid;
+  }
+  .turn-rule {
+    color: var(--muted-foreground);
+    font-size: 12px;
+    line-height: 1.35;
   }
   .turn-line {
     grid-area: 1 / 1;
@@ -1059,11 +1074,23 @@
     position: absolute;
     inset: 0;
     display: grid;
-    place-items: center;
+    place-content: center;
+    justify-items: center;
     font-size: 16px;
     font-weight: 700;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+  }
+  .ring-value small {
+    margin-top: 2px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted-foreground);
+  }
+  .ring[data-urgent] .ring-value small {
+    color: inherit;
   }
   .ring[data-urgent] .ring-value {
     color: var(--destructive);
@@ -1406,6 +1433,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
+  }
+  .placement-timer-text {
+    display: grid;
+    gap: 2px;
   }
   .placement-side h2 {
     font-size: 16px;

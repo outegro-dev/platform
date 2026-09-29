@@ -124,6 +124,11 @@ export class MatchStore {
   syncSeq: number | null = null;
   effects: Effect[] = [];
   lastShot: LastShot | null = null;
+  /**
+   * The side on turn shoots again: its latest shot hit or sank a ship (a
+   * miss, a skipped turn or a fresh snapshot ends that).
+   */
+  shootsAgain = false;
   notice: Notice | null = null;
   /** The server no longer has the match we were playing (lost while away). */
   endedWhileAway = false;
@@ -322,6 +327,7 @@ export class MatchStore {
           this.opponentFleetPlaced = true;
           this.turn = turn;
           this.deadline = deadline;
+          this.shootsAgain = false;
           if (turn === "you") this.sound.play("turn");
         });
         return;
@@ -335,6 +341,7 @@ export class MatchStore {
           this.notice = { kind: "turn_skipped", side, missedInRow };
           this.turn = nextTurn;
           this.deadline = deadline;
+          this.shootsAgain = false;
           if (nextTurn === "you") this.sound.play("turn");
         });
         return;
@@ -353,6 +360,7 @@ export class MatchStore {
           this.phase = "finished";
           this.turn = null;
           this.deadline = null;
+          this.shootsAgain = false;
           this.winner = payload.winner;
           this.reason = payload.reason;
           this.rating = payload.rating;
@@ -372,6 +380,7 @@ export class MatchStore {
           this.phase = "finished";
           this.turn = null;
           this.deadline = null;
+          this.shootsAgain = false;
           this.winner = null;
           this.reason = null;
           this.rating = null;
@@ -408,6 +417,7 @@ export class MatchStore {
       this.lastShot = { by, x, y, outcome };
       this.moves++;
       const turnChanged = nextTurn !== this.turn;
+      this.shootsAgain = outcome !== "miss" && nextTurn === by;
       this.turn = nextTurn;
       this.deadline = deadline;
       this.sound.play(outcome);
@@ -444,6 +454,8 @@ export class MatchStore {
     this.resignSeq = null;
     this.syncSeq = null;
     this.endedWhileAway = false;
+    // A snapshot does not say how the turn came about.
+    this.shootsAgain = false;
     if (isNew) {
       this.deps.placement.reset();
       this.rating = null;

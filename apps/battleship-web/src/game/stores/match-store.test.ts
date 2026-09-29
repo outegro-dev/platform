@@ -371,6 +371,60 @@ describe("MatchStore", () => {
     expect(match.yourFleetPlaced).toBe(true);
   });
 
+  it("knows when the side on turn shoots again after a hit", async () => {
+    const { match } = setup();
+    match.handle(server("match.state", { match: snapshot() }));
+    expect(match.shootsAgain).toBe(false);
+    const shot = (
+      by: "you" | "opponent",
+      x: number,
+      outcome: "hit" | "sunk" | "miss",
+      nextTurn: "you" | "opponent",
+    ) =>
+      server("shot.result", {
+        by,
+        x,
+        y: 9,
+        outcome,
+        revealed: [],
+        nextTurn,
+        deadline: null,
+      });
+
+    match.handle(shot("you", 0, "hit", "you"));
+    await vi.runAllTimersAsync();
+    expect(match.shootsAgain).toBe(true);
+    expect(match.lastShot).toMatchObject({ by: "you", outcome: "hit" });
+
+    match.handle(shot("you", 1, "miss", "opponent"));
+    await vi.runAllTimersAsync();
+    expect(match.shootsAgain).toBe(false);
+
+    match.handle(shot("opponent", 2, "hit", "opponent"));
+    await vi.runAllTimersAsync();
+    expect(match.shootsAgain).toBe(true);
+    expect(match.turn).toBe("opponent");
+
+    // Their clock ran out: the turn passed, no extra shot for anyone.
+    match.handle(
+      server("turn.skipped", {
+        side: "opponent",
+        missedInRow: 1,
+        nextTurn: "you",
+        deadline: deadline(30_000),
+      }),
+    );
+    await vi.runAllTimersAsync();
+    expect(match.shootsAgain).toBe(false);
+
+    match.handle(shot("you", 3, "hit", "you"));
+    await vi.runAllTimersAsync();
+    expect(match.shootsAgain).toBe(true);
+    // A snapshot (reconnect) does not tell how the turn came about.
+    match.handle(server("match.state", { match: snapshot() }));
+    expect(match.shootsAgain).toBe(false);
+  });
+
   it("notes a skipped turn", async () => {
     const { match } = setup();
     match.handle(server("match.state", { match: snapshot() }));

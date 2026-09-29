@@ -24,7 +24,9 @@
     "premium": "Premium",
     "provisional": "Provisional",
     "chipLabel": "{nickname}, rating {rating}. Open your profile",
-    "you": "You"
+    "you": "You",
+    "away": "Offline · {seconds} s",
+    "awayNow": "Offline"
   },
   "connection": {
     "ready": "Connected to the game server",
@@ -197,7 +199,9 @@
       "ship": "{cell}, {length}-cell ship",
       "preview": "{cell}, place here"
     },
-    "placed": "{length}-cell ship placed at {cell}, {orientation}."
+    "placed": "{length}-cell ship placed at {cell}, {orientation}.",
+    "timeRule": "Deploy before 0, or you lose the match.",
+    "timeRuleReady": "If they're not ready by 0, you win."
   },
   "battle": {
     "yourTurn": "Your turn",
@@ -236,7 +240,7 @@
         "sunk": "sunk"
       }
     },
-    "opponentAway": "Your opponent disconnected. They have {seconds} s to come back.",
+    "opponentAway": "Your opponent disconnected. If they're not back in {seconds} s, you win.",
     "opponentAwayNoTime": "Your opponent disconnected and may come back.",
     "youReconnecting": "Connection lost. Reconnecting — your match is safe for 60 seconds.",
     "skipped": {
@@ -248,6 +252,18 @@
       "already_shot": "You already fired at that cell.",
       "rate_limited": "Slow down a little.",
       "generic": "The shot didn't go through. Syncing the match…"
+    },
+    "secondsUnit": "s",
+    "clockYours": "{seconds} s left for your shot",
+    "clockTheirs": "{seconds} s left for their shot",
+    "clockRule": "{seconds} s per turn · 3 timeouts in a row lose",
+    "noClockRule": "No time limit against a bot",
+    "hint": {
+      "hitAgain": "Hit! Fire again.",
+      "sunkAgain": "Sunk! Fire again.",
+      "hurry": "Fire now: at 0 your turn passes.",
+      "theyAgain": "They hit, so they fire again…",
+      "theyAway": "They're offline. Waiting for them…"
     }
   },
   "legend": {

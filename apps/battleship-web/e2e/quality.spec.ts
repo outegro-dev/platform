@@ -160,9 +160,48 @@ test.describe("languages and phones", () => {
     ).toBeVisible();
     await deployRandomFleet(page);
     await expect(page.getByTestId("turn-indicator")).toContainText("Ваш ход");
+    await expect(page.getByTestId("turn-rule")).toHaveText(
+      "С ботом время не ограничено",
+    );
     await expect(
       page.getByTestId("target-board").locator("button").first(),
     ).toHaveAccessibleName("A1, неизвестно");
+  });
+
+  test("Russian: the clock and an absent opponent explain themselves", async ({
+    page,
+    game,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "og_locale", value: "ru", domain: "localhost", path: "/" },
+    ]);
+    const fake = await signInAndConnect(page, game, "free");
+    fake.script.turnMs = 30_000;
+    fake.startHumanMatch({
+      kind: "human",
+      nickname: "Nemo",
+      rating: 1512,
+      premium: true,
+    });
+    await expect(page.getByTestId("placement-rule")).toHaveText(
+      "Расставьте флот до нуля, иначе матч проигран.",
+    );
+    await deployRandomFleet(page);
+    const indicator = page.getByTestId("turn-indicator");
+    await expect(page.getByTestId("turn-rule")).toHaveText(
+      "30 с на ход · 3 пропуска подряд — поражение",
+    );
+    await expect(indicator.getByRole("timer")).toHaveAccessibleName(
+      /^Осталось \d+ с на ваш выстрел$/,
+    );
+    fake.presence(false, 45_000);
+    await expect(page.getByTestId("banner-opponent-away")).toContainText(
+      /Соперник отключился\. Если он не вернётся за (4[0-5]) с, победа ваша\./,
+    );
+    await expect(page.getByTestId("opponent-away")).toHaveText(
+      /^Не в сети · (4[0-5]) с$/,
+    );
   });
 
   test.describe("phone", () => {

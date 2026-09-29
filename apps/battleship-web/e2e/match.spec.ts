@@ -282,19 +282,112 @@ test.describe("match", () => {
       premium: true,
     });
     await expect(page.getByTestId("placement")).toBeVisible();
+    // The deploy clock says what happens at zero.
+    await expect(page.getByTestId("placement-rule")).toHaveText(
+      "Deploy before 0, or you lose the match.",
+    );
     await deployRandomFleet(page);
     await expect(page.getByTestId("opponent-chip")).toContainText("Nemo");
-    await expect(
-      page.getByTestId("turn-indicator").getByRole("timer"),
-    ).toBeVisible();
+    const indicator = page.getByTestId("turn-indicator");
+    await expect(indicator.getByRole("timer")).toHaveAccessibleName(
+      /^\d+ s left for your shot$/,
+    );
+    await expect(indicator.getByRole("timer")).toContainText(/^\d+s$/);
+    await expect(page.getByTestId("turn-rule")).toHaveText(
+      "30 s per turn · 3 timeouts in a row lose",
+    );
 
+    fake.script.botDelayMs = 60_000;
     fake.presence(false, 45_000);
     const banner = page.getByTestId("banner-opponent-away");
     await expect(banner).toContainText(
-      /Your opponent disconnected\. They have (4[0-5]) s to come back\./,
+      /Your opponent disconnected\. If they're not back in (4[0-5]) s, you win\./,
+    );
+    // The chip says it too, in place of the rating.
+    const away = page.getByTestId("opponent-away");
+    await expect(away).toHaveText(/^Offline · (4[0-5]) s$/);
+    // Their turn while they are away: the indicator says why nothing moves.
+    const water = fake.emptyCell();
+    await fireAt(page, water.x, water.y);
+    await expect(indicator).toHaveAttribute("data-turn", "opponent");
+    await expect(indicator.getByRole("timer")).toHaveAccessibleName(
+      /^\d+ s left for their shot$/,
+    );
+    await expect(page.getByTestId("turn-hint-theirs")).toHaveText(
+      "They're offline. Waiting for them…",
     );
     fake.presence(true);
     await expect(banner).toBeHidden();
+    await expect(away).toHaveCount(0);
+    await expect(page.getByTestId("opponent-chip")).toContainText(
+      "Rating 1512",
+    );
+    await expect(page.getByTestId("turn-hint-theirs")).toHaveText(
+      "Waiting for their shot…",
+    );
+  });
+
+  test("the turn indicator says what to do now", async ({ page, game }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    await inBattle(page, fake);
+    const hint = page.getByTestId("turn-hint-yours");
+    await expect(page.getByTestId("turn-rule")).toHaveText(
+      "No time limit against a bot",
+    );
+    await expect(hint).toHaveText("Pick a cell in enemy waters.");
+
+    // A hit keeps the turn, and the indicator says so; so does a sinking.
+    const ship = fake.opponentFleet.find((item) => item.length === 2);
+    if (!ship) throw new Error("no destroyer");
+    const cells = [0, 1].map((i) =>
+      ship.orientation === "horizontal"
+        ? { x: ship.x + i, y: ship.y }
+        : { x: ship.x, y: ship.y + i },
+    );
+    for (const [index, cell] of cells.entries()) {
+      await fireAt(page, cell.x, cell.y);
+      await expect(hint).toHaveText(
+        index === 0 ? "Hit! Fire again." : "Sunk! Fire again.",
+      );
+    }
+
+    // Their hit keeps their turn too.
+    fake.script.botDelayMs = 1500;
+    fake.script.botShots = [ownShipCell(fake), ownWaterCell(fake)];
+    const water = fake.emptyCell();
+    await fireAt(page, water.x, water.y);
+    await expect(page.getByTestId("turn-hint-theirs")).toHaveText(
+      "They hit, so they fire again…",
+    );
+    await expect(page.getByTestId("turn-indicator")).toHaveAttribute(
+      "data-turn",
+      "you",
+      { timeout: 15_000 },
+    );
+    await expect(hint).toHaveText("Pick a cell in enemy waters.");
+  });
+
+  test("the last seconds of a turn say what happens at zero", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    fake.script.turnMs = 7_000;
+    fake.startHumanMatch({
+      kind: "human",
+      nickname: "Nemo",
+      rating: 1512,
+      premium: false,
+    });
+    await deployRandomFleet(page);
+    const hint = page.getByTestId("turn-hint-yours");
+    await expect(hint).toHaveText("Pick a cell in enemy waters.");
+    await expect(hint).toHaveText("Fire now: at 0 your turn passes.", {
+      timeout: 5000,
+    });
+    await expect(
+      page.getByTestId("turn-indicator").getByRole("timer"),
+    ).toHaveAttribute("data-urgent");
   });
 
   test("resigning asks first, then ends the match as a loss", async ({

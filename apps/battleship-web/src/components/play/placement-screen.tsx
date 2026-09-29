@@ -305,8 +305,9 @@ const PlacementStatus = observer(function PlacementStatus() {
 });
 
 const OpponentStatus = observer(function OpponentStatus() {
-  const { match } = useRoot();
+  const { match, placement: store } = useRoot();
   const t = useTranslations("placement");
+  const b = useTranslations("battle");
   const ready = match.opponentFleetPlaced;
   const ms = match.msLeft;
   const seconds = match.secondsLeft;
@@ -332,9 +333,15 @@ const OpponentStatus = observer(function OpponentStatus() {
             msLeft={ms}
             totalMs={match.clockTotalMs}
             seconds={seconds}
-            label={`${t("timeLeft")}: ${seconds}`}
+            unit={b("secondsUnit")}
+            label={`${t("timeLeft")}: ${b("seconds", { seconds })}`}
           />
-          <span className="small muted">{t("timeLeft")}</span>
+          <span className="placement-timer-text">
+            <span className="small">{t("timeLeft")}</span>
+            <span className="small muted" data-testid="placement-rule">
+              {store.submitted ? t("timeRuleReady") : t("timeRule")}
+            </span>
+          </span>
         </div>
       ) : null}
     </div>
