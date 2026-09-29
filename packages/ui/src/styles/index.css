@@ -223,3 +223,52 @@
     }
   }
 }
+
+/*
+ * Game palette (battleship-web): board water, ships, shot marks and effects.
+ * Day is the default board; `data-sea="night"` on a board switches to the
+ * "Night sea" theme (pair it with data-tone="dark" for the frame).
+ */
+:root {
+  --sea: #e2e9e7;
+  --sea-deep: #cddad7;
+  --sea-line: #bfcdca;
+  --sea-glint: #f9fbfa;
+  --ship-hull: #2d322e;
+  --ship-deck: #464d47;
+  --ship-detail: #7a827b;
+  --ship-shine: #a3aaa3;
+  --ship-outline: #1d211e;
+  --ship-silver-dark: #6f746f;
+  --ship-silver-mid: #b9beb8;
+  --ship-silver-light: #f3f5f1;
+  --mark-miss: #6c7c79;
+  --mark-hit: #d9480f;
+  --mark-hit-soft: #f3d7ca;
+  --flame-core: #ffe27a;
+  --flame-mid: #ff9a3c;
+  --flame-edge: #e03d1f;
+  --shard-light: #ffffff;
+  --shard-mid: #cfd4d1;
+  --shard-dark: #7e8580;
+  --aim: #171817;
+  --placement-ok: #2f7a45;
+  --placement-bad: #c2331e;
+  --spark-gold: #ffd66b;
+  --spark-ember: #ff8b4a;
+  --spark-ice: #9fd3ff;
+  --spark-white: #ffffff;
+}
+
+[data-sea="night"] {
+  --sea: #10202d;
+  --sea-deep: #0a1621;
+  --sea-line: #1e3446;
+  --sea-glint: #6fb6d6;
+  --ship-outline: #9fb3bf;
+  --mark-miss: #86aec2;
+  --mark-hit-soft: #3b2521;
+  --aim: #e8f3f7;
+  --placement-ok: #5fcf8a;
+  --placement-bad: #ff6b52;
+}
