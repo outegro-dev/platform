@@ -72,8 +72,8 @@ CronJob `outegro/watchdog` раз в 5 минут (образ `alpine/k8s`, то
 
 Приложение Argo `monitoring` (namespace `monitoring`), значения — `gitops/platform/monitoring`:
 
-- Prometheus (kube-prometheus-stack): узел (node-exporter), Kubernetes (kube-state-metrics, kubelet/cAdvisor, API server, CoreDNS), Traefik, cert-manager, PostgreSQL и Barman Cloud (метрики CNPG), RabbitMQ (плагин Prometheus, в том числе глубина каждой очереди). Хранение 7 дней, не больше 6 ГБ; опрос раз в 30 с.
-- Правила `platform/monitoring/extra/rules.yaml` поверх стандартных: диск < 20 % / < 10 %, давление памяти, OOM, 5xx на входе > 5 %, сертификат < 14 дней, PostgreSQL недоступен, бэкап старше 26 ч, WAL не архивируется, тревога RabbitMQ, сообщения в DLQ. У каждого — summary, последствие и ссылка на runbook. Проверка перед коммитом: `promtool check rules` (тесты правил — `promtool test rules`).
+- Prometheus (kube-prometheus-stack): узел (node-exporter), Kubernetes (kube-state-metrics, kubelet/cAdvisor, API server, CoreDNS), Traefik, cert-manager, PostgreSQL и Barman Cloud (метрики CNPG), RabbitMQ (плагин Prometheus, в том числе глубина каждой очереди) и наши сервисы на порту 9464 ([observability](observability.md)). Хранение 7 дней, не больше 6 ГБ; опрос раз в 30 с.
+- Правила `platform/monitoring/extra/rules.yaml` поверх стандартных: диск < 20 % / < 10 %, давление памяти, OOM, 5xx на входе > 5 %, сертификат < 14 дней, PostgreSQL недоступен, бэкап старше 26 ч, WAL не архивируется, тревога RabbitMQ, сообщения в DLQ; по сервисам — outbox стоит, 5xx, события в DLQ, вебхук Lava не применён или отклонён, сверка платежей стоит, коды входа не доставляются, письма в очереди. У каждого — summary, последствие и ссылка на runbook. Проверка перед коммитом: `promtool check rules` (тесты правил — `promtool test rules`).
 - Loki: логи всех подов 7 дней (single binary, диск узла 10 ГБ); собирает Alloy через API Kubernetes. Метки: `namespace`, `app`, `container`, `pod`, `level`. Строки проб `/health` отбрасываются; JWT и Bearer-токены маскируются ещё до записи.
 - Наружу ничего не опубликовано; доступ — туннелем (команды в [README gitops](https://github.com/outegro-dev/gitops#мониторинг)).
 - Grafana и Alertmanager выключены: их нужно включить вместе с входом в Grafana (секрет администратора, созданный владельцем, или вход через SSO админки).
@@ -93,5 +93,5 @@ CronJob `outegro/watchdog` раз в 5 минут (образ `alpine/k8s`, то
 
 ## Чего ещё нет
 
-- Grafana (графики) и метрики самих сервисов (`/metrics`) — Prometheus собирает только инфраструктуру.
+- Grafana (графики) и Alertmanager — ждут решения о входе в Grafana.
 - `NetworkPolicy` внутри кластера.

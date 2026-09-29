@@ -1,6 +1,6 @@
 # Метрики, логи и correlation сервисов
 
-Состояние на 29.09.2026: прикладная часть [OPS-04](../04-delivery/07-operations/tasks/OPS-04.md). Сервисы отдают метрики и пишут связанные логи; Prometheus, Grafana, Alertmanager, Loki и Alloy ещё не развёрнуты. Требования — [глава 9](../01-specification/chapters/09-observability.md), разделы 9.3 и 9.4.
+Состояние на 29.09.2026: [OPS-04](../04-delivery/07-operations/tasks/OPS-04.md). Сервисы отдают метрики и пишут связанные логи. В production развёрнуты Prometheus (scrape порта 9464 через PodMonitor `services`, правила из `gitops/platform/monitoring/extra/rules.yaml`), Loki и Alloy — см. [production](production.md#мониторинг-prometheus-и-loki). Grafana и Alertmanager выключены до решения о входе в Grafana; алерты доставляет watchdog. Требования — [глава 9](../01-specification/chapters/09-observability.md), разделы 9.3 и 9.4.
 
 ## Порт метрик
 
@@ -90,7 +90,7 @@ HTTP 200 на вебхук — durable acceptance, а не обработанн�
 
 ## Предложения для alert-правил
 
-Не развёрнуты; стартовые пороги из 9.5, уточнить после baseline.
+Большая часть развёрнута в `gitops/platform/monitoring/extra/rules.yaml` (группа `outegro.services`); стартовые пороги из 9.5, уточнить после baseline.
 
 | Сигнал | Выражение |
 |---|---|
@@ -107,4 +107,4 @@ HTTP 200 на вебхук — durable acceptance, а не обработанн�
 
 ## Не сделано
 
-Развёртывание Prometheus, Grafana, Alertmanager, Loki и Alloy, scrape-конфиг и NetworkPolicy для порта 9464, retention и лимиты размера, dashboards и alert-правила — отдельный шаг OPS-04 в gitops. Трассировка (OpenTelemetry) в этот шаг не входит.
+Grafana с dashboards и Alertmanager (ждут решения о входе), NetworkPolicy для порта 9464. Трассировка (OpenTelemetry) в этот шаг не входит.
