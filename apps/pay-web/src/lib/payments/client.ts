@@ -29,7 +29,9 @@ import {
  *
  *   GET  /v1/catalog                               public
  *   POST /v1/checkout                               Bearer + Idempotency-Key
- *        { productKey, currency, returnUrl } → { orderId, attemptId, state, status, paymentUrl }
+ *        { productKey, currency, returnUrl? } → { orderId, attemptId, state, status, paymentUrl }
+ *        (buyers come back to <returnUrl>?orderId=…&result=success|failure|cancel;
+ *        without returnUrl to PAY_WEB_URL/checkout/result)
  *   GET  /v1/me/orders?cursor&limit                 → { items: OrderView[], nextCursor }
  *   GET  /v1/me/orders/:id                          → OrderView (someone else's: 404)
  *   GET  /v1/me/subscriptions?cursor&limit          → { items: SubscriptionView[], nextCursor }
@@ -145,8 +147,11 @@ export type PaymentsClientOptions = {
   baseUrl: string;
   /** https origins a payment page may live on (CHECKOUT_ORIGINS). */
   checkoutOrigins: readonly string[];
-  /** Where Lava sends the buyer back; the backend adds orderId and result. */
-  returnUrl: string;
+  /**
+   * Where Lava sends the buyer back; the backend adds orderId and result.
+   * Omitted: the backend's default, PAY_WEB_URL + /checkout/result.
+   */
+  returnUrl?: string;
   /** Browser identity for the service (user agent, client IP). */
   headers?: Headers;
   logger?: Pick<Console, "warn" | "error">;
@@ -243,10 +248,13 @@ export class PaymentsClient {
         method: "POST",
         accessToken: token,
         headers: { "idempotency-key": input.idempotencyKey },
+        // The body is strict on the backend: only these keys, no amounts.
         body: {
           productKey: input.productKey,
           currency: input.currency,
-          returnUrl: this.options.returnUrl,
+          ...(this.options.returnUrl
+            ? { returnUrl: this.options.returnUrl }
+            : {}),
         },
         timeoutMs: 20_000,
       });

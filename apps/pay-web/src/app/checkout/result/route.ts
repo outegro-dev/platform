@@ -1,18 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { orderIdFrom } from "@/lib/routes";
+import { returnPath } from "@/lib/routes";
 import { appUrl } from "@/lib/sso";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Default return address of payments-backend (`/checkout/result?orderId=…
- * &result=…`), used by purchases started outside pay-web. The `result`
- * hint is dropped on purpose: the order page asks the server instead.
+ * Return address from Lava (payments-backend's default when a checkout
+ * passes no returnUrl): /checkout/result?orderId=<uuid>&result=… opens the
+ * live order page. `result=success` proves nothing and is dropped; only
+ * "failure" and "cancel" travel on, as a wording hint for a pending order.
  */
 export function GET(request: NextRequest) {
-  const orderId = orderIdFrom(request.nextUrl.searchParams);
   return NextResponse.redirect(
-    appUrl(orderId ? `/orders/${orderId}` : "/orders"),
+    appUrl(returnPath(request.nextUrl.searchParams)),
     303,
   );
 }

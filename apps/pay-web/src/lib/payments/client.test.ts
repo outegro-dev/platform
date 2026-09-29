@@ -80,11 +80,14 @@ function respond(status: number, body?: unknown) {
 }
 
 const logger = { warn: vi.fn(), error: vi.fn() };
-const client = (checkoutOrigins: string[] = ["https://app.lava.top"]) =>
+const client = (
+  checkoutOrigins: string[] = ["https://app.lava.top"],
+  returnUrl?: string,
+) =>
   new PaymentsClient({
     baseUrl: "http://payments.internal",
     checkoutOrigins,
-    returnUrl: "https://pay.outegro.dev/orders",
+    ...(returnUrl ? { returnUrl } : {}),
     headers: () => ({ "user-agent": "test" }),
     logger,
   });
@@ -325,7 +328,7 @@ describe("checkout", () => {
     ...overrides,
   });
 
-  it("sends intent only, with the key and the return page", async () => {
+  it("sends intent only, with the key; buyers return to /checkout/result", async () => {
     respond(200, answer());
     const outcome = await client().checkout("token", input);
     expect(outcome).toEqual({
@@ -338,11 +341,22 @@ describe("checkout", () => {
     const headers = init.headers as Record<string, string>;
     expect(headers.authorization).toBe("Bearer token");
     expect(headers["idempotency-key"]).toBe(input.idempotencyKey);
+    // No returnUrl: the backend's default is PAY_WEB_URL/checkout/result.
     expect(JSON.parse(String(init.body))).toEqual({
       productKey: "battleship-premium",
       currency: "RUB",
-      returnUrl: "https://pay.outegro.dev/orders",
     });
+  });
+
+  it("passes a configured return address", async () => {
+    respond(200, answer());
+    await client(
+      ["https://app.lava.top"],
+      "https://pay.outegro.dev/checkout/result",
+    ).checkout("token", input);
+    expect(JSON.parse(String((calls()[0] as Call)[1].body)).returnUrl).toBe(
+      "https://pay.outegro.dev/checkout/result",
+    );
   });
 
   it.each([

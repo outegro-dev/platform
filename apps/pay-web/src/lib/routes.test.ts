@@ -2,7 +2,13 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { isApiPath, isPublicPath, orderIdFrom } from "./routes";
+import {
+  isApiPath,
+  isPublicPath,
+  leftPayment,
+  orderIdFrom,
+  returnPath,
+} from "./routes";
 import { timeZoneCookie } from "./time-zone";
 
 const ID = "6f1c2c8e-8d2a-4a57-9d8e-2f1f8f0d3a11";
@@ -25,8 +31,25 @@ describe("routes", () => {
     ).toBe(ID);
     expect(orderIdFrom({ order: ID.toUpperCase() })).toBe(ID);
     expect(orderIdFrom({ order: "../../admin" })).toBeNull();
+    expect(orderIdFrom({ order: "-".repeat(36) })).toBeNull();
     expect(orderIdFrom({ orderId: [ID] })).toBeNull();
     expect(orderIdFrom(new URLSearchParams("result=success"))).toBeNull();
+  });
+
+  it("opens the order from a return and keeps only the cancel/failure hint", () => {
+    const back = (query: string) => returnPath(new URLSearchParams(query));
+    expect(back(`orderId=${ID}&result=success`)).toBe(`/orders/${ID}`);
+    expect(back(`orderId=${ID}&result=cancel`)).toBe(
+      `/orders/${ID}?result=cancel`,
+    );
+    expect(back(`orderId=${ID}&result=failure`)).toBe(
+      `/orders/${ID}?result=failure`,
+    );
+    expect(back(`orderId=${ID}&result=<script>`)).toBe(`/orders/${ID}`);
+    expect(back("orderId=nope&result=cancel")).toBe("/orders");
+    expect(leftPayment({ result: "cancel" })).toBe(true);
+    expect(leftPayment({ result: "success" })).toBe(false);
+    expect(leftPayment({ result: ["cancel"] })).toBe(false);
   });
 
   it("writes the time zone cookie only for plain IANA names", () => {

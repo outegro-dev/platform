@@ -60,8 +60,9 @@ describe("dates", () => {
 
   it("uses the page language", () => {
     const text = plain(formatDateTime(late, "ru", "Europe/Moscow"));
-    expect(text).toContain("30 сент. 2026");
-    expect(text).toContain("00:30");
+    expect(text).toBe("30 сент. 2026, 00:30");
+    // No "г." at the end: sentences ending with a date keep one full stop.
+    expect(plain(formatDate(late, "ru", "UTC"))).toBe("29 сент. 2026");
   });
 
   it("binds language and zone once", () => {

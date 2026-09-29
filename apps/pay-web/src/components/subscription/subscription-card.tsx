@@ -134,13 +134,15 @@ const CardBody = observer(function CardBody({
             </span>
           )}
         </p>
+        {/* Right-aligned with the order link last: when the cancel button
+            goes away after cancelling, nothing else moves. */}
         <div className="sub-actions">
-          <Button asChild variant="ghost">
-            <Link href={`/orders/${sub.orderId}`}>{t("order")}</Link>
-          </Button>
           {store.canCancel && (
             <CancelDialog title={title} dates={dates} noteRef={noteRef} />
           )}
+          <Button asChild variant="ghost">
+            <Link href={`/orders/${sub.orderId}`}>{t("order")}</Link>
+          </Button>
         </div>
       </div>
     </article>

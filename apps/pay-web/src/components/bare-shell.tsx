@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { AppFooter } from "./app-footer";
 import { LocaleSwitcher } from "./locale-switcher";
+import { SilverRipple } from "./silver-ripple";
 
 /** Shell for pages outside a session: wordmark, language, the notice, links. */
 export async function BareShell({ children }: { children: ReactNode }) {
@@ -22,6 +23,7 @@ export async function BareShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main id="main" className="app-main bare-main og-container" tabIndex={-1}>
+        <SilverRipple size="lg" />
         {children}
       </main>
       <AppFooter />

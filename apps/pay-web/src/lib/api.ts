@@ -24,8 +24,9 @@ const forward = async () =>
 export const payments = new PaymentsClient({
   baseUrl: env.PAYMENTS_API_URL,
   checkoutOrigins: env.CHECKOUT_ORIGINS,
-  // Lava sends the buyer back to /orders?orderId=…; that page opens the order.
-  returnUrl: new URL("/orders", env.APP_URL).toString(),
+  // No returnUrl: the order does not exist yet when checkout starts, so
+  // buyers come back to payments-backend's default, this app's
+  // /checkout/result?orderId=…, which opens the live order page.
   headers: forward,
 });
 

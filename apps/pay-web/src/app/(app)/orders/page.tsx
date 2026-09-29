@@ -21,7 +21,7 @@ import { pick } from "@/lib/i18n";
 import { getFormat, getServiceName } from "@/lib/i18n-server";
 import type { Order } from "@/lib/payments/model";
 import { orderPhase } from "@/lib/payments/status";
-import { orderIdFrom } from "@/lib/routes";
+import { orderIdFrom, returnPath } from "@/lib/routes";
 import { signInPath } from "@/lib/sso";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -35,10 +35,10 @@ export default async function OrdersPage({
   searchParams,
 }: PageProps<"/orders">) {
   const params = await searchParams;
-  // Back from Lava: /orders?orderId=…&result=… opens that order. The
-  // result hint is ignored; the order page asks the server.
+  // Back from Lava through an older return address: /orders?orderId=…
+  // opens that order; the server, not `result`, decides its status.
   const orderId = orderIdFrom(params);
-  if (orderId) redirect(`/orders/${orderId}`);
+  if (orderId) redirect(returnPath(params));
 
   const cursor = typeof params.cursor === "string" ? params.cursor : null;
   const from = cursor
@@ -140,7 +140,7 @@ export default async function OrdersPage({
         </ul>
       </section>
       {(cursor || nextCursor) && (
-        <nav className="pager" aria-label={t("listLabel")}>
+        <nav className="pager" aria-label={t("pages")}>
           {cursor && (
             <Button asChild variant="ghost">
               <Link href="/orders">

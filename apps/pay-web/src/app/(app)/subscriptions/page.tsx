@@ -135,7 +135,7 @@ export default async function SubscriptionsPage({
         </section>
       )}
       {nextCursor && (
-        <nav className="pager" aria-label={t("eyebrow")}>
+        <nav className="pager" aria-label={t("pages")}>
           <Button asChild variant="outline">
             <Link
               href={`/subscriptions?cursor=${encodeURIComponent(nextCursor)}`}

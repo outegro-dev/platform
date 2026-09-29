@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
-import { orderIdFrom } from "@/lib/routes";
+import { returnPath } from "@/lib/routes";
 
-/** Home is the purchase list; `?order=<id>` opens that order (Lava return). */
+/** Home is the purchase list; `?order=<id>` opens that order. */
 export default async function Home({ searchParams }: PageProps<"/">) {
-  const orderId = orderIdFrom(await searchParams);
-  redirect(orderId ? `/orders/${orderId}` : "/orders");
+  redirect(returnPath(await searchParams));
 }

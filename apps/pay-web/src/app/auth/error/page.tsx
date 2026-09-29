@@ -28,7 +28,10 @@ export default async function SignInError({
     <BareShell>
       <section className="notice-page" role="alert">
         <p className="og-eyebrow">SSO</p>
-        <h1>{t("errorTitle")}</h1>
+        <h1>
+          {t("errorTitle")}{" "}
+          <span className="og-accent">{t("errorAccent")}</span>
+        </h1>
         <p>{t(`errorBody.${key}`)}</p>
         <Button asChild size="lg">
           <a href="/auth/sign-in?returnTo=%2Forders">

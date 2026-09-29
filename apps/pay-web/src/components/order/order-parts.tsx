@@ -41,6 +41,8 @@ export type HeroFoot =
 type HeroProps = {
   outcome: OrderPhase;
   detail: PendingDetail;
+  /** The buyer came back from Lava with result=failure|cancel. */
+  leftPayment: boolean;
   timedOut: boolean;
   /** Settled while this page was open: play the settle-in motion. */
   animate: boolean;
@@ -92,6 +94,21 @@ export function OrderHero(props: HeroProps) {
             {payLink}
           </>
         );
+        break;
+      }
+      // Lava said the buyer cancelled or the payment failed. Still only a
+      // hint: the watch goes on and the server's answer wins.
+      if (props.leftPayment && props.detail === "awaiting") {
+        title = t("leftTitle");
+        body = t("leftBody");
+        actions = props.paymentUrl ? (
+          <Button asChild size="lg">
+            <a href={props.paymentUrl} rel="noopener">
+              {order("continuePayment")}
+              <ArrowSquareOutIcon aria-hidden="true" />
+            </a>
+          </Button>
+        ) : null;
         break;
       }
       const copy = {
@@ -312,7 +329,7 @@ function Medallion({
       data-animate={animate || undefined}
       aria-hidden="true"
     >
-      {icon}
+      <span className="medallion-core">{icon}</span>
     </span>
   );
 }
@@ -461,7 +478,7 @@ export function OrderSummary({
         {t("title")}
       </h2>
       <dl className="receipt-rows">
-        <div className="receipt-row">
+        <div className="receipt-row" data-stacked>
           <dt>{t("number")}</dt>
           <dd className="mono">{order.id}</dd>
         </div>

@@ -14,7 +14,9 @@ export default async function NotFound() {
     <BareShell>
       <section className="notice-page">
         <p className="og-eyebrow">404</p>
-        <h1>{t("title")}</h1>
+        <h1>
+          {t("lead")} <span className="og-accent">{t("accent")}</span>
+        </h1>
         <p>{t("body")}</p>
         <Button asChild size="lg">
           <a href="/orders">{t("home")}</a>

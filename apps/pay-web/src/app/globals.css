@@ -251,6 +251,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
   }
   .notice-page {
+    position: relative;
     display: grid;
     justify-items: start;
     align-content: center;
@@ -260,15 +261,88 @@
     padding-block: 32px 64px;
   }
   .notice-page h1 {
-    font-size: clamp(38px, 5.4vw, 64px);
+    font-size: clamp(40px, 6vw, 84px);
     font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.05em;
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+  }
+  .notice-page h1 .og-accent {
+    font-size: 1.08em;
   }
   .notice-page p:not(.og-eyebrow) {
+    max-width: 560px;
     color: var(--muted-foreground);
     font-size: 17px;
     line-height: 1.6;
+  }
+  .bare-main {
+    position: relative;
+  }
+
+  /* Liquid-silver ornament: static rings around a brushed drop. */
+  .ripple {
+    position: absolute;
+    top: 50%;
+    right: clamp(32px, 6vw, 104px);
+    width: 300px;
+    height: 300px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .ripple[data-size="lg"] {
+    width: min(460px, 36vw);
+    height: min(460px, 36vw);
+    right: 0;
+  }
+  .ripple-ring {
+    position: absolute;
+    inset: 0;
+    border: 1px solid color-mix(in srgb, var(--border-strong) 38%, transparent);
+    border-radius: 50%;
+  }
+  .ripple-ring:nth-child(2) {
+    inset: 13%;
+    border-color: color-mix(in srgb, var(--border-strong) 52%, transparent);
+  }
+  .ripple-ring:nth-child(3) {
+    inset: 26%;
+    border-color: color-mix(in srgb, var(--border-strong) 70%, transparent);
+  }
+  .ripple-drop {
+    position: absolute;
+    inset: 37%;
+    overflow: hidden;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 210deg,
+      var(--muted-foreground),
+      var(--surface),
+      var(--border-strong),
+      var(--background),
+      var(--muted-foreground),
+      var(--surface),
+      var(--muted-foreground)
+    );
+    box-shadow:
+      inset 0 -8px 18px color-mix(in srgb, var(--foreground) 24%, transparent),
+      inset 0 6px 12px color-mix(in srgb, var(--surface) 90%, transparent),
+      0 22px 40px -18px color-mix(in srgb, var(--foreground) 45%, transparent);
+  }
+  .ripple-drop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 32% 26%,
+      color-mix(in srgb, var(--surface) 88%, transparent),
+      transparent 44%
+    );
+  }
+  @media (max-width: 1099px) {
+    .ripple {
+      display: none;
+    }
   }
 
   /* ─── Page heads ────────────────────────────────────────── */
@@ -482,12 +556,25 @@
 
   /* Empty, unavailable and out-of-date states. */
   .state-panel {
+    position: relative;
     display: grid;
     justify-items: start;
     align-content: center;
     gap: 14px;
-    min-height: 320px;
+    min-height: 340px;
     padding: clamp(28px, 5vw, 56px);
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background:
+      radial-gradient(
+        560px 320px at 88% 50%,
+        color-mix(in srgb, var(--secondary) 70%, transparent),
+        transparent 72%
+      ),
+      var(--surface);
+  }
+  .state-panel > :not(.ripple) {
+    position: relative;
   }
   .state-panel[data-tone="danger"] {
     border-color: var(--line-danger);
@@ -663,6 +750,9 @@
   .order-cell {
     display: grid;
     gap: 4px;
+  }
+  .order-cell-amount {
+    justify-items: end;
   }
   .order-cell dt {
     position: absolute;
@@ -919,35 +1009,59 @@
       animation: orb-float 3.2s ease-in-out infinite;
     }
   }
-  /* Settled marks: a medallion that settles in with scale and fade. */
+  /*
+   * Settled marks: a tinted halo around a solid core. When the order
+   * settles while the page is open, halo and core settle in (scale, fade).
+   */
   .medallion {
     display: grid;
     place-items: center;
     width: 112px;
     height: 112px;
     border-radius: 50%;
-    background: var(--primary);
+    background: var(--secondary);
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+  .medallion-core {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--foreground);
     color: var(--primary-foreground);
+    box-shadow: 0 14px 26px -14px
+      color-mix(in srgb, var(--foreground) 70%, transparent);
   }
   .medallion svg {
-    width: 46px;
-    height: 46px;
+    width: 30px;
+    height: 30px;
   }
   .medallion[data-tone="success"] {
+    background: var(--tint-success);
+    box-shadow: inset 0 0 0 1px var(--line-success);
+  }
+  .medallion[data-tone="success"] .medallion-core {
     background: var(--success);
-    color: var(--primary-foreground);
   }
   .medallion[data-tone="danger"] {
-    background: var(--destructive);
-    color: var(--primary-foreground);
+    background: var(--tint-danger);
+    box-shadow: inset 0 0 0 1px var(--line-danger);
   }
-  .medallion[data-tone="neutral"] {
-    background: var(--secondary);
+  .medallion[data-tone="danger"] .medallion-core {
+    background: var(--destructive);
+  }
+  .medallion[data-tone="neutral"] .medallion-core {
+    background: var(--surface);
     color: var(--foreground);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
   }
   @media (prefers-reduced-motion: no-preference) {
     .medallion[data-animate] {
       animation: medallion-in 520ms var(--ease-out) both;
+    }
+    .medallion[data-animate] .medallion-core {
+      animation: medallion-in 520ms 120ms var(--ease-out) both;
     }
   }
 
@@ -1097,6 +1211,23 @@
     text-align: end;
     font-weight: 500;
   }
+  /* The order number on its own line, whole and easy to copy. */
+  .receipt-row[data-stacked] {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  }
+  .receipt-row[data-stacked] dd {
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--secondary);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-align: start;
+    user-select: all;
+  }
   .receipt-rule {
     height: 0;
     border: 0;
@@ -1187,10 +1318,11 @@
     align-items: center;
     gap: 12px 24px;
   }
+  /* Two lines reserved: the result replaces the note in the same box. */
   .sub-note {
     display: grid;
     gap: 4px;
-    min-height: 44px;
+    min-height: 46px;
     align-content: center;
     font-size: 14.5px;
     line-height: 1.55;
@@ -1503,13 +1635,22 @@
       width: 84px;
       height: 84px;
     }
-    .orb-core {
+    .orb-core,
+    .medallion-core {
       width: 50px;
       height: 50px;
     }
     .medallion svg {
-      width: 36px;
-      height: 36px;
+      width: 24px;
+      height: 24px;
+    }
+    .benefit {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+    .receipt-row[data-stacked] dd {
+      font-size: 11.5px;
+      letter-spacing: 0;
     }
     .panel,
     .receipt {
@@ -1533,12 +1674,6 @@
     }
     .sub-foot {
       grid-template-columns: minmax(0, 1fr);
-    }
-    .sub-actions {
-      justify-content: stretch;
-    }
-    .sub-actions > * {
-      flex: 1 1 auto;
     }
     .product-card {
       padding: 22px 20px;

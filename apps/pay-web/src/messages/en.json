@@ -50,6 +50,7 @@
     "status": "Status",
     "older": "Older purchases",
     "latest": "Latest purchases",
+    "pages": "Purchase pages",
     "loading": "Loading your purchases…",
     "emptyTitle": "No purchases yet",
     "emptyBody": "When you buy something in an outegro app, it shows up here with its status and a summary.",
@@ -80,6 +81,8 @@
     "preparingBody": "Lava is creating the payment page for this order.",
     "verifyingTitle": "Checking the payment",
     "verifyingBody": "The payment provider hasn't answered yet. We're checking the result with Lava; you don't need to pay again.",
+    "leftTitle": "Payment not completed",
+    "leftBody": "You came back before the payment finished. If you did pay, this page updates by itself.",
     "activatingTitle": "Payment received, opening access",
     "activatingBody": "Your payment is confirmed. We're switching on access in {service}.",
     "paidTitle": "Access is active in {service}",
@@ -168,6 +171,7 @@
     "emptyAction": "Browse the catalog",
     "unavailableBody": "The payments service didn't answer, so we can't list your subscriptions right now. Nothing changed: renewals and access keep working.",
     "more": "Show more",
+    "pages": "Subscription pages",
     "paidUntil": "Paid until",
     "accessUntil": "Access until",
     "grace": "includes {days, plural, one {# grace day} other {# grace days}}",
@@ -183,16 +187,16 @@
       "renews": "Renews automatically on {paidUntil}.",
       "ends": "Won't renew. Access stays until {accessUntil}.",
       "pending": "Waiting for the first payment. Access opens once Lava confirms it.",
-      "past_due": "The latest renewal hasn't been confirmed. Access stays until {accessUntil}.",
-      "cancel_requested": "Stopping renewal: we're waiting for Lava to confirm. Access stays until {accessUntil}.",
-      "cancelling": "Renewal is off. Access stays until {accessUntil}, then the subscription ends.",
+      "past_due": "The last renewal isn't confirmed. Access stays until {accessUntil}.",
+      "cancel_requested": "Waiting for Lava to confirm. Access stays until {accessUntil}.",
+      "cancelling": "Renewal is off. Access stays until {accessUntil}.",
       "expired": "Ended on {accessUntil}.",
       "suspended": "Access is paused while this subscription is being reviewed.",
       "unknown": "We're checking this subscription's status."
     },
     "done": {
       "cancelling": "Renewal is off. You keep access until {accessUntil}.",
-      "cancel_requested": "We've asked Lava to stop renewal and are waiting for confirmation. You keep access until {accessUntil}.",
+      "cancel_requested": "Sent to Lava, awaiting confirmation. Access until {accessUntil}.",
       "unchanged": "Nothing to change: this subscription already won't renew."
     }
   },
@@ -298,7 +302,8 @@
   },
   "auth": {
     "errorMetaTitle": "Sign-in",
-    "errorTitle": "Sign-in didn't finish",
+    "errorTitle": "Sign-in didn't",
+    "errorAccent": "finish.",
     "errorBody": {
       "state_mismatch": "The sign-in link expired or was opened in another browser.",
       "missing_code": "The account service didn't confirm the sign-in.",
@@ -308,7 +313,8 @@
     },
     "errorAction": "Try again",
     "signedOutMetaTitle": "Signed out",
-    "signedOutTitle": "You're signed out",
+    "signedOutTitle": "You're signed",
+    "signedOutAccent": "out.",
     "signedOutBody": "You've signed out of Payments on this device. Your outegro account itself stays signed in, so signing back in takes one click.",
     "signIn": "Sign in again"
   },
@@ -319,6 +325,8 @@
   },
   "notFound": {
     "title": "Page not found",
+    "lead": "Page not",
+    "accent": "found.",
     "body": "The address may be mistyped, or the page has moved.",
     "home": "Go to your purchases"
   }

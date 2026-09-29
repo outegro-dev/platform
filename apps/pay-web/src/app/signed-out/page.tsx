@@ -18,7 +18,10 @@ export default async function SignedOut() {
   return (
     <BareShell>
       <section className="notice-page">
-        <h1>{t("signedOutTitle")}</h1>
+        <h1>
+          {t("signedOutTitle")}{" "}
+          <span className="og-accent">{t("signedOutAccent")}</span>
+        </h1>
         <p>{t("signedOutBody")}</p>
         <Button asChild size="lg">
           <a href="/auth/sign-in?returnTo=%2Forders">

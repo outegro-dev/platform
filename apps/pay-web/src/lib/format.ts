@@ -46,21 +46,37 @@ export function safeTimeZone(value: string | null | undefined): string {
   }
 }
 
-/** "Sep 29, 2026" / "29 сент. 2026 г.", in the viewer's time zone. */
+/**
+ * Russian dates end in "г." ("29 сент. 2026 г."), which doubles the full
+ * stop of a sentence that ends with a date. Interfaces commonly drop it.
+ */
+function withoutYearMark(parts: Intl.DateTimeFormatPart[]) {
+  return parts
+    .map((part) =>
+      part.type === "literal" ? part.value.replace(/\s?г\./, "") : part.value,
+    )
+    .join("");
+}
+
+/** "Sep 29, 2026" / "29 сент. 2026", in the viewer's time zone. */
 export function formatDate(iso: string, locale: string, timeZone: string) {
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeZone,
-  }).format(new Date(iso));
+  return withoutYearMark(
+    new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeZone,
+    }).formatToParts(new Date(iso)),
+  );
 }
 
 /** "Sep 29, 2026, 14:03" with the time, for receipts and timelines. */
 export function formatDateTime(iso: string, locale: string, timeZone: string) {
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone,
-  }).format(new Date(iso));
+  return withoutYearMark(
+    new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone,
+    }).formatToParts(new Date(iso)),
+  );
 }
 
 export type Formatters = {

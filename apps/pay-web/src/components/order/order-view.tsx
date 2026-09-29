@@ -34,6 +34,8 @@ export type OrderContext = {
   serviceUrl: string | null;
   description: Localized | null;
   periodicity: Periodicity | null;
+  /** Lava said the buyer cancelled or the payment failed: a hint only. */
+  leftPayment: boolean;
 };
 
 /**
@@ -130,6 +132,7 @@ const LiveHero = observer(function LiveHero({
     <OrderHero
       outcome={store.outcome}
       detail={pendingDetail(order)}
+      leftPayment={context.leftPayment}
       timedOut={phase === "timed-out"}
       animate={phase === "settled" && store.checks > 0}
       foot={foot}
