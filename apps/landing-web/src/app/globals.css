@@ -1091,6 +1091,163 @@
   height: 18px;
 }
 
+/* ─── Stack page ─────────────────────────────────────────── */
+.stack-hero {
+  padding-block: 160px 56px;
+}
+.stack-hero h1 {
+  max-width: 14ch;
+  font-size: clamp(52px, 7vw, 108px);
+  font-weight: 650;
+  line-height: 0.98;
+  letter-spacing: -0.068em;
+}
+.stack-hero h1 .og-accent {
+  display: block;
+  font-size: 1.07em;
+  letter-spacing: -0.03em;
+}
+.stack-intro {
+  max-width: 640px;
+  margin-top: 36px;
+  font-size: clamp(17px, 1.4vw, 20px);
+  line-height: 1.6;
+  letter-spacing: -0.02em;
+  color: var(--muted-foreground);
+}
+.stack-toc ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 40px;
+}
+.stack-toc a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding-inline: 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background-color var(--duration-base),
+    border-color var(--duration-base);
+}
+.stack-toc a:hover {
+  border-color: var(--border-strong);
+  background: var(--secondary);
+}
+.stack-art {
+  width: 100%;
+  aspect-ratio: 2.6;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(90% 120% at 30% 10%, var(--surface), transparent 70%),
+    linear-gradient(180deg, var(--secondary), var(--muted));
+}
+.stack-art .silver-poster {
+  object-fit: cover;
+}
+.stack-groups {
+  padding-block: 40px;
+}
+.stack-group {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: 32px 80px;
+  padding-block: 72px;
+  border-top: 1px solid var(--border);
+}
+.stack-group-head {
+  position: sticky;
+  top: 110px;
+  align-self: start;
+}
+.stack-group-head h2 {
+  margin-top: 14px;
+  font-size: clamp(34px, 3.6vw, 54px);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+.stack-group-head h2 + p {
+  max-width: 380px;
+  margin-top: 18px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.stack-item {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px 32px;
+  padding-block: 22px 24px;
+}
+.stack-item:first-child {
+  padding-top: 4px;
+}
+.stack-item + .stack-item {
+  border-top: 1px solid var(--border);
+}
+.stack-item h3 {
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.03em;
+}
+.stack-item p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.stack-item .stack-live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 16px;
+  margin-top: 6px;
+}
+.stack-live a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 4px;
+}
+.stack-live a:hover {
+  text-decoration-color: currentColor;
+}
+.stack-cta {
+  padding-block: 120px 140px;
+}
+.stack-cta h2 {
+  max-width: 16ch;
+  font-size: clamp(40px, 5vw, 76px);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+.stack-cta h2 + p {
+  margin-top: 22px;
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.stack-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
 /* ─── Legal pages ────────────────────────────────────────── */
 .legal {
   max-width: 820px;
@@ -1332,6 +1489,13 @@
   .format {
     padding-top: 104px;
   }
+  .stack-group {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .stack-group-head {
+    position: static;
+  }
 }
 @media (max-width: 960px) {
   .desktop-nav {
@@ -1536,6 +1700,38 @@
     grid-template-columns: 1fr;
     gap: 28px;
     padding-top: 44px;
+  }
+  .stack-hero {
+    padding-block: 120px 40px;
+  }
+  .stack-hero h1 {
+    font-size: clamp(44px, 12.4vw, 72px);
+  }
+  .stack-intro {
+    margin-top: 26px;
+    font-size: 17px;
+  }
+  .stack-toc ol {
+    margin-top: 30px;
+  }
+  .stack-art {
+    aspect-ratio: 1.3;
+    border-radius: var(--radius-lg);
+  }
+  .stack-group {
+    padding-block: 52px;
+  }
+  .stack-item {
+    grid-template-columns: 1fr;
+  }
+  .stack-cta {
+    padding-block: 84px 100px;
+  }
+  .stack-cta h2 + p {
+    font-size: 17px;
+  }
+  .stack-cta-actions > * {
+    flex: 1 1 auto;
   }
   .gallery-surfaces {
     grid-template-columns: 1fr;

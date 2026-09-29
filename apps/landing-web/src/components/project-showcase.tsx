@@ -73,6 +73,9 @@ export async function ProjectShowcase() {
               <ArrowUpRightIcon />
             </a>
           </Button>
+          <Button asChild size="lg" variant="outline">
+            <a href="/stack">{t("howBuilt")}</a>
+          </Button>
         </div>
       </header>
 

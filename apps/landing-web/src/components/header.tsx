@@ -31,6 +31,7 @@ const nav: ({ key: Section; section: Section } | { key: "stack" })[] = [
   { key: "platform", section: "platform" },
   { key: "services", section: "services" },
   { key: "process", section: "process" },
+  { key: "stack" },
   { key: "contact", section: "contact" },
 ];
 

@@ -35,6 +35,11 @@ export async function SiteFooter() {
         </h2>
         <ul>
           <li>
+            <a href="/stack" className="footer-link">
+              {t("stack")}
+            </a>
+          </li>
+          <li>
             <a href="/privacy" className="footer-link">
               {t("privacy")}
             </a>

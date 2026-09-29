@@ -307,6 +307,19 @@ for (const locale of ["en", "ru"] as const) {
         .toBe(true);
       await expect(page.locator(".hero-cta")).toBeInViewport();
     }
+    await page.goto("/stack");
+    for (const width of [320, 390, 768, 1100, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect
+        .poll(
+          () =>
+            page.evaluate(
+              () => document.documentElement.scrollWidth <= window.innerWidth,
+            ),
+          { message: `Stack page overflow at ${width}` },
+        )
+        .toBe(true);
+    }
   });
 
   test(`${locale}: accessibility scan and real page structure`, async ({
@@ -331,9 +344,86 @@ for (const locale of ["en", "ru"] as const) {
       .analyze();
     expect(modal.violations).toEqual([]);
   });
+
+  test(`${locale}: the Stack page groups the platform's technologies, is linked and indexable`, async ({
+    page,
+    context,
+    request,
+  }) => {
+    await useLocale(context, locale);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page
+      .getByRole("contentinfo")
+      .getByRole("link", { name: locale === "en" ? "Stack" : "Стек" })
+      .click();
+    await expect(page).toHaveURL(/\/stack$/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      locale === "en" ? "The stack" : "Стек",
+    );
+    const groups =
+      locale === "en"
+        ? [
+            "Frontend",
+            "Backend",
+            "Data",
+            "Messaging",
+            "Infrastructure and delivery",
+            "Observability",
+            "Quality and testing",
+            "AI-assisted development",
+          ]
+        : [
+            "Фронтенд",
+            "Бэкенд",
+            "Данные",
+            "Обмен событиями",
+            "Инфраструктура и доставка",
+            "Наблюдаемость",
+            "Качество и тестирование",
+            "Разработка с AI",
+          ];
+    await expect(page.locator(".stack-group h2")).toHaveText(groups);
+    for (const tech of [
+      "Next.js 16",
+      "NestJS 12",
+      "PostgreSQL 18 · CloudNativePG",
+      "RabbitMQ 4",
+      "Argo CD",
+      "Prometheus",
+      "Playwright",
+      "Claude Code · Codex",
+    ])
+      await expect(
+        page.getByRole("heading", { level: 3, name: tech }),
+      ).toBeVisible();
+    // Where it makes sense, a technology links to the app it runs.
+    await expect(
+      page.locator(`#frontend .stack-live a[href="${GAME}"]`).first(),
+    ).toBeVisible();
+    await expect(
+      page.locator('#backend a[href="https://id.outegro.dev"]'),
+    ).toBeVisible();
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      "https://outegro.dev/stack",
+    );
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+      "content",
+      "https://outegro.dev/stack",
+    );
+    await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+    await expectHeadingsInOrder(page);
+    const scan = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(scan.violations).toEqual([]);
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    expect(sitemap).toContain("https://outegro.dev/stack");
+  });
 }
 
-test("header navigation links every section in page order", async ({
+test("header navigation covers the sections and the Stack page, from either page", async ({
   page,
 }) => {
   await page.goto("/");
@@ -342,14 +432,30 @@ test("header navigation links every section in page order", async ({
     "#platform",
     "#services",
     "#process",
+    "/stack",
     "#contact",
   ]);
+  await page.locator(".desktop-nav a", { hasText: "Stack" }).click();
+  await expect(page).toHaveURL(/\/stack$/);
+  await expect(
+    page.locator(".desktop-nav a", { hasText: "Stack" }),
+  ).toHaveAttribute("aria-current", "page");
+  expect(await hrefs(page, ".desktop-nav a")).toEqual([
+    "/#projects",
+    "/#platform",
+    "/#services",
+    "/#process",
+    "/stack",
+    "/#contact",
+  ]);
+  await expect(page.locator(".wordmark")).toHaveAttribute("href", "/");
   await page.locator(".desktop-nav a", { hasText: "Projects" }).click();
+  await expect(page).toHaveURL(/\/#projects$/);
   await expect(page.locator("#projects")).toBeInViewport();
 });
 
 test("footer links the platform's sites on every page", async ({ page }) => {
-  for (const path of ["/", "/privacy"]) {
+  for (const path of ["/", "/stack", "/privacy"]) {
     await page.goto(path);
     const platform = page
       .getByRole("contentinfo")
@@ -382,13 +488,7 @@ test("keyboard: the skip link comes first and the navigation follows in order", 
   await expect(page.locator(".skip-link")).toBeInViewport();
   await page.keyboard.press("Tab");
   await expect(page.locator(".wordmark")).toBeFocused();
-  for (const name of [
-    "Projects",
-    "Platform",
-    "Services",
-    "Process",
-    "Contact",
-  ]) {
+  for (const name of ["Projects", "Platform", "Services", "Process", "Stack"]) {
     await page.keyboard.press("Tab");
     await expect(
       page.locator(".desktop-nav").getByRole("link", { name }),
@@ -420,7 +520,7 @@ test("header stays reachable after scrolling and hides while reading down", asyn
   await expect(page.locator(".wordmark")).toBeInViewport();
 });
 
-test("mobile menu is always available and closes after anchor navigation", async ({
+test("mobile menu is always available, lists the Stack page and closes after anchor navigation", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -429,6 +529,10 @@ test("mobile menu is always available and closes after anchor navigation", async
   await page.mouse.wheel(0, -200);
   await page.getByRole("button", { name: "Open navigation" }).click();
   const menu = page.getByRole("dialog");
+  await expect(menu.getByRole("link", { name: /Stack/ })).toHaveAttribute(
+    "href",
+    "/stack",
+  );
   await menu.getByRole("link", { name: /Process/ }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator("#process")).toBeInViewport();
@@ -438,7 +542,10 @@ test("reduced motion shows the rendered posters and creates no WebGL context", a
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const [path, stages] of [["/", 2]] as const) {
+  for (const [path, stages] of [
+    ["/", 2],
+    ["/stack", 1],
+  ] as const) {
     await page.goto(path);
     await expect(page.locator(".silver-stage")).toHaveCount(stages);
     for (const stage of await page.locator(".silver-stage").all())
@@ -562,6 +669,10 @@ test("server-rendered content remains visible without JavaScript", async ({
     page.getByRole("heading", { name: /with a conversation/ }),
   ).toBeVisible();
   await expect(page.locator('#contact a[href^="mailto:"]')).toBeVisible();
+  await page.goto(`${BASE}/stack`);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.locator("#ai").scrollIntoViewIfNeeded();
+  await expect(page.locator("#ai h2")).toBeVisible();
   await context.close();
 });
 
@@ -579,7 +690,7 @@ test("security headers and a nonce-based CSP are sent; no CSP violations", async
   expect(headers["strict-transport-security"]).toContain("max-age=");
   expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
   // Every page gets its own nonce, not only the main one.
-  for (const path of ["/privacy"])
+  for (const path of ["/stack", "/privacy"])
     expect(
       (await request.get(path)).headers()["content-security-policy"],
     ).toMatch(/'nonce-[^']+'/);
@@ -602,7 +713,7 @@ for (const [device, viewport] of [
   ["desktop", { width: 1280, height: 720 }],
   ["phone", { width: 390, height: 844 }],
 ] as const) {
-  for (const path of ["/"]) {
+  for (const path of ["/", "/stack"]) {
     test(`${device} ${path}: first load does not shift the layout (CLS < 0.02, cache disabled)`, async ({
       page,
       browserName,
@@ -736,7 +847,11 @@ test("SEO metadata, social image, sitemap and noindex gallery", async ({
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.status()).toBe(200);
   const urls = await sitemap.text();
-  for (const url of ["https://outegro.dev/", "https://outegro.dev/privacy"])
+  for (const url of [
+    "https://outegro.dev/",
+    "https://outegro.dev/stack",
+    "https://outegro.dev/privacy",
+  ])
     expect(urls).toContain(url);
   await page.goto("/design-system");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
@@ -760,6 +875,10 @@ test("no uncaught errors or failed local assets while scrolling the pages", asyn
   await page.goto("/");
   for (const section of SECTIONS)
     await page.locator(`#${section}`).scrollIntoViewIfNeeded();
+  await page.waitForLoadState("networkidle");
+  await page.goto("/stack");
+  for (const group of await page.locator(".stack-group").all())
+    await group.scrollIntoViewIfNeeded();
   await page.waitForLoadState("networkidle");
   expect(errors).toEqual([]);
   expect(failed).toEqual([]);
