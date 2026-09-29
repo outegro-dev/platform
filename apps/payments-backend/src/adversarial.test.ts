@@ -1,4 +1,10 @@
 import { randomUUID } from "node:crypto";
+import {
+  billingGrantChanged,
+  billingPaymentConfirmed,
+  billingSubscriptionChanged,
+  notificationRequested,
+} from "@outegro/contracts";
 import { DATABASE } from "@outegro/nest-common";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -1189,5 +1195,66 @@ describe("database constraints behind the invariants", () => {
         .set({ amountMinor: 0n })
         .where(eq(payments.id, payment?.id ?? "")),
     ).rejects.toThrow();
+  });
+});
+
+describe("events for consumers (runs last: sees every event above)", () => {
+  it("every outbox event passes its consumer schema, and grant projections converge in any delivery order", async () => {
+    const rows = await db
+      .select({ type: outbox.type, envelope: outbox.envelope })
+      .from(outbox);
+    const schemas: Record<string, { safeParse: (value: unknown) => unknown }> =
+      {
+        [billingGrantChanged.type]: billingGrantChanged.schema,
+        [billingPaymentConfirmed.type]: billingPaymentConfirmed.schema,
+        [billingSubscriptionChanged.type]: billingSubscriptionChanged.schema,
+        [notificationRequested.type]: notificationRequested.schema,
+      };
+    expect(rows.length).toBeGreaterThan(50);
+    for (const row of rows) {
+      const schema = schemas[row.type];
+      expect(schema, row.type).toBeDefined();
+      const parsed = schema?.safeParse(row.envelope) as {
+        success: boolean;
+        error?: { issues: unknown };
+      };
+      expect(parsed.success, JSON.stringify(parsed.error?.issues)).toBe(true);
+    }
+
+    type GrantEvent = {
+      aggregateVersion: number;
+      payload: { grantId: string; state: string; validUntil: string | null };
+    };
+    const grantEvents = rows
+      .filter((row) => row.type === billingGrantChanged.type)
+      .map((row) => row.envelope as GrantEvent);
+    // "Newer version wins" needs one event per (grant, version).
+    const versions = grantEvents.map(
+      (e) => `${e.payload.grantId}:${e.aggregateVersion}`,
+    );
+    expect(new Set(versions).size).toBe(versions.length);
+    const all = await db.select().from(grants);
+    for (const seed of [3, 11, 29]) {
+      // The auth-backend projection rule: apply only a newer aggregateVersion.
+      const projection = new Map<
+        string,
+        { version: number; state: string; validUntil: string | null }
+      >();
+      for (const event of shuffled(grantEvents, seed)) {
+        const current = projection.get(event.payload.grantId);
+        if (!current || current.version < event.aggregateVersion)
+          projection.set(event.payload.grantId, {
+            version: event.aggregateVersion,
+            state: event.payload.state,
+            validUntil: event.payload.validUntil,
+          });
+      }
+      for (const grant of all)
+        expect(projection.get(grant.id), grant.id).toEqual({
+          version: grant.version,
+          state: grant.state,
+          validUntil: grant.validUntil?.toISOString() ?? null,
+        });
+    }
   });
 });
