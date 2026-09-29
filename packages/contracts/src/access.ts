@@ -18,6 +18,8 @@ export const permissions = [
   "services.read",
   "services.flags",
   "events.replay",
+  "battleship.read",
+  "battleship.moderate",
 ] as const;
 export type Permission = (typeof permissions)[number];
 
@@ -28,6 +30,8 @@ export const platformRoles = {
     "sessions.revoke",
     "notifications.read",
     "notifications.retry",
+    "battleship.read",
+    "battleship.moderate",
   ],
   billing_operator: ["billing.read", "subscriptions.cancel"],
   auditor: ["audit.read", "billing.read"],

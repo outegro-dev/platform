@@ -49,19 +49,27 @@
 ## 16.5. Архитектура
 
 - `packages/battleship-engine` — доменная модель на TypeScript без зависимостей от фреймворков: поле, корабль, флот, правила, партия (конечный автомат), боты (стратегии), сериализация видов. ООП и SOLID: один класс — одна ответственность, правила и стратегии за интерфейсами, расширение новыми режимами без правки ядра. Один и тот же код — на сервере и в браузере.
-- `apps/battleship-backend` — NestJS, своя БД `battleship`. HTTP (`/v1/...`) и WebSocket (`/v1/ws`). Сервер — источник истины: клиент присылает только намерения (расставить, выстрелить); результат вычисляет сервер, соперник никогда не получает расположение кораблей.
-- `apps/battleship-web` — Next.js 16, BFF как у id-web (httpOnly-сессия, SSO через `id.outegro.dev/authorize`). Состояние — MobX-сторы на классах: `SessionStore`, `LobbyStore`, `MatchStore`, `ShopStore`, `StatsStore`; транспорт — `GameSocket` (переподключение, ping, очередь). Анимации — только `transform`/`opacity`, уважают `prefers-reduced-motion`.
+- `apps/battleship-backend` — NestJS, своя БД `battleship`, порт 4004. HTTP (`/v1/...`) и WebSocket (`/ws`). Сервер — источник истины: клиент присылает только намерения (расставить, выстрелить); результат вычисляет сервер, соперник никогда не получает расположение кораблей.
+- `apps/battleship-web` — Next.js 16, порт 3005, BFF как у id-web (httpOnly-сессия, SSO через `id.outegro.dev/authorize` с помощью `@outegro/bff/sso`, OAuth-клиент `battleship-web`). Состояние — MobX-сторы на классах: `SessionStore`, `LobbyStore`, `MatchStore`, `ShopStore`, `StatsStore`; транспорт — `GameSocket` (переподключение, ping, очередь). Анимации — только `transform`/`opacity`, уважают `prefers-reduced-motion`.
 - События платформы: потребляет `billing.grant.changed.v1`, `identity.user.*`; публикует `battleship.match.finished.v1` (для будущих уведомлений).
 
 ## 16.6. Протокол WebSocket
 
-Соединение: `wss://battleship.outegro.dev/ws` (прокси BFF → backend), аутентификация одноразовым билетом из BFF (`POST /api/ws-ticket`, 30 секунд), не cookie напрямую. Сообщения — JSON `{ type, payload, seq }`, схемы в `packages/contracts` (zod).
+Схемы — единственный источник: `@outegro/contracts/battleship` (zod). Сообщения — JSON `{ type, seq, payload }`; `seq` растёт в пределах соединения, `error.ref` ссылается на `seq` отклонённой команды.
 
-Клиент → сервер: `queue.join { mode }`, `queue.leave`, `room.create`, `room.join { code }`, `fleet.place { ships }`, `shot.fire { x, y }`, `match.resign`, `ping`.
+Соединение: `wss://battleship.outegro.dev/ws`. Ingress направляет путь `/ws` прямо в battleship-backend (тот же origin, Next.js не проксирует WebSocket). Аутентификация — одноразовый билет: браузер вызывает BFF `POST /api/ws-ticket`, BFF с access token пользователя вызывает backend `POST /v1/ws-tickets`, билет живёт 30 секунд в Valkey и гасится при подключении (`/ws?ticket=…`). Backend проверяет `Origin` по списку. Cookie сессии в WebSocket не участвует.
 
-Сервер → клиент: `queue.matched { matchId }`, `match.state { view }` (полный вид при подключении/переподключении), `match.started`, `shot.result { by, x, y, outcome: miss|hit|sunk, ship?, nextTurn }`, `turn.timer { deadline }`, `match.finished { winner, reason, rating? }`, `error { code }`, `pong`.
+Игроки в сообщениях — `you`/`opponent`: идентификаторы пользователей другой стороне не передаются. Соперник-человек виден по нику, рейтингу и значку Premium.
 
-Переподключение: в течение 60 секунд игрок возвращается в партию, получает `match.state`; иначе — поражение.
+Клиент → сервер: `queue.join { mode: quick }`, `queue.leave`, `bot.start { level }`, `room.create`, `room.join { code }`, `room.cancel`, `fleet.place { ships }`, `shot.fire { x, y }`, `match.resign`, `match.sync` (запросить полный снимок), `ping { t }`.
+
+Сервер → клиент: `session.ready` (первое сообщение: игрок, активная партия, очередь, комната, время сервера), `queue.joined`, `queue.left`, `queue.matched { matchId }`, `room.created { code, expiresAt }`, `room.cancelled`, `match.state { match }` (полный снимок при подключении и по `match.sync`), `fleet.placed { side }`, `match.started { turn, deadline }`, `shot.result { by, x, y, outcome, ship?, revealed, nextTurn, deadline }`, `turn.skipped`, `opponent.presence { connected, graceUntil }`, `match.finished { winner, reason, rating, opponentFleet }`, `error { code, ref }`, `pong`.
+
+Таймеры онлайн: расстановка 90 секунд, ход 30 секунд. С ботом таймера хода нет, брошенная партия закрывается через 15 минут бездействия. Переподключение: в течение 60 секунд игрок возвращается в партию и получает `match.state`; иначе — поражение (`disconnected`). Команды ограничены по частоте (`rate_limited`).
+
+Ник: у игры свой ник (3–20 символов, буквы, цифры, пробел, `-`, `_`; уникален без учёта регистра). По умолчанию — «Sailor NNNN». Имя и почта из identity в игру не попадают.
+
+HTTP backend (`/v1`, вызывает BFF): `GET/PATCH /v1/me` (профиль, ник, косметика), `POST /v1/ws-tickets`, `GET /v1/leaderboard?period=all|week` (публичный; своё место — при входе), `GET /v1/me/stats` (тепловая карта — Premium), `GET /v1/me/matches` (история), `GET /v1/matches/{id}/replay` (Premium, иначе 403). Админка: `/v1/admin/*` с правами `battleship.read` и `battleship.moderate`.
 
 ## 16.7. Данные (БД `battleship`)
 
@@ -80,10 +88,10 @@
 |---|---|
 | TC-BS-01 | Неверная расстановка (касание, выход за поле, лишний корабль) отклоняется сервером |
 | TC-BS-02 | Попадание даёт повторный ход, промах — передаёт; потопление отмечает соседние клетки |
-| TC-BS-03 | Соперник не получает координаты кораблей ни в одном сообщении |
+| TC-BS-03 | До конца партии соперник не получает координаты живых кораблей ни в одном сообщении (после конца флот раскрывается) |
 | TC-BS-04 | Выстрел не в свой ход, повтор клетки, чужая партия — ошибка без изменения состояния |
 | TC-BS-05 | Эксперт побеждает лёгкого бота в ≥ 95% из 200 партий; средний — лёгкого в ≥ 70% |
 | TC-BS-06 | Переподключение в течение 60 секунд возвращает игрока в партию с тем же состоянием |
 | TC-BS-07 | Elo меняется только в быстрых матчах, сумма изменений равна нулю |
-| TC-BS-08 | Сложный бот без Premium недоступен на сервере (403), не только в UI |
+| TC-BS-08 | Сложный бот без Premium недоступен на сервере (`premium_required` в WebSocket, 403 в HTTP), не только в UI |
 | TC-BS-09 | После оплаты «Серебряного флота» скин доступен без перезахода; отзыв гранта убирает его |

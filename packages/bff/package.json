@@ -8,7 +8,8 @@
     "./client": "./src/client.ts",
     "./session": "./src/session.ts",
     "./proxy": "./src/proxy.ts",
-    "./safe-redirect": "./src/safe-redirect.ts"
+    "./safe-redirect": "./src/safe-redirect.ts",
+    "./sso": "./src/sso.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
