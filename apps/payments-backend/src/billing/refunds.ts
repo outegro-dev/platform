@@ -58,16 +58,7 @@ export class RefundService {
     eventId: string,
   ): Promise<Outcome> {
     const now = this.clock.now();
-    const [known] = await tx
-      .select({ id: refunds.id })
-      .from(refunds)
-      .where(
-        and(
-          eq(refunds.provider, PROVIDER),
-          eq(refunds.kind, "refund"),
-          eq(refunds.providerRef, fact.refundId),
-        ),
-      );
+    const known = await this.recordedRefund(tx, fact.refundId);
     if (known)
       return {
         status: "ignored",
@@ -123,6 +114,15 @@ export class RefundService {
         refundId: row.id,
       };
     }
+    // verifiedPayment waited for the payment lock: the same refund under
+    // another event id may have been recorded by whoever held it.
+    const raced = await this.recordedRefund(tx, fact.refundId);
+    if (raced)
+      return {
+        status: "ignored",
+        note: "refund already recorded",
+        refundId: raced.id,
+      };
 
     let caseRow: RefundRow | undefined;
     if (match.caseId) {
@@ -612,5 +612,19 @@ export class RefundService {
       )
       .for("update");
     return payment ?? null;
+  }
+
+  private async recordedRefund(tx: Executor, refundId: string) {
+    const [row] = await tx
+      .select({ id: refunds.id })
+      .from(refunds)
+      .where(
+        and(
+          eq(refunds.provider, PROVIDER),
+          eq(refunds.kind, "refund"),
+          eq(refunds.providerRef, refundId),
+        ),
+      );
+    return row ?? null;
   }
 }

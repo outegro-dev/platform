@@ -554,6 +554,54 @@ describe("idempotency and concurrency", () => {
       await outboxOf("billing.grant.changed.v1", "grantId", grant?.id ?? ""),
     ).toHaveLength(1);
   });
+
+  it("one refund delivered at once under several event ids is recorded once", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, SILVER, "USD");
+    await webhook(paidWebhook(user, invoice)).expect(200);
+    const [payment] = await paymentsOf(orderId);
+    await h
+      .http()
+      .post(`/v1/admin/payments/${payment?.id}/refund-request`)
+      .set(owner.auth)
+      .send({ reason: "buyer asked by email" })
+      .expect(201);
+    const refund = lavaPayloads.refund({
+      tierId: SILVER_OFFER,
+      email: user.email,
+      amount: 0.59,
+      currency: "USD",
+      at: h.clock.now(),
+    });
+    await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        webhook(i ? { ...refund, event_id: randomUUID() } : refund),
+      ),
+    );
+    await drainRetries();
+    const cases = await db
+      .select()
+      .from(refunds)
+      .where(eq(refunds.paymentId, payment?.id ?? ""));
+    expect(cases.map((row) => row.state)).toEqual(["recorded"]);
+    expect(await issueOf(`refund:${cases[0]?.id}`)).toBeUndefined();
+    expect(
+      await db
+        .select()
+        .from(financialEntries)
+        .where(
+          and(
+            eq(financialEntries.paymentId, payment?.id ?? ""),
+            eq(financialEntries.type, "refund"),
+          ),
+        ),
+    ).toHaveLength(1);
+    expect((await grantsOf(user.userId))[0]).toMatchObject({
+      state: "revoked",
+      version: 2,
+    });
+  });
 });
 
 describe("grant lifecycle", () => {
