@@ -266,6 +266,8 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
       serverTime: isoDateTime,
     }),
   ),
+  /** Rating, Premium or cosmetics changed (a purchase lands without re-login, TC-BS-09). */
+  serverMessage("player.updated", z.object({ player: playerSummarySchema })),
   serverMessage(
     "queue.joined",
     z.object({ mode: z.literal("quick"), since: isoDateTime }),
