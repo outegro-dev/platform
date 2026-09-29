@@ -116,18 +116,16 @@ export class GameSocketServer
       const url = new URL(request.url ?? "/", "http://socket.local");
       if (url.pathname !== socketLimits.path) return this.refuse(socket, 404);
       const origin = request.headers.origin;
-      if (
-        this.stopping ||
-        !origin ||
-        !this.config.allowedOrigins.includes(origin)
-      )
-        return this.refuse(socket, this.stopping ? 503 : 403);
+      if (this.stopping) return this.refuse(socket, 503);
+      if (!origin || !this.config.allowedOrigins.includes(origin))
+        return this.refuse(socket, 403, { origin: origin ?? null });
       const userId = await this.tickets.consume(url.searchParams.get("ticket"));
       if (!userId) return this.refuse(socket, 401);
       const player = await this.players.find(userId);
-      if (player?.status !== "active") return this.refuse(socket, 403);
+      if (player?.status !== "active")
+        return this.refuse(socket, 403, { userId });
       if (this.registry.socketsOf(userId) >= socketLimits.socketsPerUser)
-        return this.refuse(socket, 429);
+        return this.refuse(socket, 429, { userId });
       // From here the WebSocket handles socket errors itself.
       socket.off("error", onError);
       this.wss.handleUpgrade(request, socket, head, (ws) =>
@@ -139,7 +137,14 @@ export class GameSocketServer
     }
   }
 
-  private refuse(socket: Duplex, status: number) {
+  private refuse(
+    socket: Duplex,
+    status: number,
+    detail: Record<string, unknown> = {},
+  ) {
+    // A wrong path is a scanner; anything else is a client that could not play.
+    if (status !== 404)
+      this.logger.log({ status, ...detail }, "Upgrade refused");
     if (socket.writable)
       socket.write(
         `HTTP/1.1 ${status} ${statusText[status] ?? "Error"}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`,
@@ -168,7 +173,8 @@ export class GameSocketServer
     socket.on("error", (error) =>
       this.logger.warn({ err: error.message }, "Socket error"),
     );
-    socket.on("close", () => this.closed(connection));
+    socket.on("close", (code) => this.closed(connection, code));
+    this.logger.log({ connection: connection.id, userId }, "Socket open");
     // session.ready first, then presence and the match snapshot.
     connection.enqueue(async () => {
       try {
@@ -195,7 +201,8 @@ export class GameSocketServer
     connection.enqueue(() => this.router.handle(connection, data, isBinary));
   }
 
-  private closed(connection: Connection) {
+  private closed(connection: Connection, code: number) {
+    this.logger.log({ connection: connection.id, code }, "Socket closed");
     if (!this.registry.remove(connection) || this.stopping) return;
     this.router.offline(connection.userId);
   }
