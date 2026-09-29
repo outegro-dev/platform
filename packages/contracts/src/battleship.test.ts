@@ -64,7 +64,7 @@ describe("server messages", () => {
   });
 
   it("tells both players when a match ends without a result", () => {
-    for (const reason of ["placement_timeout", "moderation"]) {
+    for (const reason of ["placement_timeout", "moderation", "abandoned"]) {
       expect(
         serverMessageSchema.safeParse({
           type: "match.aborted",
