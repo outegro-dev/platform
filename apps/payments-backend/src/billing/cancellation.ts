@@ -22,6 +22,7 @@ import {
   ProviderRejectedError,
 } from "../lava/provider.js";
 import { IssueRegistry } from "./issues.js";
+import { BillingNotices } from "./notices.js";
 import { subscriptionChanged } from "./outbox-events.js";
 import type { Outcome } from "./outcome.js";
 
@@ -51,6 +52,7 @@ export class CancellationService {
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
     private readonly issues: IssueRegistry,
+    private readonly notices: BillingNotices,
     private readonly relay: OutboxRelay,
   ) {}
 
@@ -282,7 +284,8 @@ export class CancellationService {
       .where(eq(subscriptions.id, current.id))
       .returning();
     if (!updated) throw new Error("subscription disappeared");
-    await subscriptionChanged(tx, updated, now);
+    const eventId = await subscriptionChanged(tx, updated, now);
+    await this.notices.subscriptionCancelled(tx, updated, eventId, now);
     // Our paid end is kept; a provider date far from it goes to an operator.
     if (
       input.willExpireAt &&

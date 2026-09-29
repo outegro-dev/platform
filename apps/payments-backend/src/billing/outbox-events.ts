@@ -3,7 +3,6 @@ import {
   billingPaymentConfirmed,
   billingSubscriptionChanged,
   createEvent,
-  notificationRequested,
 } from "@outegro/contracts";
 import { enqueueEvent } from "@outegro/db";
 import type {
@@ -47,28 +46,28 @@ export async function grantChanged(
   );
 }
 
+/** Returns the event id, the source of a follow-up notification. */
 export async function subscriptionChanged(
   tx: Executor,
   subscription: SubscriptionRow,
   at: Date,
   correlationId?: string,
 ) {
-  await enqueueEvent(
-    tx,
-    createEvent(billingSubscriptionChanged, {
-      aggregateId: subscription.id,
-      aggregateVersion: subscription.version,
-      occurredAt: at,
-      correlationId,
-      payload: {
-        subscriptionId: subscription.id,
-        userId: subscription.userId,
-        state: subscription.state,
-        paidUntil: subscription.paidUntil.toISOString(),
-        autoRenew: subscription.autoRenew,
-      },
-    }),
-  );
+  const event = createEvent(billingSubscriptionChanged, {
+    aggregateId: subscription.id,
+    aggregateVersion: subscription.version,
+    occurredAt: at,
+    correlationId,
+    payload: {
+      subscriptionId: subscription.id,
+      userId: subscription.userId,
+      state: subscription.state,
+      paidUntil: subscription.paidUntil.toISOString(),
+      autoRenew: subscription.autoRenew,
+    },
+  });
+  await enqueueEvent(tx, event);
+  return event.eventId;
 }
 
 /** Returns the event id, the source of the follow-up notification. */
@@ -93,35 +92,4 @@ export async function paymentConfirmed(
   });
   await enqueueEvent(tx, event);
   return event.eventId;
-}
-
-/** Asks Notifications for the "payment received" message (template billing.payment-confirmed). */
-export async function paymentNotification(
-  tx: Executor,
-  input: {
-    sourceEventId: string;
-    userId: string;
-    product: string;
-    amount: string;
-  },
-  at: Date,
-  correlationId?: string,
-) {
-  await enqueueEvent(
-    tx,
-    createEvent(notificationRequested, {
-      producer: "payments",
-      aggregateId: input.userId,
-      aggregateVersion: 1,
-      occurredAt: at,
-      correlationId,
-      payload: {
-        sourceEventId: input.sourceEventId,
-        templateKey: "billing.payment-confirmed",
-        category: "billing",
-        recipient: { userId: input.userId },
-        data: { product: input.product, amount: input.amount },
-      },
-    }),
-  );
 }

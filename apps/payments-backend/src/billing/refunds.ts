@@ -28,6 +28,7 @@ import type { ChargebackFact, RefundFact } from "../domain/facts.js";
 import { toMinor } from "../domain/money.js";
 import { GrantLedger } from "./grants.js";
 import { IssueRegistry } from "./issues.js";
+import { BillingNotices } from "./notices.js";
 import { subscriptionChanged } from "./outbox-events.js";
 import type { Outcome } from "./outcome.js";
 
@@ -49,6 +50,7 @@ export class RefundService {
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly grants: GrantLedger,
     private readonly issues: IssueRegistry,
+    private readonly notices: BillingNotices,
     private readonly relay: OutboxRelay,
   ) {}
 
@@ -454,14 +456,21 @@ export class RefundService {
         service: order.service,
         feature: order.feature,
       });
-      if (grant)
-        await this.grants.revoke(
-          tx,
-          grant,
-          { actorId: null, reason: "refund" },
-          now,
-          order.correlationId,
-        );
+      const revoked = grant
+        ? await this.grants.revoke(
+            tx,
+            grant,
+            { actorId: null, reason: "refund" },
+            now,
+            order.correlationId,
+          )
+        : null;
+      await this.notices.refundRecorded(
+        tx,
+        { refund: caseRow, payment, grant: revoked },
+        now,
+        order.correlationId,
+      );
       return { status: "processed", note: "purchase refunded", ...ids };
     }
 
@@ -520,14 +529,22 @@ export class RefundService {
       feature: subscription.feature,
     });
     // Refunded time carries no grace.
-    if (grant && paidUntil < subscription.paidUntil)
-      await this.grants.reshape(
-        tx,
-        grant,
-        { validUntil: paidUntil, state: lapsed ? "expired" : "active" },
-        now,
-        order.correlationId,
-      );
+    const reshaped =
+      grant && paidUntil < subscription.paidUntil
+        ? await this.grants.reshape(
+            tx,
+            grant,
+            { validUntil: paidUntil, state: lapsed ? "expired" : "active" },
+            now,
+            order.correlationId,
+          )
+        : grant;
+    await this.notices.refundRecorded(
+      tx,
+      { refund: caseRow, payment, grant: reshaped },
+      now,
+      order.correlationId,
+    );
     return {
       status: "processed",
       note: "subscription period refunded",

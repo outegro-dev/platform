@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { AuthDatabase } from "./common/database.js";
-import { auditLog, identities, sessions, users } from "./db/schema.js";
+import { auditLog, identities, outbox, sessions, users } from "./db/schema.js";
 import { type Harness, startHarness, uniqueEmail } from "./test/harness.js";
 
 let h: Harness;
@@ -37,6 +37,20 @@ const signIn = (code: string, locale = "en") =>
     .http()
     .post("/v1/login/google")
     .send({ ...payload(code), locale });
+/** Security notices requested for a user through the outbox (N-06). */
+const noticesOf = (userId: string) =>
+  db
+    .select({
+      template: sql<string>`${outbox.envelope}->'payload'->>'templateKey'`,
+      data: sql<unknown>`${outbox.envelope}->'payload'->'data'`,
+    })
+    .from(outbox)
+    .where(
+      and(
+        eq(outbox.type, "notifications.intent.requested.v1"),
+        sql`${outbox.envelope}->'payload'->'recipient'->>'userId' = ${userId}`,
+      ),
+    );
 
 describe("Google sign-in (ID-02)", () => {
   it("tells id-web how to build the authorization request", async () => {
@@ -75,6 +89,8 @@ describe("Google sign-in (ID-02)", () => {
       .from(sessions)
       .where(eq(sessions.userId, first.body.user.id));
     expect(methods.every((m) => m.method === "google")).toBe(true);
+    // Signing up with Google is not a new method on an existing account.
+    expect(await noticesOf(first.body.user.id)).toEqual([]);
   });
 
   it("TC-ID-02-02: a matching email never joins an existing account on its own", async () => {
@@ -105,6 +121,13 @@ describe("Google sign-in (ID-02)", () => {
     ]);
     const viaGoogle = await signIn(h.google.code(google)).expect(200);
     expect(viaGoogle.body.user.id).toBe(owner.user.id);
+    // The owner is told once, with no Google email in the message.
+    expect(await noticesOf(owner.user.id)).toEqual([
+      {
+        template: "security.google-linked.v1",
+        data: { at: h.clock.now().toISOString() },
+      },
+    ]);
   });
 
   it("will not link a Google account that belongs to someone else", async () => {
@@ -182,6 +205,10 @@ describe("Google sign-in (ID-02)", () => {
       "identity.linked",
       "identity.unlinked",
     ]);
+    // The refused attempt told nobody; the removal is reported once.
+    expect(
+      (await noticesOf(session.user.id)).map((notice) => notice.template),
+    ).toEqual(["security.google-unlinked.v1"]);
   });
 
   it("does not sign in a suspended user", async () => {

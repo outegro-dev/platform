@@ -3,6 +3,7 @@ import { CLOCK, type Clock } from "@outegro/nest-common";
 import { and, eq, max, sql } from "drizzle-orm";
 import type {
   Executor,
+  GrantRow,
   OrderRow,
   PaymentRow,
   SubscriptionRow,
@@ -10,18 +11,15 @@ import type {
 import {
   billingPeriods,
   checkoutAttempts,
-  customers,
   financialEntries,
   orders,
   payments,
   subscriptions,
 } from "../db/schema.js";
-import type { LocalizedText } from "../domain/catalog.js";
 import type { PaymentFact } from "../domain/facts.js";
 import { accessUntil, subscriptionLifecycle } from "../domain/lifecycle.js";
 import {
   type Currency,
-  displayMoney,
   MoneyError,
   moneyDto,
   toMinor,
@@ -29,11 +27,8 @@ import {
 import { paidInterval, type RecurringPeriodicity } from "../domain/periods.js";
 import { GrantLedger } from "./grants.js";
 import { IssueRegistry } from "./issues.js";
-import {
-  paymentConfirmed,
-  paymentNotification,
-  subscriptionChanged,
-} from "./outbox-events.js";
+import { BillingNotices } from "./notices.js";
+import { paymentConfirmed, subscriptionChanged } from "./outbox-events.js";
 import { notAfter, type Outcome } from "./outcome.js";
 
 const PROVIDER = "lava";
@@ -50,6 +45,7 @@ export class SettlementService {
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly grants: GrantLedger,
     private readonly issues: IssueRegistry,
+    private readonly notices: BillingNotices,
   ) {}
 
   apply(tx: Executor, fact: PaymentFact): Promise<Outcome> {
@@ -189,6 +185,7 @@ export class SettlementService {
       now,
     });
 
+    let grant: GrantRow;
     if (subscription && interval) {
       await tx.insert(billingPeriods).values({
         subscriptionId: subscription.id,
@@ -198,7 +195,7 @@ export class SettlementService {
         createdAt: now,
       });
       await subscriptionChanged(tx, subscription, now, order.correlationId);
-      await this.grants.activate(
+      grant = await this.grants.activate(
         tx,
         {
           userId: order.userId,
@@ -218,7 +215,7 @@ export class SettlementService {
         order.correlationId,
       );
     } else {
-      await this.grants.activate(
+      grant = await this.grants.activate(
         tx,
         {
           userId: order.userId,
@@ -232,7 +229,14 @@ export class SettlementService {
         order.correlationId,
       );
     }
-    await this.announce(tx, payment, order.title, order.correlationId, now);
+    await this.announce(
+      tx,
+      payment,
+      grant,
+      subscription,
+      order.correlationId,
+      now,
+    );
     return {
       status: "processed",
       note: "payment confirmed",
@@ -311,7 +315,10 @@ export class SettlementService {
         })
         .where(eq(subscriptions.id, subscription.id))
         .returning();
-      if (updated) await subscriptionChanged(tx, updated, now);
+      if (updated) {
+        const eventId = await subscriptionChanged(tx, updated, now);
+        await this.notices.renewalFailed(tx, updated, eventId, now);
+      }
       return { status: "processed", note: "renewal failed", ...ids };
     }
 
@@ -388,7 +395,8 @@ export class SettlementService {
       .returning();
     if (!updated) throw new Error("subscription disappeared");
     await subscriptionChanged(tx, updated, now, order.correlationId);
-    await this.grants.activate(
+    // A revoked grant stays revoked: the receipt then promises no access.
+    const grant = await this.grants.activate(
       tx,
       {
         userId: subscription.userId,
@@ -404,7 +412,7 @@ export class SettlementService {
       now,
       order.correlationId,
     );
-    await this.announce(tx, payment, order.title, order.correlationId, now);
+    await this.announce(tx, payment, grant, updated, order.correlationId, now);
     return {
       status: "processed",
       note: "renewal confirmed",
@@ -480,27 +488,19 @@ export class SettlementService {
     return payment;
   }
 
-  /** billing.payment.confirmed plus the "payment received" message request. */
+  /** billing.payment.confirmed plus the buyer's receipt, with the grant as it now stands. */
   private async announce(
     tx: Executor,
     payment: PaymentRow,
-    title: LocalizedText,
+    grant: GrantRow,
+    subscription: SubscriptionRow | null,
     correlationId: string,
     now: Date,
   ) {
     const eventId = await paymentConfirmed(tx, payment, now, correlationId);
-    const [customer] = await tx
-      .select({ locale: customers.locale })
-      .from(customers)
-      .where(eq(customers.userId, payment.userId));
-    await paymentNotification(
+    await this.notices.paymentConfirmed(
       tx,
-      {
-        sourceEventId: eventId,
-        userId: payment.userId,
-        product: title[customer?.locale ?? "en"],
-        amount: displayMoney(payment.amountMinor, payment.currency),
-      },
+      { payment, grant, subscription, sourceEventId: eventId },
       now,
       correlationId,
     );

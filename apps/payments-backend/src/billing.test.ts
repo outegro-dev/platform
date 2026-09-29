@@ -140,6 +140,33 @@ const eventsOf = (type: string, field: string, value: string) =>
           },
       ),
     );
+/** Messages requested for a buyer (N-06), oldest first. */
+const noticesOf = (userId: string) =>
+  db
+    .select({ envelope: outbox.envelope })
+    .from(outbox)
+    .where(
+      and(
+        eq(outbox.type, "notifications.intent.requested.v1"),
+        sql`${outbox.envelope}->'payload'->'recipient'->>'userId' = ${userId}`,
+      ),
+    )
+    .orderBy(outbox.createdAt)
+    .then((rows) =>
+      rows.map(
+        (row) =>
+          (
+            row.envelope as {
+              payload: {
+                templateKey: string;
+                sourceEventId: string;
+                category: string;
+                data: Record<string, unknown>;
+              };
+            }
+          ).payload,
+      ),
+    );
 
 const grantsOf = (userId: string) =>
   db.select().from(grants).where(eq(grants.userId, userId));
@@ -556,11 +583,24 @@ describe("webhooks (PAY-04, PAY-05)", () => {
       "sourceEventId",
       (confirmed as unknown as { eventId: string })?.eventId ?? "",
     );
-    expect(intent?.payload).toMatchObject({
-      templateKey: "billing.payment-confirmed",
+    // The receipt says what was committed: amount in minor units, both
+    // titles, and the grant as this transaction left it (N-06).
+    expect(intent?.payload).toEqual({
+      sourceEventId: (confirmed as unknown as { eventId: string }).eventId,
+      templateKey: "billing.payment-confirmed.v2",
       category: "billing",
       recipient: { userId: user.userId },
-      data: { product: "Серебряный флот", amount: "0.59 USD" },
+      data: {
+        productEn: "Silver Fleet",
+        productRu: "Серебряный флот",
+        amountMinor: "59",
+        amountScale: 2,
+        currency: "USD",
+        paidAt: payment?.paidAt.toISOString(),
+        access: "active",
+        accessUntil: null,
+        actionUrl: `https://pay.outegro.dev/orders/${orderId}`,
+      },
     });
     const mine = await h
       .http()
@@ -617,6 +657,22 @@ describe("webhooks (PAY-04, PAY-05)", () => {
       accessUntil: grant?.validUntil?.toISOString(),
       title: { en: "Battleship Premium" },
     });
+    expect(await noticesOf(user.userId)).toEqual([
+      expect.objectContaining({
+        templateKey: "billing.subscription-started.v1",
+        data: {
+          productEn: "Battleship Premium",
+          productRu: "Морской бой Premium",
+          amountMinor: "5000",
+          amountScale: 2,
+          currency: "RUB",
+          paidAt: paidAt.toISOString(),
+          paidUntil: paidUntil.toISOString(),
+          access: "active",
+          actionUrl: "https://pay.outegro.dev/subscriptions",
+        },
+      }),
+    ]);
   });
 
   it("TC-PAY-04-03 / TC-PAY-05-01: repeated and reformatted deliveries have one effect", async () => {
@@ -881,6 +937,18 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
         .from(billingPeriods)
         .where(eq(billingPeriods.subscriptionId, first.id)),
     ).toHaveLength(2);
+    // One receipt per renewal, with the new paid end.
+    const receipts = (await noticesOf(user.userId)).map((n) => n.templateKey);
+    expect(receipts).toEqual([
+      "billing.subscription-started.v1",
+      "billing.subscription-renewed.v1",
+    ]);
+    expect((await noticesOf(user.userId))[1]?.data).toMatchObject({
+      amountMinor: "59",
+      currency: "USD",
+      paidUntil: expectedUntil.toISOString(),
+      access: "active",
+    });
   });
 
   it("TC-PAY-07-02: an older failure does not undo a later confirmed renewal", async () => {
@@ -930,6 +998,17 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
     expect((await subscriptionOf(orderId))?.state).toBe("past_due");
     const [grant] = await grantsOf(user.userId);
     expect(grant).toMatchObject({ state: "active", version: 1 });
+    const notices = await noticesOf(user.userId);
+    expect(notices.map((n) => n.templateKey)).toEqual([
+      "billing.subscription-started.v1",
+      "billing.renewal-failed.v1",
+    ]);
+    expect(notices[1]?.data).toEqual({
+      productEn: "Battleship Premium",
+      productRu: "Морской бой Premium",
+      accessUntil: grant?.validUntil?.toISOString(),
+      actionUrl: "https://pay.outegro.dev/subscriptions",
+    });
   });
 
   it("a renewal that arrives before the first payment is applied on retry and its issue closes", async () => {
@@ -1042,6 +1121,14 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
     expect(states).toEqual(
       expect.arrayContaining(["active", "cancel_requested", "cancelling"]),
     );
+    // Told once, when Lava confirmed; paid time and grace are kept.
+    const cancelled = (await noticesOf(user.userId)).filter(
+      (n) => n.templateKey === "billing.subscription-cancelled.v1",
+    );
+    expect(cancelled).toHaveLength(1);
+    expect(cancelled[0]?.data).toMatchObject({
+      accessUntil: new Date(sub.paidUntil.getTime() + 3 * DAY_MS).toISOString(),
+    });
 
     // Still paid: nothing expires before paidUntil (+ grace).
     h.clock.set(new Date(sub.paidUntil.getTime() - 60_000));
@@ -1067,6 +1154,17 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
     ).toMatchObject({
       state: "expired",
     });
+    const ended = (await noticesOf(user.userId)).filter(
+      (n) => n.templateKey === "billing.subscription-expired.v1",
+    );
+    expect(ended.map((n) => n.data)).toEqual([
+      {
+        productEn: "Battleship Premium",
+        productRu: "Морской бой Premium",
+        endedAt: grant.validUntil.toISOString(),
+        actionUrl: "https://pay.outegro.dev/subscriptions",
+      },
+    ]);
   });
 
   it("an active subscription without renewal goes past_due at paidUntil and expires after grace", async () => {
@@ -1101,6 +1199,12 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
       state: "cancel_requested",
       autoRenew: true,
     });
+    const cancelNotices = async () =>
+      (await noticesOf(user.userId)).filter(
+        (n) => n.templateKey === "billing.subscription-cancelled.v1",
+      );
+    // An unconfirmed cancel is not a fact yet: nobody is told.
+    expect(await cancelNotices()).toHaveLength(0);
     h.lava.cancelMode = "ok";
     h.clock.advance(6 * 60_000);
     await reconciliation.tick();
@@ -1109,6 +1213,7 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
       autoRenew: false,
     });
     expect((await grantsOf(user.userId))[0]).toMatchObject({ state: "active" });
+    expect(await cancelNotices()).toHaveLength(1);
   });
 
   it("subscription.cancelled from Lava (naming a renewal contract) turns renewal off", async () => {
@@ -1335,6 +1440,21 @@ describe("refunds and disputes (PAY-09)", () => {
       );
     expect(entries).toHaveLength(1);
     expect(entries[0]?.amountMinor).toBe(-59n);
+    // One message for the refund, however many times it was delivered.
+    const told = (await noticesOf(user.userId)).filter(
+      (n) => n.templateKey === "billing.refund-recorded.v1",
+    );
+    expect(told.map((n) => n.data)).toEqual([
+      {
+        productEn: "Silver Fleet",
+        productRu: "Серебряный флот",
+        amountMinor: "59",
+        amountScale: 2,
+        currency: "USD",
+        accessUntil: null,
+        actionUrl: `https://pay.outegro.dev/orders/${orderId}`,
+      },
+    ]);
   });
 
   it("TC-PAY-09-03: a partial refund waits for an operator and revokes nothing", async () => {
@@ -1368,6 +1488,10 @@ describe("refunds and disputes (PAY-09)", () => {
     });
     expect((await grantsOf(user.userId))[0]).toMatchObject({ state: "active" });
     expect(await orderRow(orderId)).toMatchObject({ status: "paid" });
+    // Nothing is decided yet, so the buyer is not told about a refund.
+    expect(
+      (await noticesOf(user.userId)).map((n) => n.templateKey),
+    ).not.toContain("billing.refund-recorded.v1");
   });
 
   it("TC-PAY-09-04: a chargeback opens a case without deciding its outcome", async () => {
