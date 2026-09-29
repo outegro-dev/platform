@@ -36,7 +36,12 @@ export function hasConsoleAccess(granted: Granted): boolean {
   return canAny(granted, consolePermissions);
 }
 
-export type NavSectionKey = "overview" | "people" | "services" | "governance";
+export type NavSectionKey =
+  | "overview"
+  | "people"
+  | "services"
+  | "governance"
+  | "infrastructure";
 export type NavItem = {
   key: NavKey;
   href: string;
@@ -63,6 +68,8 @@ export const navigation: readonly NavSection[] = [
     ],
   },
   { key: "governance", items: [item("audit", ["audit.read"])] },
+  // Grafana: owners administer it, anyone else with the permission views it.
+  { key: "infrastructure", items: [item("monitoring", ["monitoring.read"])] },
 ];
 
 /** The sidebar for this operator: permitted items only, empty groups dropped. */

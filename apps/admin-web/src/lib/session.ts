@@ -13,6 +13,11 @@ export function appUrl(path: string): URL {
   return new URL(path, `${env.APP_URL}/`);
 }
 
+/** The sign-in entry (SSO through id.outegro.dev), returning to `returnTo`. */
+export function signInPath(returnTo: string): string {
+  return `/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
 /**
  * State-changing requests (sign-out, keepalive) must come from this
  * console's own pages: same Origin, or Sec-Fetch-Site same-origin.

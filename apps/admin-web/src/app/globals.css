@@ -27,6 +27,9 @@
     0 14px 36px color-mix(in oklab, var(--foreground) 5%, transparent);
   --sidebar-width: 268px;
   --content-max: 1360px;
+  /* Inset of a card's content: its padding, or the edge cells, head,
+     filters, pager and states of a flush card. */
+  --panel-pad: clamp(18px, 2vw, 26px);
 }
 
 @layer base {
@@ -305,6 +308,13 @@
     width: 20px;
     height: 20px;
     flex-shrink: 0;
+  }
+  /* Leaves the console (Grafana): a small arrow at the end of the row. */
+  .nav-link .nav-link-out {
+    width: 14px;
+    height: 14px;
+    margin-inline-start: auto;
+    opacity: 0.7;
   }
   .nav-link:hover {
     color: var(--foreground);
@@ -612,7 +622,7 @@
     flex-direction: column;
     gap: 20px;
     min-width: 0;
-    padding: clamp(18px, 2vw, 26px);
+    padding: var(--panel-pad);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     background: var(--surface);
@@ -623,7 +633,7 @@
     gap: 0;
   }
   .panel[data-flush] > .panel-head {
-    padding: clamp(18px, 2vw, 26px) clamp(18px, 2vw, 26px) 16px;
+    padding: var(--panel-pad) var(--panel-pad) 16px;
   }
   .panel-head {
     display: flex;
@@ -1056,11 +1066,11 @@
   }
   .table th:first-child,
   .table td:first-child {
-    padding-inline-start: clamp(18px, 2vw, 26px);
+    padding-inline-start: var(--panel-pad);
   }
   .table th:last-child,
   .table td:last-child {
-    padding-inline-end: clamp(18px, 2vw, 26px);
+    padding-inline-end: var(--panel-pad);
   }
   .table tbody tr:last-child > * {
     border-bottom: 0;
@@ -1204,7 +1214,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px clamp(18px, 2vw, 26px);
+    padding: 14px var(--panel-pad);
     border-top: 1px solid var(--line-soft);
     color: var(--muted-foreground);
     font-size: 13px;
@@ -1221,7 +1231,7 @@
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     align-items: end;
     gap: 14px 16px;
-    padding: 0 clamp(18px, 2vw, 26px) 18px;
+    padding: 0 var(--panel-pad) 18px;
   }
   .filters[data-inline] {
     padding: 0;
@@ -1412,7 +1422,7 @@
     vertical-align: 2px;
   }
   .feed-padded {
-    padding: 0 clamp(18px, 2vw, 26px) 14px;
+    padding: 0 var(--panel-pad) 14px;
   }
   .feed-item:first-child {
     padding-top: 0;
@@ -1522,6 +1532,26 @@
   .state[data-size="page"] {
     min-height: 60dvh;
     max-width: 620px;
+  }
+  /* In a card a state starts where the card's content starts: the card's
+     padding is its inset, never added twice, and a flush card (a table
+     runs edge to edge) gives it the same inset instead of none. Either way
+     it keeps the same distance to the card's head and bottom edge, and
+     fills a card taller than itself, centred in the space left. */
+  .panel > .state {
+    flex: 1 0 auto;
+    padding-block: 20px 14px;
+    padding-inline: 0;
+  }
+  .panel > .state[data-size="sm"] {
+    padding-block: 20px 4px;
+  }
+  .panel[data-flush] > .state {
+    padding-block: 24px calc(var(--panel-pad) + 14px);
+    padding-inline: var(--panel-pad);
+  }
+  .panel[data-flush] > .state[data-size="sm"] {
+    padding-block: 24px calc(var(--panel-pad) + 4px);
   }
   .state-icon {
     display: inline-grid;

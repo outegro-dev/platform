@@ -76,7 +76,7 @@ CronJob `outegro/watchdog` раз в 5 минут (образ `alpine/k8s`, то
 - Правила `platform/monitoring/extra/rules.yaml` поверх стандартных: диск < 20 % / < 10 %, давление памяти, OOM, 5xx на входе > 5 %, сертификат < 14 дней, PostgreSQL недоступен, бэкап старше 26 ч, WAL не архивируется, тревога RabbitMQ, сообщения в DLQ; по сервисам — outbox стоит, 5xx, события в DLQ, вебхук Lava не применён или отклонён, сверка платежей стоит, коды входа не доставляются, письма в очереди. У каждого — summary, последствие и ссылка на runbook. Проверка перед коммитом: `promtool check rules` (тесты правил — `promtool test rules`).
 - Loki: логи всех подов 7 дней (single binary, диск узла 10 ГБ); собирает Alloy через API Kubernetes. Метки: `namespace`, `app`, `container`, `pod`, `level`. Строки проб `/health` отбрасываются; JWT и Bearer-токены маскируются ещё до записи.
 - Наружу ничего не опубликовано; доступ — туннелем (команды в [README gitops](https://github.com/outegro-dev/gitops#мониторинг)).
-- Grafana и Alertmanager выключены: их нужно включить вместе с входом в Grafana (секрет администратора, созданный владельцем, или вход через SSO админки).
+- Grafana и Alertmanager выключены: их нужно включить вместе с входом в Grafana (секрет администратора, созданный владельцем, или вход через SSO админки). Сторона админки для входа через SSO готова: [grafana-sso](grafana-sso.md) — контракт ForwardAuth и настройки Traefik и Grafana.
 
 ## Бэкапы
 

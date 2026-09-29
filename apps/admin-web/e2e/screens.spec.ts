@@ -62,6 +62,16 @@ const screens: Screen[] = [
     },
   },
   {
+    // Nothing bought or granted: both cards show their empty state.
+    name: "user-access-empty",
+    englishOnly: true,
+    path: "/users?query=hana",
+    steps: async (page) => {
+      await openFirstRow(page);
+      await openTab("Product access")(page);
+    },
+  },
+  {
     name: "user-notifications",
     englishOnly: true,
     path: "/users?query=mira",

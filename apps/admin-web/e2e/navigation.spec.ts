@@ -15,6 +15,7 @@ test("an owner sees every section", async ({ page }) => {
     "Payments",
     "Battleship",
     "Audit",
+    "Monitoring",
   ]);
   await expect(page.locator(".operator-roles")).toHaveText("Owner");
 });

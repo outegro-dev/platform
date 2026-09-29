@@ -107,7 +107,7 @@ export function TableSkeleton({
       )}
       <div
         className="stack-sm"
-        style={{ padding: "12px clamp(18px, 2vw, 26px) 24px" }}
+        style={{ padding: "12px var(--panel-pad) 24px" }}
       >
         {slots(rows, "line").map((key) => (
           <Skeleton key={key} height={46} radius={10} />

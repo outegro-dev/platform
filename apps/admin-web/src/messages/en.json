@@ -92,7 +92,8 @@
       "overview": "Overview",
       "people": "People",
       "services": "Services",
-      "governance": "Governance"
+      "governance": "Governance",
+      "infrastructure": "Infrastructure"
     },
     "nav": {
       "dashboard": "Dashboard",
@@ -100,7 +101,8 @@
       "notifications": "Notifications",
       "payments": "Payments",
       "battleship": "Battleship",
-      "audit": "Audit"
+      "audit": "Audit",
+      "monitoring": "Monitoring"
     },
     "roles": {
       "owner": "Owner",
@@ -162,6 +164,15 @@
     "body": "You are signed in as {email}, but this account has no admin role.",
     "hint": "An owner can grant a role in Users → Roles. Until then there is nothing here for you.",
     "signOut": "Sign out"
+  },
+  "monitoring": {
+    "pageTitle": "Monitoring",
+    "forbiddenTitle": "No access to monitoring",
+    "forbiddenBody": "You are signed in as {email}, but your roles do not open monitoring. Ask an owner if you need it.",
+    "unavailableTitle": "Could not check your access",
+    "unavailableBody": "The console could not reach Identity to confirm your session, so monitoring stays closed for now. Nothing is lost: try again in a moment.",
+    "retry": "Try again",
+    "back": "Back to the console"
   },
   "notFound": {
     "title": "Page not found",

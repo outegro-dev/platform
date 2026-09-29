@@ -170,7 +170,7 @@ async function Overview() {
                   scope="row"
                   style={{
                     textAlign: "start",
-                    paddingInlineStart: "clamp(18px, 2vw, 26px)",
+                    paddingInlineStart: "var(--panel-pad)",
                   }}
                 >
                   {label("channel", channel)}

@@ -22,6 +22,11 @@ export const permissions = [
   "events.replay",
   "battleship.read",
   "battleship.moderate",
+  /**
+   * Grafana behind the console's sign-in (admin.outegro.dev/grafana/):
+   * an owner opens it as Admin, anyone else with this permission as Viewer.
+   */
+  "monitoring.read",
 ] as const;
 export type Permission = (typeof permissions)[number];
 
@@ -36,8 +41,13 @@ export const platformRoles = {
     "battleship.moderate",
   ],
   billing_operator: ["billing.read", "subscriptions.cancel"],
-  auditor: ["audit.read", "billing.read"],
-  service_operator: ["services.read", "services.flags", "events.replay"],
+  auditor: ["audit.read", "billing.read", "monitoring.read"],
+  service_operator: [
+    "services.read",
+    "services.flags",
+    "events.replay",
+    "monitoring.read",
+  ],
 } as const satisfies Record<string, readonly Permission[]>;
 export type PlatformRole = keyof typeof platformRoles;
 

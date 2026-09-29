@@ -1,4 +1,13 @@
-import { expect, openUserTab, settle, signIn, test } from "./fixtures";
+import type { Page } from "@playwright/test";
+import {
+  expect,
+  openFirstRow,
+  openUserTab,
+  phone,
+  settle,
+  signIn,
+  test,
+} from "./fixtures";
 
 test("finds a user and grants a role with a reason", async ({ page }) => {
   await signIn(page, "owner", "/users");
@@ -98,3 +107,53 @@ test("the user card shows every service in its own tab", async ({ page }) => {
     page.getByRole("heading", { name: "Grants in Payments" }),
   ).toBeVisible();
 });
+
+/**
+ * An empty state starts where its card's content starts (the title's left
+ * edge) and keeps the card's padding below it, in flush cards (tables edge
+ * to edge) and padded ones alike.
+ */
+async function expectInsideCard(page: Page, card: string) {
+  const panel = page.locator(card);
+  await expect(panel.locator(".state")).toBeVisible();
+  const [box, title, icon, text, last] = await Promise.all([
+    panel.boundingBox(),
+    panel.locator(".panel-title").boundingBox(),
+    panel.locator(".state-icon").boundingBox(),
+    panel.locator(".state-title").boundingBox(),
+    panel.locator(".state > :last-child").boundingBox(),
+  ]);
+  if (!box || !title || !icon || !text || !last) throw new Error(card);
+  expect(Math.abs(icon.x - title.x), `${card}: icon`).toBeLessThanOrEqual(1);
+  expect(Math.abs(text.x - title.x), `${card}: text`).toBeLessThanOrEqual(1);
+  expect(title.x - box.x, `${card}: left padding`).toBeGreaterThanOrEqual(18);
+  expect(
+    box.y + box.height - (last.y + last.height),
+    `${card}: bottom padding`,
+  ).toBeGreaterThanOrEqual(18);
+}
+
+for (const [device, options] of [
+  ["desktop", {}],
+  ["phone", phone],
+] as const) {
+  test.describe(`empty states in the user card (${device})`, () => {
+    test.use(options);
+    test("sit inside their card, aligned with its title", async ({ page }) => {
+      // Hana Kim has bought nothing, received nothing and changed nothing.
+      await signIn(page, "owner", "/users?query=hana");
+      await openFirstRow(page);
+      for (const [tab, cards] of [
+        ["Product access", ["#access", "#payments-grants"]],
+        ["Roles", ["#roles"]],
+        ["Notifications", ["#recent-deliveries"]],
+        ["Battleship", ["#player"]],
+        ["Payments", ["#user-orders", "#user-subscriptions"]],
+        ["Activity", ["#activity-about", "#activity-by"]],
+      ] as const) {
+        await openUserTab(page, tab);
+        for (const card of cards) await expectInsideCard(page, card);
+      }
+    });
+  });
+}
