@@ -8,8 +8,20 @@ variable "REGISTRY" {
   default = "ghcr.io/outegro-dev"
 }
 
+variable "APPS" {
+  default = [
+    "landing-web",
+    "id-web",
+    "battleship-web",
+    "auth-backend",
+    "notifications-backend",
+    "payments-backend",
+    "battleship-backend",
+  ]
+}
+
 group "default" {
-  targets = ["landing-web", "id-web", "auth-backend", "notifications-backend", "payments-backend"]
+  targets = APPS
 }
 
 target "_common" {
@@ -21,32 +33,11 @@ target "_common" {
   }
 }
 
-target "landing-web" {
+# One target per app, named like its Dockerfile stage and image.
+target "app" {
+  name     = app
+  matrix   = { app = APPS }
   inherits = ["_common"]
-  target   = "landing-web"
-  tags     = ["${REGISTRY}/landing-web:${TAG}"]
-}
-
-target "id-web" {
-  inherits = ["_common"]
-  target   = "id-web"
-  tags     = ["${REGISTRY}/id-web:${TAG}"]
-}
-
-target "auth-backend" {
-  inherits = ["_common"]
-  target   = "auth-backend"
-  tags     = ["${REGISTRY}/auth-backend:${TAG}"]
-}
-
-target "notifications-backend" {
-  inherits = ["_common"]
-  target   = "notifications-backend"
-  tags     = ["${REGISTRY}/notifications-backend:${TAG}"]
-}
-
-target "payments-backend" {
-  inherits = ["_common"]
-  target   = "payments-backend"
-  tags     = ["${REGISTRY}/payments-backend:${TAG}"]
+  target   = app
+  tags     = ["${REGISTRY}/${app}:${TAG}"]
 }

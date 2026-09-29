@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # One build for every app; each target copies only what its runtime needs.
 #   docker build --target landing-web -t outegro/landing-web:<tag> .
-# Targets: landing-web, id-web, auth-backend, notifications-backend,
-#          payments-backend.
+# Targets: landing-web, id-web, battleship-web, auth-backend,
+#          notifications-backend, payments-backend, battleship-backend.
 
 FROM node:24-bookworm-slim AS base
 ENV CI=1 \
@@ -21,10 +21,11 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 RUN pnpm turbo run build \
       --filter=@outegro/landing-web --filter=@outegro/id-web \
+      --filter=@outegro/battleship-web \
       --filter=@outegro/auth-backend --filter=@outegro/notifications-backend \
-      --filter=@outegro/payments-backend
+      --filter=@outegro/payments-backend --filter=@outegro/battleship-backend
 # Backends: production dependencies only, plus build output and migrations.
-RUN for app in auth-backend notifications-backend payments-backend; do \
+RUN for app in auth-backend notifications-backend payments-backend battleship-backend; do \
       pnpm --filter "@outegro/$app" deploy --prod "/out/$app" && \
       cp -r "apps/$app/dist" "apps/$app/drizzle" "/out/$app/"; \
     done
@@ -52,6 +53,13 @@ ENV PORT=3002
 EXPOSE 3002
 CMD ["node", "apps/id-web/server.js"]
 
+FROM web AS battleship-web
+COPY --from=build --chown=node:node /repo/apps/battleship-web/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/battleship-web/.next/static ./apps/battleship-web/.next/static
+ENV PORT=3005
+EXPOSE 3005
+CMD ["node", "apps/battleship-web/server.js"]
+
 FROM node:24-bookworm-slim AS service
 ENV NODE_ENV=production
 WORKDIR /app
@@ -73,4 +81,10 @@ FROM service AS payments-backend
 COPY --from=build --chown=node:node /out/payments-backend ./
 ENV PORT=4003
 EXPOSE 4003
+CMD ["node", "dist/main.js"]
+
+FROM service AS battleship-backend
+COPY --from=build --chown=node:node /out/battleship-backend ./
+ENV PORT=4004
+EXPOSE 4004
 CMD ["node", "dist/main.js"]
