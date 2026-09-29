@@ -565,6 +565,41 @@ describe("statistics", () => {
     );
   });
 
+  it("a tampered cursor is 400 on every paged route, never 500", async () => {
+    const id = randomUUID();
+    const cursor = (at: string) =>
+      encodeURIComponent(Buffer.from(`${at}|${id}`).toString("base64url"));
+    // Valid JavaScript dates that PostgreSQL cannot store.
+    const outOfRange = [
+      "-100000-01-01T00:00:00.000Z",
+      "0000-01-01T00:00:00.000Z",
+      "+010000-01-01T00:00:00.000Z",
+      "+275760-09-13T00:00:00.000Z",
+    ];
+    const support = randomUUID();
+    for (const at of outOfRange)
+      for (const path of [
+        "/v1/me/matches",
+        "/v1/admin/matches",
+        "/v1/admin/players",
+        "/v1/admin/audit",
+      ]) {
+        const response = await get(`${path}?cursor=${cursor(at)}`, support, [
+          "support",
+        ]);
+        expect({ at, path, status: response.status }).toEqual({
+          at,
+          path,
+          status: 400,
+        });
+      }
+    const fine = await get(
+      `/v1/me/matches?cursor=${cursor("2026-09-29T10:00:00.000Z")}`,
+      support,
+    );
+    expect(fine.status).toBe(200);
+  });
+
   it("a replay needs Premium and shows only the player's own finished matches", async () => {
     const userId = await seedPlayer();
     const rival = await seedPlayer();
