@@ -30,13 +30,8 @@ import {
 import { useActionStatus } from "@/components/action-status";
 import { isOffline } from "@/lib/online";
 import { ceremonyError } from "@/lib/passkey-ceremony";
-import {
-  PASSKEY_NAME_MAX,
-  type PasskeyError,
-  type PasskeyItem,
-  type PasskeyOutcome,
-  passkeyName,
-} from "@/lib/passkeys";
+import { PASSKEY_NAME_MAX, passkeyName } from "@/lib/passkey-name";
+import type { PasskeyError, PasskeyItem, PasskeyOutcome } from "@/lib/passkeys";
 import {
   passkeyRegistrationOptions,
   registerPasskey,
@@ -101,8 +96,8 @@ export function PasskeysPanel({
       setNote({ tone: "error", error });
     if (isOffline()) return fail("offline");
     if (!browserSupportsWebAuthn()) return fail("unsupported");
-    const label = passkeyName.safeParse(name);
-    if (!label.success) return fail("invalid_name");
+    const label = passkeyName(name);
+    if (!label) return fail("invalid_name");
     setNote({ tone: "neutral" });
     startTransition(async () => {
       const begun = await passkeyRegistrationOptions();
@@ -123,11 +118,7 @@ export function PasskeysPanel({
         if (key !== "aborted") fail(key);
         return;
       }
-      const result = await registerPasskey(
-        begun.challengeId,
-        label.data,
-        answer,
-      );
+      const result = await registerPasskey(begun.challengeId, label, answer);
       if (!result.ok) {
         if (result.error === "signed_out")
           return window.location.assign(SIGNED_OUT);
@@ -253,10 +244,10 @@ function RenameDialog({ item }: { item: PasskeyRow }) {
   const save = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isOffline()) return setError("offline");
-    const label = passkeyName.safeParse(name);
-    if (!label.success) return setError("invalid_name");
+    const label = passkeyName(name);
+    if (!label) return setError("invalid_name");
     startTransition(async () => {
-      const result = await renamePasskey(item.id, label.data);
+      const result = await renamePasskey(item.id, label);
       if (!result.ok) {
         if (result.error === "signed_out")
           return window.location.assign(SIGNED_OUT);

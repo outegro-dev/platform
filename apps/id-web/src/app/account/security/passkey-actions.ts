@@ -4,10 +4,10 @@ import type { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/bro
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { accessToken, authApi } from "@/lib/api";
+import { passkeyName } from "@/lib/passkey-name";
 import {
   ceremonyResponse,
   type PasskeyItem,
-  passkeyName,
   passkeyOutcome,
   type Result,
 } from "@/lib/passkeys";
@@ -45,8 +45,8 @@ export async function registerPasskey(
   name: string,
   response: unknown,
 ): Promise<Result<{ item: PasskeyItem }>> {
-  const label = passkeyName.safeParse(name);
-  if (!label.success) return { ok: false, error: "invalid_name" };
+  const label = passkeyName(name);
+  if (!label) return { ok: false, error: "invalid_name" };
   const id = z.uuid().safeParse(challengeId);
   const answer = ceremonyResponse.safeParse(response);
   if (!id.success || !answer.success) return { ok: false, error: "failed" };
@@ -54,7 +54,7 @@ export async function registerPasskey(
     item: await authApi<PasskeyItem>("/v1/me/passkeys", {
       method: "POST",
       accessToken: token,
-      body: { challengeId: id.data, name: label.data, response: answer.data },
+      body: { challengeId: id.data, name: label, response: answer.data },
     }),
   }));
   if (result.ok) revalidatePath(PAGE);
@@ -62,14 +62,14 @@ export async function registerPasskey(
 }
 
 export async function renamePasskey(id: string, name: string): Promise<Result> {
-  const label = passkeyName.safeParse(name);
-  if (!label.success) return { ok: false, error: "invalid_name" };
+  const label = passkeyName(name);
+  if (!label) return { ok: false, error: "invalid_name" };
   if (!z.uuid().safeParse(id).success) return { ok: false, error: "not_found" };
   const result = await asUser((token) =>
     authApi<PasskeyItem>(`/v1/me/passkeys/${id}`, {
       method: "PATCH",
       accessToken: token,
-      body: { name: label.data },
+      body: { name: label },
     }),
   );
   if (result.ok || result.error === "not_found") revalidatePath(PAGE);

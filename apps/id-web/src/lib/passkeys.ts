@@ -5,6 +5,8 @@ import { z } from "zod";
  * Passkeys (ID-05), shared by the sign-in page and the Security page. The
  * ceremony runs in the browser; everything else goes through server actions
  * to auth-backend, which holds the challenges and verifies the answers.
+ * Browser code imports only the types from here (see passkey-name.ts and
+ * passkey-ceremony.ts for what runs there).
  */
 
 export type PasskeyItem = {
@@ -47,15 +49,6 @@ export type PasskeyOutcome =
 export type Result<T = object> =
   | ({ ok: true } & T)
   | { ok: false; error: PasskeyOutcome };
-
-/** One line of printable text, as auth-backend accepts it. */
-export const passkeyName = z
-  .string()
-  .trim()
-  .min(1)
-  .max(60)
-  .regex(/^[^\p{Cc}\p{Cf}]+$/u);
-export const PASSKEY_NAME_MAX = 60;
 
 /** A loose shape check before anything is forwarded; auth-backend checks it all. */
 export const ceremonyResponse = z.looseObject({
