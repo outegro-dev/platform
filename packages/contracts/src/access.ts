@@ -51,12 +51,18 @@ export const platformRoles = {
 } as const satisfies Record<string, readonly Permission[]>;
 export type PlatformRole = keyof typeof platformRoles;
 
-/** Unknown roles grant nothing (deny by default). */
+/**
+ * Unknown roles grant nothing (deny by default). Only the table's own keys
+ * count: a role named after something every object inherits
+ * (`constructor`, `toString`, `__proto__`) is unknown, not a lookup into
+ * Object.prototype.
+ */
 export function permissionsOf(roles: readonly string[]): Set<Permission> {
   const granted = new Set<Permission>();
   for (const role of roles) {
-    const list = (platformRoles as Record<string, readonly Permission[]>)[role];
-    if (list) for (const permission of list) granted.add(permission);
+    if (!Object.hasOwn(platformRoles, role)) continue;
+    for (const permission of platformRoles[role as PlatformRole])
+      granted.add(permission);
   }
   return granted;
 }

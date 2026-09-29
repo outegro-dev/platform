@@ -126,6 +126,23 @@ describe("access", () => {
     expect(permissionsOf(["owner"]).has("roles.assign")).toBe(true);
   });
 
+  it("reads only its own role table: names inherited from Object grant nothing", () => {
+    const inherited = [
+      "constructor",
+      "toString",
+      "__proto__",
+      "hasOwnProperty",
+      "valueOf",
+    ];
+    for (const role of inherited)
+      expect([...permissionsOf([role])], role).toEqual([]);
+    // Next to a real role they neither break nor widen it.
+    expect([...permissionsOf([...inherited, "billing_operator"])]).toEqual([
+      "billing.read",
+      "subscriptions.cancel",
+    ]);
+  });
+
   it("opens monitoring to owners, auditors and service operators only", () => {
     const withMonitoring = Object.keys(platformRoles).filter((role) =>
       permissionsOf([role]).has("monitoring.read"),
