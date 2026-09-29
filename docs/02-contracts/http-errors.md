@@ -18,6 +18,12 @@
 
 Успех: предметный DTO, без обязательного дополнительного `data.data`. Ошибки: 400 validation, 401 no/expired session, 403 insufficient permission, 404 resource not visible, 409 version/idempotency conflict, 422 unsupported business transition, 429 bounded rate limit, 503 dependency unavailable. Ошибки не содержат stack/SQL/token/provider credential. Для приватных ресурсов политика 404 vs 403 единообразна в конкретном API, тест проверяет отсутствие раскрытия данных, а не случайный статус.
 
+Предметные коды уточняют статус; клиент выбирает текст по `code`, а не по `fieldErrors`. Список кодов — `packages/contracts/src/errors.ts`.
+
+| Code | HTTP | Когда | Клиент |
+|---|---|---|---|
+| `ALREADY_OWNED` | 422 | `POST /v1/checkout` продукта, который у покупателя уже есть: активная разовая покупка или подписка, которую Lava ещё может продлить (active, past_due, cancel_requested). `fieldErrors.productKey`: `already owned` или `already subscribed`; `retryable: false` | pay-web и магазин Battleship показывают EN/RU «это у вас уже есть», новый заказ не создаётся |
+
 ## IDs, даты и денежные значения
 
 Внутренние IDs — opaque UUID strings; клиент не вычисляет business meaning по ID. Примеры `user-a` в тестах — aliases фикстур, не valid UUID. DB-generated fixtures преобразуют alias в стабильный UUID. UTC ISO timestamps с `Z`, БД timestamptz. Clock передаётся в use case для expiry tests; реальный wall clock не подменяется в production.
@@ -58,7 +64,7 @@ Cursor opaque, page size default 25/max 100 как инженерный default.
 | Notifications | PATCH /v1/admin/settings | `services.flags`; expectedVersion, reason | пауза канала: доставки ждут в pending до возобновления |
 | Notifications | GET /v1/admin/audit | `audit.read` | действия операторов с причинами |
 | Payments | GET /v1/catalog | — | активные продукты с текущими ценами (title/description en+ru), checkoutEnabled |
-| Payments | POST /v1/checkout | productKey, currency, returnUrl?; Idempotency-Key обязателен | orderId, attemptId, state, status, paymentUrl при готовности |
+| Payments | POST /v1/checkout | productKey, currency, returnUrl?; Idempotency-Key обязателен | orderId, attemptId, state, status, paymentUrl при готовности; неоплаченный checkout того же продукта и валюты возвращается при любом ключе; уже купленное — 422 `ALREADY_OWNED` |
 | Payments | GET /v1/me/orders | cursor | own orders с checkout и access |
 | Payments | GET /v1/me/orders/{id} | ID | own payment/access state |
 | Payments | GET /v1/me/subscriptions | cursor | own periods/paidUntil/accessUntil |

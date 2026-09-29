@@ -10,6 +10,8 @@ export const errorCodes = {
   VERSION_CONFLICT: 409,
   IDEMPOTENCY_CONFLICT: 409,
   UNPROCESSABLE: 422,
+  /** Checkout of a one-time item the buyer owns, or of a live subscription. */
+  ALREADY_OWNED: 422,
   RATE_LIMITED: 429,
   INTERNAL: 500,
   DEPENDENCY_UNAVAILABLE: 503,

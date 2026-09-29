@@ -114,5 +114,6 @@ describe("errors", () => {
     expect(messageKeyFor("IDEMPOTENCY_CONFLICT")).toBe(
       "errors.idempotencyConflict",
     );
+    expect(messageKeyFor("ALREADY_OWNED")).toBe("errors.alreadyOwned");
   });
 });

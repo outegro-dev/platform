@@ -344,14 +344,15 @@ describe("admin reads", () => {
   it("pages with an opaque cursor and rejects a tampered one", async () => {
     const operator = await newCustomer({ roles: ["billing_operator"] });
     const user = await newCustomer();
-    for (let i = 0; i < 3; i++) {
+    // One unpaid order per product and currency: three currencies, three orders.
+    for (const currency of ["USD", "EUR", "RUB"]) {
       h.clock.advance(1000);
       await h
         .http()
         .post("/v1/checkout")
         .set(user.auth)
         .set("idempotency-key", `page-${randomUUID()}`)
-        .send({ productKey: SILVER, currency: "USD" })
+        .send({ productKey: SILVER, currency })
         .expect(200);
     }
     const first = await get(

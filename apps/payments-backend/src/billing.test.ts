@@ -450,22 +450,110 @@ describe("checkout (PAY-03)", () => {
       .expect(401);
   });
 
-  it("refuses to sell what the buyer already has", async () => {
+  it("refuses to sell what the buyer already has, with ALREADY_OWNED", async () => {
     const user = await newCustomer();
     await buy(user, SILVER);
+    const before = h.lava.createCalls;
     const owned = await checkout(user, {
       productKey: SILVER,
       currency: "RUB",
     }).expect(422);
-    expect(owned.body.error.fieldErrors.productKey).toEqual(["already owned"]);
+    expect(owned.body.error).toMatchObject({
+      code: "ALREADY_OWNED",
+      messageKey: "errors.alreadyOwned",
+      fieldErrors: { productKey: ["already owned"] },
+      retryable: false,
+    });
     await buy(user, PREMIUM, "EUR");
     const subscribed = await checkout(user, {
       productKey: PREMIUM,
       currency: "USD",
     }).expect(422);
-    expect(subscribed.body.error.fieldErrors.productKey).toEqual([
-      "already subscribed",
-    ]);
+    expect(subscribed.body.error).toMatchObject({
+      code: "ALREADY_OWNED",
+      fieldErrors: { productKey: ["already subscribed"] },
+    });
+    expect(h.lava.createCalls - before).toBe(1);
+  });
+
+  it("QA H1: two parallel checkouts of one product with different keys make one invoice", async () => {
+    const user = await newCustomer();
+    const before = h.lava.createCalls;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    h.lava.beforeAnswer = () => gate;
+    const keys = [newKey(), newKey()];
+    const pending = keys.map((key) =>
+      checkout(user, { productKey: PREMIUM, currency: "USD" }, key).then(
+        (res) => res,
+      ),
+    );
+    // Both pass validation while the one provider call is held.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    release();
+    const results = await Promise.all(pending);
+    expect(results.map((res) => res.status)).toEqual([200, 200]);
+    expect(new Set(results.map((res) => res.body.orderId)).size).toBe(1);
+    expect(h.lava.createCalls - before).toBe(1);
+    expect(
+      await db.select().from(orders).where(eq(orders.userId, user.userId)),
+    ).toHaveLength(1);
+    // The one that waited saw the call in flight; asking again brings its page.
+    const waited = results.findIndex((res) => res.body.state === "requesting");
+    const other = results[1 - waited];
+    expect(waited).toBeGreaterThanOrEqual(0);
+    const again = await checkout(
+      user,
+      { productKey: PREMIUM, currency: "USD" },
+      keys[waited],
+    ).expect(200);
+    expect(again.body).toMatchObject({
+      orderId: other?.body.orderId,
+      state: "ready",
+      paymentUrl: other?.body.paymentUrl,
+    });
+    expect(h.lava.createCalls - before).toBe(1);
+  });
+
+  it("QA H1: a checkout while the same one is unpaid returns that order and page", async () => {
+    const user = await newCustomer();
+    const first = await startPurchase(user, SILVER, "USD");
+    const before = h.lava.createCalls;
+    const second = await checkout(user, {
+      productKey: SILVER,
+      currency: "USD",
+      returnUrl: "https://battleship.outegro.dev/shop",
+    }).expect(200);
+    expect(second.body).toMatchObject({
+      orderId: first.orderId,
+      state: "ready",
+      status: "pending",
+      paymentUrl: first.invoice.paymentUrl,
+    });
+    expect(h.lava.createCalls).toBe(before);
+    // Another currency is another invoice.
+    const euro = await startPurchase(user, SILVER, "EUR");
+    expect(euro.orderId).not.toBe(first.orderId);
+    // An hour later the page is not offered again.
+    h.clock.advance(60 * 60_000 + 1_000);
+    const later = await startPurchase(user, SILVER, "USD");
+    expect(later.orderId).not.toBe(first.orderId);
+    // A failed checkout is not reused either.
+    const other = await newCustomer();
+    const failed = await startPurchase(other, SILVER, "USD");
+    await webhook(
+      lavaPayloads.paymentFailed({
+        contractId: failed.invoice.id,
+        email: other.email,
+        amount: 0.59,
+        currency: "USD",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    const retry = await startPurchase(other, SILVER, "USD");
+    expect(retry.orderId).not.toBe(failed.orderId);
   });
 
   it("marks the attempt failed when the provider refuses or cannot be reached", async () => {
@@ -763,9 +851,11 @@ describe("webhooks (PAY-04, PAY-05)", () => {
       (await webhook({ ...paidWebhook(user, cheaper.invoice), amount: 0.5 }))
         .body.status,
     ).toBe("duplicate");
-    const otherCurrency = await startPurchase(user, SILVER, "USD");
+    // A second unpaid order of one buyer would be the same order: another buyer.
+    const buyer = await newCustomer();
+    const otherCurrency = await startPurchase(buyer, SILVER, "USD");
     const other = await webhook({
-      ...paidWebhook(user, otherCurrency.invoice),
+      ...paidWebhook(buyer, otherCurrency.invoice),
       currency: "EUR",
     }).expect(200);
     expect(other.body.status).toBe("mismatch");
@@ -782,6 +872,7 @@ describe("webhooks (PAY-04, PAY-05)", () => {
       });
     }
     expect(await grantsOf(user.userId)).toHaveLength(0);
+    expect(await grantsOf(buyer.userId)).toHaveLength(0);
   });
 
   it("TC-PAY-05-03: a webhook that beats the create response is applied once after the mapping", async () => {
