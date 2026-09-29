@@ -15,21 +15,34 @@ import { ContactDialog } from "./contact-dialog";
 import { ContactLinks } from "./contact-links";
 import { LocaleSwitcher } from "./locale-switcher";
 
+/** Sections of the main page, in page order. */
 export const sections = [
-  "expertise",
-  "approach",
-  "platform",
   "projects",
+  "platform",
+  "services",
+  "process",
   "contact",
 ] as const;
+type Section = (typeof sections)[number];
+
+/** Navigation order: the Stack page sits between the sections. */
+const nav: ({ key: Section; section: Section } | { key: "stack" })[] = [
+  { key: "projects", section: "projects" },
+  { key: "platform", section: "platform" },
+  { key: "services", section: "services" },
+  { key: "process", section: "process" },
+  { key: "contact", section: "contact" },
+];
 
 /**
  * Fixed header: transparent over the hero, glass once scrolled, tucked away
  * while reading down and back on the slightest scroll up. It switches tone
- * over dark sections so the glass never turns muddy.
+ * over dark sections so the glass never turns muddy. On the Stack page the
+ * section links lead back to the main page.
  */
-export function Header() {
+export function Header({ page = "home" }: { page?: "home" | "stack" }) {
   const t = useTranslations("nav");
+  const home = page === "home";
   const [active, setActive] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -70,16 +83,31 @@ export function Header() {
       },
       { rootMargin: "-35% 0px -55% 0px" },
     );
-    for (const id of ["top", ...sections]) {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
+    if (home) {
+      for (const id of ["top", ...sections]) {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      }
     }
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, []);
+  }, [home]);
+
+  const links = nav.map((item) => {
+    const section = "section" in item ? item.section : null;
+    const current = section ? home && active === section : page === item.key;
+    return {
+      key: item.key,
+      section,
+      href: section ? `${home ? "" : "/"}#${section}` : "/stack",
+      current,
+      // A section in view is a location; the page you are on is the page.
+      ariaCurrent: current ? (section ? "location" : "page") : undefined,
+    } as const;
+  });
 
   return (
     <>
@@ -94,18 +122,22 @@ export function Header() {
         onFocusCapture={() => setHidden(false)}
       >
         <div className="site-header-inner og-container">
-          <a href="#top" className="wordmark" aria-label={t("home")}>
+          <a
+            href={home ? "#top" : "/"}
+            className="wordmark"
+            aria-label={home ? t("home") : t("homePage")}
+          >
             Nick Lukashik
           </a>
           <nav className="desktop-nav og-glass" aria-label={t("sections")}>
-            {sections.map((section) => (
+            {links.map((link) => (
               <a
-                key={section}
-                className={active === section ? "is-active" : undefined}
-                aria-current={active === section ? "location" : undefined}
-                href={`#${section}`}
+                key={link.key}
+                className={link.current ? "is-active" : undefined}
+                aria-current={link.ariaCurrent}
+                href={link.href}
               >
-                {t(section)}
+                {t(link.key)}
               </a>
             ))}
           </nav>
@@ -152,17 +184,21 @@ export function Header() {
                   Nick Lukashik
                 </DialogDescription>
                 <nav aria-label={t("sections")}>
-                  {sections.map((section, i) => (
+                  {links.map((link, i) => (
                     <a
-                      href={`#${section}`}
-                      key={section}
+                      href={link.href}
+                      key={link.key}
+                      aria-current={link.ariaCurrent}
                       onClick={() => {
-                        destination.current = section;
+                        // In-page jumps restore focus to the section; links to
+                        // another page just navigate.
+                        destination.current =
+                          home && link.section ? link.section : null;
                         setMenuOpen(false);
                       }}
                     >
                       <span className="og-eyebrow">0{i + 1}</span>
-                      {t(section)}
+                      {t(link.key)}
                     </a>
                   ))}
                 </nav>

@@ -2,6 +2,7 @@ import { fontVariables } from "@outegro/ui/fonts";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
+import { openGraph } from "@/lib/metadata";
 import "@outegro/ui/styles.css";
 import "./globals.css";
 
@@ -13,15 +14,11 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("title"),
     description: t("description"),
     alternates: { canonical: "/" },
-    openGraph: {
+    openGraph: openGraph(locale, {
       title: t("title"),
       description: t("description"),
       url: "/",
-      siteName: "Nick Lukashik",
-      type: "website",
-      locale: locale === "ru" ? "ru_RU" : "en_US",
-      images: [{ url: "/og", width: 1200, height: 630 }],
-    },
+    }),
     twitter: { card: "summary_large_image" },
   };
 }
