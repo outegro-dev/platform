@@ -7,6 +7,7 @@ import {
   defineQueue,
   identityUserCreated,
   messageKeyFor,
+  notificationRequested,
   permissionsOf,
   retryQueueName,
 } from "./index.js";
@@ -80,6 +81,21 @@ describe("event envelope", () => {
         identityUserCreated.payload,
       ),
     ).toThrow();
+  });
+
+  it("accepts notification template keys with or without a version", () => {
+    const keyOk = (templateKey: string) =>
+      notificationRequested.payload.safeParse({
+        sourceEventId: envelope.eventId,
+        templateKey,
+        category: "billing",
+        recipient: { userId: envelope.aggregateId },
+        data: {},
+      }).success;
+    expect(keyOk("billing.payment-confirmed")).toBe(true);
+    expect(keyOk("billing.payment-confirmed.v2")).toBe(true);
+    for (const bad of ["billing", "Billing.x", "billing.x2", "billing.x.v2x"])
+      expect(keyOk(bad), bad).toBe(false);
   });
 });
 
