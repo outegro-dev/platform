@@ -110,7 +110,11 @@ export class CancellationService {
     return this.callProvider(row);
   }
 
-  /** Worker: retries cancel calls whose outcome is still unknown. */
+  /**
+   * Worker: retries cancel calls whose outcome is still unknown, also after
+   * the paid time ran out (expired) or a later payment revived the
+   * subscription: until Lava confirms, it may charge the next period.
+   */
   async retryDue(limit = 20) {
     const now = this.clock.now();
     const due = await this.database.db
@@ -118,7 +122,7 @@ export class CancellationService {
       .from(subscriptions)
       .where(
         and(
-          eq(subscriptions.state, "cancel_requested"),
+          eq(subscriptions.autoRenew, true),
           isNotNull(subscriptions.nextCancelAttemptAt),
           lte(subscriptions.nextCancelAttemptAt, now),
         ),

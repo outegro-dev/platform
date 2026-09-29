@@ -112,9 +112,9 @@ export class ExpiryWorker extends PeriodicWorker {
       const [updated] = await tx
         .update(subscriptions)
         .set({
+          // A pending cancel call stays scheduled: Lava may still renew.
           state: next,
           expiredAt: now,
-          nextCancelAttemptAt: null,
           updatedAt: now,
           version: sql`${subscriptions.version} + 1`,
         })

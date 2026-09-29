@@ -823,6 +823,41 @@ describe("cancellation retries", () => {
       nextCancelAttemptAt: null,
     });
   });
+
+  it("a cancel still unanswered when access ends keeps being retried until Lava confirms", async () => {
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, PREMIUM, "USD");
+    await webhook(paidWebhook(user, invoice)).expect(200);
+    const [sub] = await subscriptionsOf(orderId);
+    if (!sub) throw new Error("no subscription");
+    const accessEnds = sub.paidUntil.getTime() + 3 * DAY_MS;
+    // The buyer cancels in the last half hour of grace and Lava does not answer.
+    h.clock.set(new Date(accessEnds - 30 * MINUTE_MS));
+    h.lava.cancelMode = "timeout";
+    const before = h.lava.cancelCalls.length;
+    await h
+      .http()
+      .post(`/v1/me/subscriptions/${sub.id}/cancel`)
+      .set(user.auth)
+      .expect(200);
+    h.clock.set(new Date(accessEnds));
+    await expiry.tick();
+    expect((await subscriptionsOf(orderId))[0]).toMatchObject({
+      state: "expired",
+      autoRenew: true,
+    });
+    // Lava may still renew this subscription: the command must not be lost.
+    h.lava.cancelMode = "ok";
+    h.clock.advance(MINUTE_MS);
+    await reconciliation.tick();
+    expect(h.lava.cancelCalls.length - before).toBe(2);
+    expect((await subscriptionsOf(orderId))[0]).toMatchObject({
+      state: "expired",
+      autoRenew: false,
+      nextCancelAttemptAt: null,
+    });
+    expect(await issueOf(`cancel:${sub.id}`)).toBeUndefined();
+  });
 });
 
 describe("authorization of admin commands", () => {
