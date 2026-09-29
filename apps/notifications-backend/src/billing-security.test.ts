@@ -189,6 +189,66 @@ describe("billing notices (N-06)", () => {
     expect(plain(item?.body)).toBe(text);
   });
 
+  it("TC-N-06-02: the refund of a payment that never opened access does not say access ended", async () => {
+    const refund = (
+      userId: string,
+      templateKey: string,
+      data: Record<string, string | number | boolean | null> = {},
+    ) =>
+      intentEvent({
+        producer: "payments",
+        userId,
+        templateKey,
+        category: "billing",
+        data: {
+          productEn: "Silver Fleet",
+          productRu: "Серебряный флот",
+          amountMinor: "52",
+          amountScale: 2,
+          currency: "EUR",
+          accessUntil: null,
+          actionUrl: `https://pay.outegro.dev/orders/${randomUUID()}`,
+          ...data,
+        },
+      });
+    const en = await newUser("en");
+    const ru = await newUser("ru");
+    for (const user of [en, ru])
+      expect(
+        await intentsService.accept(
+          refund(user.userId, "billing.refund-recorded.v2", {
+            access: "withheld",
+          }),
+        ),
+      ).toBe("processed");
+    await worker.tick();
+
+    const [english] = mailTo(en.email);
+    expect(english?.subject).toBe("Refund recorded: Silver Fleet");
+    expect(plain(english?.text)).toContain(
+      "We recorded a refund of €0.52 for “Silver Fleet”. This payment did not open any access; the money is on its way back.",
+    );
+    expect(english?.text).not.toContain("has ended");
+    const russianText =
+      "Мы учли возврат 0,52 € за «Серебряный флот». Этот платёж не открывал никакого доступа, деньги уже возвращаются к вам.";
+    expect(plain(mailTo(ru.email)[0]?.text)).toContain(russianText);
+    const [item] = await inboxOf(ru.userId);
+    expect(item).toMatchObject({ title: "Возврат учтён" });
+    expect(plain(item?.body)).toBe(russianText);
+
+    // v1, still in flight from a payments build before v2, is shown as before.
+    const earlier = await newUser("en");
+    expect(
+      await intentsService.accept(
+        refund(earlier.userId, "billing.refund-recorded.v1"),
+      ),
+    ).toBe("processed");
+    await worker.tick();
+    expect(plain(mailTo(earlier.email)[0]?.text)).toContain(
+      "We recorded a refund of €0.52 for “Silver Fleet”. Access from this purchase has ended.",
+    );
+  });
+
   it("TC-N-06-03: a name with HTML is sent as text", async () => {
     const user = await newUser("en");
     const hostile = '<img src=x onerror="alert(1)">Fleet';
