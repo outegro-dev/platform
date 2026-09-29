@@ -145,4 +145,19 @@ describe("ReplayCursor", () => {
     expect(cursor.step).toBe(3);
     expect(cursor.playing).toBe(false);
   });
+
+  it("tells a fleet never deployed from missed turns: its record is empty", () => {
+    const stats = new StatsStore({ leaderboard: vi.fn(), matches: vi.fn() });
+    const undeployed: MatchReplay = {
+      ...replay,
+      reason: "timeout",
+      fleets: { you: replay.fleets.you, opponent: [] },
+      moves: [],
+    };
+    expect(stats.openReplay(undeployed).reason).toBe("deploy_timeout");
+    expect(stats.openReplay({ ...replay, reason: "timeout" }).reason).toBe(
+      "timeout",
+    );
+    expect(stats.openReplay(replay).reason).toBe("resigned");
+  });
 });

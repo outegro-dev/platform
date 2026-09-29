@@ -15,7 +15,12 @@ import type {
 import { makeAutoObservable, runInAction } from "mobx";
 import type { z } from "zod";
 import { realTimers, type Timers } from "../transport/timers";
-import type { CellState, OwnShip } from "./match-store";
+import {
+  type CellState,
+  type OwnShip,
+  type ResultReason,
+  resultReasonOf,
+} from "./match-store";
 
 export type Period = Leaderboard["period"];
 export type MatchSummary = z.infer<typeof matchSummarySchema>;
@@ -149,6 +154,15 @@ export class ReplayCursor {
 
   get current(): MatchReplay["moves"][number] | null {
     return this.step > 0 ? (this.replay.moves[this.step - 1] ?? null) : null;
+  }
+
+  /** Why the match ended; a fleet never deployed is empty in the record. */
+  get reason(): ResultReason {
+    const { reason, fleets } = this.replay;
+    return resultReasonOf(
+      reason,
+      fleets.you.length > 0 && fleets.opponent.length > 0,
+    );
   }
 
   /** Your waters: your fleet and the opponent's shots so far. */

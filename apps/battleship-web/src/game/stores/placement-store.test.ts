@@ -64,6 +64,52 @@ describe("PlacementStore", () => {
     expect(store.preview?.cells).toHaveLength(2);
   });
 
+  it("after a click places a ship, the next one is not previewed over it", () => {
+    const { store } = setup();
+    // The mouse rests on C3 and clicks: the 4-deck lands on C3–F3.
+    store.setPointer({ x: 2, y: 2 });
+    store.activateCell(2, 2);
+    expect(store.slotAt(2, 2)?.length).toBe(4);
+    expect(store.selected?.length).toBe(3);
+    // A click there now picks the 4-deck up: the 3-deck has no spot to show.
+    expect(store.preview).toBeNull();
+    store.setPointer({ x: 4, y: 2 });
+    expect(store.preview).toBeNull();
+    // On open water the 3-deck shows where it would land.
+    store.setPointer({ x: 2, y: 6 });
+    expect(store.preview?.placement).toEqual({
+      x: 2,
+      y: 6,
+      length: 3,
+      orientation: "horizontal",
+    });
+    expect(store.preview?.issue).toBeNull();
+    // Right next to the 4-deck it would touch it, and the preview says so.
+    store.setPointer({ x: 2, y: 3 });
+    expect(store.preview?.issue).toBe("touching");
+  });
+
+  it("the keyboard cursor on a placed ship shows no spot either", () => {
+    const { store } = setup();
+    store.setCursorActive(true);
+    store.activateCell(0, 0); // Enter on A1: the 4-deck on A1–D1
+    expect(store.selected?.length).toBe(3);
+    expect(store.preview).toBeNull();
+    store.moveCursor(0, 2);
+    expect(store.preview?.placement).toMatchObject({ x: 0, y: 2, length: 3 });
+    expect(store.preview?.issue).toBeNull();
+  });
+
+  it("a dragged ship over another one is still previewed as refused", () => {
+    const { store } = setup();
+    store.place({ x: 0, y: 0 }); // 4-deck on A1–D1
+    store.beginDrag(1, 0); // a 3-deck from the tray
+    store.setPointer({ x: 1, y: 0 });
+    expect(store.preview?.issue).toBe("overlap");
+    expect(store.endDrag({ x: 1, y: 0 })).toBe(false);
+    expect(store.issue).toBe("overlap");
+  });
+
   it("rotates a placed ship in place, unless it would break a rule", () => {
     const { store } = setup();
     store.place({ x: 0, y: 0 }); // 4-deck horizontal

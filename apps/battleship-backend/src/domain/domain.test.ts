@@ -374,6 +374,20 @@ describe("game session", () => {
     expect(outlet.last(ALICE, "match.finished")?.payload.opponentFleet).toEqual(
       [],
     );
+    // Also after a reconnect, the missing fleet tells clients this "timeout"
+    // from three missed turns in a row.
+    for (const [user, placed] of [
+      [BOB, { yourFleetPlaced: false, opponentFleetPlaced: true }],
+      [ALICE, { yourFleetPlaced: true, opponentFleetPlaced: false }],
+    ] as const) {
+      const state = await game.snapshotFor(user);
+      if (state.type !== "match.state") throw new Error("expected a snapshot");
+      expect(state.payload.match).toMatchObject({
+        phase: "finished",
+        reason: "timeout",
+        ...placed,
+      });
+    }
   });
 
   it("nobody placing in time aborts the match without a result", async () => {
@@ -408,6 +422,14 @@ describe("game session", () => {
       expect.objectContaining({ winner: "b", reason: "timeout" }),
     ]);
     expect(store.moves.filter((m) => m.outcome === "skip")).toHaveLength(3);
+    // Both fleets are down: not the placement clock.
+    const state = await game.snapshotFor(ALICE);
+    if (state.type !== "match.state") throw new Error("expected a snapshot");
+    expect(state.payload.match).toMatchObject({
+      reason: "timeout",
+      yourFleetPlaced: true,
+      opponentFleetPlaced: true,
+    });
   });
 
   it("a failed write changes nothing and is reported as internal", async () => {

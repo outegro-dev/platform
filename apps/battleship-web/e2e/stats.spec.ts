@@ -97,6 +97,21 @@ test.describe("leaderboard and profile", () => {
     ).toHaveAttribute("href", "/shop");
   });
 
+  test("the replay of a match the opponent never deployed for says why it ended", async ({
+    page,
+  }) => {
+    // The fake platform's match lost on the placement clock: no fleet, no shots.
+    await signIn(
+      page,
+      "premium",
+      "/replay/00000000-0000-4000-8000-000000002000",
+    );
+    await expect(page.getByTestId("replay")).toContainText(
+      "Your opponent didn't deploy their fleet in time.",
+    );
+    await expect(page.getByTestId("replay-step")).toHaveText("Move 0 of 0");
+  });
+
   test("nickname: checked like the server, taken names refused, saved everywhere", async ({
     page,
     game,

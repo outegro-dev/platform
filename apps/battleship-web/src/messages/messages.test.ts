@@ -1,4 +1,7 @@
-import { matchAbortReasonSchema } from "@outegro/contracts/battleship";
+import {
+  finishReasonSchema,
+  matchAbortReasonSchema,
+} from "@outegro/contracts/battleship";
 import { describe, expect, it } from "vitest";
 import en from "./en.json";
 import ru from "./ru.json";
@@ -63,5 +66,16 @@ describe("messages", () => {
     for (const reason of [...matchAbortReasonSchema.options, "unknown"])
       for (const messages of [english, russian])
         expect(messages[`result.aborted.${reason}`], reason).toBeTruthy();
+  });
+
+  it("explains every way a match is won or lost", () => {
+    // A fleet not deployed in time is told apart from missed turns.
+    for (const reason of [...finishReasonSchema.options, "deploy_timeout"])
+      for (const outcome of ["win", "loss"])
+        for (const messages of [english, russian])
+          expect(
+            messages[`result.reasons.${outcome}.${reason}`],
+            `${outcome}.${reason}`,
+          ).toBeTruthy();
   });
 });

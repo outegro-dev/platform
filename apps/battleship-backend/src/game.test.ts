@@ -392,6 +392,56 @@ describe("clocks", () => {
     expect(lost.payload.opponentFleet).toEqual(fleets.a);
   });
 
+  it("a fleet missing in a quick match is rated and counted like any loss", async () => {
+    const a = await h.connect();
+    const b = await h.connect();
+    a.send("queue.join", { mode: "quick" });
+    await a.next("queue.joined");
+    b.send("queue.join", { mode: "quick" });
+    await a.next("queue.matched");
+    await b.next("queue.matched");
+    const { matchId } = (await a.next("match.state")).payload.match;
+    await b.next("match.state");
+    a.send("fleet.place", { ships: fleets.a });
+    await a.next("fleet.placed");
+    await h.advance(90_000);
+    expect((await a.next("match.finished")).payload).toMatchObject({
+      reason: "timeout",
+      rating: { before: 1000, after: 1016, delta: 16 },
+    });
+    expect((await b.next("match.finished")).payload).toMatchObject({
+      reason: "timeout",
+      rating: { before: 1000, after: 984, delta: -16 },
+    });
+    const [row] = await h.db
+      .select()
+      .from(matches)
+      .where(eq(matches.id, matchId));
+    expect(row).toMatchObject({
+      status: "finished",
+      reason: "timeout",
+      rated: true,
+      ratingDelta: 16,
+      battleStartedAt: null,
+    });
+    const records = await h.db
+      .select()
+      .from(players)
+      .where(inArray(players.userId, [a.userId, b.userId]));
+    expect(records.find((p) => p.userId === a.userId)).toMatchObject({
+      rating: 1016,
+      matches: 1,
+      wins: 1,
+      losses: 0,
+    });
+    expect(records.find((p) => p.userId === b.userId)).toMatchObject({
+      rating: 984,
+      matches: 1,
+      wins: 0,
+      losses: 1,
+    });
+  });
+
   it("a turn lasts 30 seconds and three missed turns in a row lose", async () => {
     const { a, b } = await room();
     const { first, second, secondTargets } = await battle(a, b);

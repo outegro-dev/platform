@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import type { FakeGame } from "./support/fake-game.ts";
 import {
   APP,
@@ -46,11 +46,25 @@ function ownWaterCell(fake: FakeGame) {
   throw new Error("no open water");
 }
 
+/** Waits until the element's own animations (its entrance) are over. */
+async function settled(locator: Locator) {
+  await locator.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  );
+}
+
 async function inBattle(page: Page, fake: FakeGame, level = "Easy") {
   await startBotGame(page, level);
   await deployRandomFleet(page);
   expect(fake.match?.currentPhase).toBe("battle");
 }
+
+const nemo = {
+  kind: "human",
+  nickname: "Nemo",
+  rating: 1512,
+  premium: true,
+} as const;
 
 test.describe("match", () => {
   test("a full match against a bot, to victory, then play again", async ({
@@ -142,13 +156,17 @@ test.describe("match", () => {
     const own = page.getByTestId("own-board");
     await expect(page.locator(".board .shot-marker")).toHaveCount(0);
 
-    // Your shot: the brackets frame that cell of the enemy waters.
+    // Your shot: the brackets frame that cell of the enemy waters. They lock
+    // on with a zoom, so they are measured once it is over, and the bot
+    // answers only after that.
     const miss = ownWaterCell(fake);
     fake.script.botShots = [miss];
+    fake.script.botDelayMs = 1500;
     const water = fake.emptyCell();
     await fireAt(page, water.x, water.y);
     const marker = target.locator(".shot-marker");
     await expect(marker).toHaveCount(1);
+    await settled(marker);
     const cell = await target
       .locator(`button[data-x="${water.x}"][data-y="${water.y}"]`)
       .boundingBox();
@@ -162,6 +180,7 @@ test.describe("match", () => {
     await expect(page.getByTestId("last-shot")).toHaveText(
       `They fired at ${"ABCDEFGHIJ"[miss.x]}${miss.y + 1}: miss.`,
     );
+    await settled(own.locator(".shot-marker"));
     const ownCell = await own
       .locator(".cell")
       .nth(miss.y * 10 + miss.x)
@@ -409,6 +428,66 @@ test.describe("match", () => {
     await expect(page.getByTestId("result-reason")).toHaveText("You resigned.");
     await page.getByTestId("back-to-lobby").click();
     await expect(page).toHaveURL(`${APP}/`);
+  });
+
+  test("a fleet not deployed before the clock runs out loses, and says so", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    fake.startHumanMatch(nemo);
+    await expect(page.getByTestId("placement")).toBeVisible();
+    fake.opponentDeploys();
+    await expect(page.getByTestId("opponent-status")).toHaveText(
+      "Opponent is ready",
+    );
+    fake.placementClockRunsOut();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Defeat.");
+    // Not "three turns in a row": no turn was ever played.
+    await expect(page.getByTestId("result-reason")).toHaveText(
+      "You didn't deploy your fleet in time.",
+    );
+    await expect(page.getByTestId("rating-delta")).toContainText("−16");
+  });
+
+  test("an opponent who does not deploy in time loses, and it says so", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    fake.script.opponentPlaceDelayMs = 60_000;
+    fake.startHumanMatch(nemo);
+    await page.getByTestId("random-fleet").click();
+    await page.getByTestId("ready").click();
+    await expect(page.getByTestId("fleet-deployed")).toBeVisible();
+    fake.placementClockRunsOut();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Victory.",
+    );
+    await expect(page.getByTestId("result-reason")).toHaveText(
+      "Your opponent didn't deploy their fleet in time.",
+    );
+  });
+
+  test("Russian: a fleet not deployed in time", async ({
+    page,
+    game,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "og_locale", value: "ru", domain: "localhost", path: "/" },
+    ]);
+    const fake = await signInAndConnect(page, game, "free");
+    fake.startHumanMatch(nemo);
+    await expect(page.getByTestId("placement")).toBeVisible();
+    fake.opponentDeploys();
+    fake.placementClockRunsOut();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Поражение.",
+    );
+    await expect(page.getByTestId("result-reason")).toHaveText(
+      "Вы не успели расставить флот.",
+    );
   });
 
   test("a match the server aborts is cancelled calmly", async ({

@@ -132,4 +132,31 @@ test.describe("fleet placement", () => {
     await cell(page, 5, 5).click();
     await expect(cell(page, 5, 6)).toHaveAccessibleName("F7, 2-cell ship");
   });
+
+  test("after a click, the next ship is previewed only where it could land", async ({
+    page,
+  }) => {
+    const board = page.getByTestId("placement-board");
+    const ghost = board.locator('.ship[data-state="ghost"]');
+    const refused = board.locator(
+      '.ship[data-state="invalid"], .preview-cell[data-bad]',
+    );
+    await cell(page, 2, 2).click();
+    await expect(cell(page, 2, 2)).toHaveAccessibleName("C3, 4-cell ship");
+    // The pointer still rests on the new 4-deck: nothing flashes red over it.
+    await expect(refused).toHaveCount(0);
+    await expect(ghost).toHaveCount(0);
+    await cell(page, 4, 2).hover();
+    await expect(refused).toHaveCount(0);
+    await expect(ghost).toHaveCount(0);
+    // Open water: the 3-deck shows where it would land.
+    await cell(page, 2, 6).hover();
+    await expect(ghost).toHaveCount(1);
+    await expect(board.locator(".preview-cell")).toHaveCount(3);
+    await expect(refused).toHaveCount(0);
+    // Next to the 4-deck it would touch it: that spot is shown as refused.
+    await cell(page, 2, 3).hover();
+    await expect(board.locator(".preview-cell[data-bad]")).toHaveCount(3);
+    await expect(board.locator('.ship[data-state="invalid"]')).toHaveCount(1);
+  });
 });
