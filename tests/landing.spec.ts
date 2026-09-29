@@ -386,6 +386,26 @@ for (const [device, viewport] of [
   });
 }
 
+test("posters are served as WebP even to browsers that accept AVIF", async ({
+  page,
+  request,
+}) => {
+  // AVIF encoding of the widest poster pushed the server past its memory
+  // limit in production; WebP was smaller for these posters anyway.
+  await page.goto("/");
+  const src = await page
+    .locator("#projects img")
+    .first()
+    .evaluate((img: HTMLImageElement) => img.currentSrc || img.src);
+  const widest = new URL(src);
+  widest.searchParams.set("w", "3840");
+  const response = await request.get(widest.pathname + widest.search, {
+    headers: { accept: "image/avif,image/webp,image/*,*/*;q=0.8" },
+  });
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toBe("image/webp");
+});
+
 test("health probes answer for Kubernetes", async ({ request }) => {
   for (const path of ["/health", "/health/deep"]) {
     const response = await request.get(path);
