@@ -19,6 +19,8 @@ const dir = path.join(__dirname, "screenshots");
 mkdirSync(dir, { recursive: true });
 
 async function capture(page: Page, name: string) {
+  // Fixed elements (skip link, tab bar) sit relative to the viewport: start at the top.
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({
     path: path.join(dir, `${name}.png`),

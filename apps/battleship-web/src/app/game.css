@@ -1389,6 +1389,10 @@
     .tray-ship {
       --tray-cell: 30px;
     }
+    .tool-row > button {
+      padding-inline: 12px;
+      gap: 8px;
+    }
     .result-stats .stat {
       min-width: calc(50% - 6px);
     }

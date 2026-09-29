@@ -224,11 +224,11 @@ export const LeaderboardView = observer(function LeaderboardView({
         </h2>
         {!signedIn ? (
           <>
-            <p>{t("signIn")}</p>
+            <p>{t("signInLead")}</p>
             <Button asChild>
               <a href={signInHref(`/leaderboard?period=${stats.period}`)}>
                 <SignInIcon />
-                {t("signIn")}
+                {t("signInButton")}
               </a>
             </Button>
           </>

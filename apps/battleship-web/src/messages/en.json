@@ -323,13 +323,14 @@
     "yourRank": "#{rank}",
     "unranked": "Not ranked yet",
     "unrankedHint": "Finish a quick match to appear here.",
-    "signIn": "Sign in to see your place",
     "empty": "No rated matches in this period yet.",
     "error": "The leaderboard could not load.",
     "retry": "Try again",
     "loading": "Loading…",
     "gained": "{points} this week",
-    "gainedColumn": "This week"
+    "gainedColumn": "This week",
+    "signInLead": "Sign in to see your rank, rating and the points you gained this week.",
+    "signInButton": "Sign in"
   },
   "profile": {
     "eyebrow": "03 — Service record",

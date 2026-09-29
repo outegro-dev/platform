@@ -18,7 +18,7 @@ test.describe("sign-in through id.outegro.dev", () => {
     await page.goto("/leaderboard");
     await expect(page.getByTestId("leaderboard-table")).toContainText("Nemo");
     await expect(page.getByTestId("your-place")).toContainText(
-      "Sign in to see your place",
+      "Sign in to see your rank",
     );
   });
 
