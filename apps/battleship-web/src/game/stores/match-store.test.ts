@@ -421,4 +421,23 @@ describe("MatchStore", () => {
     match.handle(server("error", { code: "no_active_match", ref: seq }));
     expect(match.endedWhileAway).toBe(true);
   });
+
+  it("an answer to the sync of a match already left changes nothing", async () => {
+    const { match, sent } = setup();
+    match.handle(server("match.state", { match: snapshot() }));
+    match.sync();
+    const seq = sent.at(-1)?.seq ?? 0;
+    match.handle(
+      server("match.finished", {
+        winner: "you",
+        reason: "resigned",
+        rating: null,
+        opponentFleet: [],
+      }),
+    );
+    await vi.runAllTimersAsync();
+    match.leave();
+    match.handle(server("error", { code: "no_active_match", ref: seq }));
+    expect(match.endedWhileAway).toBe(false);
+  });
 });
