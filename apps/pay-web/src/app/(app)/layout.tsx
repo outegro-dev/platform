@@ -1,8 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { AppFooter } from "@/components/app-footer";
 import { AppHeader } from "@/components/app-header";
+import { ReturnBar } from "@/components/return-bar";
 
-/** Signed-in shell: header with sections, the page, links. */
+/** Signed-in shell: header with sections, the way back to an app, the page, links. */
 export default async function AppLayout({
   children,
 }: {
@@ -15,6 +16,7 @@ export default async function AppLayout({
         {t("skip")}
       </a>
       <AppHeader />
+      <ReturnBar />
       <main id="main" className="app-main og-container" tabIndex={-1}>
         {children}
       </main>

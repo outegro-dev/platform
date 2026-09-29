@@ -7,6 +7,7 @@ import { OrderView } from "@/components/order/order-view";
 import { RetryButton } from "@/components/retry-button";
 import { StatePanel } from "@/components/state-panel";
 import { forBrowser, payments, requireToken } from "@/lib/api";
+import { platformUrls } from "@/lib/env";
 import { isStalePending } from "@/lib/payments/status";
 import { leftPayment } from "@/lib/routes";
 import { serviceLink } from "@/lib/services";
@@ -70,7 +71,7 @@ export default async function OrderPage({
       initial={forBrowser(order.data)}
       context={{
         service,
-        serviceUrl: serviceLink(service)?.shop ?? null,
+        serviceUrl: serviceLink(service, platformUrls)?.shop ?? null,
         description: product?.description ?? null,
         periodicity: product?.periodicity ?? null,
         leftPayment: left,

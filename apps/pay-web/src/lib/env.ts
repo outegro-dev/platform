@@ -1,3 +1,4 @@
+import type { PlatformUrls } from "@outegro/ui/lib/platform";
 import { z } from "zod";
 
 /** "a, b," → ["a", "b"]; each entry must be an https origin without a path. */
@@ -42,5 +43,18 @@ export const env = z
       .default("x-forwarded-for"),
     /** Public site with the privacy policy. */
     SITE_URL: z.url().default("https://outegro.dev"),
+    /** Public Battleship frontend: products link to it, buyers go back to it. */
+    BATTLESHIP_URL: z.url().default("https://battleship.outegro.dev"),
+    /** Public admin console, linked for users with a platform role. */
+    ADMIN_URL: z.url().default("https://admin.outegro.dev"),
   })
   .parse(process.env);
+
+/** Public addresses of the platform apps, for cross-app links. */
+export const platformUrls: PlatformUrls = {
+  site: env.SITE_URL,
+  id: env.ID_URL,
+  pay: env.APP_URL,
+  battleship: env.BATTLESHIP_URL,
+  admin: env.ADMIN_URL,
+};

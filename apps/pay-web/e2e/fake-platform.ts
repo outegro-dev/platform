@@ -142,6 +142,10 @@ type Persona = {
   id: string;
   email: string;
   displayName: string | null;
+  /** Platform roles Identity reports (the account menu's admin link). */
+  roles: string[];
+  /** Identity's /v1/me answers (up) or fails (down); sessions still work. */
+  identity: "up" | "down";
   locale: "en" | "ru";
   createdAt: number;
   ip: string | null;
@@ -672,6 +676,10 @@ function createPersona(input: Record<string, unknown>) {
         : `buyer.${id.slice(0, 6)}@outegro.test`,
     displayName:
       typeof input.displayName === "string" ? input.displayName : null,
+    roles: Array.isArray(input.roles)
+      ? input.roles.filter((role): role is string => typeof role === "string")
+      : [],
+    identity: input.identity === "down" ? "down" : "up",
     locale: input.locale === "ru" ? "ru" : "en",
     createdAt: Date.now() - 120 * DAY,
     ip: typeof input.ip === "string" ? input.ip : null,
@@ -891,6 +899,8 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
   if (path === "/v1/me" && method === "GET") {
     const persona = personaFromToken(req);
     if (!persona) return error(res, 401, "UNAUTHENTICATED");
+    if (persona.identity === "down")
+      return error(res, 503, "DEPENDENCY_UNAVAILABLE");
     return send(res, 200, {
       id: persona.id,
       email: persona.email,
@@ -900,7 +910,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
       status: "active",
       version: 1,
       createdAt: iso(persona.createdAt),
-      roles: [],
+      roles: persona.roles,
       permissions: [],
     });
   }

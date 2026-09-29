@@ -1,13 +1,20 @@
 import { refreshSession } from "@outegro/bff/proxy";
+import { RETURN_PARAM } from "@outegro/ui/lib/platform";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
+import {
+  RETURN_COOKIE,
+  RETURN_MAX_AGE_SECONDS,
+  returnTarget,
+} from "@/lib/return-to";
 import { isApiPath, isPublicPath } from "@/lib/routes";
 import { appUrl, signInPath } from "@/lib/sso";
 
 /**
  * Every page and API request: keep the session fresh (refresh rotation
  * happens here, before rendering), send signed-out visitors to SSO sign-in
- * (JSON 401 for API calls), and set a nonce-based CSP.
+ * (JSON 401 for API calls), remember an allowed way back to the app the
+ * buyer came from, and set a nonce-based CSP.
  */
 export async function proxy(request: NextRequest) {
   const session = await refreshSession(request, env.AUTH_API_URL, {
@@ -58,11 +65,24 @@ export async function proxy(request: NextRequest) {
     "frame-ancestors 'none'",
     ...(https ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
+  // An app sent the buyer here with ?return=…: remember the way back, but
+  // only to a platform app's origin; anything else is ignored.
+  const back = returnTarget(request.nextUrl.searchParams.get(RETURN_PARAM));
+  if (back) request.cookies.set(RETURN_COOKIE, back.href);
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
   const response = NextResponse.next({ request: { headers } });
   response.headers.set("Content-Security-Policy", csp);
+  if (back) {
+    response.cookies.set(RETURN_COOKIE, back.href, {
+      httpOnly: true,
+      secure: https,
+      sameSite: "lax",
+      path: "/",
+      maxAge: RETURN_MAX_AGE_SECONDS,
+    });
+  }
   return session.apply(response);
 }
 

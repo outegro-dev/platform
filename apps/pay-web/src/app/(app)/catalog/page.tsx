@@ -13,6 +13,7 @@ import { RetryButton } from "@/components/retry-button";
 import { ServiceMark } from "@/components/service-mark";
 import { StatePanel } from "@/components/state-panel";
 import { payments, requireToken } from "@/lib/api";
+import { platformUrls } from "@/lib/env";
 import { getServiceName } from "@/lib/i18n-server";
 import type { Product } from "@/lib/payments/model";
 import { serviceLink } from "@/lib/services";
@@ -132,7 +133,7 @@ export default async function CatalogPage() {
         </div>
       )}
       {[...groups].map(([service, items]) => {
-        const link = serviceLink(service);
+        const link = serviceLink(service, platformUrls);
         const name = nameOf(service);
         return (
           <section

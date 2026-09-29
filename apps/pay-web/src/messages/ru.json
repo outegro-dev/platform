@@ -14,10 +14,15 @@
     "orders": "Покупки",
     "subscriptions": "Подписки",
     "catalog": "Каталог",
-    "language": "Язык",
-    "signOut": "Выйти",
-    "account": ", настройки аккаунта",
-    "accountFallback": "Ваш аккаунт"
+    "language": "Язык"
+  },
+  "return": {
+    "label": "Назад в приложение, откуда вы пришли",
+    "to": {
+      "battleship": "Вернуться в Морской бой",
+      "id": "Вернуться в аккаунт",
+      "admin": "Вернуться в админку"
+    }
   },
   "footer": {
     "site": "outegro.dev",
