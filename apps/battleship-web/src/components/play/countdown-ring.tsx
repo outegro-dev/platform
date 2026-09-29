@@ -12,11 +12,14 @@ export function CountdownRing({
   msLeft,
   totalMs,
   seconds,
+  unit,
   label,
 }: {
   msLeft: number;
   totalMs: number;
   seconds: number;
+  /** Under the number ("s"), so it reads as seconds left. */
+  unit: string;
   label: string;
 }) {
   // Fixed at mount: the animation's clock runs on its own afterwards.
@@ -43,6 +46,7 @@ export function CountdownRing({
       </span>
       <span className="ring-value" aria-hidden="true">
         {seconds}
+        <small>{unit}</small>
       </span>
     </div>
   );

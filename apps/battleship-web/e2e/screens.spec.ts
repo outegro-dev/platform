@@ -13,7 +13,8 @@ import {
 
 /**
  * Screenshots of every screen (desktop and mobile, EN, plus RU) for review:
- * e2e/screenshots/*.png. Animations are settled before each capture.
+ * e2e/screenshots/*.png. Animations are settled before each capture; the
+ * home board is also caught mid-battle, the board key opened on phones.
  */
 const dir = path.join(__dirname, "screenshots");
 mkdirSync(dir, { recursive: true });
@@ -50,6 +51,45 @@ async function playSomeShots(page: Page, game: FakeGame) {
   );
 }
 
+/** The home board a moment after the destroyer is found and sunk. */
+async function homeMidBattle(page: Page) {
+  await page.getByTestId("demo-board").scrollIntoViewIfNeeded();
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector("[data-testid=demo-board]")
+        ?.getAttribute("data-beat") === "19",
+    undefined,
+    { polling: "raf", timeout: 30_000 },
+  );
+  await page.waitForTimeout(700);
+}
+
+/** Opens the board key (phones show it as one line that opens). */
+async function openKey(page: Page) {
+  await page.getByTestId("legend-toggle").click();
+  await expect(page.getByTestId("legend-toggle")).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+}
+
+/** A timed match against a human who has just dropped out. */
+async function opponentAway(page: Page, game: FakeGame) {
+  game.script.turnMs = 30_000;
+  game.startHumanMatch({
+    kind: "human",
+    nickname: "Nemo",
+    rating: 1512,
+    premium: true,
+  });
+  await expect(page.getByTestId("placement")).toBeVisible();
+  await deployRandomFleet(page);
+  game.script.botDelayMs = 60_000;
+  game.presence(false, 45_000);
+  await expect(page.getByTestId("opponent-away")).toBeVisible();
+}
+
 const layouts = [
   { name: "desktop", viewport: { width: 1440, height: 900 } },
   { name: "mobile", viewport: { width: 390, height: 844 } },
@@ -63,6 +103,8 @@ for (const layout of layouts) {
       await page.goto("/");
       await expect(page.getByTestId("sign-in-cta")).toBeVisible();
       await capture(page, `${layout.name}-home-guest`);
+      await homeMidBattle(page);
+      await capture(page, `${layout.name}-home-guest-battle`);
       await page.goto("/leaderboard");
       await expect(page.getByTestId("leaderboard-table")).toBeVisible();
       await capture(page, `${layout.name}-leaderboard-guest`);
@@ -74,9 +116,17 @@ for (const layout of layouts) {
       await startBotGame(page);
       await page.getByTestId("fleet-tray").getByRole("button").first().click();
       await capture(page, `${layout.name}-placement`);
+      if (layout.name === "mobile") {
+        await openKey(page);
+        await capture(page, `${layout.name}-placement-key`);
+      }
       await deployRandomFleet(page);
       await playSomeShots(page, fake);
       await capture(page, `${layout.name}-battle`);
+      if (layout.name === "mobile") {
+        await openKey(page);
+        await capture(page, `${layout.name}-battle-key`);
+      }
       fake.script.readyDelayMs = 60_000;
       await fake.drop();
       await expect(page.getByTestId("banner-reconnecting")).toBeVisible();
@@ -107,6 +157,16 @@ for (const layout of layouts) {
       await signInAndConnect(page, game, "premium", "/profile");
       await expect(page.getByTestId("stat-cards")).toBeVisible();
       await capture(page, `${layout.name}-profile-premium`);
+      await page
+        .getByTestId("history")
+        .getByRole("link", { name: "Replay" })
+        .first()
+        .click();
+      await expect(page.getByTestId("replay")).toBeVisible();
+      for (let move = 0; move < 12; move++)
+        await page.getByTestId("replay-next").click();
+      if (layout.name === "mobile") await openKey(page);
+      await capture(page, `${layout.name}-replay`);
       await page.goto("/shop");
       await expect(page.getByTestId("product-silver")).toBeVisible();
       await capture(page, `${layout.name}-shop-premium`);
@@ -124,6 +184,12 @@ for (const layout of layouts) {
       await expect(page.getByTestId("buy-silver")).toBeVisible();
       await capture(page, `${layout.name}-shop-free`);
     });
+
+    test("a timed match with the opponent away", async ({ page, game }) => {
+      const fake = await signInAndConnect(page, game, "free");
+      await opponentAway(page, fake);
+      await capture(page, `${layout.name}-battle-away`);
+    });
   });
 }
 
@@ -132,14 +198,32 @@ test.describe("screens ru", () => {
     await context.addCookies([
       { name: "og_locale", value: "ru", domain: "localhost", path: "/" },
     ]);
+    await page.goto("/");
+    await capture(page, "ru-home-guest");
+    await homeMidBattle(page);
+    await capture(page, "ru-home-guest-battle");
     const fake = await signInAndConnect(page, game, "silver");
     await capture(page, "ru-lobby");
     await startBotGame(page, "Лёгкий");
+    await capture(page, "ru-placement-night-sea");
     await deployRandomFleet(page);
     await playSomeShots(page, fake);
     await capture(page, "ru-battle-night-sea");
     await page.goto("/shop");
     await capture(page, "ru-shop");
+  });
+
+  test("a timed match with the opponent away, in Russian", async ({
+    page,
+    game,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "og_locale", value: "ru", domain: "localhost", path: "/" },
+    ]);
+    const fake = await signInAndConnect(page, game, "free");
+    await opponentAway(page, fake);
+    await capture(page, "ru-battle-away");
   });
 });
 
@@ -154,13 +238,20 @@ test.describe("screens ru mobile", () => {
     await context.addCookies([
       { name: "og_locale", value: "ru", domain: "localhost", path: "/" },
     ]);
+    await page.goto("/");
+    await homeMidBattle(page);
+    await capture(page, "ru-mobile-home-guest-battle");
     const fake = await signInAndConnect(page, game, "free");
     await capture(page, "ru-mobile-lobby");
     await startBotGame(page, "Лёгкий");
     await capture(page, "ru-mobile-placement");
+    await openKey(page);
+    await capture(page, "ru-mobile-placement-key");
     await deployRandomFleet(page);
     await playSomeShots(page, fake);
     await capture(page, "ru-mobile-battle");
+    await openKey(page);
+    await capture(page, "ru-mobile-battle-key");
     await page.goto("/shop");
     await capture(page, "ru-mobile-shop");
     expect(

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { type KeyboardEvent, useRef, useState } from "react";
 import type { Effect } from "@/game/stores/match-store";
 import { BoardFrame, cellName, gridOf } from "../board/board-frame";
-import { CellMark, EffectView } from "../board/marks";
+import { CellMark, EffectView, ShotMarker } from "../board/marks";
 import { BoardShip } from "../board/ship";
 import { useRoot } from "../providers";
 
@@ -73,6 +73,7 @@ export const OwnBoard = observer(function OwnBoard({
   const t = useTranslations("battle");
   const { ships: skin, hitEffect, theme } = session.cosmetics;
   const sinking = sinkingKeys(match.effects, "own");
+  const last = match.lastShot;
   const occupied = new Set(
     match.ownShips.flatMap((ship) =>
       placementCells(ship).map((cell) => cell.key),
@@ -131,6 +132,9 @@ export const OwnBoard = observer(function OwnBoard({
               ),
             ),
           )}
+          {last?.by === "opponent" ? (
+            <ShotMarker key={`last-${match.moves}`} x={last.x} y={last.y} />
+          ) : null}
         </>
       }
       fx={match.effects
@@ -165,6 +169,7 @@ export const TargetBoard = observer(function TargetBoard({
   const [focus, setFocus] = useState({ x: 4, y: 4 });
   const { ships: skin, hitEffect, theme } = session.cosmetics;
   const sinking = sinkingKeys(match.effects, "target");
+  const last = match.lastShot;
   const sunkKeys = new Set(
     match.sunkShips.flatMap((ship) =>
       placementCells(ship).map((cell) => cell.key),
@@ -303,6 +308,9 @@ export const TargetBoard = observer(function TargetBoard({
               ),
             ),
           )}
+          {last?.by === "you" ? (
+            <ShotMarker key={`last-${match.moves}`} x={last.x} y={last.y} />
+          ) : null}
           {interactive ? <span className="aim-reticle" /> : null}
         </>
       }

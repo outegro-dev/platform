@@ -353,9 +353,33 @@
     background: color-mix(in srgb, var(--placement-ok) 18%, transparent);
     box-shadow: inset 0 0 0 2px var(--placement-ok);
   }
+  /* Not allowed: hatched and dashed, so it differs by shape, not only hue. */
   .preview-cell[data-bad]::before {
-    background: color-mix(in srgb, var(--placement-bad) 16%, transparent);
-    box-shadow: inset 0 0 0 2px var(--placement-bad);
+    background:
+      repeating-linear-gradient(
+        -45deg,
+        color-mix(in srgb, var(--placement-bad) 34%, transparent) 0 2px,
+        transparent 2px 6px
+      ),
+      color-mix(in srgb, var(--placement-bad) 10%, transparent);
+    box-shadow: none;
+    outline: 2px dashed var(--placement-bad);
+    outline-offset: -2px;
+  }
+  /* The ship picked on the board: a second tap turns it. */
+  .ship-selected {
+    position: absolute;
+    left: calc(var(--x) * var(--cell));
+    top: calc(var(--y) * var(--cell));
+    width: calc(var(--len) * var(--cell));
+    height: var(--cell);
+    border-radius: 10px;
+    outline: 2px dashed var(--aim);
+    outline-offset: -2px;
+  }
+  .ship-selected[data-orientation="vertical"] {
+    width: var(--cell);
+    height: calc(var(--len) * var(--cell));
   }
   .cursor-cell {
     position: absolute;
@@ -476,6 +500,37 @@
     50% {
       transform: rotate(4deg) scale(1.04);
       opacity: 0.85;
+    }
+  }
+
+  /* The latest shot on a board: corner brackets that lock on. */
+  .shot-marker {
+    position: absolute;
+    left: calc(var(--x) * var(--cell));
+    top: calc(var(--y) * var(--cell));
+    width: var(--cell);
+    height: var(--cell);
+    padding: 1px;
+    animation: shot-lock 320ms var(--ease-out) both;
+  }
+  .shot-marker svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .shot-marker path {
+    fill: none;
+    stroke: var(--aim);
+    stroke-width: 2.25px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  @keyframes shot-lock {
+    from {
+      transform: scale(1.45);
+      opacity: 0;
     }
   }
 
@@ -716,6 +771,120 @@
     }
   }
 
+  /* ─── Home demo: a battle on a loop ─────────────────── */
+  /* Shells come in from below and stay inside the frame. */
+  .demo-live .board {
+    overflow: hidden;
+  }
+  /* Ships wait under water; the fleet surfaces at the end of a round. */
+  .demo-piece {
+    position: absolute;
+    inset: 0;
+  }
+  .demo-piece:not([data-shown]) {
+    opacity: 0;
+    transform: translateY(calc(var(--cell) * 0.14));
+  }
+  .demo-live .demo-piece {
+    transition:
+      opacity 800ms var(--ease-out),
+      transform 800ms var(--ease-out);
+  }
+  .demo-live[data-phase="reset"] .demo-piece {
+    transition-duration: 450ms;
+  }
+  /* A sunk ship shows at once: its sinking is the reveal. */
+  .demo-live .demo-piece[data-wreck][data-shown] {
+    transition: none;
+  }
+  .demo-live .ship[data-sinking] {
+    animation-name: demo-sink;
+  }
+  @keyframes demo-sink {
+    0% {
+      transform: translateY(-8%) scale(1.08);
+      opacity: 1;
+    }
+    35% {
+      transform: translateY(-3%) scale(1.03) rotate(-1deg);
+      opacity: 1;
+    }
+    100% {
+      transform: none;
+      opacity: 0.62;
+    }
+  }
+  .demo-marks {
+    position: absolute;
+    inset: 0;
+  }
+  .demo-mark {
+    display: contents;
+  }
+  /* The water around a ship just sunk is marked in a ripple. */
+  .demo-live .mark-dot {
+    animation-delay: var(--delay, 0ms);
+  }
+  .demo-live[data-phase="reset"] .demo-marks {
+    opacity: 0;
+    transition: opacity 450ms var(--ease-out);
+  }
+  /* The sight glides from shot to shot. */
+  .demo-live .aim-line,
+  .demo-live .aim-reticle {
+    transition:
+      opacity 220ms var(--ease-out),
+      transform 440ms cubic-bezier(0.45, 0, 0.2, 1);
+  }
+  .demo-live[data-aim] .aim-line,
+  .demo-live[data-aim] .aim-reticle {
+    opacity: 1;
+  }
+  /* Sonar: two pings spread over the empty water before each round. */
+  .demo-sonar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 150%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+  }
+  .demo-sonar::before,
+  .demo-sonar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--mark-miss) 60%, transparent);
+    background: radial-gradient(
+      closest-side,
+      transparent 82%,
+      color-mix(in srgb, var(--sea-glint) 70%, transparent) 97%,
+      transparent
+    );
+    animation: demo-ping 1300ms cubic-bezier(0.2, 0.6, 0.35, 1) both;
+  }
+  .demo-sonar::after {
+    animation-delay: 300ms;
+  }
+  @keyframes demo-ping {
+    from {
+      transform: scale(0.04);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+  /* Splash and shock ring read on the pale day sea too. */
+  .demo-live .fx-splash i {
+    border-color: color-mix(in srgb, var(--mark-miss) 45%, var(--sea-glint));
+  }
+  .demo-live .fx-hit[data-effect="flame"] .fx-ring {
+    border-color: var(--flame-mid);
+  }
+
   /* ─── Match screens ─────────────────────────────────── */
   .match {
     display: grid;
@@ -780,21 +949,36 @@
   .presence[data-away] {
     background: var(--flame-mid);
   }
+  .presence-away {
+    color: var(--warning);
+    font-weight: 600;
+    white-space: nowrap;
+  }
 
-  /* Turn indicator: a glass pill with the countdown ring. */
+  /* Turn indicator: a glass pill with the countdown ring, whose turn,
+     what to do now and the clock's rule (three lines, a fixed height). */
   .turn {
     display: flex;
     align-items: center;
     gap: 14px;
     min-width: 260px;
-    min-height: 68px;
+    min-height: 76px;
     padding: 8px 22px 8px 8px;
     border-radius: var(--radius-pill);
   }
   .turn-text {
     position: relative;
     display: grid;
+    gap: 3px;
     min-width: 170px;
+  }
+  .turn-lines {
+    display: grid;
+  }
+  .turn-rule {
+    color: var(--muted-foreground);
+    font-size: 12px;
+    line-height: 1.35;
   }
   .turn-line {
     grid-area: 1 / 1;
@@ -890,11 +1074,23 @@
     position: absolute;
     inset: 0;
     display: grid;
-    place-items: center;
+    place-content: center;
+    justify-items: center;
     font-size: 16px;
     font-weight: 700;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+  }
+  .ring-value small {
+    margin-top: 2px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted-foreground);
+  }
+  .ring[data-urgent] .ring-value small {
+    color: inherit;
   }
   .ring[data-urgent] .ring-value {
     color: var(--destructive);
@@ -1021,6 +1217,79 @@
     min-height: 24px;
     color: var(--muted-foreground);
     font-size: 14px;
+  }
+
+  /* Board key: each mark drawn with the board's own pieces, with words. */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 24px;
+    padding: 12px 18px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+  }
+  .legend-heading {
+    font-size: inherit;
+    line-height: 26px;
+  }
+  /* Under both boards the title leads the row; beside one board it tops it. */
+  .legend:not([data-mode="placement"]) .legend-list {
+    flex: 1 1 0;
+    min-width: min(100%, 420px);
+  }
+  .legend-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  .legend-toggle {
+    display: none;
+  }
+  .legend-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 26px;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .legend-item .kbd {
+    margin-inline: 1px;
+  }
+  .legend-swatch {
+    --cell: 26px;
+    position: relative;
+    flex-shrink: 0;
+    width: calc(var(--w) * var(--cell));
+    height: calc(var(--h) * var(--cell));
+    border-radius: 7px;
+    overflow: hidden;
+    background:
+      linear-gradient(to right, var(--sea-line) 1px, transparent 1px) -1px -1px
+      / var(--cell) var(--cell),
+      linear-gradient(to bottom, var(--sea-line) 1px, transparent 1px) -1px -1px
+      / var(--cell) var(--cell),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--sea-glint) 55%, var(--sea)),
+        var(--sea-deep)
+      );
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--sea-line) 80%, transparent);
+  }
+  .legend-swatch[data-sea="night"] .ship-outline {
+    opacity: 0.55;
   }
 
   /* Placement layout. */
@@ -1164,6 +1433,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
+  }
+  .placement-timer-text {
+    display: grid;
+    gap: 2px;
   }
   .placement-side h2 {
     font-size: 16px;
@@ -1409,6 +1682,49 @@
       padding-inline: 12px;
       gap: 8px;
     }
+    .legend {
+      display: block;
+      padding: 0;
+      border-radius: 16px;
+    }
+    .legend-title {
+      display: none;
+    }
+    .legend-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 48px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: inherit;
+      background: none;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: start;
+      cursor: pointer;
+    }
+    .legend-toggle svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .legend-caret {
+      margin-inline-start: auto;
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+    .legend[data-open] .legend-caret {
+      transform: rotate(180deg);
+    }
+    .legend:not([data-open]) .legend-list {
+      display: none;
+    }
+    .legend-list {
+      display: grid;
+      gap: 10px;
+      padding: 2px 16px 16px;
+    }
     .result-stats .stat {
       min-width: calc(50% - 6px);
     }
@@ -1434,6 +1750,7 @@
     .ship[data-sinking],
     .ship-enter,
     .mark-dot,
+    .shot-marker,
     .banner,
     .spark {
       animation: fade-soft 160ms ease-out both;
@@ -1448,7 +1765,11 @@
     .aim-line,
     .aim-reticle,
     .board::before,
-    .tray-ship {
+    .tray-ship,
+    .legend-caret,
+    .demo-live .demo-piece,
+    .demo-live .aim-line,
+    .demo-live .aim-reticle {
       transition-duration: 1ms;
     }
   }
@@ -1456,5 +1777,23 @@
     from {
       opacity: 0;
     }
+  }
+}
+
+/*
+ * Rules that must beat any animated game rule, whatever its specificity (a
+ * layer after "components" wins without !important). Off screen or in a
+ * hidden tab the home demo holds where it is; the board key stays still.
+ */
+@layer motion-overrides {
+  .demo-live[data-paused] *,
+  .demo-live[data-paused] *::before,
+  .demo-live[data-paused] *::after {
+    animation-play-state: paused;
+  }
+  .legend-swatch *,
+  .legend-swatch *::before,
+  .legend-swatch *::after {
+    animation: none;
   }
 }

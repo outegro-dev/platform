@@ -20,7 +20,8 @@ import {
 } from "react";
 import type { ShipSlot } from "@/game/stores/placement-store";
 import { BoardFrame, cellName, gridOf } from "../board/board-frame";
-import { BoardShip, ShipArt } from "../board/ship";
+import { BoardLegend } from "../board/board-legend";
+import { BoardShip, SelectedFrame, ShipArt } from "../board/ship";
 import { StableLabel } from "../home/modes";
 import { useRoot } from "../providers";
 import { CountdownRing } from "./countdown-ring";
@@ -49,6 +50,7 @@ const PlacementBoard = observer(function PlacementBoard({
   const { ships: skin, theme } = session.cosmetics;
   const preview = store.preview;
   const cursor = store.cursor;
+  const picked = store.submitted ? null : (store.selected?.placement ?? null);
 
   const focusCell = (x: number, y: number) =>
     boardRef.current
@@ -143,6 +145,14 @@ const PlacementBoard = observer(function PlacementBoard({
               />
             ) : null,
           )}
+          {picked ? (
+            <SelectedFrame
+              x={picked.x}
+              y={picked.y}
+              length={picked.length}
+              orientation={picked.orientation}
+            />
+          ) : null}
           {preview
             ? preview.cells.map((cell) => (
                 <span
@@ -295,8 +305,9 @@ const PlacementStatus = observer(function PlacementStatus() {
 });
 
 const OpponentStatus = observer(function OpponentStatus() {
-  const { match } = useRoot();
+  const { match, placement: store } = useRoot();
   const t = useTranslations("placement");
+  const b = useTranslations("battle");
   const ready = match.opponentFleetPlaced;
   const ms = match.msLeft;
   const seconds = match.secondsLeft;
@@ -322,9 +333,15 @@ const OpponentStatus = observer(function OpponentStatus() {
             msLeft={ms}
             totalMs={match.clockTotalMs}
             seconds={seconds}
-            label={`${t("timeLeft")}: ${seconds}`}
+            unit={b("secondsUnit")}
+            label={`${t("timeLeft")}: ${b("seconds", { seconds })}`}
           />
-          <span className="small muted">{t("timeLeft")}</span>
+          <span className="placement-timer-text">
+            <span className="small">{t("timeLeft")}</span>
+            <span className="small muted" data-testid="placement-rule">
+              {store.submitted ? t("timeRuleReady") : t("timeRule")}
+            </span>
+          </span>
         </div>
       ) : null}
     </div>
@@ -367,6 +384,7 @@ export const PlacementScreen = observer(function PlacementScreen() {
           </div>
           <PlacementBoard boardRef={boardRef} drag={drag} />
           <p className="small muted">{t("keyboardHint")}</p>
+          <BoardLegend mode="placement" />
         </div>
         <aside className="card placement-side" aria-label={t("tray")}>
           <OpponentChip />

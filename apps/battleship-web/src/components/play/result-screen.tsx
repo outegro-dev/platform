@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { CSSProperties } from "react";
 import { formatSigned } from "@/lib/format";
+import { BoardLegend } from "../board/board-legend";
 import { useRoot } from "../providers";
 import { OwnBoard, TargetBoard } from "./boards";
 
@@ -206,6 +207,7 @@ export const ResultScreen = observer(function ResultScreen() {
           <TargetBoard interactive={false} />
         </div>
       </div>
+      <BoardLegend mode="result" />
     </section>
   );
 });

@@ -21,6 +21,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useTranslations } from "next-intl";
 import { cellName } from "../board/board-frame";
+import { BoardLegend } from "../board/board-legend";
 import { useRoot } from "../providers";
 import { FleetPips, OwnBoard, TargetBoard } from "./boards";
 import { MatchBar } from "./match-bar";
@@ -193,6 +194,7 @@ export const BattleScreen = observer(function BattleScreen() {
         <LastShot />
         <Resign />
       </div>
+      <BoardLegend mode="battle" />
     </section>
   );
 });
