@@ -247,6 +247,40 @@ describe("timeouts and resignation", () => {
     rejects(() => match.timeOut("carol"), "not_a_player");
   });
 
+  it("only a player still without a fleet runs out of placement time", () => {
+    const placing = new Match("m1", ["alice", "bob"]);
+    placing.placeFleet("alice", validFleet);
+    rejects(() => placing.timeOut("alice"), "fleet_already_placed");
+    expect(placing.currentPhase).toBe("placement");
+    // In battle the turn clock skips turns instead.
+    const battle = newMatch();
+    rejects(() => battle.timeOut("alice"), "wrong_phase");
+    expect(battle.currentPhase).toBe("battle");
+  });
+
+  it("a fleet left missing tells a placement time-out from missed turns", () => {
+    // Both end with reason "timeout"; the result screen words them apart by this.
+    const placing = new Match("m1", ["alice", "bob"]);
+    placing.placeFleet("alice", validFleet);
+    placing.timeOut("bob");
+    expect(placing.viewFor("bob")).toMatchObject({
+      reason: "timeout",
+      yourFleetPlaced: false,
+    });
+    expect(placing.viewFor("alice")).toMatchObject({
+      reason: "timeout",
+      opponentFleetPlaced: false,
+    });
+    const battle = newMatch();
+    for (const player of ["alice", "bob", "alice", "bob", "alice"])
+      battle.skipTurn(player);
+    expect(battle.viewFor("alice")).toMatchObject({
+      reason: "timeout",
+      yourFleetPlaced: true,
+      opponentFleetPlaced: true,
+    });
+  });
+
   it("resigning hands the win to the opponent", () => {
     const match = newMatch();
     expect(match.resign("bob")[0]).toMatchObject({

@@ -198,10 +198,14 @@ export class Match {
   }
 
   /**
-   * A clock outside the turn ran out for `player` (the placement window):
-   * the player forfeits on time. Missed turns in battle go through skipTurn.
+   * The placement clock ran out for `player`, who has not deployed a fleet:
+   * the player forfeits on time. Missed turns in battle go through skipTurn,
+   * so a "timeout" that leaves a fleet missing is always this one.
    */
   timeOut(player: PlayerId): MatchEvent[] {
+    this.assertPlayer(player);
+    this.assertPhase("placement");
+    if (this.boards.has(player)) throw new MatchError("fleet_already_placed");
     return this.forfeit(player, "timeout");
   }
 
