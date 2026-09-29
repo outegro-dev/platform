@@ -15,7 +15,7 @@ export async function IdentityPanel() {
     kicker: t("kicker"),
     title: t("title"),
     action: <PanelLink href="/users">{t("open")}</PanelLink>,
-    className: "h-panel",
+    className: "h-panel-chart",
   };
   if (!result.ok) {
     return (

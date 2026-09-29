@@ -181,7 +181,7 @@ export async function AttentionPanel({
       id="attention"
       kicker={t("kicker")}
       title={t("title")}
-      className="h-panel-sm"
+      className="h-panel-feed"
       action={unchecked.length > 0 ? <RetryButton /> : undefined}
     >
       <ul className="attention">

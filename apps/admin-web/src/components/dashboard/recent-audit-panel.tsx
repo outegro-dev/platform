@@ -26,7 +26,7 @@ export async function RecentAuditPanel({
       id="recent-audit"
       kicker={t("kicker")}
       title={t("title")}
-      className="h-panel-sm"
+      className="h-panel-feed"
       action={<PanelLink href="/audit">{t("open")}</PanelLink>}
     >
       {failed.length > 0 && (

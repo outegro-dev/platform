@@ -3,9 +3,9 @@ import type { Page } from "../result";
 import { OptionalServiceAdapter, parse } from "./base";
 
 /**
- * battleship-backend admin API. This is the only file that knows its paths
- * and response shapes (assumed from the service in progress and
- * `@outegro/contracts/battleship`); screens use the normalized views below.
+ * battleship-backend admin API (`src/admin/admin.controller.ts` on the
+ * battleship-backend branch): the only file that knows its paths and
+ * response shapes; screens use the normalized views below.
  *
  *   GET  /v1/admin/overview                     battleship.read
  *   GET  /v1/admin/matches?status&mode&userId&cursor&limit

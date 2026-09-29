@@ -132,12 +132,15 @@ export async function FilterBar({
   active,
   children,
   inline,
+  submit = "apply",
 }: {
   action: string;
   label: string;
   active: boolean;
   children: ReactNode;
   inline?: boolean;
+  /** "search" for a single search field, "apply" for a set of filters. */
+  submit?: "apply" | "search";
 }) {
   const t = await getTranslations("common");
   return (
@@ -151,7 +154,7 @@ export async function FilterBar({
       {children}
       <div className="filter-actions">
         <Button type="submit" size="md">
-          {t("apply")}
+          {t(submit)}
         </Button>
         {active && (
           <Button asChild variant="ghost" size="md">

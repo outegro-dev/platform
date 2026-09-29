@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { observer } from "mobx-react-lite";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { afloat, type Placement, type Shot } from "@/lib/board";
 import { coordinate } from "@/lib/format";
 import { ReplayStore } from "@/stores/replay-store";
@@ -31,6 +31,24 @@ export const Replay = observer(function Replay({
   const t = useTranslations("replay");
   const [store] = useState(() => new ReplayStore(fleets, moves));
   const current = store.current;
+  const step = store.step;
+  const list = useRef<HTMLOListElement>(null);
+  // Keep the current move visible in the list (its own scroll only, never
+  // the page's): the last move on arrival, then whatever is stepped to.
+  useEffect(() => {
+    const container = list.current;
+    const item = container?.children[step - 1];
+    if (!container) return;
+    if (!item) {
+      container.scrollTop = 0;
+      return;
+    }
+    const box = container.getBoundingClientRect();
+    const rect = item.getBoundingClientRect();
+    if (rect.top < box.top) container.scrollTop -= box.top - rect.top + 4;
+    else if (rect.bottom > box.bottom)
+      container.scrollTop += rect.bottom - box.bottom + 4;
+  }, [step]);
   const boardA = store.boardA;
   const boardB = store.boardB;
   const outcome = (shot: Shot) =>
@@ -127,24 +145,26 @@ export const Replay = observer(function Replay({
         </Button>
       </div>
       {moves.length > 0 && (
-        <ol className="moves" aria-label={t("moves")}>
+        <ol ref={list} className="moves" aria-label={t("moves")}>
           {moves.map((move, index) => (
             <li key={move.n}>
               <button
                 type="button"
                 className="move"
-                aria-current={store.step === index + 1 ? "step" : undefined}
+                aria-current={step === index + 1 ? "step" : undefined}
                 onClick={() => store.goTo(index + 1)}
                 aria-label={`${t("moveNumber", { n: move.n })}: ${describe(move)}`}
               >
                 <span className="move-n">{move.n}</span>
-                <span>{names[move.side]}</span>
+                <span className="move-name">{names[move.side]}</span>
                 <span className="mono">
                   {move.x === null || move.y === null
                     ? "—"
                     : coordinate(move.x, move.y)}
                 </span>
-                <span>{outcome(move)}</span>
+                <span className="move-outcome" data-outcome={move.outcome}>
+                  {outcome(move)}
+                </span>
               </button>
             </li>
           ))}

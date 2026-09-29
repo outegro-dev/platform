@@ -30,25 +30,36 @@
 }
 
 @layer base {
+  /* The canvas carries the light, so the reserved scrollbar gutter (which
+     keeps streamed content from shifting) matches the page. Both glows fade
+     out inside the first screen and scroll away with it (no fixed
+     backgrounds: iOS ignores them and tall captures tile them); eased stops
+     keep the edge of each glow invisible. */
   html {
     scrollbar-gutter: stable;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(
+        1100px 520px at 88% -8%,
+        color-mix(in oklab, var(--secondary) 90%, transparent) 0%,
+        color-mix(in oklab, var(--secondary) 55%, transparent) 30%,
+        color-mix(in oklab, var(--secondary) 22%, transparent) 50%,
+        color-mix(in oklab, var(--secondary) 6%, transparent) 64%,
+        transparent 74%
+      ),
+      radial-gradient(
+        900px 480px at -10% 50%,
+        color-mix(in oklab, var(--muted) 70%, transparent) 0%,
+        color-mix(in oklab, var(--muted) 40%, transparent) 30%,
+        color-mix(in oklab, var(--muted) 14%, transparent) 52%,
+        transparent 72%
+      );
+    background-repeat: no-repeat;
   }
   body {
     margin: 0;
     min-height: 100dvh;
-    background:
-      radial-gradient(
-        1100px 520px at 88% -8%,
-        color-mix(in oklab, var(--secondary) 90%, transparent),
-        transparent 70%
-      ),
-      radial-gradient(
-        900px 480px at -10% 110%,
-        color-mix(in oklab, var(--muted) 80%, transparent),
-        transparent 70%
-      ),
-      var(--background);
-    background-attachment: fixed;
+    background: transparent;
     font-size: 15px;
     line-height: 1.5;
   }
@@ -679,16 +690,19 @@
   }
 
   /* ── Stats ───────────────────────────────────────────────── */
+  /* Stats share a row equally and wrap instead of overlapping: a stat is
+     never narrower than its value (which never breaks) or a label word. */
   .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 18px 16px;
   }
   .stat {
     display: grid;
+    flex: 1 1 100px;
     align-content: start;
     gap: 4px;
-    min-width: 0;
+    min-width: min-content;
   }
   .stat-label {
     color: var(--muted-foreground);
@@ -724,15 +738,19 @@
   }
 
   /* Horizontal breakdown bars (sign-in methods, bot win rates…). */
+  /* One label column for the whole list (as wide as its longest label, up
+     to about half), so labels rarely truncate and every bar starts at the
+     same x; rows share it through subgrid. */
   .bars {
     display: grid;
-    gap: 10px;
+    grid-template-columns: fit-content(55%) minmax(32px, 1fr) auto;
+    gap: 10px 12px;
   }
   .bar-row {
     display: grid;
-    grid-template-columns: minmax(84px, 0.9fr) minmax(0, 2fr) auto;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: center;
-    gap: 12px;
     font-size: 13.5px;
   }
   .bar-label {
@@ -764,7 +782,7 @@
     background: var(--border-strong);
   }
   .bar-value {
-    min-width: 44px;
+    min-width: 24px;
     color: var(--muted-foreground);
     font-size: 12.5px;
     text-align: end;
@@ -1325,6 +1343,7 @@
   }
   .fact {
     display: grid;
+    align-content: start;
     gap: 5px;
     min-width: 0;
   }
@@ -1345,6 +1364,7 @@
   /* ── Lists (feeds, timelines) ────────────────────────────── */
   .feed {
     display: grid;
+    align-content: start;
     container-type: inline-size;
   }
   .feed-item {
@@ -1769,6 +1789,7 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
+    max-width: 100%;
   }
   .copy-button {
     display: inline-grid;
@@ -1912,6 +1933,7 @@
   }
   .attention {
     display: grid;
+    align-content: start;
   }
   .attention-item {
     display: grid;
@@ -1959,7 +1981,21 @@
     min-height: 340px;
   }
   .h-panel {
-    min-height: 420px;
+    min-height: 430px;
+  }
+  .h-panel-chart {
+    min-height: 560px;
+  }
+  /* Feeds of unknown length keep a fixed height and scroll inside. */
+  .h-panel-feed {
+    height: 600px;
+  }
+  .h-panel-feed > .feed,
+  .h-panel-feed > .attention {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .h-panel-lg {
     min-height: 520px;
@@ -2164,17 +2200,22 @@
   }
   .moves {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 6px;
     max-height: 320px;
     overflow-y: auto;
     padding: 2px;
   }
+  .moves > li {
+    min-width: 0;
+  }
+  /* One line per move, in fixed columns: number, shooter, cell, outcome. */
   .move {
-    display: flex;
+    display: grid;
+    grid-template-columns: 2.2em minmax(0, 1fr) 2.8em 4.8em;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
+    width: 100%;
     min-height: 36px;
     padding-inline: 10px;
     border: 1px solid transparent;
@@ -2183,7 +2224,23 @@
     color: var(--foreground);
     font: inherit;
     font-size: 12.5px;
+    text-align: start;
+    white-space: nowrap;
     cursor: pointer;
+  }
+  .move-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .move-outcome {
+    color: var(--muted-foreground);
+    text-align: end;
+  }
+  .move-outcome:is([data-outcome="hit"], [data-outcome="sunk"]) {
+    color: var(--destructive);
+  }
+  .move[aria-current="step"] .move-outcome {
+    color: inherit;
   }
   .move:hover {
     border-color: var(--border-strong);

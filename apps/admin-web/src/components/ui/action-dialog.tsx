@@ -60,7 +60,6 @@ type Props = {
  */
 export function ActionDialog(props: Props) {
   const t = useTranslations("actions");
-  const { toasts } = useStores();
   const [open, setOpen] = useState(false);
   const [attempt, setAttempt] = useState(0);
   return (
@@ -93,14 +92,7 @@ export function ActionDialog(props: Props) {
             </DialogDescription>
           )}
         </DialogHeader>
-        <ActionForm
-          key={attempt}
-          {...props}
-          onDone={(message) => {
-            setOpen(false);
-            toasts.push("ok", message);
-          }}
-        />
+        <ActionForm key={attempt} {...props} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -116,10 +108,24 @@ function ActionForm({
   acknowledge,
   triggerIcon,
   onDone,
-}: Props & { onDone: (message: string) => void }) {
+}: Props & { onDone: () => void }) {
   const t = useTranslations("actions");
   const id = useId();
-  const [state, formAction, pending] = useActionState(action, {
+  const { toasts } = useStores();
+  // The action re-renders the page, which may replace this very dialog (the
+  // match is no longer live, the channel is paused): outcomes that must be
+  // seen go to the console-wide toasts, which outlive the dialog.
+  const run = async (previous: ActionResult, form: FormData) => {
+    const result = await action(previous, form);
+    if (result.status === "success") toasts.push("ok", result.message);
+    else if (
+      result.status === "error" &&
+      (result.code === "version-conflict" || result.code === "conflict")
+    )
+      toasts.push("bad", result.message);
+    return result;
+  };
+  const [state, formAction, pending] = useActionState(run, {
     status: "idle",
   } as ActionResult);
   const [reason, setReason] = useState("");
@@ -128,7 +134,7 @@ function ActionForm({
   const valid = length >= 3 && length <= 500 && (!acknowledge || acknowledged);
 
   useEffect(() => {
-    if (state.status === "success") onDone(state.message);
+    if (state.status === "success") onDone();
   }, [state, onDone]);
 
   return (

@@ -31,11 +31,15 @@ export function DailyBars({
   series: { key: string; label: string; tone?: Tone }[];
   formatValue?: (value: number) => string;
   height?: number;
-  /** Show every n-th day label (30-day charts). */
+  /** Show every n-th day label, counted back from the last day. */
   labelEvery?: number;
 }) {
+  // Bars stack from zero: a negative value (a day's net after a refund of
+  // an earlier payment) draws nothing; the data table keeps the real one.
+  const drawn = (day: (typeof days)[number], key: string) =>
+    Math.max(0, day.values[key] ?? 0);
   const totals = days.map((day) =>
-    series.reduce((sum, item) => sum + (day.values[item.key] ?? 0), 0),
+    series.reduce((sum, item) => sum + drawn(day, item.key), 0),
   );
   const top = niceMax(Math.max(0, ...totals));
   const width = Math.max(1, days.length) * 10;
@@ -69,7 +73,7 @@ export function DailyBars({
             return (
               <g key={day.day}>
                 {series.map((item) => {
-                  const value = day.values[item.key] ?? 0;
+                  const value = drawn(day, item.key);
                   const h = top > 0 ? (value / top) * 100 : 0;
                   offset -= h;
                   return value > 0 ? (
@@ -91,9 +95,7 @@ export function DailyBars({
         <div className="chart-xaxis" aria-hidden="true">
           {days.map((day, index) => (
             <span key={day.day}>
-              {index % labelEvery === 0 || index === days.length - 1
-                ? day.label
-                : ""}
+              {(days.length - 1 - index) % labelEvery === 0 ? day.label : ""}
             </span>
           ))}
         </div>
@@ -108,29 +110,33 @@ export function DailyBars({
           ))}
         </figcaption>
       )}
-      <table className="sr-only">
-        <caption>{label}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{label}</th>
-            {series.map((item) => (
-              <th key={item.key} scope="col">
-                {item.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {days.map((day) => (
-            <tr key={day.day}>
-              <th scope="row">{day.label}</th>
+      <div className="sr-only">
+        <table>
+          <caption>{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{label}</th>
               {series.map((item) => (
-                <td key={item.key}>{formatValue(day.values[item.key] ?? 0)}</td>
+                <th key={item.key} scope="col">
+                  {item.label}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {days.map((day) => (
+              <tr key={day.day}>
+                <th scope="row">{day.label}</th>
+                {series.map((item) => (
+                  <td key={item.key}>
+                    {formatValue(day.values[item.key] ?? 0)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }
@@ -204,22 +210,24 @@ export function LineChart({
         </svg>
         {(start || end) && (
           <div className="chart-xaxis" aria-hidden="true">
-            <span style={{ textAlign: "start" }}>{start}</span>
-            <span style={{ textAlign: "end" }}>{end}</span>
+            <span style={{ justifyContent: "flex-start" }}>{start}</span>
+            <span style={{ justifyContent: "flex-end" }}>{end}</span>
           </div>
         )}
       </div>
-      <table className="sr-only">
-        <caption>{label}</caption>
-        <tbody>
-          {points.map((point) => (
-            <tr key={point.key}>
-              <th scope="row">{point.label}</th>
-              <td>{point.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="sr-only">
+        <table>
+          <caption>{label}</caption>
+          <tbody>
+            {points.map((point) => (
+              <tr key={point.key}>
+                <th scope="row">{point.label}</th>
+                <td>{point.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

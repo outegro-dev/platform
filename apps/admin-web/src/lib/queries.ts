@@ -3,7 +3,7 @@ import type { AuditSource, Fetcher, TimelineEntry } from "./audit";
 import { env } from "./env";
 import { probe } from "./health";
 import { load } from "./result";
-import { forwardedHeaders, services } from "./server";
+import { forwardedHeaders, getOperator, services } from "./server";
 
 /**
  * Reads shared by several panels of one page, deduplicated per request
@@ -18,6 +18,19 @@ export const identityOverview = cache(() =>
 export const userDetail = cache((id: string) =>
   load(() => services().identity.user(id)),
 );
+
+/**
+ * The name behind an audit actor, for operators who may read users (null
+ * otherwise, and the feed shows the short ID). The same few operators act
+ * again and again, so each is read once per request.
+ */
+export const actorName = cache(async (id: string): Promise<string | null> => {
+  const me = await getOperator();
+  if (!me.ok || !me.data.permissions.includes("users.read")) return null;
+  if (me.data.id === id) return me.data.displayName;
+  const result = await userDetail(id);
+  return result.ok ? result.data.user.displayName : null;
+});
 
 export const notificationsOverview = cache(() =>
   load(() => services().notifications.overview()),

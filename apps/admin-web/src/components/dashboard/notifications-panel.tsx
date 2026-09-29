@@ -29,7 +29,7 @@ export async function NotificationsPanel() {
     kicker: t("kicker"),
     title: t("title"),
     action: <PanelLink href="/notifications">{t("open")}</PanelLink>,
-    className: "h-panel",
+    className: "h-panel-chart",
   };
   if (!result.ok) {
     return (

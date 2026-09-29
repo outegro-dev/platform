@@ -46,6 +46,7 @@ export async function UserActions({
       {granted.has("users.suspend") &&
         (user.status === "suspended" ? (
           <ActionDialog
+            key="restore"
             action={setUserStatus}
             triggerLabel={t("restore")}
             triggerVariant="primary"
@@ -62,6 +63,7 @@ export async function UserActions({
           />
         ) : user.status === "active" ? (
           <ActionDialog
+            key="suspend"
             action={setUserStatus}
             triggerLabel={t("suspend")}
             triggerVariant="destructive"

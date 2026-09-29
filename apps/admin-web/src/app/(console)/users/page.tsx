@@ -37,6 +37,7 @@ export default async function UsersPage({
           label={t("searchLabel")}
           active={Boolean(query)}
           inline
+          submit="search"
         >
           <TextField
             name="query"

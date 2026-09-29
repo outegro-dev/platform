@@ -192,7 +192,7 @@ async function Stats({ range }: { range: (typeof RANGES)[number] }) {
                     { key: "refunded", label: t("refunded"), tone: "bad" },
                   ]}
                   formatValue={format}
-                  labelEvery={range === "7" ? 1 : range === "30" ? 5 : 15}
+                  labelEvery={range === "7" ? 1 : range === "30" ? 7 : 21}
                 />
               </Panel>
             );

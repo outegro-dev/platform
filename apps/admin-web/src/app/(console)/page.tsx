@@ -105,7 +105,7 @@ export default async function DashboardPage() {
         <Suspense
           fallback={
             <PanelSkeleton
-              className="h-panel-sm"
+              className="h-panel-feed"
               label={t("attention.title")}
               stats={0}
               rows={4}
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
           <Suspense
             fallback={
               <PanelSkeleton
-                className="h-panel-sm"
+                className="h-panel-feed"
                 label={t("audit.title")}
                 stats={0}
                 rows={6}
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
           <Suspense
             fallback={
               <PanelSkeleton
-                className="h-panel"
+                className="h-panel-chart"
                 label={t("identity.title")}
                 chart
                 rows={2}
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
           <Suspense
             fallback={
               <PanelSkeleton
-                className="h-panel"
+                className="h-panel-chart"
                 label={t("notifications.title")}
                 chart
                 rows={1}

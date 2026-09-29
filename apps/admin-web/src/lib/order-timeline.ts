@@ -61,7 +61,7 @@ export function orderTimeline(detail: OrderDetail): TimelineItem[] {
         at: detail.attempt.resolvedAt,
         kind: "attemptResolved",
         tone: toneOf("attempt", detail.attempt.state),
-        values: { state: detail.attempt.state },
+        values: { state: detail.attempt.state, result: detail.attempt.state },
         detail: detail.attempt.failureReason,
       });
   }

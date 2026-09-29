@@ -122,6 +122,7 @@ async function Switches({ granted }: { granted: ReadonlySet<string> }) {
                 <div className="row-gap">
                   {enabled ? (
                     <ActionDialog
+                      key={`pause-${version}`}
                       action={setChannel}
                       triggerLabel={t("pause", { channel: name })}
                       triggerIcon={<PauseIcon aria-hidden="true" />}
@@ -143,6 +144,7 @@ async function Switches({ granted }: { granted: ReadonlySet<string> }) {
                     />
                   ) : (
                     <ActionDialog
+                      key={`resume-${version}`}
                       action={setChannel}
                       triggerLabel={t("resume", { channel: name })}
                       triggerVariant="primary"

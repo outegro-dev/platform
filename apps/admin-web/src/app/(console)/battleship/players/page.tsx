@@ -166,6 +166,7 @@ export default async function PlayersPage({
           label={t("searchLabel")}
           active={Boolean(query)}
           inline
+          submit="search"
         >
           <TextField
             name="query"
