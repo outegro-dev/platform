@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { createEvent, identityUserStatusChanged } from "@outegro/contracts";
+import {
+  createEvent,
+  identityRoleBindingChanged,
+  identityUserStatusChanged,
+} from "@outegro/contracts";
 import { DATABASE } from "@outegro/nest-common";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -7,6 +11,7 @@ import type { PaymentsDatabase } from "./common/database.js";
 import { CustomersService } from "./customers/customers.service.js";
 import {
   auditLog,
+  customers as customerTable,
   grants,
   orders,
   payments,
@@ -63,6 +68,33 @@ const suspend = (user: Customer) =>
       payload: { userId: user.userId, status: "suspended", accessVersion: 1 },
     }),
   );
+
+/** A status change as Identity publishes it: every change bumps accessVersion. */
+const statusEvent = (
+  user: { userId: string },
+  status: "active" | "suspended" | "deleted",
+  accessVersion: number,
+) =>
+  createEvent(identityUserStatusChanged, {
+    aggregateId: user.userId,
+    aggregateVersion: accessVersion + 1,
+    payload: { userId: user.userId, status, accessVersion },
+  });
+
+/** A role granted in Identity: it bumps accessVersion too, not the status. */
+const roleChanged = (user: { userId: string }, accessVersion: number) =>
+  createEvent(identityRoleBindingChanged, {
+    aggregateId: randomUUID(),
+    aggregateVersion: 1,
+    payload: {
+      bindingId: randomUUID(),
+      userId: user.userId,
+      roleKey: "support",
+      scope: "platform",
+      state: "active",
+      accessVersion,
+    },
+  });
 
 async function buyPremium(user: Customer) {
   const res = await h
@@ -198,16 +230,6 @@ describe("TC-ID-10-04: a suspended account with an unexpired token", () => {
 
 describe("an account Identity suspends or deletes stops its renewals", () => {
   const DAY_MS = 86_400_000;
-  const statusEvent = (
-    user: Customer,
-    status: "active" | "suspended" | "deleted",
-    accessVersion: number,
-  ) =>
-    createEvent(identityUserStatusChanged, {
-      aggregateId: user.userId,
-      aggregateVersion: accessVersion + 1,
-      payload: { userId: user.userId, status, accessVersion },
-    });
   const subscriptionsOf = (userId: string) =>
     db
       .select()
@@ -345,6 +367,36 @@ describe("an account Identity suspends or deletes stops its renewals", () => {
     expect(await systemAudit([subscription.id])).toEqual([]);
   });
 
+  it("a suspension stops renewals even when a later role change arrived first", async () => {
+    const buyer = await newCustomer();
+    const { subscription } = await buyPremium(buyer);
+    // Identity suspended the account (1), then changed a role (2). The role
+    // change says nothing about the status, so the suspension is current.
+    await customers.apply(roleChanged(buyer, 2));
+    await customers.apply(statusEvent(buyer, "suspended", 1));
+    expect((await subscriptionsOf(buyer.userId))[0]).toMatchObject({
+      state: "cancel_requested",
+      paidUntil: subscription.paidUntil,
+    });
+    expect(await systemAudit([subscription.id])).toEqual([
+      expect.objectContaining({ reason: "account suspended" }),
+    ]);
+  });
+
+  it("a suspension delivered twice, or again after a reactivation, stops renewals once", async () => {
+    const buyer = await newCustomer();
+    const { subscription } = await buyPremium(buyer);
+    const suspended = statusEvent(buyer, "suspended", 1);
+    await customers.apply(suspended);
+    await customers.apply(suspended);
+    await customers.apply(statusEvent(buyer, "active", 2));
+    await customers.apply({ ...suspended, eventId: randomUUID() });
+    expect(await systemAudit([subscription.id])).toHaveLength(1);
+    expect((await subscriptionsOf(buyer.userId))[0]).toMatchObject({
+      state: "cancel_requested",
+    });
+  });
+
   it("a cancel Lava does not answer for a closed account is reported at once and retried", async () => {
     const buyer = await newCustomer();
     const { subscription } = await buyPremium(buyer);
@@ -374,5 +426,86 @@ describe("an account Identity suspends or deletes stops its renewals", () => {
       autoRenew: false,
     });
     expect(await issue()).toMatchObject({ status: "resolved" });
+  });
+});
+
+/**
+ * Identity events may arrive out of order (a retry, a redelivery): the
+ * status with the higher accessVersion wins, whatever came last.
+ */
+describe("account statuses from Identity apply in version order", () => {
+  const stored = async (userId: string) =>
+    (
+      await db
+        .select({
+          status: customerTable.status,
+          accessVersion: customerTable.accessVersion,
+        })
+        .from(customerTable)
+        .where(eq(customerTable.userId, userId))
+    )[0];
+  const checkout = (user: Customer) =>
+    h
+      .http()
+      .post("/v1/checkout")
+      .set(user.auth)
+      .set("idempotency-key", `order-${randomUUID()}`)
+      .send({ productKey: PREMIUM, currency: "USD" });
+
+  it("a status older than the stored one changes nothing, either way", async () => {
+    // Suspended (1), reactivated (2); the suspension is delivered last.
+    const back = await newCustomer();
+    await customers.apply(statusEvent(back, "active", 2));
+    await customers.apply(statusEvent(back, "suspended", 1));
+    expect(await stored(back.userId)).toEqual({
+      status: "active",
+      accessVersion: 2,
+    });
+    await checkout(back).expect(200);
+
+    // Reactivated (3), suspended (4); the reactivation is delivered last.
+    const closed = await newCustomer();
+    await customers.apply(statusEvent(closed, "suspended", 4));
+    await customers.apply(statusEvent(closed, "active", 3));
+    expect(await stored(closed.userId)).toEqual({
+      status: "suspended",
+      accessVersion: 4,
+    });
+    const refused = await checkout(closed).expect(403);
+    expect(refused.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("a status delivered again, even under a new event id, never undoes a newer one", async () => {
+    const buyer = await newCustomer();
+    const suspended = statusEvent(buyer, "suspended", 1);
+    await customers.apply(suspended);
+    await customers.apply(suspended);
+    expect((await stored(buyer.userId))?.status).toBe("suspended");
+    await customers.apply(statusEvent(buyer, "active", 2));
+    await customers.apply(suspended);
+    await customers.apply({ ...suspended, eventId: randomUUID() });
+    expect((await stored(buyer.userId))?.status).toBe("active");
+    await checkout(buyer).expect(200);
+  });
+
+  it("the account's creation delivered late does not reopen a suspended account", async () => {
+    const userId = randomUUID();
+    const late = customerEvents(userId, `late.${userId.slice(0, 8)}@x.test`);
+    await customers.apply(statusEvent({ userId }, "suspended", 1));
+    for (const event of late.reverse()) await customers.apply(event);
+    expect((await stored(userId))?.status).toBe("suspended");
+  });
+
+  it("role changes move the access version but never decide the status", async () => {
+    const buyer = await newCustomer();
+    // Identity: suspended (3), reactivated (4), a role granted (5); the role
+    // change overtakes the reactivation.
+    await customers.apply(statusEvent(buyer, "suspended", 3));
+    await customers.apply(roleChanged(buyer, 5));
+    await customers.apply(statusEvent(buyer, "active", 4));
+    expect(await stored(buyer.userId)).toEqual({
+      status: "active",
+      accessVersion: 5,
+    });
   });
 });

@@ -59,20 +59,26 @@ export const identityQueue = defineQueue("payments", "identity-events", [
   },
 ]);
 
+type AccountStatus = "active" | "suspended" | "deleted";
+
 type Fields = {
   userId: string;
-  set: Partial<
-    Pick<CustomerRow, "email" | "emailVerified" | "locale" | "status">
-  >;
+  set: Partial<Pick<CustomerRow, "email" | "emailVerified" | "locale">>;
+  /** The account status and Identity's accessVersion it was set at. */
+  status?: { value: AccountStatus; version: number };
   accessVersion?: number;
 };
 
 /**
  * Buyer projection from Identity events: the email Lava needs, the locale
  * for its pages and emails, status, and the latest access version. Events
- * may arrive in any order; each sets only its own fields. An account
- * suspended or deleted stops the renewal of its subscriptions in the same
- * transaction, unless a newer access change was applied already.
+ * may arrive in any order; each sets only its own fields. A status replaces
+ * the stored one only if it is not older: Identity bumps accessVersion with
+ * every status change, and user.created carries the status from before any
+ * change (version 0). Role changes bump accessVersion too, but say nothing
+ * about the status, so they never hold a status back. An account suspended
+ * or deleted stops the renewal of its subscriptions in the same
+ * transaction, when that status is the one stored.
  */
 @Injectable()
 export class CustomersService implements OnApplicationBootstrap {
@@ -95,8 +101,7 @@ export class CustomersService implements OnApplicationBootstrap {
   async apply(event: AnyEvent) {
     const fields = this.fieldsOf(event);
     const now = this.clock.now();
-    const version = fields.accessVersion;
-    const status = fields.set.status;
+    const { status, accessVersion } = fields;
     let stopped = 0;
     await processOnce(
       this.database.db,
@@ -106,45 +111,56 @@ export class CustomersService implements OnApplicationBootstrap {
         type: event.type,
       },
       async (tx) => {
-        const [known] = await tx
-          .select({ accessVersion: customers.accessVersion })
-          .from(customers)
-          .where(eq(customers.userId, fields.userId))
-          .for("update");
-        await tx
+        // One statement, so the version check and the write see the same
+        // row even when two events of a new account race to insert it.
+        const [stored] = await tx
           .insert(customers)
           .values({
             userId: fields.userId,
             ...fields.set,
-            ...(version === undefined ? {} : { accessVersion: version }),
+            ...(status
+              ? { status: status.value, statusVersion: status.version }
+              : {}),
+            ...(accessVersion === undefined ? {} : { accessVersion }),
             updatedAt: now,
           })
           .onConflictDoUpdate({
             target: customers.userId,
             set: {
               ...fields.set,
-              ...(version === undefined
+              ...(status
+                ? {
+                    // An older status (a late or repeated event) is dropped.
+                    status: sql`case when ${status.version} >= ${customers.statusVersion} then ${status.value} else ${customers.status} end`,
+                    statusVersion: sql`greatest(${customers.statusVersion}, ${status.version})`,
+                  }
+                : {}),
+              ...(accessVersion === undefined
                 ? {}
                 : {
                     // Versions only grow; a late event cannot lower them.
-                    accessVersion: sql`greatest(${customers.accessVersion}, ${version})`,
+                    accessVersion: sql`greatest(${customers.accessVersion}, ${accessVersion})`,
                   }),
               updatedAt: now,
             },
-          });
+          })
+          .returning({ statusVersion: customers.statusVersion });
         // Lava must not charge a closed account again. Paid time is kept;
-        // renewal stays off if the account comes back. A status older than
-        // an access change already applied is not acted on.
-        const closed = status === "suspended" || status === "deleted";
+        // renewal stays off if the account comes back. Only the status
+        // stored now acts: one older than it is not acted on.
         if (
-          closed &&
-          version !== undefined &&
-          version >= (known?.accessVersion ?? 0)
+          status &&
+          status.value !== "active" &&
+          stored?.statusVersion === status.version
         )
           stopped = await this.cancellation.stopRenewalsOfClosedAccount(
             // processOnce runs it in a transaction of this service's database.
             tx as PaymentsTx,
-            { userId: fields.userId, status, eventId: event.eventId },
+            {
+              userId: fields.userId,
+              status: status.value,
+              eventId: event.eventId,
+            },
             now,
           );
       },
@@ -202,9 +218,14 @@ export class CustomersService implements OnApplicationBootstrap {
       );
       return;
     }
+    // The status Identity reports is current as of its accessVersion.
     await this.database.db
       .insert(customers)
-      .values({ ...user, updatedAt: this.clock.now() })
+      .values({
+        ...user,
+        statusVersion: user.accessVersion,
+        updatedAt: this.clock.now(),
+      })
       .onConflictDoNothing();
   }
 
@@ -214,7 +235,9 @@ export class CustomersService implements OnApplicationBootstrap {
         const { payload } = identityUserCreated.schema.parse(event);
         return {
           userId: payload.userId,
-          set: { locale: payload.locale, status: payload.status },
+          set: { locale: payload.locale },
+          // The status an account starts with, before any change.
+          status: { value: payload.status, version: 0 },
         };
       }
       case identityUserContactChanged.type: {
@@ -232,7 +255,8 @@ export class CustomersService implements OnApplicationBootstrap {
         const { payload } = identityUserStatusChanged.schema.parse(event);
         return {
           userId: payload.userId,
-          set: { status: payload.status },
+          set: {},
+          status: { value: payload.status, version: payload.accessVersion },
           accessVersion: payload.accessVersion,
         };
       }

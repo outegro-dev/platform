@@ -77,7 +77,13 @@ export const customers = pgTable("customers", {
     .notNull()
     .default("en"),
   status: text("status").notNull().default("active"),
+  /** The newest access version seen: status and role changes both bump it. */
   accessVersion: integer("access_version").notNull().default(0),
+  /**
+   * Identity's accessVersion of the status stored here: a status event
+   * older than it changes nothing. Role changes leave it alone.
+   */
+  statusVersion: integer("status_version").notNull().default(0),
   updatedAt: at("updated_at").notNull(),
 });
 
