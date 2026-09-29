@@ -350,6 +350,86 @@ describe("billing notices (N-06)", () => {
   });
 });
 
+describe("passkey notices (ID-05)", () => {
+  it("an added and a removed passkey are told in the reader's language, by email and inbox, without the passkey's name", async () => {
+    const en = await newUser("en");
+    const ru = await newUser("ru");
+    const passkeyId = randomUUID();
+    for (const user of [en, ru])
+      for (const templateKey of [
+        "security.passkey-added.v1",
+        "security.passkey-removed.v1",
+      ])
+        await intentsService.accept(
+          intentEvent({
+            userId: user.userId,
+            templateKey,
+            category: "security",
+            sourceEventId: passkeyId,
+            // More than the template shows: a name typed by whoever held
+            // the session never reaches the message or its storage.
+            data: {
+              at: "2026-09-29T14:03:00.000Z",
+              name: "Call +1 555 0100 to keep your account",
+            },
+          }),
+        );
+    await worker.tick();
+
+    const byPlainSubject = (to: string) =>
+      Object.fromEntries(
+        mailTo(to).map((m) => [plain(m.subject), plain(m.text)]),
+      );
+    expect(byPlainSubject(en.email)).toEqual({
+      "A passkey was added to your account": expect.stringContaining(
+        "A passkey was added to your outegro.dev account on Sep 29, 2026, 2:03 PM UTC and can now be used to sign in. If this was not you, remove it under Security and end your other sessions.",
+      ),
+      "A passkey was removed from your account": expect.stringContaining(
+        "A passkey was removed from your outegro.dev account on Sep 29, 2026, 2:03 PM UTC and can no longer be used to sign in. If this was not you, sign in with an email code and review your sign-in methods and sessions.",
+      ),
+    });
+    expect(byPlainSubject(ru.email)).toEqual({
+      "К аккаунту добавлен ключ доступа": expect.stringContaining(
+        "К вашему аккаунту outegro.dev добавлен ключ доступа (29 сент. 2026, 14:03 UTC), теперь с ним можно входить. Если это были не вы, удалите его в разделе «Безопасность» и завершите остальные сеансы.",
+      ),
+      "Ключ доступа удалён из аккаунта": expect.stringContaining(
+        "Из вашего аккаунта outegro.dev удалён ключ доступа (29 сент. 2026, 14:03 UTC), входить с ним больше нельзя. Если это были не вы, войдите по коду из письма и проверьте способы входа и сеансы.",
+      ),
+    });
+    for (const mail of [...mailTo(en.email), ...mailTo(ru.email)]) {
+      expect(mail.html).toContain(
+        'href="https://id.outegro.dev/account/security"',
+      );
+      expect(mail.html).not.toContain("555");
+      expect(mail.text).not.toContain("555");
+    }
+    expect((await inboxOf(ru.userId)).map((item) => item.title).sort()).toEqual(
+      ["Добавлен ключ доступа", "Ключ доступа удалён"],
+    );
+    const stored = await db
+      .select({ data: intents.data })
+      .from(intents)
+      .where(eq(intents.userId, en.userId));
+    expect(stored.map((row) => row.data)).toEqual([
+      { at: "2026-09-29T14:03:00.000Z" },
+      { at: "2026-09-29T14:03:00.000Z" },
+    ]);
+
+    // One notice per passkey and template: the same source again is ignored.
+    await intentsService.accept(
+      intentEvent({
+        userId: en.userId,
+        templateKey: "security.passkey-added.v1",
+        category: "security",
+        sourceEventId: passkeyId,
+        data: { at: "2026-09-29T14:03:00.000Z" },
+      }),
+    );
+    await worker.tick();
+    expect(mailTo(en.email)).toHaveLength(2);
+  });
+});
+
 describe("consumer path (N-06)", () => {
   it("a billing notice from payments and a security notice from identity arrive over RabbitMQ", async () => {
     const payments = new Messaging(

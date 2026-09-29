@@ -376,6 +376,46 @@ exports[`templates > C2.4: what each template says, in English and Russian 1`] =
     "text": "Аккаунт Google отвязан от вашего аккаунта outegro.dev (29 сент. 2026, 14:03 UTC). Если это были не вы, войдите по почте и проверьте сеансы.",
     "title": "Вход через Google отвязан",
   },
+  "security.passkey-added.v1 en": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "A passkey was added to your account",
+    "text": "A passkey was added to your outegro.dev account on Sep 29, 2026, 2:03 PM UTC and can now be used to sign in. If this was not you, remove it under Security and end your other sessions.",
+    "title": "Passkey added",
+  },
+  "security.passkey-added.v1 ru": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "К аккаунту добавлен ключ доступа",
+    "text": "К вашему аккаунту outegro.dev добавлен ключ доступа (29 сент. 2026, 14:03 UTC), теперь с ним можно входить. Если это были не вы, удалите его в разделе «Безопасность» и завершите остальные сеансы.",
+    "title": "Добавлен ключ доступа",
+  },
+  "security.passkey-removed.v1 en": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "A passkey was removed from your account",
+    "text": "A passkey was removed from your outegro.dev account on Sep 29, 2026, 2:03 PM UTC and can no longer be used to sign in. If this was not you, sign in with an email code and review your sign-in methods and sessions.",
+    "title": "Passkey removed",
+  },
+  "security.passkey-removed.v1 ru": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Ключ доступа удалён из аккаунта",
+    "text": "Из вашего аккаунта outegro.dev удалён ключ доступа (29 сент. 2026, 14:03 UTC), входить с ним больше нельзя. Если это были не вы, войдите по коду из письма и проверьте способы входа и сеансы.",
+    "title": "Ключ доступа удалён",
+  },
   "security.session-revoked en": {
     "links": [
       "https://id.outegro.dev/account/sessions",
