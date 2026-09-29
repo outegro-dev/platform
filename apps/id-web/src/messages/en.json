@@ -39,7 +39,20 @@
     "emailHint": "New here? The same step creates your account.",
     "codeHint": "No email? Check the spam folder, or send a new code below.",
     "codeResentTo": "We sent a new code to {email}",
-    "resending": "Sending a new code…"
+    "resending": "Sending a new code…",
+    "or": "or",
+    "google": "Continue with Google",
+    "googleErrors": {
+      "google_failed": "Google sign-in did not complete. Please try again.",
+      "google_cancelled": "Google sign-in was cancelled.",
+      "google_unavailable": "Google sign-in is unavailable right now. Use the email code instead.",
+      "google_link_required": "An account with this email already exists. Sign in with an email code, then connect Google under Security.",
+      "google_unverified": "Google has not verified this email address. Use the email code instead.",
+      "google_in_use": "This Google account is already connected to another outegro.dev account.",
+      "google_already_linked": "A Google account is already connected. Disconnect it first to use another one.",
+      "google_suspended": "This account is suspended.",
+      "google_last_method": "Google is your only way to sign in, so it cannot be disconnected."
+    }
   },
   "authorize": {
     "title": "This link is not valid",
@@ -55,7 +68,8 @@
     "language": "Language",
     "sections": "Account sections",
     "signingOut": "Signing out…",
-    "languageFailed": "Couldn't switch the language. Try again."
+    "languageFailed": "Couldn't switch the language. Try again.",
+    "security": "Security"
   },
   "profile": {
     "title": "Profile",
@@ -156,5 +170,36 @@
     "offline": "You're offline. Check the connection and try again.",
     "dismiss": "Dismiss",
     "loading": "Loading…"
+  },
+  "security": {
+    "title": "Security",
+    "lead": "Ways to sign in to every outegro.dev app.",
+    "email": "Email code",
+    "emailHint": "always available",
+    "googleLinked": "Connected as {email} since {date}",
+    "googleNotLinked": "Not connected",
+    "googleUnavailable": "Not available right now",
+    "link": "Connect",
+    "unlink": "Disconnect",
+    "linked": "Google is connected. You can now sign in with it.",
+    "unlinked": "Google is disconnected."
+  },
+  "telegram": {
+    "title": "Telegram",
+    "unavailable": "Telegram notifications are not available yet.",
+    "notLinked": "Get notifications in a chat with the outegro.dev bot.",
+    "linked": "Connected",
+    "linkedSince": "Connected since {date}",
+    "waiting": "Press Start in the Telegram chat that just opened. Waiting for the bot…",
+    "expired": "The link expired before the chat was connected.",
+    "openAgain": "Open Telegram",
+    "connect": "Connect",
+    "retry": "Try again",
+    "disconnect": "Disconnect",
+    "errors": {
+      "unavailable": "Could not reach the notification service. Try again shortly.",
+      "rate_limited": "Too many attempts. Wait a minute and try again.",
+      "disconnect": "Could not disconnect. Try again."
+    }
   }
 }

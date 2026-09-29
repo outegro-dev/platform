@@ -6,6 +6,7 @@ import {
   DevicesIcon,
   EnvelopeSimpleIcon,
   type Icon,
+  ShieldCheckIcon,
   UserIcon,
 } from "@phosphor-icons/react";
 import Link, { useLinkStatus } from "next/link";
@@ -15,6 +16,7 @@ import { useOfflineGuard } from "@/components/action-status";
 
 const items = [
   { href: "/account", key: "profile", Icon: UserIcon },
+  { href: "/account/security", key: "security", Icon: ShieldCheckIcon },
   { href: "/account/sessions", key: "sessions", Icon: DevicesIcon },
   { href: "/account/inbox", key: "inbox", Icon: EnvelopeSimpleIcon },
   { href: "/account/notifications", key: "notifications", Icon: BellIcon },
