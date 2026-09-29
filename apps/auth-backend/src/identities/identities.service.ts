@@ -1,5 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Locale } from "@outegro/contracts";
+import {
+  createEvent,
+  type Locale,
+  notificationRequested,
+} from "@outegro/contracts";
+import { enqueueEvent } from "@outegro/db";
 import {
   AppError,
   CLOCK,
@@ -124,7 +129,9 @@ export class IdentitiesService {
         throw new AppError("CONFLICT", {
           fieldErrors: { identity: ["already_linked"] },
         });
+      await this.notify(tx, userId, "security.google-linked.v1", attached, now);
     });
+    this.relay.kick();
     return this.list(userId);
   }
 
@@ -159,7 +166,15 @@ export class IdentitiesService {
         data: { provider: "google" },
         at: now,
       });
+      await this.notify(
+        tx,
+        userId,
+        "security.google-unlinked.v1",
+        google.id,
+        now,
+      );
     });
+    this.relay.kick();
   }
 
   async list(userId: string) {
@@ -206,7 +221,7 @@ export class IdentitiesService {
     return row?.user ?? null;
   }
 
-  /** Inserts the link; false when this user already has a Google account. */
+  /** Inserts the link; its id, or null when this user already has a Google account. */
   private async attach(
     tx: AuthTx,
     userId: string,
@@ -225,7 +240,7 @@ export class IdentitiesService {
       })
       .onConflictDoNothing()
       .returning({ id: identities.id });
-    if (!row) return false;
+    if (!row) return null;
     await audit(tx, {
       actorId: userId,
       action: "identity.linked",
@@ -234,6 +249,35 @@ export class IdentitiesService {
       data: { provider: "google", via },
       at,
     });
-    return true;
+    return row.id;
+  }
+
+  /**
+   * Security notice for the owner, in the transaction of the change (N-06).
+   * The identity row is the source: one message per link and per unlink.
+   */
+  private notify(
+    tx: AuthTx,
+    userId: string,
+    templateKey: string,
+    identityId: string,
+    at: Date,
+  ) {
+    return enqueueEvent(
+      tx,
+      createEvent(notificationRequested, {
+        producer: "identity",
+        aggregateId: userId,
+        aggregateVersion: 1,
+        occurredAt: at,
+        payload: {
+          sourceEventId: identityId,
+          templateKey,
+          category: "security",
+          recipient: { userId },
+          data: { at: at.toISOString() },
+        },
+      }),
+    );
   }
 }
