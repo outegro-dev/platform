@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.7
 # One build for every app; each target copies only what its runtime needs.
 #   docker build --target landing-web -t outegro/landing-web:<tag> .
-# Targets: landing-web, id-web, pay-web, battleship-web, auth-backend,
-#          notifications-backend, payments-backend, battleship-backend.
+# Targets: landing-web, id-web, pay-web, admin-web, battleship-web,
+#          auth-backend, notifications-backend, payments-backend,
+#          battleship-backend.
 
 FROM node:24-bookworm-slim AS base
 ENV CI=1 \
@@ -21,7 +22,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 RUN pnpm turbo run build \
       --filter=@outegro/landing-web --filter=@outegro/id-web \
-      --filter=@outegro/pay-web --filter=@outegro/battleship-web \
+      --filter=@outegro/pay-web --filter=@outegro/admin-web \
+      --filter=@outegro/battleship-web \
       --filter=@outegro/auth-backend --filter=@outegro/notifications-backend \
       --filter=@outegro/payments-backend --filter=@outegro/battleship-backend
 # Backends: production dependencies only, plus build output and migrations.
@@ -59,6 +61,13 @@ COPY --from=build --chown=node:node /repo/apps/pay-web/.next/static ./apps/pay-w
 ENV PORT=3003
 EXPOSE 3003
 CMD ["node", "apps/pay-web/server.js"]
+
+FROM web AS admin-web
+COPY --from=build --chown=node:node /repo/apps/admin-web/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/admin-web/.next/static ./apps/admin-web/.next/static
+ENV PORT=3004
+EXPOSE 3004
+CMD ["node", "apps/admin-web/server.js"]
 
 FROM web AS battleship-web
 COPY --from=build --chown=node:node /repo/apps/battleship-web/.next/standalone ./

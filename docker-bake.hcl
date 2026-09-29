@@ -13,6 +13,7 @@ variable "APPS" {
     "landing-web",
     "id-web",
     "pay-web",
+    "admin-web",
     "battleship-web",
     "auth-backend",
     "notifications-backend",
