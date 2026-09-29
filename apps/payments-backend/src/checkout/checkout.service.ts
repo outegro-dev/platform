@@ -2,23 +2,19 @@ import { createHash, randomUUID } from "node:crypto";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import { AppError, CLOCK, type Clock, DATABASE } from "@outegro/nest-common";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { alreadyHeld, lockBuyer } from "../billing/ownership.js";
 import { ProviderEvents } from "../billing/provider-events.js";
 import { CatalogService, type Offer } from "../catalog/catalog.service.js";
 import type {
   AttemptRow,
+  Executor,
   OrderRow,
   PaymentsDatabase,
 } from "../common/database.js";
 import { checkoutConfig, lavaConfig } from "../config/config.js";
 import { CustomersService } from "../customers/customers.service.js";
-import {
-  checkoutAttempts,
-  grants,
-  orders,
-  subscriptions,
-} from "../db/schema.js";
-import { renewingStates } from "../domain/lifecycle.js";
+import { checkoutAttempts, orders } from "../db/schema.js";
 import type { Currency } from "../domain/money.js";
 import {
   PAYMENT_PROVIDER,
@@ -45,14 +41,27 @@ export type CheckoutResult = {
 
 /** First reconciliation look at a fresh attempt. */
 const FIRST_CHECK_MS = 60_000;
+/**
+ * An unpaid payment page is offered again for this long (engineering
+ * default: Lava documents no invoice lifetime; one it fails ends sooner).
+ */
+const REUSE_FOR_MS = 60 * 60_000;
 
 class DuplicateCommand extends Error {}
+
+type Found = { attempt: AttemptRow; order: OrderRow };
+type Begun =
+  | { kind: "repeat"; found: Found }
+  | { kind: "open"; found: Found }
+  | { kind: "created"; attempt: AttemptRow };
 
 /**
  * Checkout (PAY-03, recipe checkout-implementation): order and attempt are
  * committed before the network; exactly one caller talks to the provider;
  * a lost answer leaves the attempt `unknown` for reconciliation, never a
- * second invoice (INV-16). Price and buyer come from the server only.
+ * second invoice (INV-16). Price and buyer come from the server only. A
+ * buyer's unpaid checkout of the same product and currency is returned
+ * instead of a new one, whatever the key (QA H1).
  */
 @Injectable()
 export class CheckoutService {
@@ -88,14 +97,20 @@ export class CheckoutService {
       });
     const offer = await this.catalog.offer(input.productKey, input.currency);
     const buyer = await this.customers.forCheckout(userId);
-    await this.assertNotOwned(userId, offer);
     const returnUrl = this.returnUrl(input.returnUrl);
 
     const now = this.clock.now();
     const orderId = randomUUID();
-    let attempt: AttemptRow;
+    let begun: Begun;
     try {
-      attempt = await this.database.db.transaction(async (tx) => {
+      begun = await this.database.db.transaction(async (tx): Promise<Begun> => {
+        await lockBuyer(tx, userId);
+        // The same key may have held the lock just before us.
+        const repeat = await this.find(userId, idempotencyKey, tx);
+        if (repeat) return { kind: "repeat", found: repeat };
+        await this.assertNotOwned(tx, userId, offer);
+        const open = await this.openAttempt(tx, userId, offer, now);
+        if (open) return { kind: "open", found: open };
         await tx.insert(orders).values({
           id: orderId,
           userId,
@@ -139,7 +154,7 @@ export class CheckoutService {
           .returning();
         // Another request with this key won the race: drop our order.
         if (!row) throw new DuplicateCommand();
-        return row;
+        return { kind: "created", attempt: row };
       });
     } catch (error) {
       if (error instanceof DuplicateCommand) {
@@ -148,7 +163,15 @@ export class CheckoutService {
       }
       throw error;
     }
-    return this.request(attempt, offer);
+    if (begun.kind === "repeat") return this.replay(begun.found, fingerprint);
+    if (begun.kind === "open") {
+      this.logger.log(
+        { orderId: begun.found.order.id, attemptId: begun.found.attempt.id },
+        "Open checkout returned instead of a new invoice",
+      );
+      return this.toResult(begun.found);
+    }
+    return this.request(begun.attempt, offer);
   }
 
   /** The single provider call of this attempt, outside any transaction. */
@@ -252,8 +275,12 @@ export class CheckoutService {
     });
   }
 
-  private async find(userId: string, idempotencyKey: string) {
-    const [row] = await this.database.db
+  private async find(
+    userId: string,
+    idempotencyKey: string,
+    tx: Executor = this.database.db,
+  ) {
+    const [row] = await tx
       .select({ attempt: checkoutAttempts, order: orders })
       .from(checkoutAttempts)
       .innerJoin(orders, eq(orders.id, checkoutAttempts.orderId))
@@ -266,22 +293,13 @@ export class CheckoutService {
     return row ?? null;
   }
 
-  private replay(
-    existing: { attempt: AttemptRow; order: OrderRow },
-    fingerprint: string,
-  ) {
+  private replay(existing: Found, fingerprint: string) {
     if (existing.attempt.fingerprint !== fingerprint)
       throw new AppError("IDEMPOTENCY_CONFLICT");
     return this.toResult(existing);
   }
 
-  private toResult({
-    attempt,
-    order,
-  }: {
-    attempt: AttemptRow;
-    order: OrderRow;
-  }) {
+  private toResult({ attempt, order }: Found) {
     return {
       orderId: order.id,
       attemptId: attempt.id,
@@ -309,41 +327,52 @@ export class CheckoutService {
   }
 
   /** A second copy of something owned, or a second live subscription, is refused. */
-  private async assertNotOwned(userId: string, offer: Offer) {
-    const { product } = offer;
-    if (product.kind === "one_time") {
-      const [owned] = await this.database.db
-        .select({ id: grants.id })
-        .from(grants)
-        .where(
-          and(
-            eq(grants.userId, userId),
-            eq(grants.service, product.service),
-            eq(grants.feature, product.feature),
-            eq(grants.sourceType, "purchase"),
-            eq(grants.state, "active"),
-          ),
-        );
-      if (owned)
-        throw new AppError("UNPROCESSABLE", {
-          fieldErrors: { productKey: ["already owned"] },
-        });
-      return;
-    }
-    const [live] = await this.database.db
-      .select({ id: subscriptions.id })
-      .from(subscriptions)
+  private async assertNotOwned(tx: Executor, userId: string, offer: Offer) {
+    const held = await alreadyHeld(tx, userId, offer.product);
+    if (held)
+      throw new AppError("ALREADY_OWNED", {
+        fieldErrors: { productKey: [held.reason] },
+      });
+  }
+
+  /**
+   * The buyer's unpaid checkout of this product and currency: its provider
+   * call is still running, or its payment page can still be paid. Whatever
+   * the key, it is the same purchase, so it gets no second invoice.
+   */
+  private async openAttempt(
+    tx: Executor,
+    userId: string,
+    offer: Offer,
+    now: Date,
+  ): Promise<Found | null> {
+    const since = (ms: number) => new Date(now.getTime() - ms);
+    const [open] = await tx
+      .select({ attempt: checkoutAttempts, order: orders })
+      .from(checkoutAttempts)
+      .innerJoin(orders, eq(orders.id, checkoutAttempts.orderId))
       .where(
         and(
-          eq(subscriptions.userId, userId),
-          eq(subscriptions.productKey, product.key),
-          inArray(subscriptions.state, [...renewingStates]),
+          eq(orders.userId, userId),
+          eq(orders.productKey, offer.product.key),
+          eq(orders.currency, offer.price.currency),
+          eq(orders.status, "pending"),
+          or(
+            and(
+              eq(checkoutAttempts.state, "requesting"),
+              gt(checkoutAttempts.requestedAt, since(this.staleAfterMs())),
+            ),
+            and(
+              eq(checkoutAttempts.state, "ready"),
+              isNotNull(checkoutAttempts.paymentUrl),
+              gt(checkoutAttempts.requestedAt, since(REUSE_FOR_MS)),
+            ),
+          ),
         ),
-      );
-    if (live)
-      throw new AppError("UNPROCESSABLE", {
-        fieldErrors: { productKey: ["already subscribed"] },
-      });
+      )
+      .orderBy(desc(checkoutAttempts.requestedAt))
+      .limit(1);
+    return open ?? null;
   }
 
   /** Only our own origins: the return page must not become an open redirect. */

@@ -434,6 +434,14 @@ export class RefundService {
       occurredAt: now,
       createdAt: now,
     });
+    // The refund an operator was asked for (a duplicate purchase, a renewal
+    // after a revoke) is done: that issue closes itself.
+    await this.issues.resolve(
+      tx,
+      `payment:${payment.id}`,
+      { actorId: null, resolution: "payment refunded" },
+      now,
+    );
 
     const [order] = await tx
       .select()

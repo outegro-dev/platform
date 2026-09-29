@@ -404,9 +404,16 @@ describe("checkout", () => {
   it.each([
     [
       422,
-      errorBody("UNPROCESSABLE", { productKey: ["already subscribed"] }),
+      errorBody("ALREADY_OWNED", { productKey: ["already subscribed"] }),
       "owned",
     ],
+    [
+      422,
+      errorBody("ALREADY_OWNED", { productKey: ["already owned"] }),
+      "owned",
+    ],
+    // Only the code means "owned"; a field name alone does not.
+    [422, errorBody("UNPROCESSABLE", { productKey: ["not offered"] }), "gone"],
     [
       422,
       errorBody("UNPROCESSABLE", { checkout: ["sales are closed"] }),

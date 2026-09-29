@@ -1026,7 +1026,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
             ))),
     );
     if (owned)
-      return error(res, 422, "UNPROCESSABLE", {
+      return error(res, 422, "ALREADY_OWNED", {
         productKey: [
           product.kind === "one_time" ? "already owned" : "already subscribed",
         ],

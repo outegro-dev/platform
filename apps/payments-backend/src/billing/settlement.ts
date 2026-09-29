@@ -30,6 +30,7 @@ import { IssueRegistry } from "./issues.js";
 import { BillingNotices } from "./notices.js";
 import { paymentConfirmed, subscriptionChanged } from "./outbox-events.js";
 import { notAfter, type Outcome } from "./outcome.js";
+import { alreadyHeld, lockBuyer } from "./ownership.js";
 
 const PROVIDER = "lava";
 
@@ -126,6 +127,22 @@ export class SettlementService {
     }
 
     const paidAt = notAfter(new Date(fact.occurredAt), now);
+    // A buyer's first payments settle one at a time, like their checkouts:
+    // two at once cannot both miss the other and grant twice.
+    await lockBuyer(tx, order.userId);
+    // Something the buyer already has (another tab, a page opened earlier):
+    // the money is recorded, nothing is granted twice (QA H1).
+    const held = await alreadyHeld(
+      tx,
+      order.userId,
+      {
+        key: order.productKey,
+        kind: order.kind,
+        service: order.service,
+        feature: order.feature,
+      },
+      order.id,
+    );
     await tx
       .update(orders)
       .set({
@@ -164,10 +181,14 @@ export class SettlementService {
           provider: PROVIDER,
           providerParentContractId: fact.contractId,
           buyerEmail: attempt.buyerEmail,
-          state: "active",
+          // A second subscription is stopped at once: the worker asks Lava
+          // to cancel its renewal, as for a buyer's cancel.
+          state: held ? "cancel_requested" : "active",
           providerStatus: fact.providerStatus,
           autoRenew: true,
           paidUntil: interval.end,
+          cancelRequestedAt: held ? now : null,
+          nextCancelAttemptAt: held ? now : null,
           createdAt: now,
           updatedAt: now,
         })
@@ -185,7 +206,6 @@ export class SettlementService {
       now,
     });
 
-    let grant: GrantRow;
     if (subscription && interval) {
       await tx.insert(billingPeriods).values({
         subscriptionId: subscription.id,
@@ -195,51 +215,81 @@ export class SettlementService {
         createdAt: now,
       });
       await subscriptionChanged(tx, subscription, now, order.correlationId);
-      grant = await this.grants.activate(
+    }
+    const source = {
+      userId: order.userId,
+      service: order.service,
+      feature: order.feature,
+      ...(subscription
+        ? { sourceType: "subscription" as const, sourceId: subscription.id }
+        : { sourceType: "purchase" as const, sourceId: order.id }),
+    };
+    const window =
+      subscription && interval
+        ? {
+            validFrom: interval.start,
+            validUntil: accessUntil(
+              subscription.paidUntil,
+              subscription.graceDays,
+            ),
+          }
+        : { validFrom: paidAt, validUntil: null };
+    if (held) {
+      await this.grants.withhold(
+        tx,
+        source,
+        window,
+        now,
+        "duplicate purchase",
+        order.correlationId,
+      );
+      // The operator refunds this payment in the Lava cabinet.
+      await this.issues.open(
         tx,
         {
-          userId: order.userId,
-          service: order.service,
-          feature: order.feature,
-          sourceType: "subscription",
-          sourceId: subscription.id,
+          kind: "duplicate_purchase",
+          severity: "high",
+          subjectKey: `payment:${payment.id}`,
+          related: {
+            orderId: order.id,
+            paymentId: payment.id,
+            subscriptionId: subscription?.id ?? null,
+            heldOrderId: held.orderId,
+            heldSubscriptionId: held.subscriptionId,
+          },
+          evidence: {
+            held: held.reason,
+            productKey: order.productKey,
+            paid: moneyDto(payment.amountMinor, payment.currency),
+          },
         },
-        {
-          validFrom: interval.start,
-          validUntil: accessUntil(
-            subscription.paidUntil,
-            subscription.graceDays,
-          ),
-        },
+        now,
+      );
+      // No receipt: it could only say access is on its way, and this payment
+      // opens nothing. The buyer hears about it with the refund.
+      await paymentConfirmed(tx, payment, now, order.correlationId);
+    } else {
+      const grant = await this.grants.activate(
+        tx,
+        source,
+        window,
         now,
         order.correlationId,
       );
-    } else {
-      grant = await this.grants.activate(
+      await this.announce(
         tx,
-        {
-          userId: order.userId,
-          service: order.service,
-          feature: order.feature,
-          sourceType: "purchase",
-          sourceId: order.id,
-        },
-        { validFrom: paidAt, validUntil: null },
-        now,
+        payment,
+        grant,
+        subscription,
         order.correlationId,
+        now,
       );
     }
-    await this.announce(
-      tx,
-      payment,
-      grant,
-      subscription,
-      order.correlationId,
-      now,
-    );
     return {
       status: "processed",
-      note: "payment confirmed",
+      note: held
+        ? "duplicate purchase: payment recorded, nothing granted"
+        : "payment confirmed",
       ...ids,
       subscriptionId: subscription?.id ?? null,
       paymentId: payment.id,
@@ -412,6 +462,28 @@ export class SettlementService {
       now,
       order.correlationId,
     );
+    // Revoked access stays revoked (above); Lava charged a period it should
+    // not have, so the operator refunds it.
+    if (grant.state === "revoked") {
+      await this.issues.open(
+        tx,
+        {
+          kind: "renewal_after_revoke",
+          severity: "high",
+          subjectKey: `payment:${payment.id}`,
+          related: {
+            subscriptionId: subscription.id,
+            paymentId: payment.id,
+            grantId: grant.id,
+          },
+          evidence: {
+            contractId: fact.contractId,
+            paid: moneyDto(payment.amountMinor, payment.currency),
+          },
+        },
+        now,
+      );
+    }
     await this.announce(tx, payment, grant, updated, order.correlationId, now);
     return {
       status: "processed",

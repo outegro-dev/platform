@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { CatalogService } from "./catalog/catalog.service.js";
 import type { PaymentsDatabase } from "./common/database.js";
@@ -477,22 +477,114 @@ describe("checkout (PAY-03)", () => {
       .expect(401);
   });
 
-  it("refuses to sell what the buyer already has", async () => {
+  it("refuses to sell what the buyer already has, with ALREADY_OWNED", async () => {
     const user = await newCustomer();
     await buy(user, SILVER);
+    const before = h.lava.createCalls;
     const owned = await checkout(user, {
       productKey: SILVER,
       currency: "RUB",
     }).expect(422);
-    expect(owned.body.error.fieldErrors.productKey).toEqual(["already owned"]);
+    expect(owned.body.error).toMatchObject({
+      code: "ALREADY_OWNED",
+      messageKey: "errors.alreadyOwned",
+      fieldErrors: { productKey: ["already owned"] },
+      retryable: false,
+    });
     await buy(user, PREMIUM, "EUR");
     const subscribed = await checkout(user, {
       productKey: PREMIUM,
       currency: "USD",
     }).expect(422);
-    expect(subscribed.body.error.fieldErrors.productKey).toEqual([
-      "already subscribed",
-    ]);
+    expect(subscribed.body.error).toMatchObject({
+      code: "ALREADY_OWNED",
+      fieldErrors: { productKey: ["already subscribed"] },
+    });
+    expect(h.lava.createCalls - before).toBe(1);
+  });
+
+  it("QA H1: two parallel checkouts of one product with different keys make one invoice", async () => {
+    const user = await newCustomer();
+    const before = h.lava.createCalls;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    h.lava.beforeAnswer = () => gate;
+    const keys = [newKey(), newKey()];
+    const pending = keys.map((key) =>
+      checkout(user, { productKey: PREMIUM, currency: "USD" }, key).then(
+        (res) => res,
+      ),
+    );
+    // Both pass validation while the one provider call is held.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    release();
+    const results = await Promise.all(pending);
+    expect(results.map((res) => res.status)).toEqual([200, 200]);
+    expect(new Set(results.map((res) => res.body.orderId)).size).toBe(1);
+    expect(h.lava.createCalls - before).toBe(1);
+    expect(
+      await db.select().from(orders).where(eq(orders.userId, user.userId)),
+    ).toHaveLength(1);
+    // The one that waited may have seen the call in flight (no page yet);
+    // asked again, either key brings the same page.
+    const again = [];
+    for (const key of keys)
+      again.push(
+        await checkout(
+          user,
+          { productKey: PREMIUM, currency: "USD" },
+          key,
+        ).expect(200),
+      );
+    const [page, ...others] = again.map((res) => res.body);
+    expect(page).toMatchObject({
+      orderId: results[0]?.body.orderId,
+      state: "ready",
+      paymentUrl: expect.stringMatching(/^https:\/\/app\.lava\.top\/pay\//),
+    });
+    expect(others).toEqual([page]);
+    expect(h.lava.createCalls - before).toBe(1);
+  });
+
+  it("QA H1: a checkout while the same one is unpaid returns that order and page", async () => {
+    const user = await newCustomer();
+    const first = await startPurchase(user, SILVER, "USD");
+    const before = h.lava.createCalls;
+    const second = await checkout(user, {
+      productKey: SILVER,
+      currency: "USD",
+      returnUrl: "https://battleship.outegro.dev/shop",
+    }).expect(200);
+    expect(second.body).toMatchObject({
+      orderId: first.orderId,
+      state: "ready",
+      status: "pending",
+      paymentUrl: first.invoice.paymentUrl,
+    });
+    expect(h.lava.createCalls).toBe(before);
+    // Another currency is another invoice.
+    const euro = await startPurchase(user, SILVER, "EUR");
+    expect(euro.orderId).not.toBe(first.orderId);
+    // An hour later the page is not offered again.
+    h.clock.advance(60 * 60_000 + 1_000);
+    const later = await startPurchase(user, SILVER, "USD");
+    expect(later.orderId).not.toBe(first.orderId);
+    // A failed checkout is not reused either.
+    const other = await newCustomer();
+    const failed = await startPurchase(other, SILVER, "USD");
+    await webhook(
+      lavaPayloads.paymentFailed({
+        contractId: failed.invoice.id,
+        email: other.email,
+        amount: 0.59,
+        currency: "USD",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    const retry = await startPurchase(other, SILVER, "USD");
+    expect(retry.orderId).not.toBe(failed.orderId);
   });
 
   it("marks the attempt failed when the provider refuses or cannot be reached", async () => {
@@ -819,9 +911,11 @@ describe("webhooks (PAY-04, PAY-05)", () => {
       (await webhook({ ...paidWebhook(user, cheaper.invoice), amount: 0.5 }))
         .body.status,
     ).toBe("duplicate");
-    const otherCurrency = await startPurchase(user, SILVER, "USD");
+    // A second unpaid order of one buyer would be the same order: another buyer.
+    const buyer = await newCustomer();
+    const otherCurrency = await startPurchase(buyer, SILVER, "USD");
     const other = await webhook({
-      ...paidWebhook(user, otherCurrency.invoice),
+      ...paidWebhook(buyer, otherCurrency.invoice),
       currency: "EUR",
     }).expect(200);
     expect(other.body.status).toBe("mismatch");
@@ -838,6 +932,7 @@ describe("webhooks (PAY-04, PAY-05)", () => {
       });
     }
     expect(await grantsOf(user.userId)).toHaveLength(0);
+    expect(await grantsOf(buyer.userId)).toHaveLength(0);
   });
 
   it("TC-PAY-05-03: a webhook that beats the create response is applied once after the mapping", async () => {
@@ -891,6 +986,197 @@ describe("webhooks (PAY-04, PAY-05)", () => {
     expect(await orderRow(orderId)).toMatchObject({ status: "failed" });
     await webhook(paidWebhook(user, invoice)).expect(200);
     expect(await orderRow(orderId)).toMatchObject({ status: "paid" });
+  });
+});
+
+describe("duplicate purchases (QA H1)", () => {
+  const duplicateIssues = (orderIds: string[]) =>
+    db
+      .select()
+      .from(reconciliationIssues)
+      .where(
+        and(
+          eq(reconciliationIssues.kind, "duplicate_purchase"),
+          inArray(sql`${reconciliationIssues.related}->>'orderId'`, orderIds),
+        ),
+      );
+
+  it("a second paid order of an owned item is recorded, grants nothing and asks for a refund", async () => {
+    const user = await newCustomer();
+    // Two pages opened before either was paid (another currency: no reuse).
+    const first = await startPurchase(user, SILVER, "USD");
+    const second = await startPurchase(user, SILVER, "EUR");
+    await webhook(paidWebhook(user, first.invoice)).expect(200);
+    const res = await webhook(paidWebhook(user, second.invoice)).expect(200);
+    expect(res.body.status).toBe("processed");
+
+    expect(await orderRow(second.orderId)).toMatchObject({ status: "paid" });
+    const [payment] = await paymentsOf(second.orderId);
+    expect(payment).toMatchObject({
+      kind: "purchase",
+      state: "confirmed",
+      amountMinor: 52n,
+      currency: "EUR",
+    });
+    expect(
+      await db
+        .select()
+        .from(financialEntries)
+        .where(eq(financialEntries.paymentId, payment?.id ?? "")),
+    ).toHaveLength(1);
+    const rows = await grantsOf(user.userId);
+    expect(rows.filter((g) => g.state === "active")).toEqual([
+      expect.objectContaining({ sourceId: first.orderId }),
+    ]);
+    const withheld = rows.find((g) => g.sourceId === second.orderId);
+    expect(withheld).toMatchObject({
+      state: "revoked",
+      revokeReason: "duplicate purchase",
+      version: 1,
+    });
+    // Consumers never see it active, not even for a moment.
+    const published = await eventsOf(
+      "billing.grant.changed.v1",
+      "grantId",
+      withheld?.id ?? "",
+    );
+    expect(published.map((e) => e.payload.state)).toEqual(["revoked"]);
+    // A receipt could only promise access this payment never opens: the
+    // buyer hears about it with the refund.
+    expect((await noticesOf(user.userId)).map((n) => n.templateKey)).toEqual([
+      "billing.payment-confirmed.v2",
+    ]);
+    const [issue] = await duplicateIssues([second.orderId]);
+    expect(issue).toMatchObject({
+      severity: "high",
+      status: "open",
+      subjectKey: `payment:${payment?.id}`,
+      related: {
+        orderId: second.orderId,
+        paymentId: payment?.id,
+        heldOrderId: first.orderId,
+      },
+      evidence: {
+        held: "already owned",
+        paid: { minor: "52", currency: "EUR", scale: 2 },
+      },
+    });
+    // The same delivery again changes nothing.
+    expect(
+      (await webhook(paidWebhook(user, second.invoice)).expect(200)).body
+        .status,
+    ).toBe("duplicate");
+    expect(await grantsOf(user.userId)).toHaveLength(2);
+  });
+
+  it("two paid orders of one item settling at once grant once", async () => {
+    const user = await newCustomer();
+    const first = await startPurchase(user, SILVER, "USD");
+    const second = await startPurchase(user, SILVER, "RUB");
+    const results = await Promise.all([
+      webhook(paidWebhook(user, first.invoice)),
+      webhook(paidWebhook(user, second.invoice)),
+    ]);
+    expect(results.map((res) => res.body.status)).toEqual([
+      "processed",
+      "processed",
+    ]);
+    const rows = await grantsOf(user.userId);
+    expect(rows.filter((g) => g.state === "active")).toHaveLength(1);
+    expect(rows.filter((g) => g.state === "revoked")).toHaveLength(1);
+    expect(await duplicateIssues([first.orderId, second.orderId])).toHaveLength(
+      1,
+    );
+  });
+
+  it("the operator's refund of the duplicate closes its issue and keeps the first purchase", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const first = await startPurchase(user, SILVER, "USD");
+    const second = await startPurchase(user, SILVER, "EUR");
+    await webhook(paidWebhook(user, first.invoice)).expect(200);
+    await webhook(paidWebhook(user, second.invoice)).expect(200);
+    const [payment] = await paymentsOf(second.orderId);
+    await h
+      .http()
+      .post(`/v1/admin/payments/${payment?.id}/refund-request`)
+      .set(owner.auth)
+      .send({ reason: "duplicate purchase, refunded in the Lava cabinet" })
+      .expect(201);
+    const res = await webhook(
+      lavaPayloads.refund({
+        tierId: productOf(SILVER).providerOfferId,
+        email: user.email,
+        amount: 0.52,
+        currency: "EUR",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    expect(res.body.status).toBe("processed");
+    expect(await orderRow(second.orderId)).toMatchObject({
+      status: "refunded",
+    });
+    const [issue] = await duplicateIssues([second.orderId]);
+    expect(issue).toMatchObject({
+      status: "resolved",
+      resolution: "payment refunded",
+    });
+    expect(
+      (await grantsOf(user.userId)).find((g) => g.sourceId === first.orderId),
+    ).toMatchObject({ state: "active" });
+  });
+
+  it("a second paid subscription grants nothing and its renewal is cancelled at Lava", async () => {
+    const user = await newCustomer();
+    const first = await startPurchase(user, PREMIUM, "USD");
+    const second = await startPurchase(user, PREMIUM, "EUR");
+    await webhook(paidWebhook(user, first.invoice)).expect(200);
+    await webhook(paidWebhook(user, second.invoice)).expect(200);
+
+    const kept = await subscriptionOf(first.orderId);
+    const extra = await subscriptionOf(second.orderId);
+    expect(kept).toMatchObject({ state: "active", autoRenew: true });
+    expect(extra).toMatchObject({ state: "cancel_requested", autoRenew: true });
+    const rows = await grantsOf(user.userId);
+    expect(rows.filter((g) => g.state === "active")).toEqual([
+      expect.objectContaining({ sourceId: kept?.id }),
+    ]);
+    expect(rows.find((g) => g.sourceId === extra?.id)).toMatchObject({
+      state: "revoked",
+      revokeReason: "duplicate purchase",
+    });
+    const [payment] = await paymentsOf(second.orderId);
+    expect(payment).toMatchObject({
+      kind: "subscription_initial",
+      subscriptionId: extra?.id,
+    });
+    const [issue] = await duplicateIssues([second.orderId]);
+    expect(issue).toMatchObject({
+      status: "open",
+      related: {
+        subscriptionId: extra?.id,
+        heldSubscriptionId: kept?.id,
+      },
+      evidence: { held: "already subscribed" },
+    });
+
+    // The worker stops the duplicate's renewal; the kept one renews on.
+    await reconciliation.tick();
+    expect(h.lava.cancelCalls).toContainEqual({
+      parentContractId: second.invoice.id,
+      email: user.email,
+    });
+    expect(
+      h.lava.cancelCalls.some((c) => c.parentContractId === first.invoice.id),
+    ).toBe(false);
+    expect(await subscriptionOf(second.orderId)).toMatchObject({
+      state: "cancelling",
+      autoRenew: false,
+    });
+    expect(await subscriptionOf(first.orderId)).toMatchObject({
+      state: "active",
+      autoRenew: true,
+    });
   });
 });
 

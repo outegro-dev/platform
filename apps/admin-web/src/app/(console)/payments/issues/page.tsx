@@ -6,13 +6,13 @@ import {
   JsonView,
   Pager,
   SelectField,
-  TextField,
   Time,
 } from "@/components/ui/data";
 import { Panel, Status } from "@/components/ui/layout";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
+import { issueKinds } from "@/lib/adapters/payments";
 import { getLabels } from "@/lib/labels";
 import { one, oneOf, type SearchParams } from "@/lib/params";
 import { getFormatter } from "@/lib/request";
@@ -139,7 +139,7 @@ export default async function IssuesPage({
   const label = await getLabels();
   const filter: Filter = {
     status: oneOf(params, "status", ["open", "resolved"] as const),
-    kind: one(params, "kind")?.slice(0, 64),
+    kind: oneOf(params, "kind", issueKinds),
     cursor: one(params, "cursor"),
   };
   return (
@@ -161,11 +161,15 @@ export default async function IssuesPage({
               label: label("issueStatus", status),
             }))}
           />
-          <TextField
+          <SelectField
             name="kind"
             label={t("kind")}
             value={filter.kind}
-            type="text"
+            allLabel={t("anyKind")}
+            options={issueKinds.map((kind) => ({
+              value: kind,
+              label: label("issueKind", kind),
+            }))}
           />
         </FilterBar>
       </Panel>

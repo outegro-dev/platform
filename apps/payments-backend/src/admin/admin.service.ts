@@ -10,6 +10,7 @@ import {
 import { and, desc, eq, gte, inArray, lt, or, sql } from "drizzle-orm";
 import { AccountService } from "../account/account.service.js";
 import { grantView, paymentView, subscriptionView } from "../account/views.js";
+import { CancellationService } from "../billing/cancellation.js";
 import { GrantLedger } from "../billing/grants.js";
 import { type Actor, audit } from "../common/audit.js";
 import { after, type Cursor, page } from "../common/cursor.js";
@@ -86,6 +87,7 @@ export class AdminService {
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly account: AccountService,
     private readonly grants: GrantLedger,
+    private readonly cancellation: CancellationService,
     private readonly relay: OutboxRelay,
   ) {}
 
@@ -542,35 +544,62 @@ export class AdminService {
     }
   }
 
-  /** Ends any grant with a reason; other sources of the same feature stay (TC-PAY-06-01). */
+  /**
+   * Ends any grant with a reason; other sources of the same feature stay
+   * (TC-PAY-06-01). A subscription grant also turns renewal off at Lava, so
+   * the buyer is not charged again for access that is gone. The revoke
+   * stands whatever Lava answers: a failed call is retried and reported.
+   */
   async revoke(actor: Actor, grantId: string, reason: string) {
     const now = this.clock.now();
-    const grant = await this.database.db.transaction(async (tx) => {
-      const current = await this.grants.lockById(tx, grantId);
-      if (!current) throw new AppError("NOT_FOUND");
-      if (current.state !== "active")
-        throw new AppError("UNPROCESSABLE", {
-          fieldErrors: { grantId: [`grant is ${current.state}`] },
+    const { grant, renewal } = await this.database.db.transaction(
+      async (tx) => {
+        const [source] = await tx
+          .select({ type: grants.sourceType, id: grants.sourceId })
+          .from(grants)
+          .where(eq(grants.id, grantId));
+        // A subscription is locked before its grant, as renewals and expiry do.
+        if (source?.type === "subscription")
+          await tx
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, source.id))
+            .for("update");
+        const current = await this.grants.lockById(tx, grantId);
+        if (!current) throw new AppError("NOT_FOUND");
+        if (current.state !== "active")
+          throw new AppError("UNPROCESSABLE", {
+            fieldErrors: { grantId: [`grant is ${current.state}`] },
+          });
+        const row = await this.grants.revoke(
+          tx,
+          current,
+          { actorId: actor.userId, reason },
+          now,
+          actor.requestId ?? undefined,
+        );
+        const renewal =
+          row.sourceType === "subscription"
+            ? await this.cancellation.stopRenewal(tx, row.sourceId, now)
+            : null;
+        await audit(tx, {
+          actor,
+          action: "grant.revoked",
+          targetType: "grant",
+          targetId: row.id,
+          reason,
+          data: {
+            sourceType: row.sourceType,
+            sourceId: row.sourceId,
+            stopsRenewal: renewal !== null,
+          },
+          at: now,
         });
-      const row = await this.grants.revoke(
-        tx,
-        current,
-        { actorId: actor.userId, reason },
-        now,
-        actor.requestId ?? undefined,
-      );
-      await audit(tx, {
-        actor,
-        action: "grant.revoked",
-        targetType: "grant",
-        targetId: row.id,
-        reason,
-        data: { sourceType: row.sourceType, sourceId: row.sourceId },
-        at: now,
-      });
-      return row;
-    });
+        return { grant: row, renewal };
+      },
+    );
     this.relay.kick();
+    if (renewal) await this.cancellation.callProvider(renewal);
     return grantView(grant);
   }
 

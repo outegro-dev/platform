@@ -1,5 +1,6 @@
 import { matchAbortReasonSchema } from "@outegro/contracts/battleship";
 import { describe, expect, it } from "vitest";
+import { issueKinds } from "@/lib/adapters/payments";
 import en from "./en.json";
 import ru from "./ru.json";
 
@@ -53,5 +54,17 @@ describe("messages", () => {
           at(messages as Tree, `labels.abortReason.${reason}`),
           reason,
         ).toBeTruthy();
+  });
+
+  it("name every payment issue kind in both languages", () => {
+    for (const messages of [en, ru]) {
+      expect(Object.keys(messages.labels.issueKind).sort()).toEqual(
+        [...issueKinds].sort(),
+      );
+    }
+    for (const kind of issueKinds)
+      expect(ru.labels.issueKind[kind], kind).not.toBe(
+        en.labels.issueKind[kind],
+      );
   });
 });

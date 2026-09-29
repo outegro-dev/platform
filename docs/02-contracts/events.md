@@ -27,6 +27,8 @@
 
 Все значения выше synthetic. Поля userId и sourceId — references, а не разрешение на действие. validUntil null разрешён только для явно бессрочного права. Consumers не превращают null в «неизвестный значит бесконечный».
 
+Grant может прийти впервые сразу в state `revoked` (aggregateVersion 1): так Payments записывает право дублирующей покупки, которое не действует ни мгновения. Consumers применяют его как любую другую версию.
+
 ## Каталог
 
 | Event | Producer | Required payload | Consumers |
