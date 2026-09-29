@@ -1024,6 +1024,43 @@ describe("duplicate purchases (QA H1)", () => {
     );
   });
 
+  it("the operator's refund of the duplicate closes its issue and keeps the first purchase", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const first = await startPurchase(user, SILVER, "USD");
+    const second = await startPurchase(user, SILVER, "EUR");
+    await webhook(paidWebhook(user, first.invoice)).expect(200);
+    await webhook(paidWebhook(user, second.invoice)).expect(200);
+    const [payment] = await paymentsOf(second.orderId);
+    await h
+      .http()
+      .post(`/v1/admin/payments/${payment?.id}/refund-request`)
+      .set(owner.auth)
+      .send({ reason: "duplicate purchase, refunded in the Lava cabinet" })
+      .expect(201);
+    const res = await webhook(
+      lavaPayloads.refund({
+        tierId: productOf(SILVER).providerOfferId,
+        email: user.email,
+        amount: 0.52,
+        currency: "EUR",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    expect(res.body.status).toBe("processed");
+    expect(await orderRow(second.orderId)).toMatchObject({
+      status: "refunded",
+    });
+    const [issue] = await duplicateIssues([second.orderId]);
+    expect(issue).toMatchObject({
+      status: "resolved",
+      resolution: "payment refunded",
+    });
+    expect(
+      (await grantsOf(user.userId)).find((g) => g.sourceId === first.orderId),
+    ).toMatchObject({ state: "active" });
+  });
+
   it("a second paid subscription grants nothing and its renewal is cancelled at Lava", async () => {
     const user = await newCustomer();
     const first = await startPurchase(user, PREMIUM, "USD");
