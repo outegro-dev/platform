@@ -52,7 +52,7 @@ export type CheckoutOutcome =
   | { kind: "preparing" }
   /** Accepted without a page to visit: wait for the grant. */
   | { kind: "pending" }
-  /** Already owned or subscribed (422). */
+  /** Already owned or subscribed (422 ALREADY_OWNED). */
   | { kind: "owned" }
   | {
       kind: "error";

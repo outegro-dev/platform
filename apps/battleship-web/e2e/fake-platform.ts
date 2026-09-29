@@ -585,8 +585,8 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
       });
     }
     if (user.features.has(feature))
-      return error(res, 422, "UNPROCESSABLE", {
-        productKey: ["already_owned"],
+      return error(res, 422, "ALREADY_OWNED", {
+        productKey: ["already owned"],
       });
     const input = JSON.stringify(body.data);
     let order = orders.get(key);

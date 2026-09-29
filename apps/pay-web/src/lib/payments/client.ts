@@ -31,7 +31,9 @@ import {
  *   POST /v1/checkout                               Bearer + Idempotency-Key
  *        { productKey, currency, returnUrl? } → { orderId, attemptId, state, status, paymentUrl }
  *        (buyers come back to <returnUrl>?orderId=…&result=success|failure|cancel;
- *        without returnUrl to PAY_WEB_URL/checkout/result)
+ *        without returnUrl to PAY_WEB_URL/checkout/result; an unpaid checkout of
+ *        the same product and currency comes back under any key; 422
+ *        ALREADY_OWNED when the buyer has it already)
  *   GET  /v1/me/orders?cursor&limit                 → { items: OrderView[], nextCursor }
  *   GET  /v1/me/orders/:id                          → OrderView (someone else's: 404)
  *   GET  /v1/me/subscriptions?cursor&limit          → { items: SubscriptionView[], nextCursor }
@@ -260,12 +262,12 @@ export class PaymentsClient {
       });
     } catch (error) {
       if (error instanceof BackendError) {
+        if (error.error.code === "ALREADY_OWNED") return { kind: "owned" };
         if (error.status === 401) return { kind: "unauthorized" };
         if (error.status === 404) return { kind: "gone" };
         if (error.status === 409) return { kind: "conflict" };
         if (error.status === 422) {
           const fields = error.error.fieldErrors ?? {};
-          if (fields.productKey?.length) return { kind: "owned" };
           if (fields.checkout?.length) return { kind: "closed" };
           return { kind: "gone" };
         }

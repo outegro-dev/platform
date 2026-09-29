@@ -260,7 +260,7 @@ describe("PaymentsClient", () => {
     expect(calls()).toHaveLength(0);
   });
 
-  it("maps 422 to owned, other refusals and outages to errors", async () => {
+  it("maps ALREADY_OWNED to owned, other refusals and outages to errors", async () => {
     const error = (code: string) => ({
       error: {
         code,
@@ -270,8 +270,14 @@ describe("PaymentsClient", () => {
         retryable: false,
       },
     });
-    respond(422, error("UNPROCESSABLE"));
+    respond(422, error("ALREADY_OWNED"));
     expect(await client().checkout(request)).toEqual({ kind: "owned" });
+    // Another 422 (sales closed, no verified email) is a refusal, not "owned".
+    respond(422, error("UNPROCESSABLE"));
+    expect(await client().checkout(request)).toEqual({
+      kind: "error",
+      reason: "rejected",
+    });
     respond(401, error("UNAUTHENTICATED"));
     expect(await client().checkout(request)).toEqual({
       kind: "error",

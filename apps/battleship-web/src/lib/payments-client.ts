@@ -185,7 +185,7 @@ export class PaymentsClient {
         if (error.status === 401)
           return { kind: "error", reason: "unauthorized" };
         // Already owned or already subscribed.
-        if (error.status === 422) return { kind: "owned" };
+        if (error.error.code === "ALREADY_OWNED") return { kind: "owned" };
         // 409: this key was used with another input; 4xx: refused.
         if (error.status < 500) return { kind: "error", reason: "rejected" };
       }
