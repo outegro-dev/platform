@@ -14,7 +14,8 @@ export type IssueKind =
   | "period_mismatch"
   | "refund_unmatched"
   | "refund_review"
-  | "chargeback_opened";
+  | "chargeback_opened"
+  | "duplicate_purchase";
 
 /**
  * Discrepancies an operator must see (chapter 6.10). One row per subject:

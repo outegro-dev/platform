@@ -77,6 +77,55 @@ export class GrantLedger {
     );
   }
 
+  /**
+   * Records the source's grant already revoked (a duplicate purchase): the
+   * payment is kept, access comes from what the buyer already had, and no
+   * later payment of this source can open it.
+   */
+  async withhold(
+    tx: Executor,
+    source: GrantSource,
+    window: { validFrom: Date; validUntil: Date | null },
+    at: Date,
+    reason: string,
+    correlationId?: string,
+  ): Promise<GrantRow> {
+    const [created] = await tx
+      .insert(grants)
+      .values({
+        ...source,
+        state: "revoked",
+        validFrom: window.validFrom,
+        validUntil: window.validUntil,
+        revokedAt: at,
+        revokeReason: reason,
+        createdAt: at,
+        updatedAt: at,
+      })
+      .onConflictDoNothing({
+        target: [
+          grants.sourceType,
+          grants.sourceId,
+          grants.service,
+          grants.feature,
+        ],
+      })
+      .returning();
+    if (created) {
+      await grantChanged(tx, created, at, correlationId);
+      return created;
+    }
+    const current = await this.lockSource(tx, source);
+    if (!current) throw new Error("grant disappeared during upsert");
+    return this.revoke(
+      tx,
+      current,
+      { actorId: null, reason },
+      at,
+      correlationId,
+    );
+  }
+
   /** Ends a grant for good (refund, operator). */
   async revoke(
     tx: Executor,

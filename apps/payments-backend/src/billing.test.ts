@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { CatalogService } from "./catalog/catalog.service.js";
 import type { PaymentsDatabase } from "./common/database.js";
@@ -926,6 +926,155 @@ describe("webhooks (PAY-04, PAY-05)", () => {
     expect(await orderRow(orderId)).toMatchObject({ status: "failed" });
     await webhook(paidWebhook(user, invoice)).expect(200);
     expect(await orderRow(orderId)).toMatchObject({ status: "paid" });
+  });
+});
+
+describe("duplicate purchases (QA H1)", () => {
+  const duplicateIssues = (orderIds: string[]) =>
+    db
+      .select()
+      .from(reconciliationIssues)
+      .where(
+        and(
+          eq(reconciliationIssues.kind, "duplicate_purchase"),
+          inArray(sql`${reconciliationIssues.related}->>'orderId'`, orderIds),
+        ),
+      );
+
+  it("a second paid order of an owned item is recorded, grants nothing and asks for a refund", async () => {
+    const user = await newCustomer();
+    // Two pages opened before either was paid (another currency: no reuse).
+    const first = await startPurchase(user, SILVER, "USD");
+    const second = await startPurchase(user, SILVER, "EUR");
+    await webhook(paidWebhook(user, first.invoice)).expect(200);
+    const res = await webhook(paidWebhook(user, second.invoice)).expect(200);
+    expect(res.body.status).toBe("processed");
+
+    expect(await orderRow(second.orderId)).toMatchObject({ status: "paid" });
+    const [payment] = await paymentsOf(second.orderId);
+    expect(payment).toMatchObject({
+      kind: "purchase",
+      state: "confirmed",
+      amountMinor: 52n,
+      currency: "EUR",
+    });
+    expect(
+      await db
+        .select()
+        .from(financialEntries)
+        .where(eq(financialEntries.paymentId, payment?.id ?? "")),
+    ).toHaveLength(1);
+    const rows = await grantsOf(user.userId);
+    expect(rows.filter((g) => g.state === "active")).toEqual([
+      expect.objectContaining({ sourceId: first.orderId }),
+    ]);
+    const withheld = rows.find((g) => g.sourceId === second.orderId);
+    expect(withheld).toMatchObject({
+      state: "revoked",
+      revokeReason: "duplicate purchase",
+      version: 1,
+    });
+    // Consumers never see it active, not even for a moment.
+    const published = await eventsOf(
+      "billing.grant.changed.v1",
+      "grantId",
+      withheld?.id ?? "",
+    );
+    expect(published.map((e) => e.payload.state)).toEqual(["revoked"]);
+    const [issue] = await duplicateIssues([second.orderId]);
+    expect(issue).toMatchObject({
+      severity: "high",
+      status: "open",
+      subjectKey: `payment:${payment?.id}`,
+      related: {
+        orderId: second.orderId,
+        paymentId: payment?.id,
+        heldOrderId: first.orderId,
+      },
+      evidence: {
+        held: "already owned",
+        paid: { minor: "52", currency: "EUR", scale: 2 },
+      },
+    });
+    // The same delivery again changes nothing.
+    expect(
+      (await webhook(paidWebhook(user, second.invoice)).expect(200)).body
+        .status,
+    ).toBe("duplicate");
+    expect(await grantsOf(user.userId)).toHaveLength(2);
+  });
+
+  it("two paid orders of one item settling at once grant once", async () => {
+    const user = await newCustomer();
+    const first = await startPurchase(user, SILVER, "USD");
+    const second = await startPurchase(user, SILVER, "RUB");
+    const results = await Promise.all([
+      webhook(paidWebhook(user, first.invoice)),
+      webhook(paidWebhook(user, second.invoice)),
+    ]);
+    expect(results.map((res) => res.body.status)).toEqual([
+      "processed",
+      "processed",
+    ]);
+    const rows = await grantsOf(user.userId);
+    expect(rows.filter((g) => g.state === "active")).toHaveLength(1);
+    expect(rows.filter((g) => g.state === "revoked")).toHaveLength(1);
+    expect(await duplicateIssues([first.orderId, second.orderId])).toHaveLength(
+      1,
+    );
+  });
+
+  it("a second paid subscription grants nothing and its renewal is cancelled at Lava", async () => {
+    const user = await newCustomer();
+    const first = await startPurchase(user, PREMIUM, "USD");
+    const second = await startPurchase(user, PREMIUM, "EUR");
+    await webhook(paidWebhook(user, first.invoice)).expect(200);
+    await webhook(paidWebhook(user, second.invoice)).expect(200);
+
+    const kept = await subscriptionOf(first.orderId);
+    const extra = await subscriptionOf(second.orderId);
+    expect(kept).toMatchObject({ state: "active", autoRenew: true });
+    expect(extra).toMatchObject({ state: "cancel_requested", autoRenew: true });
+    const rows = await grantsOf(user.userId);
+    expect(rows.filter((g) => g.state === "active")).toEqual([
+      expect.objectContaining({ sourceId: kept?.id }),
+    ]);
+    expect(rows.find((g) => g.sourceId === extra?.id)).toMatchObject({
+      state: "revoked",
+      revokeReason: "duplicate purchase",
+    });
+    const [payment] = await paymentsOf(second.orderId);
+    expect(payment).toMatchObject({
+      kind: "subscription_initial",
+      subscriptionId: extra?.id,
+    });
+    const [issue] = await duplicateIssues([second.orderId]);
+    expect(issue).toMatchObject({
+      status: "open",
+      related: {
+        subscriptionId: extra?.id,
+        heldSubscriptionId: kept?.id,
+      },
+      evidence: { held: "already subscribed" },
+    });
+
+    // The worker stops the duplicate's renewal; the kept one renews on.
+    await reconciliation.tick();
+    expect(h.lava.cancelCalls).toContainEqual({
+      parentContractId: second.invoice.id,
+      email: user.email,
+    });
+    expect(
+      h.lava.cancelCalls.some((c) => c.parentContractId === first.invoice.id),
+    ).toBe(false);
+    expect(await subscriptionOf(second.orderId)).toMatchObject({
+      state: "cancelling",
+      autoRenew: false,
+    });
+    expect(await subscriptionOf(first.orderId)).toMatchObject({
+      state: "active",
+      autoRenew: true,
+    });
   });
 });
 
