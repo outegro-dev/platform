@@ -180,10 +180,11 @@
     "label": "Projects",
     "title": "A space for",
     "titleAccent": "what’s next.",
-    "name": "Independent projects",
-    "status": "In the making",
-    "description": "Experiments, products and the thinking behind them. Coming here soon.",
-    "art": "Flowing liquid silver bands"
+    "name": "Battleship",
+    "status": "Live",
+    "description": "An online game on my own platform: matches with friends, four bot levels, an Elo rating and purchases through Lava. One account for every outegro.dev app.",
+    "art": "Flowing liquid silver bands",
+    "cta": "Play"
   },
   "contact": {
     "index": "05",

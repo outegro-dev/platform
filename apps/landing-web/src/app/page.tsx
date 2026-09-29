@@ -232,7 +232,14 @@ export default async function Home() {
                 <h3>{t("projects.name")}</h3>
                 <p>{t("projects.description")}</p>
               </div>
-              <Badge variant="glass">{t("projects.status")}</Badge>
+              <div className="project-actions">
+                <Badge variant="glass">{t("projects.status")}</Badge>
+                <Button asChild size="sm">
+                  <a href="https://battleship.outegro.dev">
+                    {t("projects.cta")}
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
         </section>

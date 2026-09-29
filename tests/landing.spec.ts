@@ -142,7 +142,12 @@ for (const locale of ["en", "ru"] as const) {
       .analyze();
     expect(scan.violations).toEqual([]);
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-    await expect(page.locator("#projects a")).toHaveCount(0);
+    // The only published project is the game on the platform.
+    await expect(page.locator("#projects a")).toHaveCount(1);
+    await expect(page.locator("#projects a")).toHaveAttribute(
+      "href",
+      "https://battleship.outegro.dev",
+    );
     await expect(page.locator("body")).not.toContainText("outegro.com");
     await page.locator(".desktop-contact button").click();
     const modal = await new AxeBuilder({ page })

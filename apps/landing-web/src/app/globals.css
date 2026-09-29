@@ -660,8 +660,15 @@
 }
 .project-caption p {
   margin-top: 6px;
+  max-width: 640px;
   font-size: 15px;
   color: var(--muted-foreground);
+}
+.project-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
 }
 .project-caption {
   background: var(--glass-bg);
