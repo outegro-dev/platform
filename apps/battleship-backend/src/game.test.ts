@@ -688,21 +688,24 @@ describe("quick matches (TC-BS-07)", () => {
     expect(await queue.size()).toBe(0);
   });
 
-  it("a player who leaves the queue while a pairing is in flight is not matched", async () => {
-    // startPair locks both players in id order: while it waits for `low`,
-    // `high` is free to leave the queue after the pass claimed the pair.
+  /**
+   * Two waiting players whose pair a pass has claimed (both are out of the
+   * queue) while startPair waits for their locks. It locks in id order and
+   * `held` has the lower id and a busy lock, so `free` can act meanwhile.
+   */
+  async function stuckPairing() {
     const low = `0${randomUUID().slice(1)}`;
     const high = `f${randomUUID().slice(1)}`;
-    const leaver = await h.connect(high);
-    const stayer = await h.connect(low);
+    const free = await h.connect(high);
+    const held = await h.connect(low);
     await h.db
       .update(players)
       .set({ rating: 1600 })
       .where(eq(players.userId, low));
-    leaver.send("queue.join", { mode: "quick" });
-    await leaver.next("queue.joined");
-    stayer.send("queue.join", { mode: "quick" });
-    await stayer.next("queue.joined");
+    free.send("queue.join", { mode: "quick" });
+    await free.next("queue.joined");
+    held.send("queue.join", { mode: "quick" });
+    await held.next("queue.joined");
     // 600 points apart: no pair until anyone is acceptable after 30 s.
     let release: () => void = () => undefined;
     const busy = h
@@ -713,18 +716,47 @@ describe("quick matches (TC-BS-07)", () => {
     await expect
       .poll(async () => [await queue.since(low), await queue.since(high)])
       .toEqual([null, null]);
-    leaver.send("queue.leave", {});
-    await leaver.next("queue.left");
-    release();
-    await busy;
-    await advancing;
-    await leaver.sync();
-    expect(leaver.pending("queue.matched")).toHaveLength(0);
-    expect(h.get(GameService).active(high)).toBeUndefined();
-    expect(h.get(GameService).active(low)).toBeUndefined();
+    const proceed = async () => {
+      release();
+      await busy;
+      await advancing;
+    };
+    return { free, held, queue, proceed };
+  }
+
+  it("a player who leaves the queue while a pairing is in flight is not matched", async () => {
+    const { free, held, queue, proceed } = await stuckPairing();
+    free.send("queue.leave", {});
+    await free.next("queue.left");
+    await proceed();
+    await free.sync();
+    expect(free.pending("queue.matched")).toHaveLength(0);
+    expect(h.get(GameService).active(free.userId)).toBeUndefined();
+    expect(h.get(GameService).active(held.userId)).toBeUndefined();
     // The other player keeps the original place in the queue.
-    expect(await queue.since(low)).toBe(h.clock.now().getTime() - 30_000);
-    expect(await queue.since(high)).toBeNull();
-    await Promise.all([leaver.close(), stayer.close()]);
+    expect(await queue.since(held.userId)).toBe(
+      h.clock.now().getTime() - 30_000,
+    );
+    expect(await queue.since(free.userId)).toBeNull();
+    await Promise.all([free.close(), held.close()]);
+  });
+
+  it("a player who joins again while a pairing is in flight is paired once and leaves no queue entry behind", async () => {
+    const { free, held, queue, proceed } = await stuckPairing();
+    free.send("queue.join", { mode: "quick" });
+    await free.next("queue.joined");
+    await proceed();
+    // The newer entry stands; the next pass pairs both from the queue.
+    await h.advance(1_000);
+    const { matchId } = (await free.next("queue.matched")).payload;
+    expect((await held.next("queue.matched")).payload.matchId).toBe(matchId);
+    await free.sync();
+    expect(free.pending("queue.matched")).toHaveLength(0);
+    // Nobody stays queued while playing (or is matched again afterwards).
+    expect(await queue.since(free.userId)).toBeNull();
+    expect(await queue.since(held.userId)).toBeNull();
+    free.send("match.resign", {});
+    await held.next("match.finished");
+    await Promise.all([free.close(), held.close()]);
   });
 });

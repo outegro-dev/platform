@@ -82,10 +82,11 @@ export class MatchmakerService {
     }
     try {
       const claimed = await this.queue.claim(pairs);
-      let requeued = false;
+      let fellThrough = false;
       for (const [a, b] of claimed)
-        if (await this.startPair(a, b)) requeued = true;
-      if (requeued || entries.length > claimed.length * 2) this.scheduleNext();
+        if (await this.startPair(a, b)) fellThrough = true;
+      if (fellThrough || entries.length > claimed.length * 2)
+        this.scheduleNext();
     } finally {
       for (const [a, b] of pairs) {
         this.pairing.delete(a.userId);
@@ -102,19 +103,13 @@ export class MatchmakerService {
     });
   }
 
-  /** Starts the match; true when a player went back to the queue instead. */
+  /** Starts the match; true when it fell through and someone may wait on. */
   private startPair(a: QueueEntry, b: QueueEntry): Promise<boolean> {
     return this.locks.run([a.userId, b.userId], async () => {
-      // Since the claim a player may have left the queue, gone offline or
-      // started a bot match: only players still waiting take part.
-      const waiting = (entry: QueueEntry) =>
-        this.pairing.get(entry.userId) === true &&
-        !this.game.active(entry.userId) &&
-        this.registry.isOnline(entry.userId);
-      if (!waiting(a) || !waiting(b)) {
-        const back = [a, b].filter(waiting);
-        await this.queue.requeue(back);
-        return back.length > 0;
+      const still = await this.stillWaiting([a, b]);
+      if (still.length < 2) {
+        await this.queue.requeue(still);
+        return true;
       }
       try {
         await this.game.start({ mode: "quick", a: a.userId, b: b.userId });
@@ -124,10 +119,27 @@ export class MatchmakerService {
           { err: (error as Error).message },
           "Could not start a quick match",
         );
-        const back = [a, b].filter(waiting);
-        await this.queue.requeue(back);
-        return back.length > 0;
+        await this.queue.requeue(await this.stillWaiting([a, b]));
+        return true;
       }
     });
+  }
+
+  /**
+   * Claimed players who still wait for this pairing. Since the claim a player
+   * may have left the queue, gone offline, started a bot match or joined the
+   * queue again (that newer entry stands instead: never both).
+   */
+  private async stillWaiting(entries: QueueEntry[]): Promise<QueueEntry[]> {
+    const still: QueueEntry[] = [];
+    for (const entry of entries)
+      if (
+        this.pairing.get(entry.userId) === true &&
+        !this.game.active(entry.userId) &&
+        this.registry.isOnline(entry.userId) &&
+        (await this.queue.since(entry.userId)) === null
+      )
+        still.push(entry);
+    return still;
   }
 }
