@@ -908,6 +908,87 @@ describe("cancellation retries", () => {
   });
 });
 
+describe("logs and error bodies", () => {
+  /** Everything written to stdout and stderr while `run` executes. */
+  async function logsOf(run: () => Promise<void>) {
+    const written: string[] = [];
+    const restore = [process.stdout, process.stderr].map((stream) => {
+      const original = stream.write.bind(stream);
+      stream.write = ((chunk: unknown, ...rest: unknown[]) => {
+        written.push(String(chunk));
+        return (original as (...args: unknown[]) => boolean)(chunk, ...rest);
+      }) as typeof stream.write;
+      return () => {
+        stream.write = original;
+      };
+    });
+    try {
+      await run();
+    } finally {
+      for (const undo of restore) undo();
+    }
+    return written.join("");
+  }
+
+  it("a webhook that cannot be stored is a retryable 503 and its payload never reaches the log", async () => {
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, SILVER, "USD");
+    await db.execute(
+      sql`alter table provider_events rename to provider_events_offline`,
+    );
+    let res: Awaited<ReturnType<typeof webhook>> | undefined;
+    let log = "";
+    try {
+      log = await logsOf(async () => {
+        res = await webhook(paidWebhook(user, invoice));
+      });
+    } finally {
+      await db.execute(
+        sql`alter table provider_events_offline rename to provider_events`,
+      );
+    }
+    expect(res?.status).toBe(503);
+    expect(res?.body.error).toMatchObject({
+      code: "DEPENDENCY_UNAVAILABLE",
+      retryable: true,
+    });
+    expect(JSON.stringify(res?.body)).not.toContain(user.email);
+    expect(log).toContain("42P01");
+    expect(log).not.toContain(user.email);
+    expect(log).not.toContain(h.webhookSecret);
+    expect(await orderRow(orderId)).toMatchObject({ status: "pending" });
+  });
+
+  it("a failed processing step explains itself without the buyer email", async () => {
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, PREMIUM, "USD");
+    // The subscription insert (it carries the buyer email) fails once.
+    await db.execute(
+      sql`alter table subscriptions add constraint qa_block check (false) not valid`,
+    );
+    let res: Awaited<ReturnType<typeof webhook>> | undefined;
+    let log = "";
+    try {
+      log = await logsOf(async () => {
+        res = await webhook(paidWebhook(user, invoice));
+      });
+    } finally {
+      await db.execute(sql`alter table subscriptions drop constraint qa_block`);
+    }
+    expect(res?.status).toBe(200);
+    expect(res?.body.status).toBe("failed");
+    const [event] = await eventsFor([invoice.id]);
+    expect(event?.lastError).toContain("qa_block");
+    expect(event?.lastError).not.toContain(user.email);
+    expect(log).toContain("qa_block");
+    expect(log).not.toContain(user.email);
+    // Once the database accepts the write, the retry settles it.
+    h.clock.advance(31_000);
+    await reconciliation.tick();
+    expect(await orderRow(orderId)).toMatchObject({ status: "paid" });
+  });
+});
+
 describe("authorization of admin commands", () => {
   it("every command needs its permission, a fresh token and a reason, and is audited", async () => {
     const owner = await newCustomer({ roles: ["owner"] });

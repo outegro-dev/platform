@@ -1,4 +1,5 @@
 import type { DatabaseHandle } from "@outegro/nest-common";
+import { DrizzleQueryError } from "drizzle-orm";
 import type * as schema from "../db/schema.js";
 
 export type PaymentsDatabase = DatabaseHandle<typeof schema>;
@@ -23,4 +24,19 @@ export function isUniqueViolation(error: unknown, constraint?: string) {
   const cause = (error as { cause?: unknown })?.cause ?? error;
   const pg = cause as { code?: string; constraint?: string };
   return pg?.code === "23505" && (!constraint || pg.constraint === constraint);
+}
+
+/**
+ * An error fit for logs and stored diagnostics. A failed query's message
+ * carries its SQL and parameters (raw payloads, buyer emails), so only the
+ * driver's code and message are kept.
+ */
+export function describeError(error: unknown): string {
+  if (error instanceof DrizzleQueryError) {
+    const pg = error.cause as { code?: unknown; message?: unknown } | undefined;
+    const code = typeof pg?.code === "string" ? `${pg.code} ` : "";
+    const message = typeof pg?.message === "string" ? pg.message : "failed";
+    return `database: ${code}${message}`;
+  }
+  return error instanceof Error ? error.message : String(error);
 }

@@ -1,7 +1,17 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { CLOCK, type Clock, DATABASE, OutboxRelay } from "@outegro/nest-common";
+import {
+  AppError,
+  CLOCK,
+  type Clock,
+  DATABASE,
+  OutboxRelay,
+} from "@outegro/nest-common";
 import { and, asc, eq, inArray, isNotNull, lte, sql } from "drizzle-orm";
-import type { Executor, PaymentsDatabase } from "../common/database.js";
+import {
+  describeError,
+  type Executor,
+  type PaymentsDatabase,
+} from "../common/database.js";
 import { providerEvents } from "../db/schema.js";
 import { type Fact, factSchema, type PaymentFact } from "../domain/facts.js";
 import { normalizeLavaEvent, payloadHash } from "../lava/webhook-events.js";
@@ -47,7 +57,7 @@ export class ProviderEvents {
     const now = this.clock.now();
     const event = normalizeLavaEvent(payload);
     const received = event.status === "received";
-    const [row] = await this.database.db
+    const row = await this.database.db
       .insert(providerEvents)
       .values({
         provider: PROVIDER,
@@ -68,7 +78,19 @@ export class ProviderEvents {
       .onConflictDoNothing({
         target: [providerEvents.provider, providerEvents.eventKey],
       })
-      .returning({ id: providerEvents.id, status: providerEvents.status });
+      .returning({ id: providerEvents.id, status: providerEvents.status })
+      .then(
+        (rows) => rows[0],
+        (error: unknown) => {
+          // The failed query carries the raw payload (buyer email): the log
+          // gets the driver error only, Lava a retryable 5xx (INV-18).
+          this.logger.error(
+            { type: event.rawType, err: describeError(error) },
+            "Provider event could not be stored",
+          );
+          throw new AppError("DEPENDENCY_UNAVAILABLE");
+        },
+      );
     if (!row) return { status: "duplicate" as const };
     if (!received) {
       this.logger.warn(
@@ -193,7 +215,7 @@ export class ProviderEvents {
       this.relay.kick();
       return status;
     } catch (error) {
-      await this.failed(eventId, error as Error);
+      await this.failed(eventId, error);
       return "failed";
     }
   }
@@ -247,10 +269,12 @@ export class ProviderEvents {
     }
   }
 
-  private async failed(eventId: string, error: Error) {
+  private async failed(eventId: string, cause: unknown) {
     const now = this.clock.now();
+    // Never the query text: its parameters can hold the buyer email.
+    const reason = describeError(cause);
     this.logger.error(
-      { eventId, err: error.message },
+      { eventId, err: reason },
       "Provider event processing failed",
     );
     try {
@@ -260,7 +284,7 @@ export class ProviderEvents {
           .set({
             status: "failed",
             attempts: sql`${providerEvents.attempts} + 1`,
-            lastError: error.message.slice(0, 500),
+            lastError: reason.slice(0, 500),
           })
           .where(
             and(
@@ -289,7 +313,7 @@ export class ProviderEvents {
               severity: "high",
               subjectKey: `event:${eventId}`,
               related: { eventId },
-              evidence: { type: row.type, error: error.message.slice(0, 200) },
+              evidence: { type: row.type, error: reason.slice(0, 200) },
             },
             now,
           );
@@ -298,7 +322,7 @@ export class ProviderEvents {
     } catch (secondary) {
       // The database itself is down; the row stays retryable as it was.
       this.logger.error(
-        { eventId, err: (secondary as Error).message },
+        { eventId, err: describeError(secondary) },
         "Could not record the processing failure",
       );
     }

@@ -713,8 +713,11 @@ describe("webhooks (PAY-04, PAY-05)", () => {
     );
     try {
       const res = await webhook(paidWebhook(user, invoice));
-      expect(res.status).toBe(500);
-      expect(res.body.error.code).toBe("INTERNAL");
+      expect(res.status).toBe(503);
+      expect(res.body.error).toMatchObject({
+        code: "DEPENDENCY_UNAVAILABLE",
+        retryable: true,
+      });
       expect(JSON.stringify(res.body)).not.toContain("provider_events");
     } finally {
       await db.execute(
