@@ -785,6 +785,46 @@ describe("operator visibility of money problems", () => {
   });
 });
 
+describe("cancellation retries", () => {
+  it("retries an unanswered cancel after 1, 5, 15 min, 1 h and 6 h, then asks an operator", async () => {
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, PREMIUM, "USD");
+    await webhook(paidWebhook(user, invoice)).expect(200);
+    const [sub] = await subscriptionsOf(orderId);
+    h.lava.cancelMode = "timeout";
+    const before = h.lava.cancelCalls.length;
+    await h
+      .http()
+      .post(`/v1/me/subscriptions/${sub?.id}/cancel`)
+      .set(user.auth)
+      .expect(200);
+    const calls = () => h.lava.cancelCalls.length - before;
+    expect(calls()).toBe(1);
+    for (const [minutes, expected] of [
+      [1, 2],
+      [5, 3],
+      [15, 4],
+      [60, 5],
+      [360, 6],
+    ] as const) {
+      h.clock.advance(minutes * MINUTE_MS + 1_000);
+      await reconciliation.tick();
+      expect(calls(), `after +${minutes} min`).toBe(expected);
+    }
+    h.clock.advance(DAY_MS);
+    await reconciliation.tick();
+    expect(calls()).toBe(6);
+    expect(await issueOf(`cancel:${sub?.id}`)).toMatchObject({
+      kind: "cancel_failed",
+      status: "open",
+    });
+    expect((await subscriptionsOf(orderId))[0]).toMatchObject({
+      state: "cancel_requested",
+      nextCancelAttemptAt: null,
+    });
+  });
+});
+
 describe("authorization of admin commands", () => {
   it("every command needs its permission, a fresh token and a reason, and is audited", async () => {
     const owner = await newCustomer({ roles: ["owner"] });

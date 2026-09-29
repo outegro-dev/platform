@@ -195,8 +195,9 @@ export class CancellationService {
     const now = this.clock.now();
     return this.database.db.transaction(async (tx) => {
       const current = await this.lock(tx, subscriptionId);
+      // attempts counts failed calls: after the first one, wait the first delay.
       const attempts = current.cancelAttempts + 1;
-      const delay = RETRY_DELAYS_MS[attempts];
+      const delay = RETRY_DELAYS_MS[attempts - 1];
       if (delay === undefined) {
         await this.issues.open(
           tx,
