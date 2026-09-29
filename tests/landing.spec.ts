@@ -335,6 +335,52 @@ test("security headers and a nonce-based CSP are sent; no CSP violations", async
   expect(errors.filter((e) => /Content Security Policy/i.test(e))).toEqual([]);
 });
 
+for (const [device, viewport] of [
+  ["desktop", { width: 1280, height: 720 }],
+  ["phone", { width: 390, height: 844 }],
+] as const) {
+  test(`${device}: first load does not shift the layout (CLS < 0.02, cache disabled)`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== "chromium",
+      "Layout-shift entries and network emulation are Chromium APIs.",
+    );
+    test.setTimeout(90_000);
+    await page.setViewportSize(viewport);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Network.enable");
+    await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+    // Chrome's "Slow 4G": the fonts arrive after the first paint.
+    await cdp.send("Network.emulateNetworkConditions", {
+      offline: false,
+      latency: 150,
+      downloadThroughput: (1.6 * 1024 * 1024) / 8,
+      uploadThroughput: (750 * 1024) / 8,
+    });
+    await page.addInitScript(() => {
+      const state = window as unknown as { __cls: number };
+      state.__cls = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as (PerformanceEntry & {
+          value: number;
+          hadRecentInput: boolean;
+        })[]) {
+          if (!entry.hadRecentInput) state.__cls += entry.value;
+        }
+      }).observe({ type: "layout-shift", buffered: true });
+    });
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(1000);
+    const cls = await page.evaluate(
+      () => (window as unknown as { __cls: number }).__cls,
+    );
+    expect(cls).toBeLessThan(0.02);
+  });
+}
+
 test("health probes answer for Kubernetes", async ({ request }) => {
   for (const path of ["/health", "/health/deep"]) {
     const response = await request.get(path);

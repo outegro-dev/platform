@@ -1,6 +1,6 @@
 import { randomBytes, randomInt } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
 const PAY_CALLBACK = "http://localhost:3003/auth/callback";
@@ -190,6 +190,8 @@ test("unknown pages get the branded 404", async ({ page }) => {
 
 test("account pages pass an accessibility scan", async ({ page }) => {
   const scan = async (where: string) => {
+    // Scan the page itself, not its loading skeleton.
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
     const { violations } = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();
@@ -250,4 +252,336 @@ test("pages are never stored, build assets stay cached", async ({
   // Refetching CSS and fonts on every reload was the cause of layout jumps.
   const asset = await request.get(css as string);
   expect(asset.headers()["cache-control"]).toContain("immutable");
+});
+
+// ─── Layout stability and visible states ────────────────────────────────
+
+const ACCOUNT_PAGES = [
+  "/account",
+  "/account/sessions",
+  "/account/inbox",
+  "/account/notifications",
+];
+
+type Box = { x: number; y: number; width: number; height: number } | null;
+
+/** Rounded boxes of named elements, to compare before and after an interaction. */
+async function layoutOf(elements: Record<string, Locator>) {
+  const result: Record<string, Box> = {};
+  for (const [name, element] of Object.entries(elements)) {
+    const box = await element.boundingBox();
+    result[name] = box && {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+    };
+  }
+  return result;
+}
+
+/** Every layout shift of each new document is summed into `window.__cls`. */
+async function recordLayoutShifts(page: Page) {
+  await page.addInitScript(() => {
+    const state = window as unknown as { __cls: number };
+    state.__cls = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as (PerformanceEntry & {
+        value: number;
+        hadRecentInput: boolean;
+      })[]) {
+        if (!entry.hadRecentInput) state.__cls += entry.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+}
+
+/** A cold first visit: no HTTP cache, and a phone-grade network if asked. */
+async function network(page: Page) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
+  await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  return (slow: boolean) =>
+    cdp.send("Network.emulateNetworkConditions", {
+      offline: false,
+      // Chrome's "Slow 4G": fonts arrive after the first paint.
+      latency: slow ? 150 : 0,
+      downloadThroughput: slow ? (1.6 * 1024 * 1024) / 8 : -1,
+      uploadThroughput: slow ? (750 * 1024) / 8 : -1,
+    });
+}
+
+/** CLS of one first load, once the content and the fonts are in. */
+async function firstLoadShift(page: Page, path: string) {
+  await page.goto(path);
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(600);
+  return page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+}
+
+/** Holds this page's server-action responses until released. */
+async function holdServerActions(page: Page, path: string) {
+  const url = new URL(path, page.url()).href;
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(url, async (route) => {
+    if (route.request().method() === "POST") await held;
+    await route.continue().catch(() => {});
+  });
+  return async () => {
+    release();
+    await page.unroute(url);
+  };
+}
+
+for (const [device, viewport] of [
+  ["desktop", { width: 1280, height: 720 }],
+  ["phone", { width: 390, height: 844 }],
+] as const) {
+  test(`${device}: first load does not shift the layout (CLS < 0.02, cache disabled)`, async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize(viewport);
+    const throttle = await network(page);
+    await recordLayoutShifts(page);
+    const shifts: Record<string, number> = {};
+    await throttle(true);
+    shifts["/login"] = await firstLoadShift(page, "/login");
+    await throttle(false);
+    await signIn(page);
+    await expect(page).toHaveURL("/account");
+    await throttle(true);
+    for (const path of ACCOUNT_PAGES)
+      shifts[path] = await firstLoadShift(page, path);
+    for (const [path, cls] of Object.entries(shifts))
+      expect.soft(cls, `CLS of ${path}`).toBeLessThan(0.02);
+  });
+}
+
+test("brand fonts: Latin is preloaded, Cyrillic is fetched only for Russian text", async ({
+  page,
+  context,
+}) => {
+  const response = await page.goto("/login");
+  const preloads = (response?.headers().link ?? "")
+    .split(/,\s*(?=<)/)
+    .filter((link) => /rel=preload/.test(link) && /as="font"/.test(link));
+  expect(preloads.length).toBeGreaterThan(0);
+  expect(preloads.every((link) => /latin/.test(link))).toBe(true);
+  const fonts = () =>
+    page.evaluate(() =>
+      performance
+        .getEntriesByType("resource")
+        .map((entry) => entry.name)
+        .filter((name) => name.endsWith(".woff2")),
+    );
+  await page.evaluate(() => document.fonts.ready);
+  expect((await fonts()).some((name) => /cyrillic/.test(name))).toBe(false);
+
+  await context.addCookies([
+    { name: "og_locale", value: "ru", url: "http://localhost:3002" },
+  ]);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Вход");
+  await page.evaluate(() => document.fonts.ready);
+  expect((await fonts()).some((name) => /cyrillic/.test(name))).toBe(true);
+});
+
+test("the sign-in form keeps its layout while focusing, typing and failing", async ({
+  page,
+}) => {
+  // Hover lifts and press scales are transforms, not layout: leave them out.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/login");
+  const email = page.getByLabel("Email");
+  const around = () =>
+    layoutOf({
+      heading: page.getByRole("heading", { level: 1 }),
+      label: page.locator('label[for="email"]'),
+      input: email,
+      message: page.locator("#email-message"),
+      button: page.locator('form button[type="submit"]'),
+      footer: page.getByRole("contentinfo"),
+    });
+  const initial = await around();
+
+  await email.focus();
+  expect(await around(), "focus").toEqual(initial);
+  await email.pressSequentially("someone@", { delay: 20 });
+  expect(await around(), "typing").toEqual(initial);
+
+  // Refused in the browser, then by the server: the message fills the slot.
+  await page.getByRole("button", { name: "Send code" }).click();
+  await expect(page.locator("#email-message")).toHaveText(
+    "Enter a valid email address.",
+  );
+  await expect(email).toHaveAttribute("aria-invalid", "true");
+  expect(await around(), "browser error").toEqual(initial);
+  await email.fill("someone@localhost");
+  const refused = page.waitForResponse(
+    (response) => response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Send code" }).click();
+  await refused;
+  await expect(page.locator("#email-message")).toHaveText(
+    "Enter a valid email address.",
+  );
+  expect(await around(), "server error").toEqual(initial);
+  await expect(email).toHaveValue("someone@localhost");
+
+  // The code step.
+  await email.fill(uniqueEmail());
+  await page.getByRole("button", { name: "Send code" }).click();
+  const code = page.getByLabel("Six-digit code");
+  await expect(code).toBeFocused();
+  await expect(code).toHaveAttribute("inputmode", "numeric");
+  await expect(code).toHaveAttribute("autocomplete", "one-time-code");
+  const codeAround = () =>
+    layoutOf({
+      card: page.locator(".login-card"),
+      input: code,
+      message: page.locator("#code-message"),
+      verify: page.locator('form button[type="submit"]').first(),
+      another: page.getByRole("button", { name: "Use another email" }),
+    });
+  const step = await codeAround();
+  await code.pressSequentially("123", { delay: 20 });
+  expect(await codeAround(), "typing").toEqual(step);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator("#code-message")).toHaveText(
+    "Enter all six digits of the code.",
+  );
+  expect(await codeAround(), "incomplete code").toEqual(step);
+  // A pasted code keeps only its digits.
+  await code.fill("000 000");
+  await expect(code).toHaveValue("000000");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator("#code-message")).toHaveText(
+    "That code is not right. Check it and try again.",
+  );
+  await expect(code).toHaveValue("000000");
+  await expect(code).toHaveAttribute("aria-describedby", "code-message");
+  expect(await codeAround(), "wrong code").toEqual(step);
+});
+
+test("pending buttons keep their size, stay focusable and say what is happening", async ({
+  page,
+}) => {
+  // Hover lifts and press scales are transforms, not layout: leave them out.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(uniqueEmail());
+  const send = page.locator('form button[type="submit"]');
+  const idle = await send.boundingBox();
+  const release = await holdServerActions(page, "/login");
+  await send.click();
+  await expect(send).toHaveAttribute("aria-busy", "true");
+  await expect(send).toHaveAttribute("aria-disabled", "true");
+  await expect(send).toHaveAccessibleName("Sending…");
+  await expect(send).toBeFocused();
+  expect(await send.boundingBox()).toEqual(idle);
+  await release();
+  await expect(page.getByLabel("Six-digit code")).toBeVisible();
+});
+
+test("saving the profile moves nothing around the form", async ({ page }) => {
+  // Hover lifts and press scales are transforms, not layout: leave them out.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/login");
+  await signIn(page);
+  await expect(page).toHaveURL("/account");
+  const name = page.getByLabel("Display name");
+  const save = page.locator('main form button[type="submit"]');
+  const status = page.getByRole("status");
+  const around = () =>
+    layoutOf({
+      name,
+      english: page.getByRole("radio", { name: "English" }),
+      save,
+      status,
+      footer: page.getByRole("contentinfo"),
+    });
+  const initial = await around();
+  await name.focus();
+  await name.fill("Steady Person");
+  expect(await around(), "typing").toEqual(initial);
+
+  const release = await holdServerActions(page, "/account");
+  await save.click();
+  await expect(save).toHaveAttribute("aria-busy", "true");
+  await expect(save).toHaveAccessibleName("Saving…");
+  await expect(status).toHaveText("Saving…");
+  expect(await around(), "pending").toEqual(initial);
+  await release();
+  await expect(status).toHaveText("Saved.");
+  expect(await around(), "saved").toEqual(initial);
+  // Editing again clears the old result instead of leaving "Saved." behind.
+  await name.fill("Steady Person 2");
+  await expect(status).toHaveText("");
+});
+
+test("an offline submit is explained, not sent", async ({ page, context }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(uniqueEmail());
+  const posts: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST") posts.push(request.url());
+  });
+  await context.setOffline(true);
+  await page.getByRole("button", { name: "Send code" }).click();
+  const message = page.locator("#email-message");
+  await expect(message).toHaveText(
+    "You're offline. Check the connection and try again.",
+  );
+  expect(posts).toEqual([]);
+  await context.setOffline(false);
+  await expect(message).not.toContainText("offline");
+});
+
+test("navigation shows the page skeleton, never a blank area", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await signIn(page);
+  await expect(page).toHaveURL("/account");
+  // Prefetched loading states first, then hold the page's own data.
+  await page.waitForLoadState("networkidle");
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/account/sessions?_rsc=*", async (route) => {
+    if (!route.request().headers()["next-router-prefetch"]) await held;
+    await route.continue().catch(() => {});
+  });
+  await page
+    .getByRole("navigation")
+    .getByRole("link", { name: "Sessions" })
+    .click();
+  await expect(page.getByRole("heading", { name: "Sessions" })).toBeVisible();
+  await expect(page.locator('[aria-busy="true"]').first()).toBeVisible();
+  release();
+  await expect(
+    page.getByRole("listitem").filter({ hasText: "This device" }),
+  ).toBeVisible();
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+});
+
+test("sign-in states pass an accessibility scan", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(uniqueEmail());
+  await page.getByRole("button", { name: "Send code" }).click();
+  await page.getByLabel("Six-digit code").fill("000000");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator("#code-message")).toHaveText(
+    "That code is not right. Check it and try again.",
+  );
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(violations.map((v) => `${v.id} × ${v.nodes.length}`)).toEqual([]);
 });
