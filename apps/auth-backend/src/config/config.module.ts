@@ -11,6 +11,7 @@ import {
   rabbitConfig,
   tokenConfig,
   valkeyConfig,
+  webauthnConfig,
 } from "./config.js";
 import { env } from "./env.js";
 
@@ -28,6 +29,7 @@ import { env } from "./env.js";
       internalConfig,
       oauthConfig,
       googleConfig,
+      webauthnConfig,
     ]),
   ],
 })

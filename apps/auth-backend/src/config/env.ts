@@ -64,5 +64,17 @@ export const env = defineEnv(
       GOOGLE_CLIENT_ID: unsetIfEmpty(z.string().min(10)),
       GOOGLE_CLIENT_SECRET: unsetIfEmpty(z.string().min(10)),
       GOOGLE_REDIRECT_URI: unsetIfEmpty(z.url()),
+      /**
+       * Passkey relying party (ID-05): the host every credential is bound to.
+       * Changing it orphans every registered passkey; see docs/06-operations/passkeys.md.
+       */
+      WEBAUTHN_RP_ID: z
+        .string()
+        .regex(
+          /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/,
+        )
+        .default("id.outegro.dev"),
+      /** The only page origin a passkey ceremony is accepted from: id-web. */
+      WEBAUTHN_ORIGIN: z.url().default("https://id.outegro.dev"),
     }),
 );
