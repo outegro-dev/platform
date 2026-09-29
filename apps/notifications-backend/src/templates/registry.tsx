@@ -569,7 +569,31 @@ const subscriptionExpired = notice({
   action: subscriptionAction,
 });
 
-/** A refund applied to a verified payment. */
+/** The refund, then what it left of the purchase's access. */
+const refunded = (l: Locale, d: Data, left: string) =>
+  l === "ru"
+    ? `Мы учли возврат ${amount(l, d)} за «${product(l, d)}». ${left}`
+    : `We recorded a refund of ${amount(l, d)} for “${product(l, d)}”. ${left}`;
+const refundEnded = {
+  en: "Access from this purchase has ended.",
+  ru: "Доступ по этой покупке закрыт.",
+};
+const refundKeepsUntil = (l: Locale, until: unknown) =>
+  l === "ru"
+    ? `Доступ по этой покупке сохранится до ${at(l, until)}.`
+    : `Access from this purchase stays active until ${at(l, until)}.`;
+const refundSubject = (l: Locale, d: Data) =>
+  l === "ru"
+    ? `Возврат учтён: ${product(l, d)}`
+    : `Refund recorded: ${product(l, d)}`;
+const refundTitle = (l: Locale) =>
+  l === "ru" ? "Возврат учтён" : "Refund recorded";
+
+/**
+ * v1: a refund applied to a verified payment. Any grant not in force reads
+ * as ended, even one a duplicate purchase never opened; it stays for the
+ * messages already stored.
+ */
 const refundRecorded = notice({
   ...billing,
   schema: z.object({
@@ -588,24 +612,60 @@ const refundRecorded = notice({
     actionUrl:
       "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
   },
-  subject: (l, d) =>
-    l === "ru"
-      ? `Возврат учтён: ${product(l, d)}`
-      : `Refund recorded: ${product(l, d)}`,
-  title: (l) => (l === "ru" ? "Возврат учтён" : "Refund recorded"),
-  text: (l, d) => {
-    // null: the grant of this purchase is no longer in force.
-    const left = !d.accessUntil
-      ? l === "ru"
-        ? "Доступ по этой покупке закрыт."
-        : "Access from this purchase has ended."
-      : l === "ru"
-        ? `Доступ по этой покупке сохранится до ${at(l, d.accessUntil)}.`
-        : `Access from this purchase stays active until ${at(l, d.accessUntil)}.`;
-    return l === "ru"
-      ? `Мы учли возврат ${amount(l, d)} за «${product(l, d)}». ${left}`
-      : `We recorded a refund of ${amount(l, d)} for “${product(l, d)}”. ${left}`;
-  },
+  subject: refundSubject,
+  title: refundTitle,
+  // null: the grant of this purchase is no longer in force.
+  text: (l, d) =>
+    refunded(
+      l,
+      d,
+      d.accessUntil ? refundKeepsUntil(l, d.accessUntil) : refundEnded[l],
+    ),
+  action: orderAction,
+});
+
+/**
+ * What a refund left of the purchase's access: still in force (until
+ * `accessUntil`, or with no end), ended, or withheld: the refunded payment
+ * never opened any (a duplicate purchase, a renewal charged after a
+ * revoke), so nothing ended and only the money goes back.
+ */
+const refundAccess = z.enum(["active", "ended", "withheld"]);
+const refundOpenedNothing = {
+  en: "This payment did not open any access; the money is on its way back.",
+  ru: "Этот платёж не открывал никакого доступа, деньги уже возвращаются к вам.",
+};
+const refundKeeps = {
+  en: "Access from this purchase stays active.",
+  ru: "Доступ по этой покупке сохраняется.",
+};
+
+/** v2: v1 with the access state; ended and active read as v1 did. */
+const refundRecordedV2 = notice({
+  ...billing,
+  schema: z.object({
+    ...productFields,
+    ...moneyFields,
+    access: refundAccess,
+    /** The end of access still in force; null when it has none or is over. */
+    accessUntil: iso.nullable(),
+    actionUrl,
+  }),
+  sample: { ...refundRecorded.sample, access: "ended" },
+  subject: refundSubject,
+  title: refundTitle,
+  text: (l, d) =>
+    refunded(
+      l,
+      d,
+      d.access === "withheld"
+        ? refundOpenedNothing[l]
+        : d.access !== "active"
+          ? refundEnded[l]
+          : d.accessUntil
+            ? refundKeepsUntil(l, d.accessUntil)
+            : refundKeeps[l],
+    ),
   action: orderAction,
 });
 
@@ -692,6 +752,7 @@ export const templates: Record<string, Template> = {
   "billing.subscription-cancelled.v1": subscriptionCancelled,
   "billing.subscription-expired.v1": subscriptionExpired,
   "billing.refund-recorded.v1": refundRecorded,
+  "billing.refund-recorded.v2": refundRecordedV2,
 };
 
 export function templateFor(key: string) {

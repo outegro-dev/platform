@@ -228,6 +228,67 @@ describe("TC-N-06-02: access that will not open is never promised", () => {
   });
 });
 
+describe("TC-N-06-02: a refund says what it left of access, and only that", () => {
+  const v1 = templates["billing.refund-recorded.v1"];
+  const v2 = templates["billing.refund-recorded.v2"];
+  if (!v1 || !v2) throw new Error("missing refund templates");
+  const withState = (access: string, accessUntil: string | null = null) => ({
+    ...v1.sample,
+    access,
+    accessUntil,
+  });
+
+  it("a payment that never opened access (a duplicate) is not told its access ended", () => {
+    const data = withState("withheld");
+    expect(v2.schema?.safeParse(data).success).toBe(true);
+    expect(plain(v2.text("en", data))).toBe(
+      "We recorded a refund of €0.52 for “Silver Fleet”. This payment did not open any access; the money is on its way back.",
+    );
+    expect(plain(v2.text("ru", data))).toBe(
+      "Мы учли возврат 0,52 € за «Серебряный флот». Этот платёж не открывал никакого доступа, деньги уже возвращаются к вам.",
+    );
+    expect(v2.text("en", data)).not.toMatch(/ended|active/i);
+    expect(v2.text("ru", data)).not.toMatch(/закрыт|сохранится/i);
+    for (const locale of locales) {
+      expect(v2.subject(locale, data)).toBe(v1.subject(locale, v1.sample));
+      expect(v2.title(locale, data)).toBe(v1.title(locale, v1.sample));
+    }
+  });
+
+  it("access that ended or stays reads exactly as the previous version", () => {
+    const until = "2026-10-29T14:03:00.000Z";
+    for (const locale of locales) {
+      expect(v2.text(locale, withState("ended"))).toBe(
+        v1.text(locale, { ...v1.sample, accessUntil: null }),
+      );
+      expect(v2.text(locale, withState("active", until))).toBe(
+        v1.text(locale, { ...v1.sample, accessUntil: until }),
+      );
+    }
+    expect(plain(v2.text("en", withState("active", until)))).toContain(
+      "Access from this purchase stays active until Oct 29, 2026, 2:03 PM UTC.",
+    );
+  });
+
+  it("access still in force with no end is never called ended", () => {
+    const data = withState("active");
+    expect(plain(v2.text("en", data))).toBe(
+      "We recorded a refund of €0.52 for “Silver Fleet”. Access from this purchase stays active.",
+    );
+    expect(plain(v2.text("ru", data))).toBe(
+      "Мы учли возврат 0,52 € за «Серебряный флот». Доступ по этой покупке сохраняется.",
+    );
+  });
+
+  it("takes only the known states; v1 stays for the messages already stored", () => {
+    expect(v2.schema?.safeParse(withState("pending")).success).toBe(false);
+    expect(v2.schema?.safeParse(v1.sample).success).toBe(false);
+    expect(v1.schema?.safeParse(v1.sample).success).toBe(true);
+    for (const locale of locales)
+      expect(plain(v1.text(locale, v1.sample))).toMatch(/has ended|закрыт/);
+  });
+});
+
 describe("TC-N-06-03: links and hostile text", () => {
   it("allows links only to our own sites, with the same scheme and no credentials", () => {
     const own = "https://pay.outegro.dev/orders/42?x=1";
