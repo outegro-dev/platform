@@ -1,0 +1,11 @@
+export * from "./board.js";
+export * from "./bots/bots.js";
+export * from "./bots/strategy.js";
+export { hitClusters, TargetingPolicy } from "./bots/targeting.js";
+export * from "./coordinate.js";
+export * from "./elo.js";
+export * from "./fleet.js";
+export * from "./match.js";
+export * from "./random.js";
+export * from "./rules.js";
+export * from "./ship.js";
