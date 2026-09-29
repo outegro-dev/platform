@@ -83,7 +83,7 @@ CronJob `outegro/watchdog` раз в 5 минут (образ `alpine/k8s`, то
 - PostgreSQL: WAL непрерывно и полная копия ежедневно в 03:00 UTC в R2 `outegro-dev-backups/postgres`, хранение 30 дней. Свежесть проверяет watchdog.
 - Проверка вручную: `sudo k3s kubectl -n outegro get backups`, условия `cluster pg`: `ContinuousArchiving=True`, `LastBackupSucceeded=True`.
 - После смены ObjectStore перезапустить под базы (`kubectl annotate cluster pg kubectl.kubernetes.io/restartedAt=…`): плагин кэширует настройки.
-- Пока не покрыто: копия датастора K3s, restore-drill (OPS-06).
+- Восстановление из R2 проверено 29.09 (OPS-07): все 4 базы за 81 с, данные совпали ([runbook](restore.md#проверка-postgresql-из-r2-шаг-4-проверено-29092026)). Пока не покрыто: копия датастора K3s, восстановление узла целиком.
 
 ## Проверки после выпуска
 
