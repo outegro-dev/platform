@@ -14,7 +14,7 @@
 | `packages/bff` | вызовы сервисов из Next.js, httpOnly-cookie сессии, refresh в proxy, безопасный redirect, проброс User-Agent и IP клиента | 11 тестов |
 | `apps/id-web` (порт 3002) | вход по коду, `/authorize` (SSO), профиль, сессии, inbox с пагинацией, настройки уведомлений; EN/RU, CSP с nonce, свои 404 и страница ошибки, раскладка для телефона | 10 e2e (ID-04/09/10, axe, телефон) |
 | Локальная инфраструктура | `pnpm infra:up`: Postgres 18, Valkey 9, RabbitMQ 4, Mailpit | — |
-| Production (`ssh outegro-prod`) | K3s на VPS за прокси Cloudflare: лендинг, id-web, auth, notifications; PostgreSQL с WAL и ежедневными бэкапами в R2, Valkey, RabbitMQ. Выпуск — `infra/deploy/release.sh` | миграции и readiness при выпуске; [production.md](../06-operations/production.md) |
+| Production (`ssh outegro-prod`) | K3s на VPS за прокси Cloudflare: лендинг, id-web, auth, notifications; PostgreSQL с WAL и ежедневными бэкапами в R2, Valkey, RabbitMQ, Argo CD, Sealed Secrets. Состояние — репозиторий `outegro-dev/gitops` | CI в GitHub Actions, миграции PreSync; [production.md](../06-operations/production.md) |
 
 Проверено вручную: вход в id-web по коду из Mailpit, смена языка профиля (письма приходят на новом языке), отзыв чужого сеанса, inbox, настройки уведомлений, SSO-редирект с кодом и обмен кода на токены (повтор отклоняется).
 
