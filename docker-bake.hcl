@@ -12,6 +12,7 @@ variable "APPS" {
   default = [
     "landing-web",
     "id-web",
+    "pay-web",
     "battleship-web",
     "auth-backend",
     "notifications-backend",
