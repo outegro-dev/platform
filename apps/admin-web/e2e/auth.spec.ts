@@ -1,3 +1,4 @@
+import type { BrowserContext, Page } from "@playwright/test";
 import { expect, settle, signIn, test } from "./fixtures";
 
 test.describe("sign-in through id.outegro.dev", () => {
@@ -60,6 +61,84 @@ test.describe("sign-in through id.outegro.dev", () => {
     expect(cookies.some((cookie) => cookie.name === "og_at")).toBe(false);
     await page.goto("/");
     await page.waitForURL(/localhost:4196\/authorize/);
+  });
+
+  test.describe("a session ended elsewhere while its access token is valid", () => {
+    /** Ends the console's session in Identity (another tab, an operator, a suspension). */
+    async function endSessionElsewhere(page: Page, context: BrowserContext) {
+      const refresh = (await context.cookies()).find(
+        (cookie) => cookie.name === "og_rt",
+      )?.value;
+      const ended = await page.request.post(
+        "http://localhost:4196/auth/v1/sessions/logout",
+        { data: { refreshToken: refresh } },
+      );
+      expect(ended.status()).toBe(204);
+    }
+
+    /** Every document the tab loads on this origin, in order. */
+    function consoleHops(page: Page) {
+      const hops: string[] = [];
+      page.on("request", (request) => {
+        const url = new URL(request.url());
+        if (
+          request.isNavigationRequest() &&
+          request.frame() === page.mainFrame() &&
+          url.origin === "http://localhost:3196"
+        )
+          hops.push(url.pathname);
+      });
+      return hops;
+    }
+
+    async function expectSignedOut(context: BrowserContext) {
+      const names = (await context.cookies()).map((cookie) => cookie.name);
+      for (const name of ["og_at", "og_rt", "og_admin_seen"])
+        expect(names, name).not.toContain(name);
+    }
+
+    test("opening a page goes to sign-in once and drops the cookies", async ({
+      page,
+      context,
+    }) => {
+      await signIn(page, "owner", "/");
+      await endSessionElsewhere(page, context);
+      const hops = consoleHops(page);
+
+      await page.goto("/users?query=mira");
+      await page.waitForURL(/localhost:4196\/authorize\?/);
+      expect(hops).toEqual(["/users", "/auth/sign-in"]);
+      await expectSignedOut(context);
+
+      // Signing in again returns to the page that was asked for.
+      await page.getByRole("link", { name: /Nick Lukashik/ }).click();
+      await expect(page).toHaveURL("/users?query=mira");
+      await settle(page);
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Users" }),
+      ).toBeVisible();
+    });
+
+    test("following a link inside the console does the same", async ({
+      page,
+      context,
+    }) => {
+      await signIn(page, "owner", "/");
+      await endSessionElsewhere(page, context);
+      const hops = consoleHops(page);
+
+      await page
+        .getByRole("navigation", { name: "Console sections" })
+        .getByRole("link", { name: "Users" })
+        .click();
+      await page.waitForURL(/localhost:4196\/authorize\?/);
+      // The router fetches /users and then sign-in; the browser loads sign-in once.
+      expect(hops).toEqual(["/auth/sign-in"]);
+      await expectSignedOut(context);
+
+      await page.getByRole("link", { name: /Nick Lukashik/ }).click();
+      await expect(page).toHaveURL("/users");
+    });
   });
 
   test("a failed round trip lands on the sign-in page with a reason", async ({
