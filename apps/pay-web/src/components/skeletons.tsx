@@ -55,7 +55,7 @@ export function OrderDetailSkeleton({ label }: { label: string }) {
             {block("64%", 14)}
           </div>
         </div>
-        <div className="card panel">
+        <div className="card panel progress-panel">
           {block(120, 16)}
           {block("60%", 14)}
           {block("48%", 14)}

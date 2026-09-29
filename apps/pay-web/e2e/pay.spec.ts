@@ -646,6 +646,47 @@ test.describe("Russian", () => {
   });
 });
 
+test.describe("viewer preferences", () => {
+  test.describe("in Tbilisi", () => {
+    test.use({ timezoneId: "Asia/Tbilisi" });
+
+    test("dates follow the browser's time zone after one quiet refresh", async ({
+      page,
+    }) => {
+      await persona(page);
+      await page.goto("/orders");
+      await expect
+        .poll(async () =>
+          (await page.context().cookies(APP)).find((c) => c.name === "og_tz"),
+        )
+        .toMatchObject({ value: "Asia/Tbilisi" });
+      await page.reload();
+      await expect(page.locator("article.order-row")).toHaveCount(4);
+    });
+  });
+
+  test.describe("with reduced motion", () => {
+    test.use({ colorScheme: "light", reducedMotion: "reduce" });
+
+    test("the processing mark stands still but keeps its meaning", async ({
+      page,
+    }) => {
+      const buyer = await persona(page, { scenario: "returning" });
+      await page.goto(`/orders/${pendingOrder(buyer)}`);
+      await expect(
+        page.getByRole("heading", { name: "Confirming your payment" }),
+      ).toBeVisible();
+      const moving = await page.evaluate(
+        () =>
+          document.getAnimations().filter((a) => a.playState === "running")
+            .length,
+      );
+      expect(moving).toBe(0);
+      await expect(page.getByText("Checking every 3 seconds")).toBeVisible();
+    });
+  });
+});
+
 test.describe("phone", () => {
   test.use({
     viewport: { width: 360, height: 780 },

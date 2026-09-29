@@ -156,7 +156,10 @@ const LiveProgress = observer(function LiveProgress() {
   const store = useOrderWatch();
   const t = useTranslations("order");
   return (
-    <section className="card panel" aria-labelledby="order-progress-title">
+    <section
+      className="card panel progress-panel"
+      aria-labelledby="order-progress-title"
+    >
       <h2 id="order-progress-title" className="og-eyebrow">
         {t("progress")}
       </h2>

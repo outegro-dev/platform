@@ -185,8 +185,8 @@ async function OrderRow({
             <Link href={`/orders/${order.id}`}>{title}</Link>
           </h2>
           <p className="order-meta og-eyebrow">
-            {service ? `${nameOf(service)} · ` : ""}
-            {kinds(order.kind)}
+            {service ? <span>{nameOf(service)} · </span> : null}
+            <span>{kinds(order.kind)}</span>
           </p>
         </div>
         <div className="order-cell order-cell-date">

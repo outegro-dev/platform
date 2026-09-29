@@ -415,7 +415,10 @@ export function OrderBenefit({
         ? "neutral"
         : "pending";
   return (
-    <section className="card panel" aria-labelledby="order-benefit-title">
+    <section
+      className="card panel benefit-panel"
+      aria-labelledby="order-benefit-title"
+    >
       <h2 id="order-benefit-title" className="og-eyebrow">
         {t("benefit")}
       </h2>
