@@ -108,26 +108,47 @@ export async function signInAndConnect(
   return current;
 }
 
+/** While axe measures, every animation and transition shows its end at once. */
+const HOLD_STILL = `*, *::before, *::after {
+  animation-delay: 0s !important;
+  animation-duration: 0s !important;
+  transition-delay: 0s !important;
+  transition-duration: 0s !important;
+}`;
+
 /** No serious or critical accessibility violations (WCAG 2.2 AA rules). */
 export async function expectAccessible(page: Page, where: string) {
-  // Contrast is measured on final colours: fades and zooms (dialogs, the
-  // status pill, the account menu) end first. Endless ones never do.
-  await page.waitForFunction(() =>
-    document
-      .getAnimations()
-      .every(
-        (animation) =>
-          animation.playState !== "running" ||
-          animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY,
-      ),
-  );
-  const { violations } = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .analyze();
-  const serious = violations.filter(
-    (violation) =>
-      violation.impact === "serious" || violation.impact === "critical",
-  );
+  // Contrast is measured on final colours. Fades and zooms (dialogs, the
+  // status pill, the account menu) can also begin while axe measures, say
+  // when the game socket answers mid-scan: the page holds still until axe is
+  // done, so they show their end at once. CSS animations under way jump to
+  // their end too; a transition under way keeps its length and is waited for.
+  const still = await page.addStyleTag({ content: HOLD_STILL });
+  let serious: Awaited<ReturnType<AxeBuilder["analyze"]>>["violations"];
+  try {
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .every(
+          (animation) =>
+            animation.playState !== "running" ||
+            animation.effect?.getTiming().iterations ===
+              Number.POSITIVE_INFINITY,
+        ),
+    );
+    const { violations } = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    serious = violations.filter(
+      (violation) =>
+        violation.impact === "serious" || violation.impact === "critical",
+    );
+  } finally {
+    await still
+      .evaluate((node) => (node as HTMLStyleElement).remove())
+      .catch(() => undefined);
+    await still.dispose();
+  }
   expect(
     serious.map(
       (violation) =>

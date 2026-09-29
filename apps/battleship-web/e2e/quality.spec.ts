@@ -80,6 +80,77 @@ test.describe("accessibility (axe, WCAG 2.2 AA: no serious or critical issues)",
     await expect(page.getByTestId("replay")).toBeVisible();
     await expectAccessible(page, "replay");
   });
+
+  test("a fade that begins while axe measures counts with its final colours", async ({
+    page,
+    game,
+  }) => {
+    // Away from /play, a match in progress shows the status pill. It fades in
+    // once the game socket answers, which can be in the middle of a scan.
+    await signInAndConnect(page, game, "free");
+    await startBotGame(page);
+    await page.goto("/profile");
+    const pill = page.locator(".status-pill");
+    await expect(pill).toContainText("Return to match");
+    // Here it is hidden at once and fades in the moment axe arrives, slowly,
+    // from a quarter of the way: a scan that measured it half-transparent
+    // would fail (as it did now and then in the suite).
+    await pill.evaluate((element) => {
+      const node = element as HTMLElement;
+      node.style.transition = "none";
+      node.setAttribute("data-hidden", "");
+      getComputedStyle(node).opacity;
+      node.style.transition =
+        "opacity 60s linear -15s, transform 60s linear -15s";
+    });
+    await page.evaluate(() => {
+      let axe: unknown;
+      Object.defineProperty(window, "axe", {
+        configurable: true,
+        get: () => axe,
+        set(value) {
+          axe = value;
+          document
+            .querySelector(".status-pill")
+            ?.removeAttribute("data-hidden");
+        },
+      });
+    });
+    await expectAccessible(page, "status pill fading in");
+    await expect(pill).not.toHaveAttribute("data-hidden");
+  });
+
+  test("a dialog that opens while axe measures counts with its final colours", async ({
+    page,
+    game,
+  }) => {
+    await signInAndConnect(page, game, "free");
+    await startBotGame(page);
+    await deployRandomFleet(page);
+    // The resign dialog zooms and fades in; here slowly, from a quarter of
+    // the way, and it opens the moment axe arrives.
+    await page.addStyleTag({
+      content: `[data-slot="dialog-overlay"], [data-slot="dialog-content"] {
+        animation-duration: 60s;
+        animation-delay: -15s;
+        animation-timing-function: linear;
+      }`,
+    });
+    await page.evaluate(() => {
+      let axe: unknown;
+      Object.defineProperty(window, "axe", {
+        configurable: true,
+        get: () => axe,
+        set(value) {
+          axe = value;
+          for (const button of document.querySelectorAll("button"))
+            if (button.textContent?.trim() === "Resign") button.click();
+        },
+      });
+    });
+    await expectAccessible(page, "resign dialog opening");
+    await expect(page.getByRole("dialog")).toBeVisible();
+  });
 });
 
 test.describe("no layout shift", () => {
