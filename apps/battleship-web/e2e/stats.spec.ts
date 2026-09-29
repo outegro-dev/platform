@@ -71,11 +71,15 @@ test.describe("leaderboard and profile", () => {
     await expect(page).toHaveURL(/\/replay\/[0-9a-f-]{36}$/);
     const step = page.getByTestId("replay-step");
     await expect(step).toHaveText(/Move 0 of \d+/);
+    const marker = page.getByTestId("replay").locator(".shot-marker");
+    await expect(marker).toHaveCount(0);
     await page.getByTestId("replay-next").click();
     await expect(step).toHaveText(/Move 1 of \d+/);
     await expect(
       page.getByText(/^You → [A-J]\d+: (miss|hit|sunk)$/),
     ).toBeVisible();
+    // The move being shown is framed on its board.
+    await expect(marker).toHaveCount(1);
     await page.getByRole("button", { name: "Last move" }).click();
     const total = Number((await step.textContent())?.match(/of (\d+)/)?.[1]);
     await expect(step).toHaveText(`Move ${total} of ${total}`);

@@ -11,11 +11,11 @@ import {
 } from "@phosphor-icons/react";
 import { observer } from "mobx-react-lite";
 import { useTranslations } from "next-intl";
-import { type CSSProperties, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CellState, OwnShip } from "@/game/stores/match-store";
 import type { MatchReplay, ReplayCursor } from "@/game/stores/stats-store";
 import { BoardFrame, cellName, gridOf } from "../board/board-frame";
-import { CellMark } from "../board/marks";
+import { CellMark, ShotMarker } from "../board/marks";
 import { BoardShip } from "../board/ship";
 import { useRoot } from "../providers";
 
@@ -70,11 +70,10 @@ const ReplayBoard = observer(function ReplayBoard({
             ),
           )}
           {highlight ? (
-            <span
-              className="cursor-cell"
-              style={
-                { "--x": highlight.x, "--y": highlight.y } as CSSProperties
-              }
+            <ShotMarker
+              key={`${highlight.x}-${highlight.y}`}
+              x={highlight.x}
+              y={highlight.y}
             />
           ) : null}
         </>

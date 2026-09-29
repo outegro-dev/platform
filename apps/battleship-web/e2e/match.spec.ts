@@ -30,6 +30,22 @@ function ownShipCell(fake: FakeGame) {
   return { x: ship.x, y: ship.y };
 }
 
+/** Open water in your own waters, for the bot to miss. */
+function ownWaterCell(fake: FakeGame) {
+  const ships = new Set(
+    (fake.match?.viewFor("you").own?.ships ?? []).flatMap((ship) =>
+      Array.from({ length: ship.length }, (_, i) =>
+        ship.orientation === "horizontal"
+          ? `${ship.x + i},${ship.y}`
+          : `${ship.x},${ship.y + i}`,
+      ),
+    ),
+  );
+  for (let y = 9; y >= 0; y--)
+    for (let x = 9; x >= 0; x--) if (!ships.has(`${x},${y}`)) return { x, y };
+  throw new Error("no open water");
+}
+
 async function inBattle(page: Page, fake: FakeGame, level = "Easy") {
   await startBotGame(page, level);
   await deployRandomFleet(page);
@@ -114,6 +130,45 @@ test.describe("match", () => {
     expect(
       fake.received.filter((message) => message.type === "shot.fire"),
     ).toHaveLength(1);
+  });
+
+  test("the latest shot is marked on the board it landed on", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    await inBattle(page, fake);
+    const target = page.getByTestId("target-board");
+    const own = page.getByTestId("own-board");
+    await expect(page.locator(".shot-marker")).toHaveCount(0);
+
+    // Your shot: the brackets frame that cell of the enemy waters.
+    const miss = ownWaterCell(fake);
+    fake.script.botShots = [miss];
+    const water = fake.emptyCell();
+    await fireAt(page, water.x, water.y);
+    const marker = target.locator(".shot-marker");
+    await expect(marker).toHaveCount(1);
+    const cell = await target
+      .locator(`button[data-x="${water.x}"][data-y="${water.y}"]`)
+      .boundingBox();
+    const box = await marker.boundingBox();
+    expect(Math.abs((box?.x ?? 0) - (cell?.x ?? 0))).toBeLessThan(2);
+    expect(Math.abs((box?.y ?? 0) - (cell?.y ?? 0))).toBeLessThan(2);
+
+    // Their answer moves it to your waters: only the latest shot is marked.
+    await expect(own.locator(".shot-marker")).toHaveCount(1);
+    await expect(target.locator(".shot-marker")).toHaveCount(0);
+    await expect(page.getByTestId("last-shot")).toHaveText(
+      `They fired at ${"ABCDEFGHIJ"[miss.x]}${miss.y + 1}: miss.`,
+    );
+    const ownCell = await own
+      .locator(".cell")
+      .nth(miss.y * 10 + miss.x)
+      .boundingBox();
+    const ownBox = await own.locator(".shot-marker").boundingBox();
+    expect(Math.abs((ownBox?.x ?? 0) - (ownCell?.x ?? 0))).toBeLessThan(2);
+    expect(Math.abs((ownBox?.y ?? 0) - (ownCell?.y ?? 0))).toBeLessThan(2);
   });
 
   test("a refused shot changes nothing and resyncs", async ({ page, game }) => {

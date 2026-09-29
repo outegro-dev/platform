@@ -73,6 +73,20 @@ export function CellMark({
 }
 
 /**
+ * Corner brackets around the cell of the latest shot on a board (the move
+ * being shown in a replay). A shape, so it never reads as colour alone.
+ */
+export function ShotMarker({ x, y }: { x: number; y: number }) {
+  return (
+    <span className="shot-marker" style={at(x, y)}>
+      <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+        <path d="M3 13V3h10M27 3h10v10M37 27v10H27M13 37H3V27" />
+      </svg>
+    </span>
+  );
+}
+
+/**
  * One animated event over a cell: the tracer of a shot, the splash of a
  * miss, the flash of a hit, or a sinking. Only transform and opacity move.
  */
