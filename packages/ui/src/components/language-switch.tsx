@@ -27,7 +27,7 @@ function LanguageSwitch({
       data-slot="language-switch"
       aria-busy={pending || undefined}
       className={cn(
-        "m-0 flex items-center gap-0.5 border-0 p-0 font-mono text-[12px] font-medium",
+        "m-0 flex items-center gap-0.5 border-0 p-0 font-mono text-[12px] font-medium transition-opacity duration-(--duration-fast) aria-busy:opacity-60",
         className,
       )}
       {...props}
@@ -43,10 +43,11 @@ function LanguageSwitch({
             // an attribute also avoids downloading Cyrillic glyphs on English pages.
             aria-label={`${option.label} — ${option.name}`}
             aria-pressed={active}
-            disabled={pending}
-            onClick={() => !active && onValueChange(option.value)}
+            // Not `disabled`: the pressed button keeps keyboard focus.
+            aria-disabled={pending || undefined}
+            onClick={() => !pending && !active && onValueChange(option.value)}
             className={cn(
-              "inline-flex h-11 min-w-9 items-center justify-center rounded-full px-2 transition-colors duration-(--duration-fast) disabled:cursor-progress",
+              "inline-flex h-11 min-w-9 items-center justify-center rounded-full px-2 transition-colors duration-(--duration-fast) aria-disabled:cursor-progress",
               active
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground",

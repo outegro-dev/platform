@@ -35,10 +35,13 @@
 
 | Компонент | Назначение |
 |---|---|
-| Button | primary / secondary / outline / glass / ghost / destructive / link; размеры sm / md / lg / icon / icon-sm; `asChild` для ссылок |
+| Button | primary / secondary / outline / glass / ghost / destructive / link; размеры sm / md / lg / icon / icon-sm; `asChild` для ссылок; `pending` + `pendingLabel` — спиннер поверх сохранённой подписи: ширина не меняется, `aria-busy`, фокус остаётся (aria-disabled) |
 | Dialog | модальное окно; `closeLabel` — переведённое имя кнопки закрытия |
 | Accordion | раскрывающиеся списки |
-| Input, Label | поля форм |
+| Input, Label | поля форм; фокус и ошибка меняют цвет рамки и тень, не её толщину |
+| FormMessage | подсказка или результат под полем/кнопкой; всегда отрисован и резервирует `lines` строк, поэтому сообщение не сдвигает форму; тоны neutral / pending / success / error |
+| Spinner | индикатор занятости; при reduced motion только пульсирует |
+| Skeleton | заглушка загрузки размером с то, что она заменяет |
 | Badge | моно-метка: outline / solid / glass / muted |
 | Surface | карточка: solid / glass / muted / inverse (inverse включает тёмный тон) |
 | Container | общая ширина страницы |
