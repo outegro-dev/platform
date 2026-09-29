@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import type { FakeGame } from "./support/fake-game.ts";
 import {
   APP,
@@ -44,6 +44,13 @@ function ownWaterCell(fake: FakeGame) {
   for (let y = 9; y >= 0; y--)
     for (let x = 9; x >= 0; x--) if (!ships.has(`${x},${y}`)) return { x, y };
   throw new Error("no open water");
+}
+
+/** Waits until the element's own animations (its entrance) are over. */
+async function settled(locator: Locator) {
+  await locator.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  );
 }
 
 async function inBattle(page: Page, fake: FakeGame, level = "Easy") {
@@ -149,13 +156,17 @@ test.describe("match", () => {
     const own = page.getByTestId("own-board");
     await expect(page.locator(".board .shot-marker")).toHaveCount(0);
 
-    // Your shot: the brackets frame that cell of the enemy waters.
+    // Your shot: the brackets frame that cell of the enemy waters. They lock
+    // on with a zoom, so they are measured once it is over, and the bot
+    // answers only after that.
     const miss = ownWaterCell(fake);
     fake.script.botShots = [miss];
+    fake.script.botDelayMs = 1500;
     const water = fake.emptyCell();
     await fireAt(page, water.x, water.y);
     const marker = target.locator(".shot-marker");
     await expect(marker).toHaveCount(1);
+    await settled(marker);
     const cell = await target
       .locator(`button[data-x="${water.x}"][data-y="${water.y}"]`)
       .boundingBox();
@@ -169,6 +180,7 @@ test.describe("match", () => {
     await expect(page.getByTestId("last-shot")).toHaveText(
       `They fired at ${"ABCDEFGHIJ"[miss.x]}${miss.y + 1}: miss.`,
     );
+    await settled(own.locator(".shot-marker"));
     const ownCell = await own
       .locator(".cell")
       .nth(miss.y * 10 + miss.x)
