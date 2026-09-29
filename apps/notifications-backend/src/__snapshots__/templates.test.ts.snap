@@ -56,6 +56,46 @@ exports[`templates > C2.4: what each template says, in English and Russian 1`] =
     "text": "Оплата 50,00 ₽ за «Серебряный флот» получена 29 сент. 2026, 14:03 UTC. Доступ открыт бессрочно.",
     "title": "Оплата получена",
   },
+  "billing.payment-confirmed.v3 en": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Payment received: Silver Fleet",
+    "text": "We received ₽50.00 for “Silver Fleet” on Sep 29, 2026, 2:03 PM UTC. Access is active with no end date.",
+    "title": "Payment received",
+  },
+  "billing.payment-confirmed.v3 ru": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Оплата получена: Серебряный флот",
+    "text": "Оплата 50,00 ₽ за «Серебряный флот» получена 29 сент. 2026, 14:03 UTC. Доступ открыт бессрочно.",
+    "title": "Оплата получена",
+  },
+  "billing.payment-confirmed.v3 withheld en": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Payment received: Silver Fleet",
+    "text": "We received ₽50.00 for “Silver Fleet” on Sep 29, 2026, 2:03 PM UTC. This payment does not open access; we will refund it.",
+    "title": "Payment received",
+  },
+  "billing.payment-confirmed.v3 withheld ru": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Оплата получена: Серебряный флот",
+    "text": "Оплата 50,00 ₽ за «Серебряный флот» получена 29 сент. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.",
+    "title": "Оплата получена",
+  },
   "billing.refund-recorded.v1 en": {
     "links": [
       "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
@@ -156,6 +196,46 @@ exports[`templates > C2.4: what each template says, in English and Russian 1`] =
     "text": "Оплата 0,59 $ за «Морской бой Premium» получена 29 окт. 2026, 14:03 UTC. Теперь подписка оплачена до 29 нояб. 2026, 14:03 UTC. Доступ открыт.",
     "title": "Подписка продлена",
   },
+  "billing.subscription-renewed.v2 en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Subscription renewed: Battleship Premium",
+    "text": "We received $0.59 for “Battleship Premium” on Oct 29, 2026, 2:03 PM UTC. The subscription is now paid until Nov 29, 2026, 2:03 PM UTC. Access is active.",
+    "title": "Subscription renewed",
+  },
+  "billing.subscription-renewed.v2 ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Подписка продлена: Морской бой Premium",
+    "text": "Оплата 0,59 $ за «Морской бой Premium» получена 29 окт. 2026, 14:03 UTC. Теперь подписка оплачена до 29 нояб. 2026, 14:03 UTC. Доступ открыт.",
+    "title": "Подписка продлена",
+  },
+  "billing.subscription-renewed.v2 withheld en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Payment received: Battleship Premium",
+    "text": "We received $0.59 for “Battleship Premium” on Oct 29, 2026, 2:03 PM UTC. This payment does not open access; we will refund it.",
+    "title": "Payment received",
+  },
+  "billing.subscription-renewed.v2 withheld ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Оплата получена: Морской бой Premium",
+    "text": "Оплата 0,59 $ за «Морской бой Premium» получена 29 окт. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.",
+    "title": "Оплата получена",
+  },
   "billing.subscription-started.v1 en": {
     "links": [
       "https://pay.outegro.dev/subscriptions",
@@ -175,6 +255,46 @@ exports[`templates > C2.4: what each template says, in English and Russian 1`] =
     "subject": "Подписка оформлена: Морской бой Premium",
     "text": "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Подписка оплачена до 29 окт. 2026, 14:03 UTC и продлевается автоматически. Доступ открыт.",
     "title": "Подписка оформлена",
+  },
+  "billing.subscription-started.v2 en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Subscription started: Battleship Premium",
+    "text": "We received ₽50.00 for “Battleship Premium” on Sep 29, 2026, 2:03 PM UTC. The subscription is paid until Oct 29, 2026, 2:03 PM UTC and renews automatically. Access is active.",
+    "title": "Subscription started",
+  },
+  "billing.subscription-started.v2 ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Подписка оформлена: Морской бой Premium",
+    "text": "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Подписка оплачена до 29 окт. 2026, 14:03 UTC и продлевается автоматически. Доступ открыт.",
+    "title": "Подписка оформлена",
+  },
+  "billing.subscription-started.v2 withheld en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Payment received: Battleship Premium",
+    "text": "We received ₽50.00 for “Battleship Premium” on Sep 29, 2026, 2:03 PM UTC. This payment does not open access; we will refund it.",
+    "title": "Payment received",
+  },
+  "billing.subscription-started.v2 withheld ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Оплата получена: Морской бой Premium",
+    "text": "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.",
+    "title": "Оплата получена",
   },
   "security.google-linked.v1 en": {
     "links": [

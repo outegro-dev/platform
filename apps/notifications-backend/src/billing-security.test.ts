@@ -156,6 +156,39 @@ describe("billing notices (N-06)", () => {
     expect(item?.body).not.toContain("Access is active");
   });
 
+  it("TC-N-06-02: a renewal whose access is withheld says it will be refunded, never that access opens", async () => {
+    const user = await newUser("ru");
+    await intentsService.accept(
+      intentEvent({
+        producer: "payments",
+        userId: user.userId,
+        templateKey: "billing.subscription-renewed.v2",
+        category: "billing",
+        data: {
+          productEn: "Battleship Premium",
+          productRu: "Морской бой Premium",
+          amountMinor: "5000",
+          amountScale: 2,
+          currency: "RUB",
+          paidAt: "2026-09-29T14:03:00.000Z",
+          paidUntil: "2026-10-29T14:03:00.000Z",
+          access: "withheld",
+          actionUrl: "https://pay.outegro.dev/subscriptions",
+        },
+      }),
+    );
+    await worker.tick();
+    const text =
+      "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.";
+    const [sent] = mailTo(user.email);
+    expect(sent?.subject).toBe("Оплата получена: Морской бой Premium");
+    expect(plain(sent?.text)).toContain(text);
+    expect(sent?.text).not.toMatch(/откроется|оплачена до|Доступ открыт/);
+    const [item] = await inboxOf(user.userId);
+    expect(item).toMatchObject({ title: "Оплата получена" });
+    expect(plain(item?.body)).toBe(text);
+  });
+
   it("TC-N-06-03: a name with HTML is sent as text", async () => {
     const user = await newUser("en");
     const hostile = '<img src=x onerror="alert(1)">Fleet';

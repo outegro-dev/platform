@@ -17,6 +17,14 @@ const sameInstant = (a: Date | null, b: Date | null) =>
   (a?.getTime() ?? null) === (b?.getTime() ?? null);
 
 /**
+ * Recorded revoked from the start (`withhold`, a duplicate purchase): it
+ * never gave access. Every change bumps the version and none applies to a
+ * revoked grant, so no other grant is revoked at version 1.
+ */
+export const neverGranted = (grant: Pick<GrantRow, "state" | "version">) =>
+  grant.state === "revoked" && grant.version === 1;
+
+/**
  * Commercial grants: one row per source and feature. Every change bumps
  * `version` and publishes billing.grant.changed with it, so consumers can
  * drop stale events (INV-11). Call inside the caller's transaction.

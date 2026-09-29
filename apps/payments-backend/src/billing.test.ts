@@ -169,6 +169,24 @@ const noticesOf = (userId: string) =>
       ),
     );
 
+/** Messages whose source is a change of this subscription. */
+const noticesAbout = async (userId: string, subscriptionId: string) => {
+  const changes = await db
+    .select({ envelope: outbox.envelope })
+    .from(outbox)
+    .where(
+      and(
+        eq(outbox.type, "billing.subscription.changed.v1"),
+        sql`${outbox.envelope}->'payload'->>'subscriptionId' = ${subscriptionId}`,
+      ),
+    );
+  const ids = changes.map(
+    (row) => (row.envelope as { eventId: string }).eventId,
+  );
+  expect(ids.length).toBeGreaterThan(0);
+  return (await noticesOf(userId)).filter((n) => ids.includes(n.sourceEventId));
+};
+
 const grantsOf = (userId: string) =>
   db.select().from(grants).where(eq(grants.userId, userId));
 const orderRow = (orderId: string) =>
@@ -680,7 +698,7 @@ describe("webhooks (PAY-04, PAY-05)", () => {
     // titles, and the grant as this transaction left it (N-06).
     expect(intent?.payload).toEqual({
       sourceEventId: (confirmed as unknown as { eventId: string }).eventId,
-      templateKey: "billing.payment-confirmed.v2",
+      templateKey: "billing.payment-confirmed.v3",
       category: "billing",
       recipient: { userId: user.userId },
       data: {
@@ -752,7 +770,7 @@ describe("webhooks (PAY-04, PAY-05)", () => {
     });
     expect(await noticesOf(user.userId)).toEqual([
       expect.objectContaining({
-        templateKey: "billing.subscription-started.v1",
+        templateKey: "billing.subscription-started.v2",
         data: {
           productEn: "Battleship Premium",
           productRu: "Морской бой Premium",
@@ -1045,7 +1063,7 @@ describe("duplicate purchases (QA H1)", () => {
     // A receipt could only promise access this payment never opens: the
     // buyer hears about it with the refund.
     expect((await noticesOf(user.userId)).map((n) => n.templateKey)).toEqual([
-      "billing.payment-confirmed.v2",
+      "billing.payment-confirmed.v3",
     ]);
     const [issue] = await duplicateIssues([second.orderId]);
     expect(issue).toMatchObject({
@@ -1178,6 +1196,22 @@ describe("duplicate purchases (QA H1)", () => {
       state: "active",
       autoRenew: true,
     });
+
+    // Its buyer never had access from it: "renewal turned off" or "ended"
+    // would read as if the real subscription had gone.
+    expect(await noticesAbout(user.userId, extra?.id ?? "")).toEqual([]);
+    h.clock.set(new Date((extra?.paidUntil.getTime() ?? 0) + 3 * DAY_MS));
+    await expiry.tick();
+    expect(await subscriptionOf(second.orderId)).toMatchObject({
+      state: "expired",
+    });
+    expect(await noticesAbout(user.userId, extra?.id ?? "")).toEqual([]);
+    // The kept subscription ended at the same moment, and says so.
+    expect(
+      (await noticesAbout(user.userId, kept?.id ?? "")).map(
+        (n) => n.templateKey,
+      ),
+    ).toEqual(["billing.subscription-expired.v1"]);
   });
 });
 
@@ -1227,8 +1261,8 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
     // One receipt per renewal, with the new paid end.
     const receipts = (await noticesOf(user.userId)).map((n) => n.templateKey);
     expect(receipts).toEqual([
-      "billing.subscription-started.v1",
-      "billing.subscription-renewed.v1",
+      "billing.subscription-started.v2",
+      "billing.subscription-renewed.v2",
     ]);
     expect((await noticesOf(user.userId))[1]?.data).toMatchObject({
       amountMinor: "59",
@@ -1287,7 +1321,7 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
     expect(grant).toMatchObject({ state: "active", version: 1 });
     const notices = await noticesOf(user.userId);
     expect(notices.map((n) => n.templateKey)).toEqual([
-      "billing.subscription-started.v1",
+      "billing.subscription-started.v2",
       "billing.renewal-failed.v1",
     ]);
     expect(notices[1]?.data).toEqual({
@@ -1451,6 +1485,82 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
         endedAt: grant.validUntil.toISOString(),
         actionUrl: "https://pay.outegro.dev/subscriptions",
       },
+    ]);
+  });
+
+  it("the expiry notice of a subscription whose access was revoked names when access really ended", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const { orderId } = await buy(user, PREMIUM, "USD");
+    const sub = await subscriptionOf(orderId);
+    if (!sub) throw new Error("no subscription");
+    h.clock.advance(5 * DAY_MS);
+    const [grant] = await grantsOf(user.userId);
+    await h
+      .http()
+      .post(`/v1/admin/grants/${grant?.id}/revoke`)
+      .set(owner.auth)
+      .send({ reason: "abuse of the ranked queue" })
+      .expect(200);
+    const [revoked] = await grantsOf(user.userId);
+    expect(revoked?.revokedAt).toEqual(h.clock.now());
+    h.clock.set(new Date(sub.paidUntil.getTime() + 3 * DAY_MS));
+    await expiry.tick();
+    expect(await subscriptionOf(orderId)).toMatchObject({ state: "expired" });
+    const ended = (await noticesOf(user.userId)).filter(
+      (n) => n.templateKey === "billing.subscription-expired.v1",
+    );
+    expect(ended.map((n) => n.data.endedAt)).toEqual([
+      revoked?.revokedAt?.toISOString(),
+    ]);
+  });
+
+  it("the expiry notice after a refunded period names the end of the access that was left", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const { orderId, invoice } = await buy(user, PREMIUM, "USD");
+    const first = await subscriptionOf(orderId);
+    if (!first) throw new Error("no subscription");
+    h.clock.set(new Date(first.paidUntil.getTime() - 3_600_000));
+    await webhook(
+      lavaPayloads.renewalSuccess({
+        parentContractId: invoice.id,
+        email: user.email,
+        amount: 0.59,
+        currency: "USD",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    const renewal = (await paymentsOf(orderId)).find(
+      (payment) => payment.kind === "subscription_renewal",
+    );
+    await h
+      .http()
+      .post(`/v1/admin/payments/${renewal?.id}/refund-request`)
+      .set(owner.auth)
+      .send({ reason: "renewed by mistake, refunded in the Lava cabinet" })
+      .expect(201);
+    const refunded = await webhook(
+      lavaPayloads.refund({
+        tierId: productOf(PREMIUM).providerOfferId,
+        email: user.email,
+        amount: 0.59,
+        currency: "USD",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    expect(refunded.body.status).toBe("processed");
+    // Refunded time carries no grace: access ends with the first period.
+    const [grant] = await grantsOf(user.userId);
+    expect(grant?.validUntil).toEqual(first.paidUntil);
+    h.clock.set(new Date(first.paidUntil.getTime() + 3 * DAY_MS));
+    await expiry.tick();
+    expect(await subscriptionOf(orderId)).toMatchObject({ state: "expired" });
+    const ended = (await noticesOf(user.userId)).filter(
+      (n) => n.templateKey === "billing.subscription-expired.v1",
+    );
+    expect(ended.map((n) => n.data.endedAt)).toEqual([
+      first.paidUntil.toISOString(),
     ]);
   });
 
