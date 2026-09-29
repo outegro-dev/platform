@@ -1,0 +1,528 @@
+{
+  "meta": {
+    "title": "Battleship — outegro",
+    "titleTemplate": "%s · Battleship",
+    "description": "Classic Battleship online: bots of four levels, rated quick matches and private rooms with friends."
+  },
+  "brand": {
+    "product": "Battleship",
+    "home": "Battleship by outegro, home"
+  },
+  "nav": {
+    "sections": "Game sections",
+    "play": "Play",
+    "leaderboard": "Leaderboard",
+    "shop": "Shop",
+    "profile": "Profile",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "language": "Language",
+    "skip": "Skip to content"
+  },
+  "player": {
+    "rating": "Rating {rating}",
+    "premium": "Premium",
+    "provisional": "Provisional",
+    "chipLabel": "{nickname}, rating {rating}. Open your profile",
+    "you": "You"
+  },
+  "connection": {
+    "ready": "Connected to the game server",
+    "readyRtt": "Connected · {rtt} ms",
+    "connecting": "Connecting to the game server…",
+    "reconnecting": "Connection lost. Reconnecting…",
+    "retryIn": "Next attempt in {seconds} s",
+    "unavailable": "The game server is not answering. Retrying…",
+    "offline": "You are offline. We will reconnect when the network is back.",
+    "unauthorized": "Your session has ended. Sign in again to keep playing.",
+    "closed": "Disconnected",
+    "idle": "Not connected",
+    "retry": "Retry now",
+    "signInAgain": "Sign in again"
+  },
+  "strip": {
+    "searching": "Looking for an opponent · {time}",
+    "cancel": "Cancel",
+    "inMatch": "Your match is in progress",
+    "return": "Return to match",
+    "roomOpen": "Room {code} is waiting for your friend",
+    "openRoom": "Open room"
+  },
+  "home": {
+    "eyebrow": "01 — Command deck",
+    "title": "Sink the fleet.",
+    "titleAccent": "Keep your nerve.",
+    "lead": "Classic 10×10 Battleship. Take on four bots, get matched by rating, or invite a friend with a private link.",
+    "guestEyebrow": "Battleship · outegro.dev",
+    "guestTitle": "Sink the fleet.",
+    "guestTitleAccent": "Online.",
+    "guestLead": "Place ten ships, then trade shots. Bots from easy to expert, rated quick matches and private rooms. One outegro account for every app.",
+    "signInToPlay": "Sign in to play",
+    "seeLeaderboard": "See the leaderboard",
+    "modesTitle": "Choose how to play",
+    "rulesTitle": "The fleet",
+    "rulesLead": "Ten ships, straight lines, never touching — not even at the corners.",
+    "rulesTurn": "A hit or a sinking gives you another shot. 30 seconds per turn online.",
+    "demoLabel": "Example battle: a fleet under fire",
+    "ships": {
+      "1": "Submarines · 1 cell",
+      "2": "Destroyers · 2 cells",
+      "3": "Cruisers · 3 cells",
+      "4": "Battleship · 4 cells"
+    }
+  },
+  "modes": {
+    "bot": {
+      "title": "Versus bot",
+      "lead": "Practice against four strategies. No rating at stake.",
+      "levelsLabel": "Bot level",
+      "start": "Start game",
+      "starting": "Starting…"
+    },
+    "levels": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "expert": "Expert",
+      "easyHint": "Random shots",
+      "mediumHint": "Hunts, then finishes",
+      "hardHint": "Checkerboard hunting",
+      "expertHint": "Probability map"
+    },
+    "quick": {
+      "title": "Quick match",
+      "lead": "A human opponent near your rating. The search widens over time.",
+      "find": "Find opponent",
+      "joining": "Joining…",
+      "cancel": "Cancel search",
+      "cancelling": "Cancelling…",
+      "searching": "Searching · {time}",
+      "idle": "Rated · Elo"
+    },
+    "room": {
+      "title": "Private room",
+      "lead": "Invite a friend with a link. Rating does not change.",
+      "create": "Create room",
+      "creating": "Creating…",
+      "or": "Got a code from a friend?",
+      "code": "Room code",
+      "codePlaceholder": "K7M2QX",
+      "join": "Join",
+      "joining": "Joining…"
+    },
+    "locked": "Premium",
+    "offline": "Connect to the game server to play."
+  },
+  "lobbyErrors": {
+    "premium_required": "Hard and Expert bots are part of Battleship Premium.",
+    "invalid_room_code": "A room code has 6 letters and digits, like K7M2QX.",
+    "room_not_found": "That room does not exist or has expired.",
+    "own_room": "This is your own room — send the link to a friend.",
+    "already_in_match": "You already have a match in progress.",
+    "already_queued": "You are already in the queue.",
+    "rate_limited": "Too many requests. Wait a moment and try again.",
+    "offline": "No connection to the game server right now.",
+    "generic": "The game server refused that. Try again."
+  },
+  "upsell": {
+    "title": "Unlock Hard and Expert",
+    "body": "Battleship Premium adds the two strongest bots, extended stats with a shot heatmap, match replays, every skin while it lasts and a badge on the leaderboard.",
+    "serverSaid": "The game server asked for Premium. If you have just subscribed, it can take a moment to arrive.",
+    "cta": "See Premium",
+    "later": "Not now",
+    "close": "Close"
+  },
+  "rating": {
+    "title": "Your rating",
+    "matches": "{count, plural, =0 {No rated matches yet} one {# rated match} other {# rated matches}}",
+    "record": "{wins} W · {losses} L",
+    "getPremium": "Get Premium",
+    "premiumActive": "Premium active"
+  },
+  "mini": {
+    "title": "Top captains",
+    "all": "Full leaderboard",
+    "you": "Your place",
+    "unranked": "Play a quick match to get ranked.",
+    "empty": "No rated matches yet. Be the first.",
+    "unavailable": "The leaderboard is unavailable right now."
+  },
+  "play": {
+    "connecting": "Connecting to your match…",
+    "loading": "Loading the match…",
+    "noMatch": "No match in progress",
+    "noMatchBody": "Start a game from the lobby: a bot, a quick match or a private room.",
+    "toLobby": "Back to lobby",
+    "endedAway": "The match ended while you were away",
+    "endedAwayBody": "You were disconnected for longer than 60 seconds, so the match was closed. It is in your history.",
+    "history": "Open match history",
+    "vs": "vs",
+    "botName": "Bot · {level}",
+    "yourWaters": "Your waters",
+    "enemyWaters": "Enemy waters",
+    "shipsLeft": "{count, plural, =0 {No ships left} one {# ship afloat} other {# ships afloat}}",
+    "lobby": "Lobby"
+  },
+  "placement": {
+    "title": "Deploy your fleet",
+    "hint": "Drag ships onto the board, or pick one and tap a cell. R rotates.",
+    "keyboardHint": "Keyboard: arrows move, Enter places, R rotates, Delete lifts a ship, 1–4 pick a size.",
+    "tray": "Your fleet",
+    "trayDone": "All ships are on the board.",
+    "shipLabel": "{length, plural, one {# cell} other {# cells}} ship",
+    "shipInTray": "{length}-cell ship, not placed",
+    "rotate": "Rotate",
+    "random": "Random",
+    "clear": "Clear",
+    "ready": "Ready",
+    "sending": "Sending…",
+    "waiting": "Fleet deployed. Waiting for your opponent…",
+    "waitingShort": "Fleet deployed",
+    "placeAll": "Place all ten ships to continue.",
+    "opponentReady": "Opponent is ready",
+    "opponentPlacing": "Opponent is placing ships…",
+    "timeLeft": "Time to deploy",
+    "boardLabel": "Placement board",
+    "orientation": {
+      "horizontal": "horizontal",
+      "vertical": "vertical"
+    },
+    "issues": {
+      "out_of_bounds": "That position runs off the board.",
+      "overlap": "Ships can't overlap.",
+      "touching": "Ships can't touch, not even at the corners."
+    },
+    "cell": {
+      "empty": "{cell}, empty",
+      "ship": "{cell}, {length}-cell ship",
+      "preview": "{cell}, place here"
+    },
+    "placed": "{length}-cell ship placed at {cell}, {orientation}."
+  },
+  "battle": {
+    "yourTurn": "Your turn",
+    "theirTurn": "Opponent's turn",
+    "yourTurnHint": "Pick a cell in enemy waters.",
+    "theirTurnHint": "Waiting for their shot…",
+    "noClock": "No time limit",
+    "seconds": "{seconds} s left",
+    "resign": "Resign",
+    "resignTitle": "Resign this match?",
+    "resignBody": "The match ends now and counts as a loss.",
+    "resignBodyRated": "The match ends now and counts as a loss, with rating.",
+    "resignConfirm": "Resign",
+    "resignCancel": "Keep playing",
+    "targetLabel": "Enemy waters. Choose a cell to fire at.",
+    "ownLabel": "Your waters",
+    "cell": {
+      "unknown": "{cell}, unknown",
+      "miss": "{cell}, miss",
+      "hit": "{cell}, hit",
+      "sunk": "{cell}, sunk"
+    },
+    "ownCell": {
+      "water": "{cell}, water",
+      "ship": "{cell}, your ship",
+      "miss": "{cell}, their miss",
+      "hit": "{cell}, your ship, hit",
+      "sunk": "{cell}, your ship, sunk"
+    },
+    "last": {
+      "you": "You fired at {cell}: {outcome}.",
+      "opponent": "They fired at {cell}: {outcome}.",
+      "outcome": {
+        "miss": "miss",
+        "hit": "hit",
+        "sunk": "sunk"
+      }
+    },
+    "opponentAway": "Your opponent disconnected. They have {seconds} s to come back.",
+    "opponentAwayNoTime": "Your opponent disconnected and may come back.",
+    "youReconnecting": "Connection lost. Reconnecting — your match is safe for 60 seconds.",
+    "skipped": {
+      "you": "Time's up — your turn passed ({count} of 3 in a row).",
+      "opponent": "Their time ran out — your turn ({count} of 3 in a row)."
+    },
+    "rejected": {
+      "not_your_turn": "It's not your turn yet.",
+      "already_shot": "You already fired at that cell.",
+      "rate_limited": "Slow down a little.",
+      "generic": "The shot didn't go through. Syncing the match…"
+    }
+  },
+  "result": {
+    "victory": "Victory.",
+    "defeat": "Defeat.",
+    "reasons": {
+      "win": {
+        "fleet_destroyed": "You sank the whole enemy fleet.",
+        "resigned": "Your opponent resigned.",
+        "timeout": "Your opponent ran out of time three turns in a row.",
+        "disconnected": "Your opponent left and did not come back."
+      },
+      "loss": {
+        "fleet_destroyed": "Your whole fleet was sunk.",
+        "resigned": "You resigned.",
+        "timeout": "You ran out of time three turns in a row.",
+        "disconnected": "You were disconnected for too long."
+      }
+    },
+    "rating": "Rating {before} → {after}",
+    "unrated": "Rating unchanged",
+    "moves": "Moves",
+    "sunk": "Ships sunk",
+    "lost": "Ships lost",
+    "hits": "Hits",
+    "playAgain": "Play again",
+    "findAnother": "Find another match",
+    "toLobby": "Back to lobby",
+    "revealed": "Enemy fleet revealed",
+    "yours": "Your fleet",
+    "cancelled": "Match cancelled.",
+    "aborted": {
+      "placement_timeout": "Nobody deployed a fleet in time. There is no winner, and ratings are unchanged.",
+      "moderation": "A moderator stopped this match. There is no winner, and ratings are unchanged.",
+      "unknown": "The match ended without a result. Ratings are unchanged."
+    }
+  },
+  "room": {
+    "title": "Private room",
+    "code": "Room code",
+    "waiting": "Waiting for your friend to join…",
+    "expires": "Expires in {time}",
+    "copy": "Copy link",
+    "copied": "Link copied",
+    "copyFailed": "Copy the address from the browser bar",
+    "cancel": "Close room",
+    "joining": "Joining room {code}…",
+    "notFound": "This room does not exist or has expired.",
+    "own": "This is your room. Send the link to a friend.",
+    "closedCancelled": "The room was closed.",
+    "closedExpired": "The room expired before anyone joined.",
+    "newRoom": "Create a new room",
+    "invalid": "This link has an invalid room code.",
+    "shareLabel": "Invite link"
+  },
+  "leaderboard": {
+    "eyebrow": "02 — Rankings",
+    "title": "Leaderboard",
+    "titleAccent": "Top captains.",
+    "lead": "Elo from quick matches. Bots and private rooms never change the rating.",
+    "tabs": "Period",
+    "all": "All time",
+    "week": "This week",
+    "since": "Since {date}",
+    "rank": "Rank",
+    "player": "Player",
+    "rating": "Rating",
+    "wins": "Wins",
+    "matches": "Matches",
+    "winRate": "Win rate",
+    "you": "You",
+    "yourPlace": "Your place",
+    "yourRank": "#{rank}",
+    "unranked": "Not ranked yet",
+    "unrankedHint": "Finish a quick match to appear here.",
+    "empty": "No rated matches in this period yet.",
+    "error": "The leaderboard could not load.",
+    "retry": "Try again",
+    "loading": "Loading…",
+    "gained": "{points} this week",
+    "gainedColumn": "This week",
+    "signInLead": "Sign in to see your rank, rating and the points you gained this week.",
+    "signInButton": "Sign in"
+  },
+  "profile": {
+    "eyebrow": "03 — Service record",
+    "title": "Profile",
+    "lead": "Your matches, accuracy and settings.",
+    "stats": {
+      "matches": "Matches",
+      "wins": "Wins",
+      "winRate": "Win rate",
+      "accuracy": "Accuracy",
+      "streak": "Best streak",
+      "currentStreak": "Current streak {count}",
+      "avgMoves": "Moves to win",
+      "none": "—"
+    },
+    "bots": "Wins against bots",
+    "heatmap": "Shot heatmap",
+    "heatmapLead": "Where your shots land most often.",
+    "heatmapLocked": "The shot heatmap is part of Premium.",
+    "heatmapEmpty": "Fire some shots and the map fills in.",
+    "heatmapLegendLow": "Fewer",
+    "heatmapLegendHigh": "More",
+    "history": "Match history",
+    "historyEmpty": "No finished matches yet.",
+    "loadMore": "Show older matches",
+    "loadingMore": "Loading…",
+    "historyError": "Could not load more matches.",
+    "replay": "Replay",
+    "replayLocked": "Replays are part of Premium",
+    "win": "Win",
+    "loss": "Loss",
+    "modes": {
+      "bot": "Bot",
+      "quick": "Quick match",
+      "private": "Private room"
+    },
+    "statsUnavailable": "Stats are unavailable right now.",
+    "settings": "Settings",
+    "nickname": "Nickname",
+    "nicknameHint": "3–20 letters, digits, spaces, - or _. Shown to other players.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "nicknameInvalid": "Use 3–20 letters or digits; spaces, - and _ only in the middle.",
+    "nicknameTaken": "That nickname is taken. Try another.",
+    "unavailable": "Could not save right now. Try again shortly.",
+    "signedOut": "Your session has ended. Sign in again.",
+    "sound": "Sound effects",
+    "soundHint": "Short synthesized sounds for shots and hits.",
+    "soundOn": "On",
+    "soundOff": "Off",
+    "account": "Account",
+    "accountHint": "You sign in with your outegro account. Name and email stay there; the game only knows your nickname.",
+    "signOut": "Sign out"
+  },
+  "replay": {
+    "eyebrow": "Replay",
+    "title": "Match replay",
+    "back": "Back to profile",
+    "first": "First move",
+    "prev": "Previous move",
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next move",
+    "last": "Last move",
+    "step": "Move {step} of {total}",
+    "start": "Start of the match",
+    "move": "{side} → {cell}: {outcome}",
+    "you": "You",
+    "opponent": "Opponent",
+    "lockedTitle": "Replays are part of Premium",
+    "lockedBody": "Step through any finished match with both fleets revealed.",
+    "notFound": "This match was not found.",
+    "unavailable": "The replay is unavailable right now.",
+    "slider": "Replay position",
+    "yours": "Your fleet",
+    "theirs": "Their fleet"
+  },
+  "shop": {
+    "eyebrow": "04 — Shipyard",
+    "title": "Shop",
+    "titleAccent": "Look sharp.",
+    "lead": "Purchases never change a match. Premium unlocks the strongest bots and deep stats; the Silver Fleet is yours forever.",
+    "premium": {
+      "title": "Battleship Premium",
+      "tagline": "Monthly subscription",
+      "features": {
+        "bots": "Hard and Expert bots",
+        "stats": "Shot heatmap and match replays",
+        "skins": "Every skin while it lasts",
+        "badge": "Premium badge on the leaderboard"
+      }
+    },
+    "silver": {
+      "title": "Silver Fleet",
+      "tagline": "One-time purchase, forever",
+      "features": {
+        "ships": "Brushed silver ships",
+        "shards": "Shards hit effect",
+        "night": "Night sea board theme"
+      }
+    },
+    "perMonth": "/ month",
+    "once": "once",
+    "buy": "Buy",
+    "subscribe": "Subscribe",
+    "signInToBuy": "Sign in to buy",
+    "owned": "Owned",
+    "active": "Active",
+    "activeUntil": "Active until {date}",
+    "comingSoon": "Coming soon",
+    "comingSoonBody": "Payments are being connected. Prices appear here once checkout is live.",
+    "unavailable": "The shop can't reach payments right now. Try again later.",
+    "starting": "Opening checkout…",
+    "redirecting": "Redirecting to the payment page…",
+    "processing": "Processing payment…",
+    "processingBody": "Waiting for confirmation from the payment provider. This usually takes a few seconds.",
+    "success": "Payment received",
+    "successBody": "{product} is active. Enjoy!",
+    "slow": "Still processing",
+    "slowBody": "Confirmation is taking longer than usual. It will apply automatically — you can keep playing.",
+    "dismiss": "Dismiss",
+    "errors": {
+      "unavailable": "Checkout is unavailable right now. Try again in a minute.",
+      "blocked": "The payment page address was not trusted, so we stopped. Please contact support.",
+      "unauthorized": "Your session has ended. Sign in again to buy.",
+      "rejected": "Payments refused this purchase. Try again later.",
+      "owned": "You already have this — it is active on your account."
+    },
+    "cosmetics": "Cosmetics",
+    "cosmeticsLead": "Choose how your fleet and board look. Locked items come with the Silver Fleet or Premium.",
+    "slots": {
+      "ships": "Ships",
+      "hitEffect": "Hit effect",
+      "theme": "Board"
+    },
+    "items": {
+      "classic": "Classic",
+      "silver": "Silver",
+      "flame": "Flame",
+      "shards": "Shards",
+      "day": "Day",
+      "night-sea": "Night sea"
+    },
+    "equipped": "Equipped",
+    "equip": "Equip",
+    "locked": "Locked",
+    "equipErrors": {
+      "locked": "That item is not unlocked yet.",
+      "unavailable": "Could not change it right now. Try again.",
+      "unauthorized": "Sign in again to change cosmetics."
+    },
+    "preview": "Preview",
+    "openSoon": "Purchases open soon",
+    "openSoonBody": "Checkout is not open yet. Prices are final; purchases will open here soon.",
+    "currency": "Currency",
+    "preparing": "Preparing the payment page…",
+    "cancelled": "Payment cancelled",
+    "cancelledBody": "Nothing was charged. You can buy it whenever you like.",
+    "failed": "The payment didn't go through",
+    "failedBody": "The provider declined it. You can try again, or with another card."
+  },
+  "auth": {
+    "errorTitle": "Sign-in didn't finish",
+    "reasons": {
+      "state_mismatch": "The sign-in link expired or was opened in another browser.",
+      "missing_code": "The sign-in page did not send a code back.",
+      "invalid_grant": "The sign-in could not be confirmed. It may have been used already.",
+      "unavailable": "The account service is temporarily unavailable."
+    },
+    "retry": "Try again",
+    "home": "Back to the game"
+  },
+  "errors": {
+    "title": "Something is temporarily unavailable",
+    "body": "The game service did not answer in time. Your progress is safe.",
+    "retry": "Try again"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The address may be mistyped, or the page has moved.",
+    "home": "Back to the game"
+  },
+  "footer": {
+    "privacy": "Privacy",
+    "site": "outegro.dev",
+    "account": "Account"
+  },
+  "common": {
+    "loading": "Loading…",
+    "close": "Close",
+    "retry": "Try again",
+    "premium": "Premium"
+  }
+}
