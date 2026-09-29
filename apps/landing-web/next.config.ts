@@ -31,7 +31,9 @@ const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   // Posters are 2x renders of the 3D scenes; 90 keeps the metal crisp.
-  images: { formats: ["image/avif", "image/webp"], qualities: [75, 90] },
+  // WebP only: encoding AVIF from these posters pushed the server past its
+  // memory limit in production (OOM kills) for a few percent in size.
+  images: { formats: ["image/webp"], qualities: [75, 90] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
