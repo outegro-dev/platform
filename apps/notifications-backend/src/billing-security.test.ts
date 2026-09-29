@@ -156,6 +156,39 @@ describe("billing notices (N-06)", () => {
     expect(item?.body).not.toContain("Access is active");
   });
 
+  it("TC-N-06-02: a renewal whose access is withheld says it will be refunded, never that access opens", async () => {
+    const user = await newUser("ru");
+    await intentsService.accept(
+      intentEvent({
+        producer: "payments",
+        userId: user.userId,
+        templateKey: "billing.subscription-renewed.v2",
+        category: "billing",
+        data: {
+          productEn: "Battleship Premium",
+          productRu: "Морской бой Premium",
+          amountMinor: "5000",
+          amountScale: 2,
+          currency: "RUB",
+          paidAt: "2026-09-29T14:03:00.000Z",
+          paidUntil: "2026-10-29T14:03:00.000Z",
+          access: "withheld",
+          actionUrl: "https://pay.outegro.dev/subscriptions",
+        },
+      }),
+    );
+    await worker.tick();
+    const text =
+      "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.";
+    const [sent] = mailTo(user.email);
+    expect(sent?.subject).toBe("Оплата получена: Морской бой Premium");
+    expect(plain(sent?.text)).toContain(text);
+    expect(sent?.text).not.toMatch(/откроется|оплачена до|Доступ открыт/);
+    const [item] = await inboxOf(user.userId);
+    expect(item).toMatchObject({ title: "Оплата получена" });
+    expect(plain(item?.body)).toBe(text);
+  });
+
   it("TC-N-06-03: a name with HTML is sent as text", async () => {
     const user = await newUser("en");
     const hostile = '<img src=x onerror="alert(1)">Fleet';
@@ -170,29 +203,54 @@ describe("billing notices (N-06)", () => {
     expect(item?.body).toContain(hostile);
   });
 
-  it("TC-N-06-03: a link to someone else's site is refused before anything is stored", async () => {
+  it("TC-N-06-03: a link to someone else's site never reaches the user, but the notice does", async () => {
     const user = await newUser("en");
-    for (const actionUrl of [
+    const dropped = () =>
+      h.metric("notifications_action_links_dropped_total", {
+        template: "billing.payment-confirmed.v2",
+      });
+    const droppedBefore = await dropped();
+    const hostile = [
       "https://evil.example/orders/1",
       "https://pay.outegro.dev.evil.example/orders/1",
       "https://user:pw@pay.outegro.dev/orders/1",
       "javascript:alert(1)",
-    ]) {
-      await expect(
-        intentsService.accept(purchase(user.userId, { actionUrl })),
-      ).rejects.toThrow("action link not allowed");
-    }
+    ];
+    // A pay-web address payments has but notifications does not (a config
+    // mismatch) must not lose the receipt either.
+    const events = hostile.map((actionUrl) =>
+      purchase(user.userId, { actionUrl }),
+    );
+    for (const event of events)
+      expect(await intentsService.accept(event)).toBe("processed");
+    // Redelivered: nothing new is stored or counted.
+    const [again] = events;
+    if (!again) throw new Error("no event");
+    expect(await intentsService.accept(again)).toBe("duplicate");
     await worker.tick();
-    expect(
-      await db.select().from(intents).where(eq(intents.userId, user.userId)),
-    ).toHaveLength(0);
-    expect(
-      await db
-        .select()
-        .from(inboxItems)
-        .where(eq(inboxItems.userId, user.userId)),
-    ).toHaveLength(0);
-    expect(mailTo(user.email)).toHaveLength(0);
+
+    const stored = await db
+      .select({ data: intents.data })
+      .from(intents)
+      .where(eq(intents.userId, user.userId));
+    expect(stored).toHaveLength(hostile.length);
+    for (const { data } of stored) expect(data).not.toHaveProperty("actionUrl");
+    const items = await db
+      .select({ data: inboxItems.data })
+      .from(inboxItems)
+      .where(eq(inboxItems.userId, user.userId));
+    expect(items).toHaveLength(hostile.length);
+    for (const { data } of items) expect(data).not.toHaveProperty("actionUrl");
+    const sent = mailTo(user.email);
+    expect(sent).toHaveLength(hostile.length);
+    for (const mail of sent) {
+      expect(mail.subject).toBe("Payment received: Silver Fleet");
+      expect(mail.html).not.toMatch(/evil\.example|user:pw|javascript:/);
+      expect(mail.text).not.toMatch(/evil\.example|user:pw|javascript:/);
+      expect(mail.html).toContain('href="https://pay.outegro.dev/orders"');
+    }
+    expect(await inboxOf(user.userId)).toHaveLength(hostile.length);
+    expect(await dropped()).toBe(droppedBefore + hostile.length);
   });
 
   it("refuses data a template cannot show exactly", async () => {

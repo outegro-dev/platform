@@ -26,6 +26,7 @@ import {
   type MatchAction,
   type MatchRecord,
   type SessionEnd,
+  type SideKey,
 } from "./game/types.js";
 import { PairingPlanner, SearchWindow } from "./matchmaking.js";
 import { defaultNickname, generateRoomCode } from "./names.js";
@@ -322,7 +323,11 @@ describe("game session", () => {
     createdAt: clock.now(),
   });
 
-  const session = (record: MatchRecord, history: MatchAction[] = []) => {
+  const session = (
+    record: MatchRecord,
+    history: MatchAction[] = [],
+    waitingForfeit: SideKey | null = null,
+  ) => {
     const created = new GameSession(
       record,
       {
@@ -336,6 +341,7 @@ describe("game session", () => {
         onEnd: (_s, end) => ends.push(end),
       },
       history,
+      waitingForfeit,
     );
     created.start();
     return created;
@@ -543,8 +549,9 @@ describe("game session", () => {
     await scheduler.advance(5_000);
     outlet.online.add(ALICE);
     game.userOnline(ALICE);
-    // Her turn (Bob's timed out at 60 s), but her forfeit is waiting.
+    // Her forfeit is waiting: she cannot play, whoever is on turn.
     await rejects(game.fire(ALICE, 9, 9), "wrong_phase");
+    await rejects(game.resign(ALICE), "wrong_phase");
     await scheduler.advance(5_000);
     outlet.online.add(BOB);
     game.userOnline(BOB);
@@ -556,6 +563,188 @@ describe("game session", () => {
       winner: "opponent",
       reason: "disconnected",
     });
+  });
+
+  /**
+   * Battle, Alice on turn and Bob one missed turn down. Alice's turn is
+   * skipped at 30 s, she leaves at 50 s (grace to 110 s), Bob's turn is
+   * skipped at 60 s, he leaves at 65 s (grace to 125 s), Alice's turn is
+   * skipped at 90 s: at 110 s her forfeit waits, with Bob's third missed
+   * turn due at 120 s.
+   */
+  const bothAwayInBattle = async () => {
+    const game = session(online("quick", "b"), [
+      { kind: "place", side: "a", ships: fleets.a },
+      { kind: "place", side: "b", ships: fleets.b },
+      { kind: "skip", side: "b" },
+    ]);
+    await scheduler.advance(50_000);
+    outlet.online.delete(ALICE);
+    game.userOffline(ALICE);
+    await scheduler.advance(15_000);
+    outlet.online.delete(BOB);
+    game.userOffline(BOB);
+    await scheduler.advance(45_000);
+    return game;
+  };
+
+  it("while a forfeit waits, the turn clock decides nothing; the opponent's grace does", async () => {
+    const game = await bothAwayInBattle();
+    const skipped = store.moves.length;
+    expect(ends).toHaveLength(0);
+    expect(game.inspect()).toMatchObject({
+      phase: "battle",
+      deadline: null,
+      graceUntil: { b: "2026-09-29T10:02:05.000Z" },
+    });
+    await scheduler.advance(14_999);
+    expect(ends).toHaveLength(0);
+    expect(store.finished).toHaveLength(0);
+    expect(store.moves).toHaveLength(skipped);
+    await scheduler.advance(1);
+    expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+    expect(store.finished).toHaveLength(0);
+  });
+
+  it("while a forfeit waits in battle, the opponent back after the turn clock ran out still wins", async () => {
+    const game = await bothAwayInBattle();
+    await scheduler.advance(12_000);
+    outlet.online.add(BOB);
+    game.userOnline(BOB);
+    await scheduler.advance(0);
+    expect(ends).toEqual([
+      expect.objectContaining({
+        kind: "finished",
+        winner: "b",
+        reason: "disconnected",
+      }),
+    ]);
+    expect(outlet.last(BOB, "match.finished")?.payload).toMatchObject({
+      winner: "you",
+      reason: "disconnected",
+      rating: { delta: 16 },
+    });
+  });
+
+  /**
+   * Placement: Alice places and leaves at 25 s (grace to 85 s), Bob leaves
+   * without a fleet at 40 s (grace to 100 s): at 85 s her forfeit waits,
+   * with the placement window closing at 90 s.
+   */
+  const bothAwayInPlacement = async () => {
+    const game = session(online("quick"));
+    await scheduler.advance(25_000);
+    await game.placeFleet(ALICE, fleets.a);
+    outlet.online.delete(ALICE);
+    game.userOffline(ALICE);
+    await scheduler.advance(15_000);
+    outlet.online.delete(BOB);
+    game.userOffline(BOB);
+    await scheduler.advance(45_000);
+    return game;
+  };
+
+  it("while a forfeit waits, the placement clock decides nothing; the opponent's grace does", async () => {
+    await bothAwayInPlacement();
+    expect(ends).toHaveLength(0);
+    await scheduler.advance(14_999);
+    expect(ends).toHaveLength(0);
+    expect(store.finished).toHaveLength(0);
+    await scheduler.advance(1);
+    expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+    expect(store.aborted).toEqual([{ reason: "abandoned", audit: null }]);
+  });
+
+  it("while a forfeit waits in placement, the opponent back after the window closed still wins", async () => {
+    const game = await bothAwayInPlacement();
+    await scheduler.advance(10_000);
+    outlet.online.add(BOB);
+    game.userOnline(BOB);
+    await scheduler.advance(0);
+    expect(ends).toEqual([
+      expect.objectContaining({
+        kind: "finished",
+        winner: "b",
+        reason: "disconnected",
+      }),
+    ]);
+  });
+
+  it("a late player who comes and goes while the forfeit waits gets no new grace", async () => {
+    const game = await staggered();
+    outlet.online.add(ALICE);
+    game.userOnline(ALICE);
+    outlet.online.delete(ALICE);
+    game.userOffline(ALICE);
+    expect(game.inspect().graceUntil).toEqual({
+      b: "2026-09-29T10:01:50.000Z",
+    });
+    await scheduler.advance(50_000);
+    expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+  });
+
+  const placed: MatchAction[] = [
+    { kind: "place", side: "a", ships: fleets.a },
+    { kind: "place", side: "b", ships: fleets.b },
+  ];
+
+  it("a waiting forfeit is stored, so that a restart keeps it", async () => {
+    await staggered();
+    expect(store.waitingForfeits).toEqual(["a"]);
+  });
+
+  it("a waiting forfeit the database missed is stored on retry, and waits meanwhile", async () => {
+    const game = session(online("quick"), placed);
+    outlet.online.delete(ALICE);
+    game.userOffline(ALICE);
+    await scheduler.advance(50_000);
+    outlet.online.delete(BOB);
+    game.userOffline(BOB);
+    store.failNext = true;
+    await scheduler.advance(10_000);
+    expect(store.waitingForfeits).toEqual([]);
+    expect(game.inspect().deadline).toBeNull();
+    await scheduler.advance(defaultTimings.retryMs);
+    expect(store.waitingForfeits).toEqual(["a"]);
+    expect(ends).toHaveLength(0);
+  });
+
+  it("a recovered waiting forfeit keeps waiting: no clock, and no new grace for its side", async () => {
+    outlet.online.clear();
+    const game = session(online("quick"), placed, "a");
+    expect(game.inspect().deadline).toBeNull();
+    expect(game.inspect().graceUntil).toEqual({
+      b: "2026-09-29T10:01:00.000Z",
+    });
+    outlet.online.add(ALICE);
+    game.userOnline(ALICE);
+    await rejects(game.fire(ALICE, 9, 9), "wrong_phase");
+    await scheduler.advance(59_999);
+    expect(ends).toHaveLength(0);
+    await scheduler.advance(1);
+    expect(ends).toEqual([{ kind: "aborted", reason: "abandoned" }]);
+  });
+
+  it("a recovered waiting forfeit is decided when the opponent is back, or already here", async () => {
+    outlet.online.clear();
+    const game = session(online("quick"), placed, "a");
+    await scheduler.advance(30_000);
+    outlet.online.add(BOB);
+    game.userOnline(BOB);
+    await scheduler.advance(0);
+    expect(ends).toEqual([
+      expect.objectContaining({ winner: "b", reason: "disconnected" }),
+    ]);
+
+    // Bob's forfeit waited; Alice is connected when the match is resumed.
+    ends = [];
+    outlet.online.clear();
+    outlet.online.add(ALICE);
+    session(online("quick"), placed, "b");
+    await scheduler.advance(0);
+    expect(ends).toEqual([
+      expect.objectContaining({ winner: "a", reason: "disconnected" }),
+    ]);
   });
 
   it("the player back in time gets the result right after the snapshot", async () => {

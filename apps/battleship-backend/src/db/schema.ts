@@ -110,6 +110,12 @@ export const matches = pgTable(
     winner: text("winner", { enum: sides }),
     reason: text("reason", { enum: finishReasons }),
     abortReason: text("abort_reason", { enum: abortReasons }),
+    /**
+     * A side whose reconnect grace ran out while the opponent was away too:
+     * its forfeit waits for the opponent, also across a restart. null
+     * otherwise, and once the match has ended.
+     */
+    pendingForfeit: text("pending_forfeit", { enum: sides }),
     /** Shots fired (skipped turns are not moves). */
     moves: integer("moves").notNull().default(0),
     rated: boolean("rated").notNull(),

@@ -14,19 +14,32 @@ import { payWebConfig } from "../config/config.js";
 import { grants, orders } from "../db/schema.js";
 import { accessUntil, grantInForce } from "../domain/lifecycle.js";
 import { type Currency, moneyDto } from "../domain/money.js";
+import { neverGranted } from "./grants.js";
 
 /** notifications-backend template per kind of confirmed payment. */
 const receipts: Record<PaymentRow["kind"], string> = {
-  purchase: "billing.payment-confirmed.v2",
-  subscription_initial: "billing.subscription-started.v1",
-  subscription_renewal: "billing.subscription-renewed.v1",
+  purchase: "billing.payment-confirmed.v3",
+  subscription_initial: "billing.subscription-started.v2",
+  subscription_renewal: "billing.subscription-renewed.v2",
 };
+
+/**
+ * The grant as the payment left it: in force, not in force yet, or
+ * withheld: revoked (by an operator, or never granted as a duplicate), so
+ * this payment will not open it and the operator refunds the payment.
+ */
+function accessOf(grant: GrantRow, at: Date) {
+  if (grant.state === "revoked") return "withheld";
+  return grantInForce(grant, at) ? "active" : "pending";
+}
 
 /**
  * Messages to the buyer, requested through the outbox in the transaction
  * of the fact they report (INV-13). Access is described exactly as the
  * grant stands in that transaction, never ahead of it; amounts go in minor
  * units and product titles in both languages, Notifications formats them.
+ * A subscription whose grant was never given (a duplicate) gets no
+ * renewal or expiry notices: they would read as the buyer's real one.
  */
 @Injectable()
 export class BillingNotices {
@@ -48,7 +61,7 @@ export class BillingNotices {
     correlationId?: string,
   ) {
     const { payment, grant, subscription } = input;
-    const active = grantInForce(grant, at);
+    const access = accessOf(grant, at);
     await this.request(
       tx,
       {
@@ -59,16 +72,17 @@ export class BillingNotices {
           ...(await this.product(tx, payment.orderId)),
           ...this.money(payment.amountMinor, payment.currency),
           paidAt: payment.paidAt.toISOString(),
-          access: active ? "active" : "pending",
+          access,
           ...(subscription
             ? {
                 paidUntil: subscription.paidUntil.toISOString(),
                 actionUrl: this.link("/subscriptions"),
               }
             : {
-                accessUntil: active
-                  ? (grant.validUntil?.toISOString() ?? null)
-                  : null,
+                accessUntil:
+                  access === "active"
+                    ? (grant.validUntil?.toISOString() ?? null)
+                    : null,
                 actionUrl: this.link(`/orders/${payment.orderId}`),
               }),
         },
@@ -110,13 +124,19 @@ export class BillingNotices {
     );
   }
 
-  /** Paid time and grace are over. */
+  /**
+   * Paid time and grace are over. `endedAt` is when access from this
+   * subscription really ended: a revoke or a refunded period ends it
+   * before paidUntil + grace.
+   */
   async subscriptionExpired(
     tx: Executor,
     subscription: SubscriptionRow,
     sourceEventId: string,
     at: Date,
   ) {
+    const grant = await this.grantOf(tx, subscription);
+    if (grant && neverGranted(grant)) return;
     await this.request(
       tx,
       {
@@ -125,10 +145,7 @@ export class BillingNotices {
         templateKey: "billing.subscription-expired.v1",
         data: {
           ...(await this.product(tx, subscription.orderId)),
-          endedAt: accessUntil(
-            subscription.paidUntil,
-            subscription.graceDays,
-          ).toISOString(),
+          endedAt: this.accessEnd(subscription, grant, at).toISOString(),
           actionUrl: this.link("/subscriptions"),
         },
       },
@@ -173,6 +190,25 @@ export class BillingNotices {
     sourceEventId: string,
     at: Date,
   ) {
+    const grant = await this.grantOf(tx, subscription);
+    if (grant && neverGranted(grant)) return;
+    await this.request(
+      tx,
+      {
+        sourceEventId,
+        userId: subscription.userId,
+        templateKey,
+        data: {
+          ...(await this.product(tx, subscription.orderId)),
+          accessUntil: this.inForceUntil(grant, at),
+          actionUrl: this.link("/subscriptions"),
+        },
+      },
+      at,
+    );
+  }
+
+  private async grantOf(tx: Executor, subscription: SubscriptionRow) {
     const [grant] = await tx
       .select()
       .from(grants)
@@ -184,20 +220,7 @@ export class BillingNotices {
           eq(grants.feature, subscription.feature),
         ),
       );
-    await this.request(
-      tx,
-      {
-        sourceEventId,
-        userId: subscription.userId,
-        templateKey,
-        data: {
-          ...(await this.product(tx, subscription.orderId)),
-          accessUntil: this.inForceUntil(grant ?? null, at),
-          actionUrl: this.link("/subscriptions"),
-        },
-      },
-      at,
-    );
+    return grant ?? null;
   }
 
   /** The end of a grant still in force; null when it gives no access now. */
@@ -205,6 +228,24 @@ export class BillingNotices {
     return grant && grantInForce(grant, at)
       ? (grant.validUntil?.toISOString() ?? null)
       : null;
+  }
+
+  /**
+   * When access from a subscription ended, by `at` at the latest: its
+   * grant's end, earlier if it was revoked. Without a grant, the paid time
+   * plus grace.
+   */
+  private accessEnd(
+    subscription: SubscriptionRow,
+    grant: GrantRow | null,
+    at: Date,
+  ) {
+    if (!grant)
+      return accessUntil(subscription.paidUntil, subscription.graceDays);
+    const ends = [at, grant.validUntil, grant.revokedAt].filter(
+      (end): end is Date => end !== null,
+    );
+    return new Date(Math.min(...ends.map((end) => end.getTime())));
   }
 
   private async product(tx: Executor, orderId: string) {

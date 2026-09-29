@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+import { runDetached } from "@outegro/db";
 import { SCHEDULER } from "../common/tokens.js";
 import type { Scheduler, TimerHandle } from "../domain/scheduler.js";
 import { ConnectionRegistry } from "../realtime/connection.registry.js";
@@ -9,6 +10,8 @@ import { PlayersService } from "./players.service.js";
  * Grants also change by time alone (Premium ends at validUntil). While a
  * player is online, the next such moment is scheduled and `player.updated`
  * goes out then, so an expired skin disappears like a revoked one (TC-BS-09).
+ * The timer is armed detached: days later it must not run, or log, as part
+ * of the grant event or request that armed it.
  */
 @Injectable()
 export class EntitlementWatch {
@@ -32,18 +35,20 @@ export class EntitlementWatch {
     if (!next || !this.registry.isOnline(userId)) return;
     this.timers.set(
       userId,
-      this.scheduler.at(next, async () => {
-        this.timers.delete(userId);
-        try {
-          await this.players.pushUpdate(userId);
-          await this.watch(userId);
-        } catch (error) {
-          this.logger.warn(
-            { err: (error as Error).message },
-            "Grant change push failed",
-          );
-        }
-      }),
+      runDetached(() =>
+        this.scheduler.at(next, async () => {
+          this.timers.delete(userId);
+          try {
+            await this.players.pushUpdate(userId);
+            await this.watch(userId);
+          } catch (error) {
+            this.logger.warn(
+              { err: (error as Error).message },
+              "Grant change push failed",
+            );
+          }
+        }),
+      ),
     );
   }
 

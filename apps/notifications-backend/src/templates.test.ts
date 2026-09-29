@@ -53,15 +53,29 @@ describe("templates", () => {
   it("C2.4: what each template says, in English and Russian", async () => {
     const said: Record<string, unknown> = {};
     for (const [key, template] of Object.entries(templates)) {
-      for (const locale of locales) {
-        const email = await renderEmail(key, locale, template.sample, context);
-        said[`${key} ${locale}`] = {
-          subject: plain(email.subject),
-          title: plain(template.title(locale, template.sample)),
-          text: plain(template.text(locale, template.sample)),
-          links: [...email.html.matchAll(/href="([^"]*)"/g)].map((m) => m[1]),
-        };
-      }
+      // Receipts that take a withheld grant say so as well.
+      const withheld = {
+        ...template.sample,
+        access: "withheld",
+        ...("accessUntil" in template.sample ? { accessUntil: null } : {}),
+      };
+      const variants = [
+        [key, template.sample],
+        ...("access" in template.sample &&
+        template.schema?.safeParse(withheld).success
+          ? [[`${key} withheld`, withheld] as const]
+          : []),
+      ] as const;
+      for (const [name, data] of variants)
+        for (const locale of locales) {
+          const email = await renderEmail(key, locale, data, context);
+          said[`${name} ${locale}`] = {
+            subject: plain(email.subject),
+            title: plain(template.title(locale, data)),
+            text: plain(template.text(locale, data)),
+            links: [...email.html.matchAll(/href="([^"]*)"/g)].map((m) => m[1]),
+          };
+        }
     }
     expect(said).toMatchSnapshot();
   });
@@ -119,6 +133,97 @@ describe("TC-N-06-02: access that is not active yet is never promised", () => {
     for (const locale of locales) {
       const text = legacy.text(locale, legacy.sample);
       expect(text).not.toMatch(/access|доступ/i);
+    }
+  });
+});
+
+describe("TC-N-06-02: access that will not open is never promised", () => {
+  const withheld = [
+    {
+      key: "billing.payment-confirmed.v3",
+      subject: [
+        "Payment received: Silver Fleet",
+        "Оплата получена: Серебряный флот",
+      ],
+      text: [
+        "We received ₽50.00 for “Silver Fleet” on Sep 29, 2026, 2:03 PM UTC. This payment does not open access; we will refund it.",
+        "Оплата 50,00 ₽ за «Серебряный флот» получена 29 сент. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.",
+      ],
+    },
+    {
+      key: "billing.subscription-started.v2",
+      subject: [
+        "Payment received: Battleship Premium",
+        "Оплата получена: Морской бой Premium",
+      ],
+      text: [
+        "We received ₽50.00 for “Battleship Premium” on Sep 29, 2026, 2:03 PM UTC. This payment does not open access; we will refund it.",
+        "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.",
+      ],
+    },
+    {
+      key: "billing.subscription-renewed.v2",
+      subject: [
+        "Payment received: Battleship Premium",
+        "Оплата получена: Морской бой Premium",
+      ],
+      text: [
+        "We received $0.59 for “Battleship Premium” on Oct 29, 2026, 2:03 PM UTC. This payment does not open access; we will refund it.",
+        "Оплата 0,59 $ за «Морской бой Premium» получена 29 окт. 2026, 14:03 UTC. Этот платёж не открывает доступ, мы его вернём.",
+      ],
+    },
+  ];
+
+  it.each(withheld)(
+    "$key: a revoked or never granted access says it stays closed and the payment is refunded",
+    ({ key, subject, text }) => {
+      const template = templates[key];
+      if (!template) throw new Error(`missing ${key}`);
+      const data = {
+        ...template.sample,
+        access: "withheld",
+        ...("accessUntil" in template.sample ? { accessUntil: null } : {}),
+      };
+      expect(template.schema?.safeParse(data).success).toBe(true);
+      locales.forEach((locale, i) => {
+        expect(plain(template.subject(locale, data))).toBe(subject[i]);
+        expect(plain(template.text(locale, data))).toBe(text[i]);
+      });
+      expect(template.title("en", data)).toBe("Payment received");
+      expect(template.title("ru", data)).toBe("Оплата получена");
+    },
+  );
+
+  it("the new keys read as before while access is active or pending", () => {
+    const pairs = [
+      ["billing.payment-confirmed.v2", "billing.payment-confirmed.v3"],
+      ["billing.subscription-started.v1", "billing.subscription-started.v2"],
+      ["billing.subscription-renewed.v1", "billing.subscription-renewed.v2"],
+    ] as const;
+    for (const [before, after] of pairs) {
+      const old = templates[before];
+      const next = templates[after];
+      if (!old || !next) throw new Error(`missing ${before} or ${after}`);
+      for (const access of ["active", "pending"])
+        for (const locale of locales) {
+          const data = { ...old.sample, access };
+          expect(next.schema?.safeParse(data).success, after).toBe(true);
+          expect(next.subject(locale, data)).toBe(old.subject(locale, data));
+          expect(next.text(locale, data)).toBe(old.text(locale, data));
+        }
+    }
+  });
+
+  it("the old keys, kept for stored messages, never took withheld", () => {
+    for (const key of [
+      "billing.payment-confirmed.v2",
+      "billing.subscription-started.v1",
+      "billing.subscription-renewed.v1",
+    ]) {
+      const template = templates[key];
+      if (!template) throw new Error(`missing ${key}`);
+      const data = { ...template.sample, access: "withheld" };
+      expect(template.schema?.safeParse(data).success, key).toBe(false);
     }
   });
 });

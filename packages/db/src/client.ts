@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
@@ -48,6 +49,28 @@ export function createDatabase<TSchema extends Record<string, unknown>>(
     },
     close: () => pool.end(),
   };
+}
+
+/**
+ * Runs `read` in its own read-only transaction whose statements PostgreSQL
+ * cancels after `timeoutMs` (a transaction-local statement_timeout): a slow
+ * read stops on the server too and gives its connection back to the pool,
+ * instead of running on after its caller stopped waiting.
+ */
+export function readWithTimeout<T>(
+  db: NodePgDatabase<Record<string, unknown>>,
+  timeoutMs: number,
+  read: (tx: Executor) => Promise<T>,
+): Promise<T> {
+  return db.transaction(
+    async (tx) => {
+      await tx.execute(
+        sql`select set_config('statement_timeout', ${String(Math.ceil(timeoutMs))}, true)`,
+      );
+      return read(tx);
+    },
+    { accessMode: "read only" },
+  );
 }
 
 /**

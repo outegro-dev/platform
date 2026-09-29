@@ -129,6 +129,15 @@ export class MatchRepository implements MatchStore {
       throw new Error(`match ${matchId} is not in battle`);
   }
 
+  async saveWaitingForfeit(matchId: string, side: SideKey) {
+    const rows = await this.database.db
+      .update(matches)
+      .set({ pendingForfeit: side, version: sql`${matches.version} + 1` })
+      .where(and(eq(matches.id, matchId), inArray(matches.status, LIVE)))
+      .returning({ id: matches.id });
+    if (rows.length !== 1) throw new Error(`match ${matchId} is not live`);
+  }
+
   async finish(input: FinishInput): Promise<FinishResult> {
     const { record, winner, at } = input;
     const loser = otherSide(winner);
@@ -226,6 +235,7 @@ export class MatchRepository implements MatchStore {
           status: "finished",
           winner,
           reason: input.reason,
+          pendingForfeit: null,
           moves: input.moves,
           ratingDelta: delta,
           finishedAt: at,
@@ -274,6 +284,7 @@ export class MatchRepository implements MatchStore {
         .set({
           status: "aborted",
           abortReason: reason,
+          pendingForfeit: null,
           finishedAt: at,
           version: sql`${matches.version} + 1`,
         })

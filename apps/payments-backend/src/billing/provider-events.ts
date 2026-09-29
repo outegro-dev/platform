@@ -151,6 +151,9 @@ export class ProviderEvents {
   /** Applies one stored event; safe to call concurrently and repeatedly. */
   async process(eventId: string): Promise<string> {
     try {
+      // Counted after the commit: an attempt that rolled back and is
+      // retried later does not count a grant twice.
+      let grantActivated = undefined as Outcome["grantActivated"];
       const status = await this.database.db.transaction(async (tx) => {
         const [row] = await tx
           .select()
@@ -221,9 +224,11 @@ export class ProviderEvents {
               "renewal_without_parent",
             );
         }
+        grantActivated = outcome.grantActivated;
         return outcome.status;
       });
       this.relay.kick();
+      if (grantActivated) this.metrics.grantActivated(grantActivated);
       return status;
     } catch (error) {
       await this.failed(eventId, error);

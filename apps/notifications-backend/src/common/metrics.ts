@@ -29,6 +29,7 @@ const OUTCOMES: Partial<Record<State, string>> = {
 @Injectable()
 export class NotificationsMetrics {
   private readonly deliveries: Counter<"channel" | "outcome">;
+  private readonly droppedLinks: Counter<"template">;
 
   constructor(
     metrics: Metrics,
@@ -40,6 +41,11 @@ export class NotificationsMetrics {
       help: "Delivery attempts by channel and outcome (sent, retried, failed, expired, unknown).",
       labelNames: ["channel", "outcome"],
     });
+    this.droppedLinks = metrics.counter({
+      name: "notifications_action_links_dropped_total",
+      help: "Action links outside our sites dropped at intake, by template key; the notice goes out with the template's own page.",
+      labelNames: ["template"],
+    });
     const queued = metrics.gauge({
       name: "notifications_deliveries_queued",
       help: "Deliveries waiting to be sent, by channel.",
@@ -50,31 +56,41 @@ export class NotificationsMetrics {
       help: "Age of the oldest waiting delivery by channel; 0 when none.",
       labelNames: ["channel"],
     });
-    metrics.readOnScrape("deliveries", [queued, oldest], async () => {
-      const rows = await database.db
-        .select({
-          channel: deliveries.channel,
-          queued: count(),
-          oldest: min(deliveries.createdAt),
-        })
-        .from(deliveries)
-        .where(inArray(deliveries.state, QUEUED))
-        .groupBy(deliveries.channel);
-      const now = clock.now().getTime();
-      for (const channel of CHANNELS) {
-        const row = rows.find((r) => r.channel === channel);
-        queued.set({ channel }, row?.queued ?? 0);
-        oldest.set(
-          { channel },
-          row?.oldest ? Math.max(0, now - row.oldest.getTime()) / 1000 : 0,
-        );
-      }
-    });
+    metrics.readOnScrape(
+      "deliveries",
+      [queued, oldest],
+      database.db,
+      async (tx) => {
+        const rows = await tx
+          .select({
+            channel: deliveries.channel,
+            queued: count(),
+            oldest: min(deliveries.createdAt),
+          })
+          .from(deliveries)
+          .where(inArray(deliveries.state, QUEUED))
+          .groupBy(deliveries.channel);
+        const now = clock.now().getTime();
+        for (const channel of CHANNELS) {
+          const row = rows.find((r) => r.channel === channel);
+          queued.set({ channel }, row?.queued ?? 0);
+          oldest.set(
+            { channel },
+            row?.oldest ? Math.max(0, now - row.oldest.getTime()) / 1000 : 0,
+          );
+        }
+      },
+    );
   }
 
   /** A delivery's recorded outcome; `pending` and `leased` are not outcomes. */
   delivery(channel: Channel, state: State) {
     const outcome = OUTCOMES[state];
     if (outcome) this.deliveries.inc({ channel, outcome });
+  }
+
+  /** `template` is a key of the registry, checked before this is counted. */
+  actionLinkDropped(template: string) {
+    this.droppedLinks.inc({ template });
   }
 }

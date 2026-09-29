@@ -22,6 +22,7 @@ export const silentLog: LogPort = {
 export class FakeStore implements MatchStore {
   placements: { side: SideKey; ships: readonly ShipPlacement[] }[] = [];
   moves: StoredMove[] = [];
+  waitingForfeits: SideKey[] = [];
   finished: FinishInput[] = [];
   aborted: { reason: AbortReason; audit: AuditEntry | null }[] = [];
   failNext = false;
@@ -46,6 +47,11 @@ export class FakeStore implements MatchStore {
   async saveMove(_id: string, move: StoredMove) {
     this.fail();
     this.moves.push(move);
+  }
+
+  async saveWaitingForfeit(_id: string, side: SideKey) {
+    this.fail();
+    this.waitingForfeits.push(side);
   }
 
   async finish(input: FinishInput): Promise<FinishResult> {

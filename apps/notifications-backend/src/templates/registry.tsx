@@ -273,8 +273,14 @@ const moneyFields = {
   amountScale: z.number().int().min(0).max(4),
   currency: z.string().regex(/^[A-Z]{3}$/),
 };
-/** Whether the grant was in force when the payment was recorded. */
+/** Whether the grant was in force when the payment was recorded (keys before withheld). */
 const access = z.enum(["active", "pending"]);
+/**
+ * The grant as the payment left it: in force, not yet in force, or
+ * withheld (revoked, or never granted as a duplicate) and never to open
+ * from this payment, which the operator refunds.
+ */
+const grantAccess = z.enum(["active", "pending", "withheld"]);
 /** A page of the recipient's own resource; its origin is checked on arrival. */
 const actionUrl = z.string().max(2048);
 
@@ -314,19 +320,64 @@ const subscriptionInactive = {
   en: "Access from this subscription is not active.",
   ru: "Доступ по этой подписке не активен.",
 };
+/** Withheld: access will not open from this payment, and it is refunded. */
+const withheld = {
+  en: "This payment does not open access; we will refund it.",
+  ru: "Этот платёж не открывает доступ, мы его вернём.",
+};
+const paymentSubject = (l: Locale, d: Data) =>
+  l === "ru"
+    ? `Оплата получена: ${product(l, d)}`
+    : `Payment received: ${product(l, d)}`;
+const paymentTitle = (l: Locale) =>
+  l === "ru" ? "Оплата получена" : "Payment received";
+
+/**
+ * The next version of a receipt: `access` may also be withheld. Then the
+ * message confirms the money and the refund, and nothing about the paid
+ * period or renewal; otherwise it reads exactly as the previous version.
+ */
+function withWithheld(
+  previous: Template,
+  schema: z.ZodType<Data>,
+  action: Parameters<typeof notice>[0]["action"],
+): Template {
+  return notice({
+    ...billing,
+    schema,
+    sample: previous.sample,
+    subject: (l, d) =>
+      d.access === "withheld" ? paymentSubject(l, d) : previous.subject(l, d),
+    title: (l, d) =>
+      d.access === "withheld" ? paymentTitle(l) : previous.title(l, d),
+    text: (l, d) =>
+      d.access === "withheld"
+        ? `${received(l, d)} ${withheld[l]}`
+        : previous.text(l, d),
+    action,
+  });
+}
+
+const purchaseFields = {
+  ...productFields,
+  ...moneyFields,
+  paidAt: iso,
+  /** null with active access: no end date. */
+  accessUntil: iso.nullable(),
+  actionUrl,
+};
+const subscriptionPaymentFields = {
+  ...productFields,
+  ...moneyFields,
+  paidAt: iso,
+  paidUntil: iso,
+  actionUrl,
+};
 
 /** A one-time purchase was paid. */
 const paymentReceived = notice({
   ...billing,
-  schema: z.object({
-    ...productFields,
-    ...moneyFields,
-    paidAt: iso,
-    access,
-    /** null with active access: no end date. */
-    accessUntil: iso.nullable(),
-    actionUrl,
-  }),
+  schema: z.object({ ...purchaseFields, access }),
   sample: {
     productEn: "Silver Fleet",
     productRu: "Серебряный флот",
@@ -339,11 +390,8 @@ const paymentReceived = notice({
     actionUrl:
       "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
   },
-  subject: (l, d) =>
-    l === "ru"
-      ? `Оплата получена: ${product(l, d)}`
-      : `Payment received: ${product(l, d)}`,
-  title: (l) => (l === "ru" ? "Оплата получена" : "Payment received"),
+  subject: paymentSubject,
+  title: paymentTitle,
   text: (l, d) => {
     const until = d.accessUntil ? at(l, d.accessUntil) : null;
     const state =
@@ -363,14 +411,7 @@ const paymentReceived = notice({
 
 const subscriptionStarted = notice({
   ...billing,
-  schema: z.object({
-    ...productFields,
-    ...moneyFields,
-    paidAt: iso,
-    paidUntil: iso,
-    access,
-    actionUrl,
-  }),
+  schema: z.object({ ...subscriptionPaymentFields, access }),
   sample: {
     productEn: "Battleship Premium",
     productRu: "Морской бой Premium",
@@ -396,14 +437,7 @@ const subscriptionStarted = notice({
 
 const subscriptionRenewed = notice({
   ...billing,
-  schema: z.object({
-    ...productFields,
-    ...moneyFields,
-    paidAt: iso,
-    paidUntil: iso,
-    access,
-    actionUrl,
-  }),
+  schema: z.object({ ...subscriptionPaymentFields, access }),
   sample: {
     productEn: "Battleship Premium",
     productRu: "Морской бой Premium",
@@ -426,6 +460,27 @@ const subscriptionRenewed = notice({
       : `${received(l, d)} The subscription is now paid until ${at(l, d.paidUntil)}. ${subscriptionAccess(l, d)}`,
   action: subscriptionAction,
 });
+
+/*
+ * Receipts whose grant may also be withheld: before, a revoked grant was
+ * sent as `pending` and read as access still to open. The keys above stay
+ * for the messages already stored.
+ */
+const paymentReceivedV3 = withWithheld(
+  paymentReceived,
+  z.object({ ...purchaseFields, access: grantAccess }),
+  orderAction,
+);
+const subscriptionStartedV2 = withWithheld(
+  subscriptionStarted,
+  z.object({ ...subscriptionPaymentFields, access: grantAccess }),
+  subscriptionAction,
+);
+const subscriptionRenewedV2 = withWithheld(
+  subscriptionRenewed,
+  z.object({ ...subscriptionPaymentFields, access: grantAccess }),
+  subscriptionAction,
+);
 
 /** The provider reported a failed renewal charge. */
 const renewalFailed = notice({
@@ -628,8 +683,11 @@ export const templates: Record<string, Template> = {
   "service.test": serviceTest,
   "billing.payment-confirmed": paymentConfirmed,
   "billing.payment-confirmed.v2": paymentReceived,
+  "billing.payment-confirmed.v3": paymentReceivedV3,
   "billing.subscription-started.v1": subscriptionStarted,
+  "billing.subscription-started.v2": subscriptionStartedV2,
   "billing.subscription-renewed.v1": subscriptionRenewed,
+  "billing.subscription-renewed.v2": subscriptionRenewedV2,
   "billing.renewal-failed.v1": renewalFailed,
   "billing.subscription-cancelled.v1": subscriptionCancelled,
   "billing.subscription-expired.v1": subscriptionExpired,

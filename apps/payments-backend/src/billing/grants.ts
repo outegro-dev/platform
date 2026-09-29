@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { and, eq, sql } from "drizzle-orm";
 import type { Executor, GrantRow } from "../common/database.js";
-import { PaymentsMetrics } from "../common/metrics.js";
 import { grants } from "../db/schema.js";
 import { grantChanged } from "./outbox-events.js";
 
@@ -13,8 +12,25 @@ export type GrantSource = {
   sourceId: string;
 };
 
+export type Activation = {
+  grant: GrantRow;
+  /**
+   * It became active now, new or after its expiry (an end moved by a
+   * renewal is not). The caller counts it once its transaction commits.
+   */
+  activated: boolean;
+};
+
 const sameInstant = (a: Date | null, b: Date | null) =>
   (a?.getTime() ?? null) === (b?.getTime() ?? null);
+
+/**
+ * Recorded revoked from the start (`withhold`, a duplicate purchase): it
+ * never gave access. Every change bumps the version and none applies to a
+ * revoked grant, so no other grant is revoked at version 1.
+ */
+export const neverGranted = (grant: Pick<GrantRow, "state" | "version">) =>
+  grant.state === "revoked" && grant.version === 1;
 
 /**
  * Commercial grants: one row per source and feature. Every change bumps
@@ -23,8 +39,6 @@ const sameInstant = (a: Date | null, b: Date | null) =>
  */
 @Injectable()
 export class GrantLedger {
-  constructor(private readonly metrics: PaymentsMetrics) {}
-
   /**
    * Makes the source's grant active until `validUntil` (null = perpetual).
    * Repeating the same values changes nothing and publishes nothing; a
@@ -37,7 +51,7 @@ export class GrantLedger {
     at: Date,
     correlationId?: string,
     extra: { reason?: string; grantedBy?: string } = {},
-  ): Promise<GrantRow> {
+  ): Promise<Activation> {
     const [created] = await tx
       .insert(grants)
       .values({
@@ -61,27 +75,26 @@ export class GrantLedger {
       .returning();
     if (created) {
       await grantChanged(tx, created, at, correlationId);
-      this.metrics.grantActivated(source.sourceType);
-      return created;
+      return { grant: created, activated: true };
     }
     const current = await this.lockSource(tx, source);
     if (!current) throw new Error("grant disappeared during upsert");
-    if (current.state === "revoked") return current;
+    if (current.state === "revoked")
+      return { grant: current, activated: false };
     if (
       current.state === "active" &&
       sameInstant(current.validUntil, window.validUntil)
     )
-      return current;
+      return { grant: current, activated: false };
     // An active grant only moves its end (renewal); an expired one comes back.
-    if (current.state !== "active")
-      this.metrics.grantActivated(source.sourceType);
-    return this.change(
+    const grant = await this.change(
       tx,
       current,
       { state: "active", validUntil: window.validUntil },
       at,
       correlationId,
     );
+    return { grant, activated: current.state !== "active" };
   }
 
   /**

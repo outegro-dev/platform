@@ -721,17 +721,18 @@ describe("grant lifecycle", () => {
     expect((await grantsOf(user.userId))[0]).toMatchObject({
       state: "revoked",
     });
-    // The receipt confirms the money, never access the grant does not give.
+    // The receipt confirms the money and the refund, never access the grant
+    // will not give.
     const [receipt] = (
       await outboxOf(
         "notifications.intent.requested.v1",
         "templateKey",
-        "billing.subscription-renewed.v1",
+        "billing.subscription-renewed.v2",
       )
     ).filter(
       (e) => (e.payload.recipient as { userId: string }).userId === user.userId,
     );
-    expect(receipt?.payload.data).toMatchObject({ access: "pending" });
+    expect(receipt?.payload.data).toMatchObject({ access: "withheld" });
   });
 });
 

@@ -45,6 +45,8 @@ export function historyOf(
  * match still in placement or battle is rebuilt by replaying its stored
  * fleets and moves into a fresh engine match, and its clocks restart: fresh
  * placement or turn window, and the reconnect grace for players not back yet.
+ * A stored waiting forfeit keeps waiting: its side gets no new grace, and no
+ * clock runs.
  */
 @Injectable()
 export class RecoveryService implements OnApplicationBootstrap {
@@ -64,7 +66,11 @@ export class RecoveryService implements OnApplicationBootstrap {
     let recovered = 0;
     for (const { match, moves } of live) {
       try {
-        this.game.resume(await this.recordOf(match), historyOf(match, moves));
+        this.game.resume(
+          await this.recordOf(match),
+          historyOf(match, moves),
+          match.pendingForfeit,
+        );
         recovered++;
       } catch (error) {
         this.logger.error(

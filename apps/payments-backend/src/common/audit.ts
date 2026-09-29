@@ -3,11 +3,14 @@ import type { Executor } from "./database.js";
 
 export type Actor = { userId: string; requestId?: string | null };
 
+/** The service itself, acting on an event: no user, no request. */
+export const SYSTEM = { userId: null, requestId: null } as const;
+
 /** Writes an audit row; call inside the transaction of the change it explains. */
 export async function audit(
   tx: Executor,
   entry: {
-    actor: Actor;
+    actor: Actor | typeof SYSTEM;
     action: string;
     targetType: string;
     targetId: string;

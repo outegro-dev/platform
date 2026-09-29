@@ -234,6 +234,7 @@ export class SettlementService {
             ),
           }
         : { validFrom: paidAt, validUntil: null };
+    let grantActivated: Outcome["grantActivated"];
     if (held) {
       await this.grants.withhold(
         tx,
@@ -269,7 +270,7 @@ export class SettlementService {
       // opens nothing. The buyer hears about it with the refund.
       await paymentConfirmed(tx, payment, now, order.correlationId);
     } else {
-      const grant = await this.grants.activate(
+      const { grant, activated } = await this.grants.activate(
         tx,
         source,
         window,
@@ -284,6 +285,7 @@ export class SettlementService {
         order.correlationId,
         now,
       );
+      if (activated) grantActivated = source.sourceType;
     }
     return {
       status: "processed",
@@ -293,6 +295,7 @@ export class SettlementService {
       ...ids,
       subscriptionId: subscription?.id ?? null,
       paymentId: payment.id,
+      grantActivated,
     };
   }
 
@@ -446,7 +449,7 @@ export class SettlementService {
     if (!updated) throw new Error("subscription disappeared");
     await subscriptionChanged(tx, updated, now, order.correlationId);
     // A revoked grant stays revoked: the receipt then promises no access.
-    const grant = await this.grants.activate(
+    const { grant, activated } = await this.grants.activate(
       tx,
       {
         userId: subscription.userId,
@@ -490,6 +493,7 @@ export class SettlementService {
       note: "renewal confirmed",
       ...ids,
       paymentId: payment.id,
+      grantActivated: activated ? "subscription" : undefined,
     };
   }
 

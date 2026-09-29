@@ -74,11 +74,16 @@ export class OutboxRelay
       name: "outbox_oldest_pending_age_seconds",
       help: "Age of the oldest unpublished event; 0 when none.",
     });
-    metrics.readOnScrape("outbox", [pending, oldest], async () => {
-      const backlog = await outboxBacklog(this.database.db);
-      pending.set(backlog.pending);
-      oldest.set(backlog.oldestSeconds);
-    });
+    metrics.readOnScrape(
+      "outbox",
+      [pending, oldest],
+      this.database.db,
+      async (tx) => {
+        const backlog = await outboxBacklog(tx);
+        pending.set(backlog.pending);
+        oldest.set(backlog.oldestSeconds);
+      },
+    );
   }
 
   onApplicationBootstrap() {

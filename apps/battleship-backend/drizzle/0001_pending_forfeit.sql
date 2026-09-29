@@ -1,0 +1,1 @@
+ALTER TABLE "matches" ADD COLUMN "pending_forfeit" text;
