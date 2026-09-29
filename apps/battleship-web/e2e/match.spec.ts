@@ -140,7 +140,7 @@ test.describe("match", () => {
     await inBattle(page, fake);
     const target = page.getByTestId("target-board");
     const own = page.getByTestId("own-board");
-    await expect(page.locator(".shot-marker")).toHaveCount(0);
+    await expect(page.locator(".board .shot-marker")).toHaveCount(0);
 
     // Your shot: the brackets frame that cell of the enemy waters.
     const miss = ownWaterCell(fake);

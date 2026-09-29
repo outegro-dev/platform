@@ -250,6 +250,26 @@
       "generic": "The shot didn't go through. Syncing the match…"
     }
   },
+  "legend": {
+    "title": "Board key",
+    "toggle": "What the marks mean",
+    "ship": "Your ship",
+    "shipHit": "Your ship, hit",
+    "miss": "Miss: open water",
+    "hit": "Hit: a ship is there",
+    "sunk": "Ship sunk",
+    "around": "Water around a sunk ship: no ship can be there",
+    "last": "Latest shot",
+    "afloat": "Enemy ship left afloat, shown after the match",
+    "anyShip": "Ship",
+    "anyShipHit": "Ship, hit",
+    "move": "The move shown",
+    "placed": "Your ship: drag it to move",
+    "selected": "Selected: click or tap it again to turn it",
+    "fits": "Fits here",
+    "blocked": "Can't go here: off the board, on or next to a ship",
+    "turn": "Orientation: {orientation} · <kbd>R</kbd> or Rotate turns it"
+  },
   "result": {
     "victory": "Victory.",
     "defeat": "Defeat.",

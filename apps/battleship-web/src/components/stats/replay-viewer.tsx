@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import type { CellState, OwnShip } from "@/game/stores/match-store";
 import type { MatchReplay, ReplayCursor } from "@/game/stores/stats-store";
 import { BoardFrame, cellName, gridOf } from "../board/board-frame";
+import { BoardLegend } from "../board/board-legend";
 import { CellMark, ShotMarker } from "../board/marks";
 import { BoardShip } from "../board/ship";
 import { useRoot } from "../providers";
@@ -244,6 +245,7 @@ export const ReplayViewer = observer(function ReplayViewer({
           />
         </div>
       </div>
+      <BoardLegend mode="replay" />
     </section>
   );
 });

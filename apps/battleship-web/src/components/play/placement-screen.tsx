@@ -20,6 +20,7 @@ import {
 } from "react";
 import type { ShipSlot } from "@/game/stores/placement-store";
 import { BoardFrame, cellName, gridOf } from "../board/board-frame";
+import { BoardLegend, SelectedFrame } from "../board/board-legend";
 import { BoardShip, ShipArt } from "../board/ship";
 import { StableLabel } from "../home/modes";
 import { useRoot } from "../providers";
@@ -49,6 +50,7 @@ const PlacementBoard = observer(function PlacementBoard({
   const { ships: skin, theme } = session.cosmetics;
   const preview = store.preview;
   const cursor = store.cursor;
+  const picked = store.submitted ? null : (store.selected?.placement ?? null);
 
   const focusCell = (x: number, y: number) =>
     boardRef.current
@@ -143,6 +145,14 @@ const PlacementBoard = observer(function PlacementBoard({
               />
             ) : null,
           )}
+          {picked ? (
+            <SelectedFrame
+              x={picked.x}
+              y={picked.y}
+              length={picked.length}
+              orientation={picked.orientation}
+            />
+          ) : null}
           {preview
             ? preview.cells.map((cell) => (
                 <span
@@ -367,6 +377,7 @@ export const PlacementScreen = observer(function PlacementScreen() {
           </div>
           <PlacementBoard boardRef={boardRef} drag={drag} />
           <p className="small muted">{t("keyboardHint")}</p>
+          <BoardLegend mode="placement" />
         </div>
         <aside className="card placement-side" aria-label={t("tray")}>
           <OpponentChip />

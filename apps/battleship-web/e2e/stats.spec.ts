@@ -71,7 +71,7 @@ test.describe("leaderboard and profile", () => {
     await expect(page).toHaveURL(/\/replay\/[0-9a-f-]{36}$/);
     const step = page.getByTestId("replay-step");
     await expect(step).toHaveText(/Move 0 of \d+/);
-    const marker = page.getByTestId("replay").locator(".shot-marker");
+    const marker = page.getByTestId("replay").locator(".board .shot-marker");
     await expect(marker).toHaveCount(0);
     await page.getByTestId("replay-next").click();
     await expect(step).toHaveText(/Move 1 of \d+/);
