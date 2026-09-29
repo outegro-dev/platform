@@ -64,7 +64,7 @@ export type StoredMove = {
   readonly outcome: ShotOutcome | "skip";
 };
 
-export type AbortReason = "placement_timeout" | "moderation";
+export type AbortReason = "placement_timeout" | "moderation" | "abandoned";
 
 /** A moderation record written in the same transaction as its effect. */
 export type AuditEntry = {

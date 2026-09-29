@@ -32,6 +32,7 @@ export const finishReasonSchema = z.enum([
 export const matchAbortReasonSchema = z.enum([
   "placement_timeout",
   "moderation",
+  "abandoned",
 ]);
 /** Players are "you" and "opponent" on the wire: user ids never reach the other side. */
 export const sideSchema = z.enum(["you", "opponent"]);
@@ -336,7 +337,8 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   ),
   /**
    * The match ended without a result and without rating changes: nobody
-   * placed a fleet in time, or a moderator stopped it.
+   * placed a fleet in time, both players left and neither came back in time,
+   * or a moderator stopped it.
    */
   serverMessage("match.aborted", z.object({ reason: matchAbortReasonSchema })),
   serverMessage(

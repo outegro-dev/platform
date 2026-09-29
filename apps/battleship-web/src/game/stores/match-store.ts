@@ -269,13 +269,17 @@ export class MatchStore {
     this.phase = null;
     this.aborted = null;
     this.endedWhileAway = false;
+    this.syncSeq = null;
     this.effects = [];
     this.notice = null;
   }
 
-  /** The session came back without the match we were in. */
+  /**
+   * The session came back without the match we were in, or the match ended
+   * before this tab got its first snapshot.
+   */
   markEndedWhileAway(): void {
-    if (!this.active) return;
+    if (this.finished) return;
     this.deps.queue.clear();
     this.clearShotTimer();
     this.pendingShot = null;

@@ -96,6 +96,20 @@ describe("RootStore", () => {
     root.dispose();
   });
 
+  it("a tab opened just as its match ends offers the lobby instead of loading", async () => {
+    const { root } = setup();
+    root.start();
+    await settle();
+    FakeSocket.last.open();
+    FakeSocket.last.receive(sessionReady({ activeMatchId: MATCH_ID }));
+    const sync = FakeSocket.last.sent.find((m) => m.type === "match.sync");
+    FakeSocket.last.receive(
+      server("error", { code: "no_active_match", ref: sync?.seq ?? null }),
+    );
+    expect(root.match.endedWhileAway).toBe(true);
+    root.dispose();
+  });
+
   it("lands queued animations at once when the tab is hidden", async () => {
     const { root, environment } = setup();
     root.start();

@@ -38,7 +38,11 @@ export const finishReasons = [
   "timeout",
   "disconnected",
 ] as const;
-export const abortReasons = ["placement_timeout", "moderation"] as const;
+export const abortReasons = [
+  "placement_timeout",
+  "moderation",
+  "abandoned",
+] as const;
 export const moveOutcomes = ["miss", "hit", "sunk", "skip"] as const;
 
 /**

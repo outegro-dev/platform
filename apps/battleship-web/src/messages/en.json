@@ -154,7 +154,7 @@
     "noMatchBody": "Start a game from the lobby: a bot, a quick match or a private room.",
     "toLobby": "Back to lobby",
     "endedAway": "The match ended while you were away",
-    "endedAwayBody": "You were disconnected for longer than 60 seconds, so the match was closed. It is in your history.",
+    "endedAwayBody": "You were disconnected for longer than 60 seconds, so the match was closed. If your opponent stayed, it is in your history; if they left too, it was cancelled and ratings are unchanged.",
     "history": "Open match history",
     "vs": "vs",
     "botName": "Bot · {level}",
@@ -282,6 +282,7 @@
     "aborted": {
       "placement_timeout": "Nobody deployed a fleet in time. There is no winner, and ratings are unchanged.",
       "moderation": "A moderator stopped this match. There is no winner, and ratings are unchanged.",
+      "abandoned": "Both players were disconnected for too long. There is no winner, and ratings are unchanged.",
       "unknown": "The match ended without a result. Ratings are unchanged."
     }
   },
