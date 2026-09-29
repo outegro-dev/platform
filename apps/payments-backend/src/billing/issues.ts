@@ -18,8 +18,10 @@ export type IssueKind =
 
 /**
  * Discrepancies an operator must see (chapter 6.10). One row per subject:
- * a repeat bumps `occurrences` and `lastSeenAt`. Evidence holds ids and
- * amounts, never buyer emails.
+ * a repeat bumps `occurrences` and `lastSeenAt`. The row always shows the
+ * subject's latest problem: another kind replaces the old one, and a
+ * problem that comes back after it was resolved opens the row again.
+ * Evidence holds ids and amounts, never buyer emails.
  */
 @Injectable()
 export class IssueRegistry {
@@ -48,9 +50,18 @@ export class IssueRegistry {
       .onConflictDoUpdate({
         target: reconciliationIssues.subjectKey,
         set: {
+          kind: sql`excluded.kind`,
+          severity: sql`excluded.severity`,
+          status: "open",
+          related: sql`${reconciliationIssues.related} || excluded.related`,
+          evidence: sql`excluded.evidence`,
+          // A reopened issue is a new problem in the operator's queue.
+          firstSeenAt: sql`case when ${reconciliationIssues.status} = 'resolved' then excluded.first_seen_at else ${reconciliationIssues.firstSeenAt} end`,
           lastSeenAt: at,
           occurrences: sql`${reconciliationIssues.occurrences} + 1`,
-          evidence: sql`excluded.evidence`,
+          resolvedAt: null,
+          resolvedBy: null,
+          resolution: null,
         },
       });
   }

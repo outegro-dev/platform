@@ -338,11 +338,14 @@ export class RefundService {
         subscriptionCancelled: evidence.subscriptionCancelled ?? false,
         now,
       });
+      // Only "no verified purchase" is solved here: a partial refund turned
+      // the same subject into a review that must stay open.
       await this.issues.resolve(
         tx,
         `refund:${caseRow.id}`,
         { actorId: actor.userId, resolution: reason },
         now,
+        "refund_unmatched",
       );
       if (caseRow.providerEventId) {
         await tx

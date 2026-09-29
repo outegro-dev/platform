@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { IssueRegistry } from "./billing/issues.js";
 import type { PaymentsDatabase } from "./common/database.js";
 import { env } from "./config/env.js";
 import { CustomersService } from "./customers/customers.service.js";
@@ -18,6 +19,7 @@ import {
   refunds,
   subscriptions,
 } from "./db/schema.js";
+import { catalog } from "./domain/catalog.js";
 import type { Currency } from "./domain/money.js";
 import { addMonthsUtc } from "./domain/periods.js";
 import type { FakeInvoice } from "./test/fake-lava.js";
@@ -34,6 +36,8 @@ import { ReconciliationWorker } from "./workers/reconciliation.worker.js";
 
 const PREMIUM = "battleship-premium";
 const SILVER = "battleship-silver-fleet";
+const SILVER_OFFER =
+  catalog.find((p) => p.key === SILVER)?.providerOfferId ?? "";
 const DAY_MS = 86_400_000;
 const MINUTE_MS = 60_000;
 
@@ -130,6 +134,12 @@ const paymentsOf = (orderId: string) =>
   db.select().from(payments).where(eq(payments.orderId, orderId));
 const grantsOf = (userId: string) =>
   db.select().from(grants).where(eq(grants.userId, userId));
+const issueOf = (subjectKey: string) =>
+  db
+    .select()
+    .from(reconciliationIssues)
+    .where(eq(reconciliationIssues.subjectKey, subjectKey))
+    .then((rows) => rows[0]);
 const eventsFor = (contractIds: string[]) =>
   db
     .select()
@@ -655,6 +665,122 @@ describe("grant lifecycle", () => {
     ).expect(200);
     expect((await grantsOf(user.userId))[0]).toMatchObject({
       state: "revoked",
+    });
+  });
+});
+
+describe("operator visibility of money problems", () => {
+  it("a partial refund matched by an operator stays visible as an open issue", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, SILVER, "RUB");
+    await webhook(paidWebhook(user, invoice)).expect(200);
+    const res = await webhook(
+      lavaPayloads.refund({
+        tierId: SILVER_OFFER,
+        email: user.email,
+        amount: 25,
+        currency: "RUB",
+        refundType: "partial",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    expect(res.body.status).toBe("unmatched");
+    const [event] = await db
+      .select()
+      .from(providerEvents)
+      .where(
+        and(
+          eq(providerEvents.type, "refund.success"),
+          sql`${providerEvents.payload}->'data'->>'customer_email' = ${user.email}`,
+        ),
+      );
+    const refundId = event?.refundId ?? "";
+    const [payment] = await paymentsOf(orderId);
+    const matched = await h
+      .http()
+      .post(`/v1/admin/refunds/${refundId}/match`)
+      .set(owner.auth)
+      .send({ paymentId: payment?.id, reason: "found it in the Lava cabinet" })
+      .expect(200);
+    expect(matched.body.refund.state).toBe("review_required");
+    // Nothing was revoked, so a person has to decide: the issue must be open.
+    expect((await grantsOf(user.userId))[0]).toMatchObject({ state: "active" });
+    expect(await issueOf(`refund:${refundId}`)).toMatchObject({
+      kind: "refund_review",
+      status: "open",
+    });
+  });
+
+  it("a renewal that first arrived without its parent and then mismatches stays an open issue", async () => {
+    const user = await newCustomer();
+    const { orderId, invoice } = await startPurchase(user, PREMIUM, "USD");
+    const renewal = lavaPayloads.renewalSuccess({
+      parentContractId: invoice.id,
+      email: user.email,
+      amount: 0.99,
+      currency: "USD",
+      at: h.clock.now(),
+    });
+    expect((await webhook(renewal).expect(200)).body.status).toBe("unmatched");
+    await webhook(paidWebhook(user, invoice)).expect(200);
+    h.clock.advance(61_000);
+    await reconciliation.tick();
+    const [event] = await eventsFor([renewal.contractId]);
+    expect(event?.status).toBe("mismatch");
+    // Money arrived and bought nothing: an operator must see it.
+    expect(await paymentsOf(orderId)).toHaveLength(1);
+    expect(await issueOf(`contract:${renewal.contractId}`)).toMatchObject({
+      kind: "amount_mismatch",
+      status: "open",
+      severity: "high",
+    });
+  });
+  it("a problem that comes back after it was resolved is open again, with its new kind", async () => {
+    const registry = h.app.get(IssueRegistry);
+    const subject = `qa:${randomUUID()}`;
+    const t0 = h.clock.now();
+    await registry.open(
+      db,
+      { kind: "unmatched_event", severity: "medium", subjectKey: subject },
+      t0,
+    );
+    await registry.open(
+      db,
+      { kind: "unmatched_event", severity: "medium", subjectKey: subject },
+      new Date(t0.getTime() + 1_000),
+    );
+    expect(await issueOf(subject)).toMatchObject({
+      status: "open",
+      occurrences: 2,
+    });
+    await registry.resolve(
+      db,
+      subject,
+      { actorId: null, resolution: "matched on retry" },
+      new Date(t0.getTime() + 2_000),
+    );
+    const later = new Date(t0.getTime() + 3_000);
+    await registry.open(
+      db,
+      {
+        kind: "event_failed",
+        severity: "high",
+        subjectKey: subject,
+        evidence: { error: "boom" },
+      },
+      later,
+    );
+    expect(await issueOf(subject)).toMatchObject({
+      kind: "event_failed",
+      severity: "high",
+      status: "open",
+      resolvedAt: null,
+      resolution: null,
+      evidence: { error: "boom" },
+      firstSeenAt: later,
+      lastSeenAt: later,
+      occurrences: 3,
     });
   });
 });
