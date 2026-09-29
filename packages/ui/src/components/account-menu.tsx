@@ -69,6 +69,9 @@ const icons: Record<AccountMenuIcon, Icon> = {
   site: GlobeHemisphereWestIcon,
 };
 
+const triggerClass =
+  "og-glass group inline-flex h-11 max-w-full min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-full py-1 pr-2.5 pl-1 text-[13px] max-md:pr-1 font-medium text-foreground transition-[translate,box-shadow] duration-(--duration-fast) ease-(--ease-out) motion-safe:hover:-translate-y-px aria-busy:cursor-progress";
+
 const itemClass =
   "relative flex min-h-11 cursor-pointer select-none items-center gap-3 rounded-[12px] px-3 py-1.5 text-[14px] leading-tight font-medium text-foreground outline-none transition-colors duration-(--duration-fast) data-highlighted:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring [&_svg]:size-5 [&_svg]:shrink-0";
 
@@ -128,7 +131,10 @@ function SignedInMenu({
 
   return (
     <>
-      <DropdownMenu.Root>
+      {/* Not modal: the page stays in the accessibility tree (no aria-hidden
+          around a focusable button) and scrollable; outside clicks, Tab and
+          Escape still close the menu. */}
+      <DropdownMenu.Root modal={false}>
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
@@ -136,10 +142,7 @@ function SignedInMenu({
             aria-label={`${person.title}, ${messages.menu}`}
             aria-busy={signingOut || undefined}
             title={signingOut ? messages.signingOut : undefined}
-            className={cn(
-              "og-glass group inline-flex h-11 max-w-full min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-full py-1 pr-2.5 pl-1 text-[13px] font-medium text-foreground transition-[translate,box-shadow] duration-(--duration-fast) ease-(--ease-out) motion-safe:hover:-translate-y-px aria-busy:cursor-progress",
-              className,
-            )}
+            className={cn(triggerClass, className)}
           >
             <Avatar initials={person.initials} busy={signingOut} />
             {compact ? null : (
@@ -153,7 +156,7 @@ function SignedInMenu({
             <CaretDownIcon
               aria-hidden="true"
               weight="bold"
-              className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-(--duration-fast) group-data-[state=open]:rotate-180"
+              className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-(--duration-fast) group-data-[state=open]:rotate-180 max-md:hidden"
             />
           </button>
         </DropdownMenu.Trigger>
@@ -269,28 +272,33 @@ function MenuLink({
   currentLabel: string;
 }) {
   const ItemIcon = icons[item.icon];
+  // One spoken name, "Battleship, battleship.outegro.dev, you are here",
+  // starting with the visible label; the lines below stay visual.
+  const name = [item.label, item.host, item.current ? currentLabel : null]
+    .filter(Boolean)
+    .join(", ");
   return (
-    <DropdownMenu.Item asChild className={itemClass}>
-      <a href={item.href} data-testid={`account-menu-${item.key}`}>
+    <DropdownMenu.Item asChild className={itemClass} textValue={item.label}>
+      <a
+        href={item.href}
+        aria-label={name}
+        data-testid={`account-menu-${item.key}`}
+      >
         <ItemIcon aria-hidden="true" className="text-muted-foreground" />
         <span className="grid min-w-0 flex-1">
           <span className="truncate">{item.label}</span>
           {item.host ? (
             <span className="truncate font-mono text-[11px] font-normal tracking-[0.02em] text-muted-foreground">
-              <span className="sr-only">, </span>
               {item.host}
             </span>
           ) : null}
         </span>
         {item.current ? (
-          <>
-            <CheckIcon
-              aria-hidden="true"
-              weight="bold"
-              className="text-success"
-            />
-            <span className="sr-only">, {currentLabel}</span>
-          </>
+          <CheckIcon
+            aria-hidden="true"
+            weight="bold"
+            className="text-success"
+          />
         ) : null}
       </a>
     </DropdownMenu.Item>
@@ -325,4 +333,34 @@ function Avatar({
   );
 }
 
-export { AccountMenu, type AccountMenuProps };
+/**
+ * The signed-in button's box while the host app still asks Identity who is
+ * signed in (a Suspense fallback), so the header does not move when the
+ * menu arrives. Inert and hidden from assistive technology.
+ */
+function AccountMenuPlaceholder({
+  compact = false,
+  className,
+}: {
+  compact?: boolean;
+  className?: string;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="account-menu-placeholder"
+      className={cn(triggerClass, "cursor-default", className)}
+    >
+      <span className="size-9 shrink-0 rounded-full bg-secondary" />
+      {compact ? null : (
+        <span className="h-3 w-24 rounded-full bg-secondary max-md:hidden" />
+      )}
+      <CaretDownIcon
+        weight="bold"
+        className="size-3.5 shrink-0 text-muted-foreground max-md:hidden"
+      />
+    </span>
+  );
+}
+
+export { AccountMenu, AccountMenuPlaceholder, type AccountMenuProps };
