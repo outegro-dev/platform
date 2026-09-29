@@ -1,3 +1,4 @@
+import { matchAbortReasonSchema } from "@outegro/contracts/battleship";
 import { autorun } from "mobx";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MATCH_ID, server, snapshot } from "../testing/fakes";
@@ -297,20 +298,35 @@ describe("MatchStore", () => {
     expect(sound.play).toHaveBeenCalledWith("win");
   });
 
-  it("ends without a result when the match is aborted", async () => {
+  it.each(matchAbortReasonSchema.options)(
+    "ends without a result when the match is aborted (%s)",
+    async (reason) => {
+      const { match } = setup();
+      match.handle(
+        server("match.state", {
+          match: snapshot({ phase: "placement", turn: null }),
+        }),
+      );
+      match.handle(server("match.aborted", { reason }));
+      await vi.runAllTimersAsync();
+      expect(match.active).toBe(false);
+      expect(match.finished).toBe(true);
+      expect(match.aborted).toBe(reason);
+      expect(match.won).toBeNull();
+      expect(match.rating).toBeNull();
+    },
+  );
+
+  it("a battle both players left ends cancelled, even right after a snapshot", async () => {
     const { match } = setup();
-    match.handle(
-      server("match.state", {
-        match: snapshot({ phase: "placement", turn: null }),
-      }),
-    );
-    match.handle(server("match.aborted", { reason: "placement_timeout" }));
+    match.handle(server("match.state", { match: snapshot() }));
+    match.handle(server("match.aborted", { reason: "abandoned" }));
     await vi.runAllTimersAsync();
-    expect(match.active).toBe(false);
-    expect(match.finished).toBe(true);
-    expect(match.aborted).toBe("placement_timeout");
-    expect(match.won).toBeNull();
-    expect(match.rating).toBeNull();
+    expect(match.phase).toBe("finished");
+    expect(match.aborted).toBe("abandoned");
+    expect(match.turn).toBeNull();
+    expect(match.deadline).toBeNull();
+    expect(match.canFire).toBe(false);
   });
 
   it("reads a finished snapshot without a winner as cancelled", () => {

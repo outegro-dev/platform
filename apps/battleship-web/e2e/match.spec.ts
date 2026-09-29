@@ -279,4 +279,51 @@ test.describe("match", () => {
     await page.getByRole("button", { name: "Back to lobby" }).click();
     await expect(page).toHaveURL(`${APP}/`);
   });
+
+  test("a match both players left is cancelled without a winner", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    fake.startHumanMatch({
+      kind: "human",
+      nickname: "Nemo",
+      rating: 1512,
+      premium: true,
+    });
+    await deployRandomFleet(page);
+    fake.send("match.aborted", { reason: "abandoned" });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Match cancelled.",
+    );
+    await expect(page.getByTestId("result-reason")).toHaveText(
+      "Both players were disconnected for too long. There is no winner, and ratings are unchanged.",
+    );
+    await page.getByRole("button", { name: "Back to lobby" }).click();
+    await expect(page).toHaveURL(`${APP}/`);
+  });
+
+  test("coming back to a match that was cancelled meanwhile leads to the lobby", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    fake.startHumanMatch({
+      kind: "human",
+      nickname: "Nemo",
+      rating: 1512,
+      premium: true,
+    });
+    await deployRandomFleet(page);
+    fake.endWhileAway();
+    await fake.drop();
+    const notice = page.getByTestId("ended-away");
+    await expect(notice).toContainText("The match ended while you were away");
+    await expect(notice).toContainText(
+      "if they left too, it was cancelled and ratings are unchanged.",
+    );
+    await notice.getByRole("link", { name: "Back to lobby" }).click();
+    await expect(page).toHaveURL(`${APP}/`);
+    await expect(page.getByTestId("start-bot")).toBeVisible();
+  });
 });

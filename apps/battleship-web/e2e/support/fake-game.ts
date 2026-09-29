@@ -119,6 +119,12 @@ export class FakeGame {
     await ws?.close({ code, reason: "test drop" });
   }
 
+  /** The server ended the match while the player had no socket: nobody was told. */
+  endWhileAway(): void {
+    this.dispose();
+    this.match = null;
+  }
+
   /** The opponent's connection changes (human matches). */
   presence(connected: boolean, graceMs = 60_000): void {
     this.opponentConnected = connected;

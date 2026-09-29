@@ -1,3 +1,4 @@
+import { matchAbortReasonSchema } from "@outegro/contracts/battleship";
 import { describe, expect, it } from "vitest";
 import en from "./en.json";
 import ru from "./ru.json";
@@ -56,5 +57,11 @@ describe("messages", () => {
         .filter(([, value]) => value.trim() === "")
         .map(([key]) => key),
     ).toEqual([]);
+  });
+
+  it("explains every reason a match is cancelled", () => {
+    for (const reason of [...matchAbortReasonSchema.options, "unknown"])
+      for (const messages of [english, russian])
+        expect(messages[`result.aborted.${reason}`], reason).toBeTruthy();
   });
 });
