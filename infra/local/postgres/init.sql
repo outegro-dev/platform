@@ -8,3 +8,5 @@ CREATE ROLE payments LOGIN PASSWORD 'payments';
 CREATE DATABASE payments OWNER payments;
 CREATE ROLE admin LOGIN PASSWORD 'admin';
 CREATE DATABASE admin OWNER admin;
+CREATE ROLE battleship LOGIN PASSWORD 'battleship';
+CREATE DATABASE battleship OWNER battleship;

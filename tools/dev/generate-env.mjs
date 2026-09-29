@@ -11,6 +11,7 @@ const force = process.argv.includes("--force");
 const apps = [
   { dir: "apps/auth-backend", file: ".env" },
   { dir: "apps/notifications-backend", file: ".env" },
+  { dir: "apps/battleship-backend", file: ".env" },
   { dir: "apps/id-web", file: ".env.local" },
 ];
 const secret = () => randomBytes(32).toString("base64url");
