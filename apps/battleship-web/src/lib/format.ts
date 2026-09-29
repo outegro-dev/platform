@@ -5,16 +5,33 @@ export function formatClock(seconds: number): string {
   return `${minutes}:${String(safe % 60).padStart(2, "0")}`;
 }
 
-export function formatDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
-    new Date(iso),
-  );
+/*
+ * Dates always name their time zone: pages render on the server (UTC in the
+ * container) and hydrate in the browser, so an implicit zone would differ
+ * between the two and break hydration. Calendar days of the game (the week
+ * starts Monday 00:00 UTC) are UTC; moments are shown in the browser's zone
+ * once it is known (useTimeZone).
+ */
+export function formatDate(
+  iso: string,
+  locale: string,
+  timeZone = "UTC",
+): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone,
+  }).format(new Date(iso));
 }
 
-export function formatDateTime(iso: string, locale: string): string {
+export function formatDateTime(
+  iso: string,
+  locale: string,
+  timeZone = "UTC",
+): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone,
   }).format(new Date(iso));
 }
 

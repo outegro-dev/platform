@@ -19,6 +19,7 @@ import {
   formatPercent,
   formatSigned,
 } from "@/lib/format";
+import { useTimeZone } from "@/lib/use-time-zone";
 import { initialOf, PremiumBadge } from "../chrome/player-chip";
 import { useRoot } from "../providers";
 import { AccountCard, Settings } from "./settings";
@@ -199,6 +200,7 @@ function HistoryRow({
   item: MatchSummary;
   premium: boolean;
 }) {
+  const timeZone = useTimeZone();
   const t = useTranslations("profile");
   const p = useTranslations("play");
   const levels = useTranslations("modes.levels");
@@ -217,7 +219,8 @@ function HistoryRow({
           {p("vs")} {opponent}
         </strong>
         <span className="history-meta">
-          {t(`modes.${item.mode}`)} · {formatDateTime(item.finishedAt, locale)}
+          {t(`modes.${item.mode}`)} ·{" "}
+          {formatDateTime(item.finishedAt, locale, timeZone)}
         </span>
       </span>
       <span className="history-side">

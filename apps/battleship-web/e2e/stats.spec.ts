@@ -134,3 +134,20 @@ test.describe("leaderboard and profile", () => {
     );
   });
 });
+
+test.describe("a browser in another time zone than the server", () => {
+  test.use({ timezoneId: "Pacific/Auckland" });
+
+  test("hydrates dates without mismatches and shows local times", async ({
+    page,
+    game,
+  }) => {
+    await signInAndConnect(page, game, "free", "/profile");
+    const first = page.getByTestId("history").locator(".history-meta").first();
+    // 12:00 UTC on 29 September is midnight in Auckland (NZDT, UTC+13): the 30th.
+    await expect(first).toContainText("Sep 30, 2026");
+    await page.goto("/leaderboard?period=week");
+    // The week starts on Monday 00:00 UTC, shown as that calendar day.
+    await expect(page.getByText("Since Sep 28, 2026")).toBeVisible();
+  });
+});
