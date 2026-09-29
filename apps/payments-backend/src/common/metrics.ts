@@ -85,23 +85,29 @@ export class PaymentsMetrics {
       help: "Age of the oldest provider event not applied yet, by status; 0 when none.",
       labelNames: ["status"],
     });
-    metrics.readOnScrape("provider_events", [waiting, oldest], async () => {
-      const rows = await this.database.db
-        .select({
-          status: providerEvents.status,
-          waiting: count(),
-          oldest: min(providerEvents.receivedAt),
-        })
-        .from(providerEvents)
-        .where(inArray(providerEvents.status, [...UNPROCESSED]))
-        .groupBy(providerEvents.status);
-      const now = this.clock.now();
-      for (const status of UNPROCESSED) {
-        const row = rows.find((r) => r.status === status);
-        waiting.set({ status }, row?.waiting ?? 0);
-        oldest.set({ status }, ageSeconds(now, row?.oldest));
-      }
-    });
+    const db = this.database.db;
+    metrics.readOnScrape(
+      "provider_events",
+      [waiting, oldest],
+      db,
+      async (tx) => {
+        const rows = await tx
+          .select({
+            status: providerEvents.status,
+            waiting: count(),
+            oldest: min(providerEvents.receivedAt),
+          })
+          .from(providerEvents)
+          .where(inArray(providerEvents.status, [...UNPROCESSED]))
+          .groupBy(providerEvents.status);
+        const now = this.clock.now();
+        for (const status of UNPROCESSED) {
+          const row = rows.find((r) => r.status === status);
+          waiting.set({ status }, row?.waiting ?? 0);
+          oldest.set({ status }, ageSeconds(now, row?.oldest));
+        }
+      },
+    );
   }
 
   private readCheckouts(metrics: Metrics) {
@@ -115,8 +121,9 @@ export class PaymentsMetrics {
       help: "Age of the oldest pending checkout by attempt state; 0 when none.",
       labelNames: ["state"],
     });
-    metrics.readOnScrape("checkouts", [pending, oldest], async () => {
-      const rows = await this.database.db
+    const db = this.database.db;
+    metrics.readOnScrape("checkouts", [pending, oldest], db, async (tx) => {
+      const rows = await tx
         .select({
           state: checkoutAttempts.state,
           pending: count(),

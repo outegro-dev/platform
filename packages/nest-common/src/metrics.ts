@@ -16,6 +16,7 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import { HttpAdapterHost } from "@nestjs/core";
+import { type Database, type Executor, readWithTimeout } from "@outegro/db";
 import {
   Counter,
   type CounterConfiguration,
@@ -34,11 +35,17 @@ export type MetricsOptions = {
   service: string;
   /** Port of the separate `/metrics` listener; 0 turns it off. */
   port: number;
+  /** statement_timeout of a gauge read (default 2 s). */
+  readTimeoutMs?: number;
 };
 
 const METRICS_OPTIONS = Symbol("METRICS_OPTIONS");
-/** A gauge read that has not answered by then counts as failed. */
 const READ_TIMEOUT_MS = 2000;
+/**
+ * How much longer than its statement_timeout a scrape waits for a read:
+ * room for a busy pool, after which the read counts as failed.
+ */
+const READ_WAIT_MARGIN_MS = 1000;
 
 type Own<C> = Omit<C, "registers">;
 /** What a failed read does to a gauge of any label set. */
@@ -67,8 +74,12 @@ export class Metrics {
   private readonly reads: (() => Promise<void>)[] = [];
   private readonly unlabelled = new WeakSet<ReadGauge>();
   private readonly readErrors: Counter<"reader">;
+  private readonly readTimeoutMs: number;
+  /** The round of reads in progress; scrapes meanwhile wait for it. */
+  private reading: Promise<void> | null = null;
 
   constructor(@Inject(METRICS_OPTIONS) options: MetricsOptions) {
+    this.readTimeoutMs = options.readTimeoutMs ?? READ_TIMEOUT_MS;
     this.registry.setDefaultLabels({ service: options.service });
     collectDefaultMetrics({ register: this.registry });
     this.readErrors = this.counter({
@@ -93,15 +104,26 @@ export class Metrics {
   }
 
   /**
-   * Sets `gauges` from a store (outbox, queues) right before every scrape;
-   * `read` should be one cheap query. When it fails or times out its gauges
-   * turn unknown (NaN, or no series) instead of failing the whole scrape.
+   * Sets `gauges` from the database (outbox, queues) right before every
+   * scrape; `read` should be one cheap query through `tx`. It runs in its
+   * own read-only transaction with a statement_timeout, so PostgreSQL stops
+   * a slow read and frees its connection. When it fails or times out its
+   * gauges turn unknown (NaN, or no series) instead of failing the whole
+   * scrape.
    */
-  readOnScrape(reader: string, gauges: ReadGauge[], read: () => Promise<void>) {
+  readOnScrape(
+    reader: string,
+    gauges: ReadGauge[],
+    db: Database<Record<string, unknown>>,
+    read: (tx: Executor) => Promise<void>,
+  ) {
     let failing = false;
     this.reads.push(async () => {
       try {
-        await withTimeout(read(), READ_TIMEOUT_MS);
+        await withTimeout(
+          readWithTimeout(db, this.readTimeoutMs, read),
+          this.readTimeoutMs + READ_WAIT_MARGIN_MS,
+        );
         failing = false;
       } catch (error) {
         for (const gauge of gauges) {
@@ -119,9 +141,18 @@ export class Metrics {
     });
   }
 
-  /** Prometheus text exposition, as served on METRICS_PORT. */
+  /**
+   * Prometheus text exposition, as served on METRICS_PORT. Scrapes that
+   * arrive while the reads run share that round instead of starting their
+   * own, so the database sees at most one round at a time.
+   */
   async scrape() {
-    await Promise.all(this.reads.map((read) => read()));
+    this.reading ??= Promise.all(this.reads.map((read) => read()))
+      .then(() => undefined)
+      .finally(() => {
+        this.reading = null;
+      });
+    await this.reading;
     return this.registry.metrics();
   }
 }

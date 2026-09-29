@@ -4,8 +4,10 @@ import type { AddressInfo } from "node:net";
 import { Controller, Get, Module, Param } from "@nestjs/common";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
+import { createDatabase } from "@outegro/db";
+import { startPostgres, type TestPostgres } from "@outegro/db/testing";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { configureApp } from "./bootstrap.js";
 import { metricsEnvSchema } from "./config.js";
 import { HealthModule } from "./health.js";
@@ -136,36 +138,102 @@ describe("HTTP metrics", () => {
       await app.close();
     }
   });
+});
+
+describe("store reads on scrape", () => {
+  let pg: TestPostgres;
+  let database: ReturnType<typeof createDatabase>;
+
+  beforeAll(async () => {
+    pg = await startPostgres();
+    database = createDatabase({ url: pg.url });
+  });
+  afterAll(async () => {
+    await database?.close();
+    await pg?.stop();
+  });
+
+  /** Statements of other sessions still running now. */
+  const running = async (text: string) =>
+    (
+      await database.db.execute<{ n: number }>(
+        `select count(*)::int as n from pg_stat_activity
+          where state = 'active' and pid <> pg_backend_pid()
+            and query like '%${text}%'`,
+      )
+    ).rows[0]?.n;
 
   it("a failing store read makes its gauges unknown without failing the scrape", async () => {
-    const app = await start(0);
-    try {
-      const metrics = app.get(Metrics);
-      const backlog = metrics.gauge({ name: "test_backlog", help: "Test." });
-      const byChannel = metrics.gauge({
-        name: "test_queued",
-        help: "Test.",
-        labelNames: ["channel"],
-      });
-      let down = false;
-      metrics.readOnScrape("test", [backlog, byChannel], async () => {
-        if (down) throw new Error("connection refused");
+    const metrics = new Metrics({ service: "test", port: 0 });
+    const backlog = metrics.gauge({ name: "test_backlog", help: "Test." });
+    const byChannel = metrics.gauge({
+      name: "test_queued",
+      help: "Test.",
+      labelNames: ["channel"],
+    });
+    let down = false;
+    metrics.readOnScrape(
+      "test",
+      [backlog, byChannel],
+      database.db,
+      async (tx) => {
+        await tx.execute(down ? "select * from no_such_table" : "select 1");
         backlog.set(3);
         byChannel.set({ channel: "email" }, 2);
-      });
-      const healthy = await metrics.scrape();
-      expect(metricValue(healthy, "test_backlog")).toBe(3);
-      expect(metricValue(healthy, "test_queued", { channel: "email" })).toBe(2);
-      down = true;
-      const failed = await metrics.scrape();
-      expect(metricValue(failed, "test_backlog")).toBeNaN();
-      expect(failed).not.toContain("test_queued{");
-      expect(
-        metricValue(failed, "metrics_read_errors_total", { reader: "test" }),
-      ).toBe(1);
-      expect(failed).toContain("process_cpu_user_seconds_total");
-    } finally {
-      await app.close();
-    }
+      },
+    );
+    const healthy = await metrics.scrape();
+    expect(metricValue(healthy, "test_backlog")).toBe(3);
+    expect(metricValue(healthy, "test_queued", { channel: "email" })).toBe(2);
+    down = true;
+    const failed = await metrics.scrape();
+    expect(metricValue(failed, "test_backlog")).toBeNaN();
+    expect(failed).not.toContain("test_queued{");
+    expect(
+      metricValue(failed, "metrics_read_errors_total", { reader: "test" }),
+    ).toBe(1);
+    expect(failed).toContain("process_cpu_user_seconds_total");
+  });
+
+  it("PostgreSQL itself stops a slow read: it holds no connection after the scrape", async () => {
+    const metrics = new Metrics({
+      service: "test",
+      port: 0,
+      readTimeoutMs: 300,
+    });
+    const slow = metrics.gauge({ name: "test_slow", help: "Test." });
+    metrics.readOnScrape("slow", [slow], database.db, async (tx) => {
+      await tx.execute("select pg_sleep(4) as slow_scrape_read");
+      slow.set(1);
+    });
+    const started = Date.now();
+    const scrape = await metrics.scrape();
+    expect(Date.now() - started).toBeLessThan(1_300);
+    expect(metricValue(scrape, "test_slow")).toBeNaN();
+    expect(
+      metricValue(scrape, "metrics_read_errors_total", { reader: "slow" }),
+    ).toBe(1);
+    expect(await running("slow_scrape_read")).toBe(0);
+  });
+
+  it("concurrent scrapes share one round of reads", async () => {
+    const metrics = new Metrics({ service: "test", port: 0 });
+    const gauge = metrics.gauge({ name: "test_reads", help: "Test." });
+    let reads = 0;
+    metrics.readOnScrape("count", [gauge], database.db, async (tx) => {
+      reads++;
+      await tx.execute("select pg_sleep(0.2)");
+      gauge.set(reads);
+    });
+    const scrapes = await Promise.all([
+      metrics.scrape(),
+      metrics.scrape(),
+      metrics.scrape(),
+    ]);
+    expect(reads).toBe(1);
+    for (const scrape of scrapes)
+      expect(metricValue(scrape, "test_reads")).toBe(1);
+    // The next scrape reads again.
+    expect(metricValue(await metrics.scrape(), "test_reads")).toBe(2);
   });
 });
