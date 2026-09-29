@@ -383,7 +383,13 @@
     "soundOff": "Off",
     "account": "Account",
     "accountHint": "You sign in with your outegro account. Name and email stay there; the game only knows your nickname.",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "purchases": "Purchases",
+    "purchasesLead": "What your account owns in the game. Payments, receipts, renewal and cancellation are on {host}.",
+    "silverOwned": "Owned, yours forever",
+    "silverOff": "Not bought yet",
+    "toShop": "See the shop",
+    "manageAccount": "Manage your account"
   },
   "replay": {
     "eyebrow": "Replay",
@@ -490,7 +496,17 @@
     "cancelled": "Payment cancelled",
     "cancelledBody": "Nothing was charged. You can buy it whenever you like.",
     "failed": "The payment didn't go through",
-    "failedBody": "The provider declined it. You can try again, or with another card."
+    "failedBody": "The provider declined it. You can try again, or with another card.",
+    "premiumRenews": "Active · renews {date}",
+    "premiumEnds": "Active until {date} · won't renew",
+    "premiumCancelPending": "Active until {date} · cancellation pending",
+    "premiumOverdue": "Active until {date} · renewal not confirmed yet",
+    "premiumOff": "Not active",
+    "manageSubscription": "Manage subscription",
+    "yourPurchases": "Your purchases",
+    "paymentsNote": "Payments go through <pay>{host}</pay> with Lava. Renewal and cancellation are managed there too.",
+    "backToGame": "Back to the game",
+    "playNow": "Play now"
   },
   "auth": {
     "errorTitle": "Sign-in didn't finish",

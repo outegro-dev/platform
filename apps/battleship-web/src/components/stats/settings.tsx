@@ -4,7 +4,7 @@ import { nicknameSchema } from "@outegro/contracts/battleship";
 import { Button } from "@outegro/ui/button";
 import { Input } from "@outegro/ui/input";
 import { Label } from "@outegro/ui/label";
-import { SignOutIcon } from "@phosphor-icons/react";
+import { SignOutIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { observer } from "mobx-react-lite";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useId, useState } from "react";
@@ -126,18 +126,27 @@ export const Settings = observer(function Settings() {
   );
 });
 
-export function AccountCard() {
+/** The outegro account behind the player: where to manage it, and sign-out. */
+export function AccountCard({ accountUrl }: { accountUrl: string }) {
   const t = useTranslations("profile");
   return (
     <section className="card" aria-labelledby="account-title">
       <h2 id="account-title">{t("account")}</h2>
       <p>{t("accountHint")}</p>
-      <form action="/auth/sign-out" method="post">
-        <Button type="submit" variant="outline" data-testid="sign-out">
-          <SignOutIcon />
-          {t("signOut")}
+      <div className="account-actions">
+        <Button asChild variant="outline">
+          <a href={accountUrl} data-testid="manage-account">
+            <UserCircleIcon />
+            {t("manageAccount")}
+          </a>
         </Button>
-      </form>
+        <form action="/auth/sign-out" method="post">
+          <Button type="submit" variant="ghost" data-testid="sign-out">
+            <SignOutIcon />
+            {t("signOut")}
+          </Button>
+        </form>
+      </div>
     </section>
   );
 }

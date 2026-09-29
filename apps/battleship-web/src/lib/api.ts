@@ -21,6 +21,7 @@ import { cache } from "react";
 import { z } from "zod";
 import type { HistoryPage, MatchReplay } from "@/game/stores/stats-store";
 import { env } from "./env";
+import type { SubscriptionSummary } from "./ownership";
 import { PaymentsClient } from "./payments-client";
 
 // Every call runs inside a request, so the browser identity is always at hand.
@@ -65,6 +66,17 @@ export const payments = new PaymentsClient({
   checkoutOrigins: env.CHECKOUT_ORIGINS,
   headers: forward,
 });
+
+/**
+ * The player's subscriptions from payments, for renewal and cancellation
+ * details in the shop and profile (null: signed out or payments cannot say).
+ */
+export const loadSubscriptions = cache(
+  async (): Promise<SubscriptionSummary[] | null> => {
+    const token = await accessToken();
+    return token ? payments.subscriptions(token) : null;
+  },
+);
 
 export const matchHistorySchema = pageSchema(matchSummarySchema);
 

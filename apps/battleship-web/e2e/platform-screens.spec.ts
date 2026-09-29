@@ -1,7 +1,12 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
-import { expect, signInAndConnect, test } from "./support/fixtures.ts";
+import {
+  expect,
+  PLATFORM,
+  signInAndConnect,
+  test,
+} from "./support/fixtures.ts";
 import type { Persona } from "./support/personas.ts";
 
 /**
@@ -51,6 +56,48 @@ for (const layout of layouts) {
         await expect(page.getByRole("menu")).toBeVisible();
         await page.waitForTimeout(300);
         await capture(page, shot("account-menu"));
+      });
+
+      test("shop and profile of a Premium player", async ({ page, game }) => {
+        await signInAndConnect(page, game, "premium", "/shop");
+        await expect(page.getByTestId("manage-subscription")).toBeVisible();
+        await page.getByTestId("product-premium").scrollIntoViewIfNeeded();
+        await capture(page, shot("shop-premium"));
+        await page.getByTestId("payments-note").scrollIntoViewIfNeeded();
+        await capture(page, shot("shop-note"));
+        await page.goto("/profile");
+        await expect(page.getByTestId("purchases-card")).toBeVisible();
+        await page.getByTestId("purchases-card").scrollIntoViewIfNeeded();
+        await capture(page, shot("profile-purchases"));
+      });
+
+      test("back from checkout", async ({ page, game }) => {
+        const fake = await signInAndConnect(page, game, "free", "/shop");
+        // What the shop remembers while the buyer is on the provider's page.
+        await page.evaluate(() =>
+          sessionStorage.setItem(
+            "bs:pending-purchase",
+            JSON.stringify({
+              productKey: "battleship-silver-fleet",
+              feature: "cosmetics.silver-fleet",
+            }),
+          ),
+        );
+        await page.goto(
+          "/shop?orderId=5e0c0de0-0000-4000-8000-00000000abcd&result=success",
+        );
+        const banner = page.getByTestId("shop-banner");
+        await expect(banner.getByTestId("back-to-game")).toBeVisible();
+        await capture(page, shot("checkout-processing"));
+        await fetch(`${PLATFORM}/__test/users/${fake.uid}/grant`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ feature: "cosmetics.silver-fleet" }),
+        });
+        (await game.current()).playerUpdated({});
+        await expect(banner).toHaveAttribute("data-tone", "success");
+        await page.waitForTimeout(300);
+        await capture(page, shot("checkout-success"));
       });
     });
   }

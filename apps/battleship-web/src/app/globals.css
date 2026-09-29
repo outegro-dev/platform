@@ -1110,6 +1110,71 @@
     display: grid;
     gap: 20px;
   }
+  /* What the account owns: one row per product, the way to manage it. */
+  .purchase-list {
+    display: grid;
+  }
+  .purchase-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 14px;
+    padding-block: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .purchase-row:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .purchase-icon {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--secondary);
+  }
+  .purchase-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .purchase-name {
+    grid-column: 2;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .purchase-status {
+    grid-column: 2;
+    color: var(--muted-foreground);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .purchase-status[data-owned] {
+    color: var(--success);
+    font-weight: 500;
+  }
+  .purchase-action {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+  .card > .pay-link {
+    justify-self: start;
+  }
+  .account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  @media (max-width: 480px) {
+    .purchase-row {
+      grid-template-columns: 40px minmax(0, 1fr);
+    }
+    .purchase-action {
+      grid-column: 2;
+      grid-row: auto;
+    }
+  }
   .stat-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1406,6 +1471,7 @@
   }
   .product-features {
     display: grid;
+    align-content: start;
     gap: 10px;
     font-size: 15px;
   }
@@ -1458,6 +1524,82 @@
   .product[data-featured] .owned-tag {
     background: color-mix(in srgb, var(--live) 18%, transparent);
     color: var(--live);
+  }
+  /* What the player owns, and the link to where it is managed (pay.). */
+  .owned-block {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
+  }
+  .owned-block .owned-tag {
+    padding-block: 8px;
+    line-height: 1.3;
+  }
+  .pay-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding-inline: 4px;
+    border-radius: var(--radius-sm);
+    color: var(--foreground);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 4px;
+    transition: text-decoration-color var(--duration-fast) var(--ease-out);
+  }
+  .pay-link:hover {
+    text-decoration-color: currentColor;
+  }
+  .pay-link svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  /* Where payments happen, right under the prices. */
+  .shop-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: 760px;
+    margin-top: 18px;
+    color: var(--muted-foreground);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .shop-note svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .shop-note a {
+    color: var(--foreground);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 3px;
+  }
+  .shop-note a:hover {
+    text-decoration-color: currentColor;
+  }
+  .shop-banner {
+    flex-wrap: wrap;
+  }
+  .shop-banner-cta {
+    flex-shrink: 0;
+  }
+  @media (max-width: 767px) {
+    /* On phones the way back to the game gets a line of its own. */
+    .shop-banner-text {
+      min-width: calc(100% - 120px);
+    }
+    .shop-banner-cta {
+      order: 1;
+      margin-inline-start: 60px;
+    }
   }
   .soon-tag {
     display: inline-flex;
