@@ -11,7 +11,7 @@ import { Time } from "@/components/ui/data";
 import type { AuditSource, TimelineEntry } from "@/lib/audit";
 import { shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
-import { actorName } from "@/lib/queries";
+import { Actor } from "./actor";
 
 const sourceIcons: Record<AuditSource, ReactNode> = {
   identity: <FingerprintIcon aria-hidden="true" />,
@@ -63,12 +63,6 @@ export async function AuditFeed({
 }) {
   const t = await getTranslations("audit");
   const label = await getLabels();
-  const actors = [...new Set(entries.flatMap((entry) => entry.actorId ?? []))];
-  const names = new Map(
-    await Promise.all(
-      actors.map(async (id) => [id, await actorName(id)] as const),
-    ),
-  );
   return (
     <ul className="feed">
       {entries.map((entry) => {
@@ -103,22 +97,7 @@ export async function AuditFeed({
               <span className="feed-meta">
                 {entry.actorId ? (
                   <>
-                    {t("by")}{" "}
-                    {names.get(entry.actorId) ? (
-                      <Link
-                        href={`/users/${encodeURIComponent(entry.actorId)}`}
-                        className="link"
-                      >
-                        {names.get(entry.actorId)}
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/users/${encodeURIComponent(entry.actorId)}`}
-                        className="link mono"
-                      >
-                        {shortId(entry.actorId)}
-                      </Link>
-                    )}
+                    {t("by")} <Actor id={entry.actorId} />
                   </>
                 ) : (
                   t("bySystem")

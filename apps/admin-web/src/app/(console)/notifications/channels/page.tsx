@@ -7,13 +7,13 @@ import {
   WarningIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import {
   sendTestMessage,
   setChannel,
 } from "@/app/(console)/notifications/actions";
+import { Actor } from "@/components/audit/actor";
 import { ActionButton } from "@/components/ui/action-button";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { Time } from "@/components/ui/data";
@@ -22,7 +22,6 @@ import { PanelSkeleton } from "@/components/ui/skeleton";
 import { FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { externalChannels } from "@/lib/adapters/notifications";
-import { shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
 import {
   channelSettings,
@@ -64,9 +63,7 @@ async function Switches({ granted }: { granted: ReadonlySet<string> }) {
           {updatedBy && (
             <>
               {" · "}
-              <Link href={`/users/${updatedBy}`} className="link mono">
-                {shortId(updatedBy)}
-              </Link>
+              <Actor id={updatedBy} />
             </>
           )}
           {" · "}

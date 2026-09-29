@@ -5,20 +5,20 @@ import {
   SignOutIcon,
   UserMinusIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import {
   grantRole,
   revokeRole,
   revokeUserSessions,
 } from "@/app/(console)/users/actions";
+import { Actor } from "@/components/audit/actor";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { CopyText } from "@/components/ui/copy-text";
 import { DataTable, Time } from "@/components/ui/data";
 import { Facts, Panel, Stat, Status } from "@/components/ui/layout";
 import { EmptyState } from "@/components/ui/states";
 import type { UserDetail } from "@/lib/adapters/identity";
-import { maskEmail, shortId } from "@/lib/format";
+import { maskEmail } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
 import { toneOf } from "@/lib/tones";
 
@@ -257,12 +257,7 @@ export async function RolesTab({
                     {binding.grantedBy && (
                       <span className="cell-sub">
                         {t("by")}{" "}
-                        <Link
-                          href={`/users/${binding.grantedBy}`}
-                          className="link mono above"
-                        >
-                          {shortId(binding.grantedBy)}
-                        </Link>
+                        <Actor id={binding.grantedBy} className="above" />
                       </span>
                     )}
                   </td>
