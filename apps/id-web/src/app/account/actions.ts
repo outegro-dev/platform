@@ -14,12 +14,17 @@ export type FormState = {
   message?: string;
 };
 
+/** A service that failed on its side: the UI offers a retry, not an error page. */
+const unavailable = (error: unknown) =>
+  error instanceof BackendUnavailable ||
+  (error instanceof BackendError && error.status >= 500);
+
 const outcome = (error: unknown): FormState => {
   if (error instanceof BackendError && error.error.code === "VERSION_CONFLICT")
     return { status: "conflict" };
   if (error instanceof BackendError && error.status < 500)
     return { status: "invalid" };
-  if (error instanceof BackendUnavailable) return { status: "error" };
+  if (unavailable(error)) return { status: "error" };
   throw error;
 };
 
@@ -56,43 +61,76 @@ export async function updateProfile(
   return { status: "saved" };
 }
 
-export async function revokeSession(form: FormData) {
-  const id = z.uuid().parse(form.get("sessionId"));
-  await withSession("/account/sessions", (token) =>
-    authApi(`/v1/me/sessions/${id}`, {
-      method: "DELETE",
-      accessToken: token,
-    }).catch((error) => {
-      if (error instanceof BackendError && error.status === 404) return;
-      throw error;
-    }),
-  );
-  revalidatePath("/account/sessions");
+export type SessionsState =
+  | { status: "idle" }
+  | { status: "revoked"; device: string }
+  | { status: "revokedOthers"; count: number }
+  | { status: "error" };
+
+/**
+ * Signs out one session (`intent=revoke`) or all but this one
+ * (`intent=revoke-others`). The refreshed list shows the result; the state
+ * names it for the status message.
+ */
+export async function sessionsAction(
+  _: SessionsState,
+  form: FormData,
+): Promise<SessionsState> {
+  try {
+    if (form.get("intent") === "revoke-others") {
+      const result = await withSession("/account/sessions", (token) =>
+        authApi<{ revoked: number }>("/v1/me/sessions/revoke-all", {
+          method: "POST",
+          accessToken: token,
+          body: {},
+        }),
+      );
+      revalidatePath("/account/sessions");
+      return { status: "revokedOthers", count: result.revoked };
+    }
+    const id = z.uuid().parse(form.get("sessionId"));
+    await withSession("/account/sessions", (token) =>
+      authApi(`/v1/me/sessions/${id}`, {
+        method: "DELETE",
+        accessToken: token,
+      }).catch((error) => {
+        if (error instanceof BackendError && error.status === 404) return;
+        throw error;
+      }),
+    );
+    revalidatePath("/account/sessions");
+    return {
+      status: "revoked",
+      device: String(form.get("device") ?? "").slice(0, 120),
+    };
+  } catch (error) {
+    if (error instanceof BackendError || unavailable(error))
+      return { status: "error" };
+    throw error;
+  }
 }
 
-export async function revokeOtherSessions(_: {
-  revoked?: number;
-}): Promise<{ revoked?: number }> {
-  const result = await withSession("/account/sessions", (token) =>
-    authApi<{ revoked: number }>("/v1/me/sessions/revoke-all", {
-      method: "POST",
-      accessToken: token,
-      body: {},
-    }),
-  );
-  revalidatePath("/account/sessions");
-  return { revoked: result.revoked };
-}
+export type InboxState = { status: "idle" | "read" | "error" };
 
-export async function markRead(form: FormData) {
+export async function inboxAction(
+  _: InboxState,
+  form: FormData,
+): Promise<InboxState> {
   const id = z.uuid().parse(form.get("itemId"));
-  await withSession("/account/inbox", (token) =>
-    notificationsApi(`/v1/me/inbox/${id}/read`, {
-      method: "POST",
-      accessToken: token,
-    }),
-  );
+  try {
+    await withSession("/account/inbox", (token) =>
+      notificationsApi(`/v1/me/inbox/${id}/read`, {
+        method: "POST",
+        accessToken: token,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof BackendError || unavailable(error))
+      return { status: "error" };
+    throw error;
+  }
   revalidatePath("/account/inbox");
+  return { status: "read" };
 }
 
 export async function savePreferences(

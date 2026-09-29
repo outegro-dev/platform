@@ -1,6 +1,7 @@
 import { Surface } from "@outegro/ui/surface";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { PageHead } from "@/components/page-head";
 import { notificationsApi, type Preferences, withSession } from "@/lib/api";
 import { PreferencesForm } from "./preferences-form";
 
@@ -18,10 +19,7 @@ export default async function NotificationsPage() {
   );
   return (
     <>
-      <header className="page-head">
-        <h1>{t("title")}</h1>
-        <p>{t("lead")}</p>
-      </header>
+      <PageHead title={t("title")} lead={t("lead")} />
       <Surface className="panel">
         <PreferencesForm preferences={preferences} />
       </Surface>

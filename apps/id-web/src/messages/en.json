@@ -12,7 +12,7 @@
     "eyebrow": "One account for every outegro.dev app",
     "title": "Sign in",
     "titleAccent": "without a password.",
-    "lead": "Enter your email and we will send a six-digit code. New here? The same step creates your account.",
+    "lead": "Enter your email and we will send a six-digit code.",
     "email": "Email",
     "emailPlaceholder": "you@example.com",
     "sendCode": "Send code",
@@ -32,8 +32,14 @@
       "too_many_attempts": "Too many attempts. Request a new code.",
       "rate_limited": "Too many requests. Please wait a moment.",
       "invalid_email": "Enter a valid email address.",
-      "unavailable": "Sign-in is temporarily unavailable. Try again shortly."
-    }
+      "unavailable": "Sign-in is temporarily unavailable. Try again shortly.",
+      "offline": "You're offline. Check the connection and try again.",
+      "incomplete_code": "Enter all six digits of the code."
+    },
+    "emailHint": "New here? The same step creates your account.",
+    "codeHint": "No email? Check the spam folder, or send a new code below.",
+    "codeResentTo": "We sent a new code to {email}",
+    "resending": "Sending a new code…"
   },
   "authorize": {
     "title": "This link is not valid",
@@ -47,7 +53,9 @@
     "notifications": "Notifications",
     "signOut": "Sign out",
     "language": "Language",
-    "sections": "Account sections"
+    "sections": "Account sections",
+    "signingOut": "Signing out…",
+    "languageFailed": "Couldn't switch the language. Try again."
   },
   "profile": {
     "title": "Profile",
@@ -79,9 +87,15 @@
     "lastActive": "Last active {date}",
     "started": "Signed in {date}",
     "revoke": "Sign out",
+    "revokeTarget": "of {device}",
     "revokeOthers": "Sign out of all other sessions",
     "unknownDevice": "Unknown device",
-    "empty": "No other sessions."
+    "empty": "No other sessions.",
+    "revoking": "Signing out…",
+    "revokingOthers": "Signing out other sessions…",
+    "revoked": "Signed out of {device}.",
+    "revokedOthers": "{count, plural, =0 {No other sessions were active.} one {Signed out of # session.} other {Signed out of # sessions.}}",
+    "revokeFailed": "Couldn't sign that session out. Try again shortly."
   },
   "inbox": {
     "title": "Inbox",
@@ -90,7 +104,14 @@
     "markRead": "Mark as read",
     "empty": "Nothing here yet.",
     "older": "Older messages",
-    "latest": "Back to latest"
+    "latest": "Back to latest",
+    "marking": "Marking…",
+    "marked": "Marked as read.",
+    "markedShort": "Read",
+    "markFailed": "Couldn't mark it as read. Try again shortly.",
+    "unreadItem": "Unread",
+    "pages": "Inbox pages",
+    "loadingPage": "Loading…"
   },
   "preferences": {
     "title": "Notifications",
@@ -117,7 +138,10 @@
   "errors": {
     "title": "Something is temporarily unavailable",
     "body": "Your data is safe. The service did not answer in time.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "offlineTitle": "You're offline",
+    "offlineBody": "Your data is safe. Reconnect to the internet, then try again.",
+    "retrying": "Trying again…"
   },
   "notFound": {
     "title": "Page not found",
@@ -127,5 +151,10 @@
   "footer": {
     "privacy": "Privacy",
     "site": "outegro.dev"
+  },
+  "status": {
+    "offline": "You're offline. Check the connection and try again.",
+    "dismiss": "Dismiss",
+    "loading": "Loading…"
   }
 }

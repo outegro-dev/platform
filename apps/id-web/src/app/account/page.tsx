@@ -3,6 +3,7 @@ import { Surface } from "@outegro/ui/surface";
 import { SealCheckIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
+import { PageHead } from "@/components/page-head";
 import { authApi, type Me, withSession } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { ProfileForm } from "./profile-form";
@@ -20,10 +21,7 @@ export default async function ProfilePage() {
   );
   return (
     <>
-      <header className="page-head">
-        <h1>{t("title")}</h1>
-        <p>{t("lead")}</p>
-      </header>
+      <PageHead title={t("title")} lead={t("lead")} />
       <Surface className="panel">
         <dl className="facts">
           <div>

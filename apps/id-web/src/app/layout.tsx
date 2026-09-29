@@ -2,6 +2,7 @@ import { fontVariables } from "@outegro/ui/fonts";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
+import { ActionStatusProvider } from "@/components/action-status";
 import "@outegro/ui/styles.css";
 import "./globals.css";
 
@@ -28,7 +29,9 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={fontVariables}>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <ActionStatusProvider>{children}</ActionStatusProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

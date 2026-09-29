@@ -1,13 +1,13 @@
 import { BackendError } from "@outegro/bff/backend";
-import { Button } from "@outegro/ui/button";
 import { Surface } from "@outegro/ui/surface";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { PageHead } from "@/components/page-head";
 import { type InboxPage, notificationsApi, withSession } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import { markRead } from "../actions";
+import { InboxActions, MarkReadForm, PagerLink } from "./inbox-actions";
 
 const PAGE_SIZE = 20;
 const cursorSchema = z.string().regex(/^[A-Za-z0-9_-]{1,200}$/);
@@ -46,14 +46,12 @@ export default async function InboxRoute({
     }),
   );
   return (
-    <>
-      <header className="page-head">
-        <h1>{t("title")}</h1>
-        <p>{t("lead")}</p>
+    <InboxActions>
+      <PageHead title={t("title")} lead={t("lead")}>
         <p className="og-eyebrow">
           {t("unread", { count: inbox.unreadCount })}
         </p>
-      </header>
+      </PageHead>
       {inbox.items.length === 0 ? (
         <p className="muted">{t("empty")}</p>
       ) : (
@@ -64,10 +62,12 @@ export default async function InboxRoute({
                 className="row"
                 data-unread={item.readAt ? undefined : ""}
               >
+                {/* In the row's gutter: reading it moves no text. */}
+                <span className="unread-dot" aria-hidden="true" />
                 <div className="row-main">
                   <p className="row-title">
                     {!item.readAt && (
-                      <span className="unread-dot" aria-hidden="true" />
+                      <span className="sr-only">{t("unreadItem")}: </span>
                     )}
                     {item.title}
                   </p>
@@ -76,37 +76,29 @@ export default async function InboxRoute({
                     {formatDate(item.createdAt, locale)}
                   </p>
                 </div>
-                {!item.readAt && (
-                  <form action={markRead}>
-                    <input type="hidden" name="itemId" value={item.id} />
-                    <Button type="submit" variant="ghost" size="sm">
-                      {t("markRead")}
-                    </Button>
-                  </form>
-                )}
+                <MarkReadForm itemId={item.id} read={Boolean(item.readAt)} />
               </Surface>
             </li>
           ))}
         </ul>
       )}
       {(cursor || inbox.nextCursor) && (
-        <nav className="pager" aria-label={t("title")}>
+        <nav className="pager" aria-label={t("pages")}>
           {cursor && (
-            <Button asChild variant="ghost">
-              <a href="/account/inbox">{t("latest")}</a>
-            </Button>
+            <PagerLink href="/account/inbox" variant="ghost">
+              {t("latest")}
+            </PagerLink>
           )}
           {inbox.nextCursor && (
-            <Button asChild variant="outline">
-              <a
-                href={`/account/inbox?cursor=${encodeURIComponent(inbox.nextCursor)}`}
-              >
-                {t("older")}
-              </a>
-            </Button>
+            <PagerLink
+              href={`/account/inbox?cursor=${encodeURIComponent(inbox.nextCursor)}`}
+              variant="outline"
+            >
+              {t("older")}
+            </PagerLink>
           )}
         </nav>
       )}
-    </>
+    </InboxActions>
   );
 }
