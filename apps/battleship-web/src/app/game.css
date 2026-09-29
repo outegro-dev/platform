@@ -1,0 +1,1440 @@
+/*
+ * Boards, ships, shot marks and effects. Every animation moves only
+ * transform and opacity; prefers-reduced-motion keeps short fades.
+ * Colours are tokens from @outegro/ui (game palette at its end).
+ */
+
+@layer components {
+  /* ─── Board frame ───────────────────────────────────── */
+  .board {
+    --label: 24px;
+    --radius-water: 12px;
+    position: relative;
+    container-type: inline-size;
+    width: 100%;
+    padding: 12px 16px 16px 10px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lift);
+    color: var(--foreground);
+    isolation: isolate;
+  }
+  .board[data-size="sm"] {
+    --label: 18px;
+    padding: 8px 10px 10px 6px;
+    border-radius: 18px;
+  }
+  .board[data-size="xs"] {
+    --label: 0px;
+    padding: 6px;
+    border-radius: 16px;
+    box-shadow: none;
+  }
+  .board[data-size="xs"] .board-table thead,
+  .board[data-size="xs"] .board-table tbody th {
+    display: none;
+  }
+  /* Glow for the board you act on; it fades in (opacity only). */
+  .board::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow:
+      0 0 0 1.5px var(--ring),
+      0 0 0 6px color-mix(in srgb, var(--ring) 10%, transparent),
+      0 30px 70px -34px color-mix(in srgb, var(--ring) 45%, transparent);
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-out);
+    pointer-events: none;
+  }
+  .board[data-active]::before {
+    opacity: 1;
+  }
+  .board-grid {
+    --cell: calc((100cqi - var(--label)) / 10);
+    position: relative;
+  }
+
+  /* The grid is a real table: column letters, row numbers, 100 cells. */
+  .board-table {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .board-table col:first-child {
+    width: var(--label);
+  }
+  .board-table thead th,
+  .board-table .board-corner {
+    height: var(--label);
+    padding: 0 0 4px;
+    font-family: var(--font-mono);
+    font-size: clamp(10px, calc(var(--cell) * 0.28), 12px);
+    font-weight: 500;
+    color: var(--muted-foreground);
+    text-align: center;
+    vertical-align: bottom;
+  }
+  .board-table tbody th {
+    padding: 0 6px 0 0;
+    font-family: var(--font-mono);
+    font-size: clamp(10px, calc(var(--cell) * 0.28), 12px);
+    font-weight: 500;
+    color: var(--muted-foreground);
+    text-align: end;
+  }
+  .board-table tbody tr {
+    height: var(--cell);
+  }
+  .board-table td {
+    height: var(--cell);
+    padding: 0;
+  }
+  .cell {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: var(--cell);
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.cell {
+    cursor: pointer;
+  }
+  button.cell[aria-disabled="true"] {
+    cursor: default;
+  }
+  .cell:focus-visible {
+    outline: 2px solid var(--aim);
+    outline-offset: -3px;
+    z-index: 1;
+  }
+  .board[data-interactive] button.cell:not([aria-disabled="true"]):hover {
+    background: color-mix(in srgb, var(--aim) 7%, transparent);
+  }
+
+  /* Water with its grid lines and a slow light band. */
+  .board-water {
+    position: absolute;
+    z-index: 0;
+    left: var(--label);
+    top: var(--label);
+    width: calc(var(--cell) * 10);
+    height: calc(var(--cell) * 10);
+    border-radius: var(--radius-water);
+    --sea-top: var(--sea-glint);
+    background: linear-gradient(
+      160deg,
+      var(--sea-top) 0%,
+      var(--sea) 34%,
+      var(--sea-deep) 100%
+    );
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--sea-line) 70%, transparent);
+  }
+  .board-water::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, var(--sea-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--sea-line) 1px, transparent 1px);
+    background-size: var(--cell) var(--cell);
+    background-position: -1px -1px;
+    opacity: 0.9;
+  }
+  .board-water::after {
+    content: "";
+    position: absolute;
+    inset: -30% -60%;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      color-mix(in srgb, var(--sea-glint) 60%, transparent) 50%,
+      transparent 62%
+    );
+    transform: translateX(-35%);
+    animation: sea-shimmer 11s ease-in-out infinite;
+    opacity: 0.7;
+  }
+  @keyframes sea-shimmer {
+    0%,
+    100% {
+      transform: translateX(-35%);
+    }
+    50% {
+      transform: translateX(35%);
+    }
+  }
+  .board[data-sea="night"] .board-water {
+    --sea-top: color-mix(in srgb, var(--sea-glint) 16%, var(--sea));
+  }
+  .board[data-sea="night"] .board-water::after {
+    opacity: 0.18;
+  }
+
+  /* Layers over the water: ships and marks (clipped), effects (free). */
+  .board-layer {
+    position: absolute;
+    left: var(--label);
+    top: var(--label);
+    width: calc(var(--cell) * 10);
+    height: calc(var(--cell) * 10);
+    pointer-events: none;
+  }
+  .board-layer[data-layer="ships"] {
+    z-index: 1;
+    border-radius: var(--radius-water);
+    overflow: hidden;
+  }
+  .board-layer[data-layer="fx"] {
+    z-index: 3;
+  }
+
+  /* Crosshair on the target board, following hover and focus. */
+  .aim-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: color-mix(in srgb, var(--aim) 6%, transparent);
+    opacity: 0;
+    transition:
+      opacity var(--duration-fast) var(--ease-out),
+      transform 140ms var(--ease-out);
+  }
+  .aim-line[data-axis="x"] {
+    width: var(--cell);
+    height: 100%;
+    transform: translateX(calc(var(--aim-x, 0) * var(--cell)));
+  }
+  .aim-line[data-axis="y"] {
+    width: 100%;
+    height: var(--cell);
+    transform: translateY(calc(var(--aim-y, 0) * var(--cell)));
+  }
+  .aim-reticle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--cell);
+    height: var(--cell);
+    opacity: 0;
+    transform: translate(
+      calc(var(--aim-x, 0) * var(--cell)),
+      calc(var(--aim-y, 0) * var(--cell))
+    );
+    transition:
+      opacity var(--duration-fast) var(--ease-out),
+      transform 140ms var(--ease-out);
+  }
+  .aim-reticle::before,
+  .aim-reticle::after {
+    content: "";
+    position: absolute;
+    inset: 18%;
+    border-radius: 50%;
+    border: 2px solid var(--aim);
+  }
+  .aim-reticle::after {
+    inset: 44%;
+    border: 0;
+    background: var(--aim);
+  }
+  .board[data-aim] .aim-line,
+  .board[data-aim] .aim-reticle {
+    opacity: 1;
+  }
+
+  /* ─── Ships ─────────────────────────────────────────── */
+  .ship {
+    position: absolute;
+    left: calc(var(--x) * var(--cell));
+    top: calc(var(--y) * var(--cell));
+    width: calc(var(--len) * var(--cell));
+    height: var(--cell);
+    transform-origin: calc(var(--cell) / 2) 50%;
+  }
+  .ship[data-orientation="vertical"] {
+    rotate: 90deg;
+  }
+  .ship-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(
+      0 calc(var(--cell) * 0.07) calc(var(--cell) * 0.06)
+        color-mix(in srgb, var(--ship-outline) 38%, transparent)
+    );
+  }
+  .ship[data-orientation="vertical"] .ship-art {
+    filter: drop-shadow(
+      calc(var(--cell) * 0.07) 0 calc(var(--cell) * 0.06)
+        color-mix(in srgb, var(--ship-outline) 38%, transparent)
+    );
+  }
+  .ship-outline {
+    opacity: 0;
+  }
+  .ship[data-skin="silver"] .ship-outline {
+    opacity: 0.3;
+  }
+  .board[data-sea="night"] .ship-outline {
+    opacity: 0.55;
+  }
+  .ship[data-state="ghost"] {
+    opacity: 0.55;
+  }
+  .ship[data-state="invalid"] {
+    opacity: 0.35;
+  }
+  .ship[data-state="lifted"] {
+    opacity: 0.3;
+  }
+  .ship[data-state="wreck"] {
+    opacity: 0.62;
+  }
+  .ship[data-state="wreck"] .ship-art {
+    filter: grayscale(0.6) brightness(0.85);
+  }
+  .ship[data-sinking] {
+    animation: ship-sink var(--sink-ms, 950ms) var(--ease-out) both;
+  }
+  @keyframes ship-sink {
+    0% {
+      transform: translateY(0) scale(1.04);
+      opacity: 1;
+    }
+    35% {
+      transform: translateY(-4%) scale(1.02) rotate(-1deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(5%) scale(0.97) rotate(1.5deg);
+      opacity: 0.62;
+    }
+  }
+  .ship-enter {
+    animation: ship-enter 380ms var(--ease-out) both;
+  }
+  @keyframes ship-enter {
+    from {
+      transform: scale(1.12);
+      opacity: 0;
+    }
+  }
+
+  /* Placement preview cells. */
+  .preview-cell {
+    position: absolute;
+    left: calc(var(--x) * var(--cell));
+    top: calc(var(--y) * var(--cell));
+    width: var(--cell);
+    height: var(--cell);
+    padding: 2px;
+  }
+  .preview-cell::before {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--placement-ok) 18%, transparent);
+    box-shadow: inset 0 0 0 2px var(--placement-ok);
+  }
+  .preview-cell[data-bad]::before {
+    background: color-mix(in srgb, var(--placement-bad) 16%, transparent);
+    box-shadow: inset 0 0 0 2px var(--placement-bad);
+  }
+  .cursor-cell {
+    position: absolute;
+    left: calc(var(--x) * var(--cell));
+    top: calc(var(--y) * var(--cell));
+    width: var(--cell);
+    height: var(--cell);
+    border-radius: 7px;
+    box-shadow: inset 0 0 0 2px var(--aim);
+  }
+
+  /* ─── Marks left by shots ───────────────────────────── */
+  .mark {
+    position: absolute;
+    left: calc(var(--x) * var(--cell));
+    top: calc(var(--y) * var(--cell));
+    width: var(--cell);
+    height: var(--cell);
+    display: grid;
+    place-items: center;
+  }
+  .mark-dot {
+    width: 24%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--mark-miss);
+    box-shadow: 0 0 0 calc(var(--cell) * 0.09)
+      color-mix(in srgb, var(--mark-miss) 16%, transparent);
+    animation: mark-in 320ms var(--ease-out) both;
+  }
+  .mark[data-kind="hit"]::before,
+  .mark[data-kind="sunk"]::before {
+    content: "";
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--flame-mid) 45%, transparent),
+      transparent
+    );
+    animation: ember-glow 2.4s ease-in-out infinite;
+  }
+  .mark[data-kind="sunk"]::before {
+    opacity: 0.5;
+    animation: none;
+  }
+  .mark .flame,
+  .mark .shards {
+    position: relative;
+    width: 66%;
+    height: 66%;
+    overflow: visible;
+    transform-origin: 50% 90%;
+  }
+  .mark[data-kind="hit"] .flame {
+    animation: flame-flicker 1.25s ease-in-out infinite;
+  }
+  .mark[data-kind="hit"] .flame-inner {
+    animation: flame-core 0.9s ease-in-out infinite;
+    transform-origin: 50% 90%;
+  }
+  .mark[data-kind="sunk"] .flame,
+  .mark[data-kind="sunk"] .shards {
+    width: 44%;
+    height: 44%;
+    opacity: 0.85;
+  }
+  .mark[data-kind="hit"] .shards {
+    animation: shard-glint 2.6s ease-in-out infinite;
+  }
+  @keyframes mark-in {
+    from {
+      transform: scale(0.2);
+      opacity: 0;
+    }
+  }
+  @keyframes ember-glow {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(0.94);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+  }
+  @keyframes flame-flicker {
+    0%,
+    100% {
+      transform: scale(1, 1) rotate(-1deg);
+    }
+    30% {
+      transform: scale(1.05, 0.96) rotate(1.5deg);
+    }
+    60% {
+      transform: scale(0.96, 1.06) rotate(-2deg);
+    }
+  }
+  @keyframes flame-core {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(0.88, 1.08);
+      opacity: 0.85;
+    }
+  }
+  @keyframes shard-glint {
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: rotate(4deg) scale(1.04);
+      opacity: 0.85;
+    }
+  }
+
+  /* ─── Effects ───────────────────────────────────────── */
+  .fx {
+    position: absolute;
+    left: calc(var(--x) * var(--cell));
+    top: calc(var(--y) * var(--cell));
+    width: var(--cell);
+    height: var(--cell);
+    pointer-events: none;
+  }
+
+  /* Tracer: a glowing shell with a short trail, flying in from --dx/--dy. */
+  .fx-tracer-body {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    animation: tracer-fly var(--tracer-ms, 320ms) cubic-bezier(0.33, 0, 0.2, 1)
+      both;
+  }
+  .fx-tracer-dot {
+    width: 30%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      var(--spark-white) 0%,
+      var(--flame-core) 45%,
+      transparent 72%
+    );
+  }
+  .fx-tracer-trail {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--cell) * 2.4);
+    height: 3px;
+    margin-top: -1.5px;
+    border-radius: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--flame-core) 85%, transparent)
+    );
+    transform-origin: 100% 50%;
+    transform: translateX(-100%) rotate(var(--angle));
+  }
+  @keyframes tracer-fly {
+    from {
+      transform: translate(
+          calc(var(--dx) * var(--cell)),
+          calc(var(--dy) * var(--cell))
+        )
+        scale(0.7);
+      opacity: 0.2;
+    }
+    15% {
+      opacity: 1;
+    }
+    to {
+      transform: translate(0, 0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Miss: rings spreading on the water and a droplet. */
+  .fx-splash i {
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    border: 2px solid var(--sea-glint);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mark-miss) 40%, transparent);
+    animation: ripple 900ms var(--ease-out) both;
+  }
+  .fx-splash i:nth-child(2) {
+    animation-delay: 120ms;
+  }
+  .fx-splash i:nth-child(3) {
+    animation-delay: 240ms;
+  }
+  .fx-splash b {
+    position: absolute;
+    left: 42%;
+    top: 42%;
+    width: 16%;
+    height: 16%;
+    border-radius: 50%;
+    background: var(--sea-glint);
+    animation: droplet 520ms var(--ease-out) both;
+  }
+  @keyframes ripple {
+    from {
+      transform: scale(0.15);
+      opacity: 0.95;
+    }
+    to {
+      transform: scale(1.9);
+      opacity: 0;
+    }
+  }
+  @keyframes droplet {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-120%) scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(0) scale(0.4);
+      opacity: 0;
+    }
+  }
+
+  /* Hit and sunk: a flash, a shock ring and particles. */
+  .fx-flash {
+    position: absolute;
+    inset: -60%;
+    width: 220%;
+    height: 220%;
+    animation: flash 460ms var(--ease-out) both;
+  }
+  .fx-hit[data-kind="sunk"] .fx-flash {
+    inset: -110%;
+    width: 320%;
+    height: 320%;
+    animation-duration: 700ms;
+  }
+  .fx-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--flame-core);
+    animation: shock 520ms var(--ease-out) both;
+  }
+  .fx-hit[data-effect="shards"] .fx-ring {
+    border-color: var(--shard-light);
+  }
+  .fx-particle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16%;
+    height: 16%;
+    margin: -8% 0 0 -8%;
+    border-radius: 50%;
+    background: var(--flame-mid);
+    --turn: calc(var(--i) / var(--n) * 360deg);
+    animation: particle 620ms cubic-bezier(0.15, 0.7, 0.3, 1) both;
+  }
+  .fx-particle:nth-child(odd) {
+    background: var(--flame-core);
+  }
+  .fx-hit[data-effect="shards"] .fx-particle {
+    width: 22%;
+    height: 22%;
+    margin: -11% 0 0 -11%;
+    border-radius: 0;
+    background: none;
+  }
+  .fx-particle svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .fx-hit[data-kind="sunk"] .fx-particle {
+    animation-duration: 900ms;
+  }
+  @keyframes flash {
+    from {
+      transform: scale(0.25);
+      opacity: 1;
+    }
+    to {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+  @keyframes shock {
+    from {
+      transform: scale(0.3);
+      opacity: 1;
+    }
+    to {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
+  @keyframes particle {
+    from {
+      transform: rotate(var(--turn)) translateY(0) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: rotate(var(--turn)) translateY(calc(var(--cell) * -0.95))
+        rotate(160deg) scale(0.3);
+      opacity: 0;
+    }
+  }
+  .fx-bubbles i {
+    position: absolute;
+    bottom: 20%;
+    width: 14%;
+    height: 14%;
+    border-radius: 50%;
+    border: 1.5px solid var(--sea-glint);
+    animation: bubble 1100ms var(--ease-out) both;
+  }
+  .fx-bubbles i:nth-child(1) {
+    left: 18%;
+  }
+  .fx-bubbles i:nth-child(2) {
+    left: 46%;
+    animation-delay: 160ms;
+  }
+  .fx-bubbles i:nth-child(3) {
+    left: 70%;
+    animation-delay: 300ms;
+  }
+  .fx-bubbles i:nth-child(4) {
+    left: 32%;
+    animation-delay: 420ms;
+  }
+  @keyframes bubble {
+    from {
+      transform: translateY(0) scale(0.6);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    to {
+      transform: translateY(calc(var(--cell) * -0.9)) scale(1.1);
+      opacity: 0;
+    }
+  }
+
+  /* ─── Match screens ─────────────────────────────────── */
+  .match {
+    display: grid;
+    gap: 14px;
+    padding-top: 8px;
+  }
+  .match-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    min-height: 76px;
+  }
+  .side-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .side-chip[data-side="opponent"] {
+    justify-self: end;
+    flex-direction: row-reverse;
+    text-align: end;
+  }
+  .side-chip-text {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .side-chip-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .side-chip[data-side="opponent"] .side-chip-name {
+    justify-content: flex-end;
+  }
+  .side-chip-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .side-chip[data-side="opponent"] .side-chip-meta {
+    justify-content: flex-end;
+  }
+  .presence {
+    display: inline-flex;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--live);
+  }
+  .presence[data-away] {
+    background: var(--flame-mid);
+  }
+
+  /* Turn indicator: a glass pill with the countdown ring. */
+  .turn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 260px;
+    min-height: 68px;
+    padding: 8px 22px 8px 8px;
+    border-radius: var(--radius-pill);
+  }
+  .turn-text {
+    position: relative;
+    display: grid;
+    min-width: 170px;
+  }
+  .turn-line {
+    grid-area: 1 / 1;
+    display: grid;
+    gap: 2px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+  .turn-line[data-on] {
+    opacity: 1;
+    transform: none;
+  }
+  .turn-line strong {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+  .turn-line span {
+    color: var(--muted-foreground);
+    font-size: 13px;
+  }
+
+  /* Countdown ring: two half rings rotate (transform only). */
+  .ring {
+    --ring-size: 52px;
+    --ring-width: 4px;
+    --ring-color: var(--foreground);
+    position: relative;
+    flex-shrink: 0;
+    width: var(--ring-size);
+    height: var(--ring-size);
+    border-radius: 50%;
+  }
+  .ring[data-urgent] {
+    --ring-color: var(--destructive);
+  }
+  .ring-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: var(--ring-width) solid
+      color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+  .ring-half {
+    position: absolute;
+    inset: 0;
+  }
+  .ring-half[data-half="right"] {
+    clip-path: inset(0 0 0 50%);
+  }
+  .ring-half[data-half="left"] {
+    clip-path: inset(0 50% 0 0);
+  }
+  .ring-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: var(--ring-width) solid var(--ring-color);
+    transform: rotate(180deg);
+  }
+  .ring-half[data-half="right"] .ring-fill {
+    clip-path: inset(0 50% 0 0);
+    animation: ring-right var(--ring-total) linear both;
+    animation-delay: var(--ring-offset);
+  }
+  .ring-half[data-half="left"] .ring-fill {
+    clip-path: inset(0 0 0 50%);
+    animation: ring-left var(--ring-total) linear both;
+    animation-delay: var(--ring-offset);
+  }
+  @keyframes ring-right {
+    0% {
+      transform: rotate(180deg);
+    }
+    50%,
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes ring-left {
+    0%,
+    50% {
+      transform: rotate(180deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  .ring-value {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .ring[data-urgent] .ring-value {
+    color: var(--destructive);
+    animation: urgent 1s ease-in-out infinite;
+  }
+  @keyframes urgent {
+    50% {
+      transform: scale(1.12);
+    }
+  }
+  .ring-idle {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--secondary);
+  }
+  .ring-idle svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Banner slot above the boards: always the same height. */
+  .banner-slot {
+    min-height: 52px;
+    display: grid;
+  }
+  .banner {
+    grid-area: 1 / 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 10px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    animation: banner-in var(--duration-base) var(--ease-out) both;
+  }
+  .banner svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .banner[data-tone="warn"] {
+    background: color-mix(in srgb, var(--flame-mid) 16%, var(--surface));
+  }
+  .banner[data-tone="info"] {
+    background: var(--secondary);
+  }
+  .banner[data-tone="error"] {
+    background: color-mix(in srgb, var(--destructive) 10%, var(--surface));
+    color: var(--destructive);
+  }
+  .banner .spinner {
+    flex-shrink: 0;
+  }
+  .banner-action {
+    margin-inline-start: auto;
+  }
+  @keyframes banner-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
+  .boards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(20px, 3vw, 48px);
+    align-items: start;
+  }
+  .board-column {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    max-width: 560px;
+    width: 100%;
+    justify-self: center;
+  }
+  .board-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 32px;
+    padding-inline: 4px;
+  }
+  .board-caption h2 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .fleet-pips {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .fleet-pip {
+    display: flex;
+    gap: 2px;
+  }
+  .fleet-pip i {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--foreground);
+  }
+  .fleet-pip[data-gone] i {
+    background: var(--border);
+  }
+  .match-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 48px;
+  }
+  .last-shot {
+    min-height: 24px;
+    color: var(--muted-foreground);
+    font-size: 14px;
+  }
+
+  /* Placement layout. */
+  .placement {
+    display: grid;
+    grid-template-columns: minmax(0, 560px) minmax(300px, 380px);
+    justify-content: center;
+    gap: clamp(20px, 3vw, 44px);
+    align-items: start;
+  }
+  .placement-side {
+    display: grid;
+    gap: 16px;
+  }
+  .tray {
+    display: grid;
+    gap: 10px;
+  }
+  .tray-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+  }
+  .tray-ship {
+    --tray-cell: 40px;
+    position: relative;
+    display: block;
+    width: calc(var(--len) * var(--tray-cell) + 12px);
+    height: calc(var(--tray-cell) + 12px);
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    cursor: grab;
+    touch-action: none;
+    transition:
+      transform var(--duration-fast) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out);
+  }
+  .tray-ship:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  .tray-ship[aria-pressed="true"] {
+    border-color: var(--foreground);
+    background: var(--secondary);
+  }
+  .tray-ship[data-placed] {
+    opacity: 0.28;
+  }
+  .tray-ship:disabled {
+    cursor: default;
+  }
+  .tray-ship .ship-art {
+    filter: none;
+  }
+  .tray-done {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--success);
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .tool-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tool-row > button {
+    flex: 1 1 auto;
+  }
+  .kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    padding-inline: 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  .ready-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    font-size: 14px;
+    color: var(--muted-foreground);
+  }
+  .opponent-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 14px;
+    background: var(--secondary);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .opponent-status svg {
+    width: 18px;
+    height: 18px;
+  }
+  .opponent-status[data-ready] {
+    background: color-mix(in srgb, var(--success) 12%, var(--surface));
+    color: var(--success);
+  }
+
+  .placement-head {
+    display: grid;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+  .placement-head h1 {
+    font-size: clamp(30px, 3.4vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+  .placement-side .side-chip[data-side="opponent"] {
+    justify-self: start;
+    flex-direction: row;
+    text-align: start;
+  }
+  .placement-side .side-chip[data-side="opponent"] .side-chip-name,
+  .placement-side .side-chip[data-side="opponent"] .side-chip-meta {
+    justify-content: flex-start;
+  }
+  .placement-meta {
+    display: grid;
+    gap: 10px;
+  }
+  .placement-timer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .placement-side h2 {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .board[data-interactive] button.cell[data-draggable] {
+    cursor: grab;
+    touch-action: none;
+  }
+  .ready-note {
+    min-height: 58px;
+  }
+
+  /* Drag ghost follows the pointer (translate only, no layout). */
+  .drag-ghost {
+    position: fixed;
+    z-index: 60;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    width: calc(var(--len) * var(--ghost-cell));
+    height: var(--ghost-cell);
+    transform-origin: calc(var(--ghost-cell) / 2) 50%;
+    will-change: transform;
+    opacity: 0.92;
+    filter: drop-shadow(
+      0 12px 18px color-mix(in srgb, var(--foreground) 28%, transparent)
+    );
+  }
+  .drag-ghost[data-orientation="vertical"] {
+    rotate: 90deg;
+  }
+
+  /* ─── Result ────────────────────────────────────────── */
+  .result {
+    position: relative;
+    display: grid;
+    gap: 28px;
+    padding-top: 12px;
+  }
+  .result-head {
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+    max-width: 760px;
+  }
+  .result-head h1 {
+    font-size: clamp(64px, 10vw, 150px);
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    line-height: 0.9;
+  }
+  .result-head h1 .og-accent {
+    font-weight: 500;
+    font-size: 1.05em;
+  }
+  .result-head p {
+    font-size: 18px;
+    color: var(--muted-foreground);
+    line-height: 1.5;
+  }
+  .rating-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding-inline: 16px;
+    border-radius: var(--radius-pill);
+    background: var(--secondary);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .rating-delta[data-sign="up"] {
+    background: color-mix(in srgb, var(--success) 14%, var(--surface));
+    color: var(--success);
+  }
+  .rating-delta[data-sign="down"] {
+    background: color-mix(in srgb, var(--destructive) 10%, var(--surface));
+    color: var(--destructive);
+  }
+  .result-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .result-stats .stat {
+    min-width: 140px;
+    min-height: 0;
+  }
+  .result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .fireworks {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .burst {
+    position: absolute;
+    left: var(--bx);
+    top: var(--by);
+    width: 0;
+    height: 0;
+  }
+  .spark {
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--spark-color);
+    --turn: calc(var(--i) / var(--n) * 360deg);
+    animation: spark 1300ms cubic-bezier(0.12, 0.7, 0.3, 1) both;
+    animation-delay: var(--delay);
+  }
+  @keyframes spark {
+    0% {
+      transform: rotate(var(--turn)) translateY(0) scale(1.4);
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(var(--turn)) translateY(var(--reach)) scale(0.2);
+      opacity: 0;
+    }
+  }
+
+  /* ─── Replay ────────────────────────────────────────── */
+  .replay-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 12px;
+    border-radius: var(--radius-pill);
+  }
+  .replay-buttons {
+    display: flex;
+    gap: 4px;
+  }
+  .replay-slider {
+    flex: 1;
+    min-width: 160px;
+    accent-color: var(--primary);
+    height: 44px;
+  }
+  .replay-step {
+    min-width: 150px;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .replay-move {
+    min-height: 24px;
+    color: var(--muted-foreground);
+    font-size: 14px;
+  }
+
+  /* ─── Responsive ────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .placement {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 620px;
+      margin-inline: auto;
+      width: 100%;
+    }
+  }
+  @media (max-width: 900px) {
+    .boards {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .board-column[data-board="target"] {
+      order: -1;
+    }
+    .match-bar {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas: "you opp" "turn turn";
+      row-gap: 12px;
+    }
+    .match-bar > .side-chip[data-side="you"] {
+      grid-area: you;
+    }
+    .match-bar > .side-chip[data-side="opponent"] {
+      grid-area: opp;
+    }
+    .match-bar > .turn {
+      grid-area: turn;
+      justify-self: stretch;
+    }
+  }
+  @media (max-width: 767px) {
+    /* Phones: boards edge to edge, cells stay at least 32 px. */
+    .match {
+      margin-inline: -8px;
+    }
+    .board {
+      --label: 16px;
+      padding: 8px 8px 10px 4px;
+      border-radius: 18px;
+    }
+    .turn {
+      min-width: 0;
+      padding-right: 14px;
+    }
+    .turn-text {
+      min-width: 0;
+    }
+    .ring {
+      --ring-size: 46px;
+    }
+    .side-chip .avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 13px;
+    }
+    .tray-ship {
+      --tray-cell: 30px;
+    }
+    .result-stats .stat {
+      min-width: calc(50% - 6px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .board-water::after,
+    .mark[data-kind="hit"]::before,
+    .mark[data-kind="hit"] .flame,
+    .mark[data-kind="hit"] .flame-inner,
+    .mark[data-kind="hit"] .shards,
+    .ring[data-urgent] .ring-value {
+      animation: none;
+    }
+    /* Motion becomes a short fade: the meaning stays, the travel goes. */
+    .fx-tracer-body,
+    .fx-splash i,
+    .fx-splash b,
+    .fx-flash,
+    .fx-ring,
+    .fx-particle,
+    .fx-bubbles i,
+    .ship[data-sinking],
+    .ship-enter,
+    .mark-dot,
+    .banner,
+    .spark {
+      animation: fade-soft 160ms ease-out both;
+    }
+    .fx-particle,
+    .fx-bubbles,
+    .fx-tracer-trail,
+    .fireworks {
+      display: none;
+    }
+    .turn-line,
+    .aim-line,
+    .aim-reticle,
+    .board::before,
+    .tray-ship {
+      transition-duration: 1ms;
+    }
+  }
+  @keyframes fade-soft {
+    from {
+      opacity: 0;
+    }
+  }
+}
