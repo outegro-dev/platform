@@ -814,31 +814,21 @@ describe("service", () => {
         auth: { authorization: `Bearer ${await h.tokenFor(userId)}` },
       };
       const { orderId } = await buy(user, SILVER, "USD");
+      const confirmedFor = (e: AnyEvent) =>
+        e.type === billingPaymentConfirmed.type &&
+        (e.payload as { orderId: string }).orderId === orderId;
+      const grantFor = (e: AnyEvent) =>
+        e.type === billingGrantChanged.type &&
+        (e.payload as { userId: string }).userId === userId;
+      // Both are written in one transaction; the relay may publish either first.
       const deadline = Date.now() + 15_000;
-      while (Date.now() < deadline) {
-        if (
-          received.some(
-            (e) =>
-              e.type === billingPaymentConfirmed.type &&
-              (e.payload as { orderId: string }).orderId === orderId,
-          )
-        )
-          break;
+      while (
+        Date.now() < deadline &&
+        !(received.some(confirmedFor) && received.some(grantFor))
+      )
         await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      const confirmed = received.find(
-        (e) =>
-          e.type === billingPaymentConfirmed.type &&
-          (e.payload as { orderId: string }).orderId === orderId,
-      );
-      expect(confirmed?.producer).toBe("payments");
-      expect(
-        received.some(
-          (e) =>
-            e.type === billingGrantChanged.type &&
-            (e.payload as { userId: string }).userId === userId,
-        ),
-      ).toBe(true);
+      expect(received.find(confirmedFor)?.producer).toBe("payments");
+      expect(received.some(grantFor)).toBe(true);
     } finally {
       await identity.onApplicationShutdown();
       await admin.onApplicationShutdown();
