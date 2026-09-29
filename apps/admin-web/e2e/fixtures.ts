@@ -131,8 +131,28 @@ export async function useRussian(context: BrowserContext) {
   ]);
 }
 
+/**
+ * Waits for finite animations and transitions (a dialog's fade and zoom,
+ * the navigation sheet, a toast, a focus ring) to end, so contrast is
+ * measured on the final colours. Endless ones (skeleton shimmer, spinners,
+ * pulses) never end and are not waited for.
+ */
+export async function settleAnimations(page: Page) {
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (animation) =>
+          animation.playState !== "running" ||
+          animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY,
+      ),
+  );
+}
+
 /** No serious or critical accessibility violations on the current screen. */
 export async function expectAccessible(page: Page) {
+  // Mid-fade, a dialog reads as low contrast (the flaky suspend dialog).
+  await settleAnimations(page);
   // The email preview is a sandboxed document without scripts: axe cannot
   // run inside it (and its markup is the email's, not the console's).
   const results = await new AxeBuilder({ page })
