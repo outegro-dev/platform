@@ -1,7 +1,11 @@
 import { Redis } from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startValkey, type TestService } from "./testing.js";
-import { RateLimiter, ValkeyThrottlerStorage } from "./valkey.js";
+import {
+  createValkeyClient,
+  RateLimiter,
+  ValkeyThrottlerStorage,
+} from "./valkey.js";
 
 let valkey: TestService;
 let client: Redis;
@@ -67,5 +71,23 @@ describe("RateLimiter", () => {
     expect((await limiter.consume("resend:a", 1, 150)).allowed).toBe(true);
     await limiter.reset("resend:a");
     expect((await limiter.consume("resend:a", 1, 150)).remaining).toBe(0);
+  });
+});
+
+describe("createValkeyClient", () => {
+  it("prefixes every key, including those of Lua scripts, for a shared Valkey", async () => {
+    const prefixed = createValkeyClient({
+      url: valkey.url,
+      keyPrefix: "game:",
+    });
+    try {
+      await prefixed.set("plain", "1", "PX", 60_000);
+      await new RateLimiter(prefixed).consume("scripted", 5, 60_000);
+      expect(await client.get("game:plain")).toBe("1");
+      expect(await client.exists("game:bl:scripted:hits")).toBe(1);
+      expect(await client.exists("plain", "bl:scripted:hits")).toBe(0);
+    } finally {
+      await prefixed.quit();
+    }
   });
 });
