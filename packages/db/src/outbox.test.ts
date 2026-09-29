@@ -4,6 +4,11 @@ import { sql } from "drizzle-orm";
 import { integer, pgTable, text } from "drizzle-orm/pg-core";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createDatabase } from "./client.js";
+import {
+  currentCorrelation,
+  runDetached,
+  runWithCorrelation,
+} from "./correlation.js";
 import { processOnce, type Transaction } from "./inbox.js";
 import {
   claimOutboxBatch,
@@ -128,6 +133,51 @@ describe("outbox", () => {
     expect(
       await claimOutboxBatch(database.db, { limit: 1, leaseMs: 30_000 }),
     ).toEqual([]);
+  });
+
+  it("stamps the correlation of the request it runs for, keeping explicit ids", async () => {
+    const plain = event();
+    const explicit = {
+      ...event(),
+      correlationId: "order-chain-1",
+      causationId: "cmd-1",
+    };
+    await runWithCorrelation(
+      { correlationId: "req-00000001", causationId: "req-00000001" },
+      () =>
+        database.db.transaction(async (tx) => {
+          await enqueueEvent(tx, plain);
+          await enqueueEvent(tx, explicit);
+        }),
+    );
+    const envelopes = new Map(
+      (await claimOutboxBatch(database.db, { limit: 10, leaseMs: 30_000 })).map(
+        (claimed) => [claimed.eventId, claimed.envelope],
+      ),
+    );
+    expect(envelopes.get(plain.eventId)).toEqual({
+      ...plain,
+      correlationId: "req-00000001",
+      causationId: "req-00000001",
+    });
+    expect(envelopes.get(explicit.eventId)).toEqual(explicit);
+  });
+
+  it("keeps detached work out of the surrounding correlation", async () => {
+    const seen = await runWithCorrelation(
+      { correlationId: "req-00000002", causationId: "req-00000002" },
+      () =>
+        new Promise<[unknown, unknown]>((resolve) => {
+          const inside = currentCorrelation();
+          runDetached(() =>
+            setTimeout(() => resolve([inside, currentCorrelation()]), 1),
+          );
+        }),
+    );
+    expect(seen).toEqual([
+      { correlationId: "req-00000002", causationId: "req-00000002" },
+      undefined,
+    ]);
   });
 });
 

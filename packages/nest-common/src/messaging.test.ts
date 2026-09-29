@@ -1,15 +1,19 @@
 import { randomUUID } from "node:crypto";
+import { Logger } from "@nestjs/common";
 import { type AnyEvent, defineQueue } from "@outegro/contracts";
 import {
+  type Correlation,
   createDatabase,
+  currentCorrelation,
   enqueueEvent,
   inbox,
   outbox,
   processOnce,
+  runWithCorrelation,
 } from "@outegro/db";
 import { startPostgres, type TestPostgres } from "@outegro/db/testing";
 import { connect } from "amqp-connection-manager";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { HealthRegistry } from "./health.js";
 import { Messaging, PermanentError } from "./messaging.js";
 import { OutboxRelay } from "./outbox-relay.js";
@@ -159,6 +163,47 @@ describe("Messaging", () => {
     );
     await raw.close();
   });
+
+  it("handles every event as part of its correlation and logs its ids", async () => {
+    const logged = vi.spyOn(Logger.prototype, "log");
+    const seen = new Map<string, Correlation | undefined>();
+    await consumer.subscribe(
+      defineQueue("notifications", "t5", [
+        { producer: "identity", types: ["identity.user.contact.changed.v1"] },
+      ]),
+      async (e) => {
+        seen.set(e.eventId, currentCorrelation());
+      },
+    );
+    const chained = {
+      ...event("identity.user.contact.changed.v1"),
+      correlationId: "req-chain-0001",
+    };
+    const first = event("identity.user.contact.changed.v1");
+    await publisher.publish("identity.events", chained);
+    await publisher.publish("identity.events", first);
+    await waitFor(() => seen.size === 2);
+    // A chain continues with its id; an event without one starts a chain.
+    expect(seen.get(chained.eventId)).toEqual({
+      correlationId: "req-chain-0001",
+      causationId: chained.eventId,
+    });
+    expect(seen.get(first.eventId)).toEqual({
+      correlationId: first.eventId,
+      causationId: first.eventId,
+    });
+    await waitFor(() => logged.mock.calls.length >= 2);
+    expect(logged).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queue: "notifications.t5",
+        eventId: chained.eventId,
+        type: "identity.user.contact.changed.v1",
+        correlationId: "req-chain-0001",
+      }),
+      "Event handled",
+    );
+    logged.mockRestore();
+  });
 });
 
 describe("OutboxRelay", () => {
@@ -207,6 +252,43 @@ describe("OutboxRelay", () => {
     await new Promise((r) => setTimeout(r, 500));
     expect(effects.sort()).toEqual(events.map((e) => e.eventId).sort());
     expect(await relay.tick()).toBe(0);
+    relay.onApplicationShutdown();
+  });
+
+  it("carries a request's correlation through a consumer into the next event", async () => {
+    const caused = event("identity.chain.caused.v1");
+    await consumer.subscribe(
+      defineQueue("notifications", "t6", [
+        { producer: "identity", types: ["identity.chain.started.v1"] },
+      ]),
+      () => database.db.transaction((tx) => enqueueEvent(tx, caused)),
+    );
+    const relay = new OutboxRelay(database, publisher, { intervalMs: 50 });
+    const started = event("identity.chain.started.v1");
+    await runWithCorrelation(
+      { correlationId: "req-chain-0002", causationId: "req-chain-0002" },
+      () => database.db.transaction((tx) => enqueueEvent(tx, started)),
+    );
+    expect(await relay.tick()).toBe(1);
+    const envelopes = async () =>
+      new Map(
+        (await database.db.select().from(outbox)).map((row) => [
+          row.eventId,
+          row.envelope as AnyEvent,
+        ]),
+      );
+    await expect
+      .poll(async () => (await envelopes()).has(caused.eventId))
+      .toBe(true);
+    const stored = await envelopes();
+    expect(stored.get(started.eventId)).toMatchObject({
+      correlationId: "req-chain-0002",
+      causationId: "req-chain-0002",
+    });
+    expect(stored.get(caused.eventId)).toMatchObject({
+      correlationId: "req-chain-0002",
+      causationId: started.eventId,
+    });
     relay.onApplicationShutdown();
   });
 });

@@ -12,6 +12,7 @@ import {
   markOutboxPublished,
   purgePublishedOutbox,
   releaseOutboxEvent,
+  runDetached,
 } from "@outegro/db";
 import { DATABASE, type DatabaseHandle } from "./database.js";
 import { Messaging } from "./messaging.js";
@@ -75,7 +76,8 @@ export class OutboxRelay
   private schedule(delay: number) {
     if (this.stopped) return;
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.tick(), delay);
+    // Kicked from a request: later passes must not run as part of it.
+    this.timer = runDetached(() => setTimeout(() => void this.tick(), delay));
   }
 
   /** One relay pass; returns the number of events published. */

@@ -18,6 +18,7 @@ import {
   type QueueSpec,
   retryQueueName,
 } from "@outegro/contracts";
+import { runWithCorrelation } from "@outegro/db";
 import {
   type AmqpConnectionManager,
   type ChannelWrapper,
@@ -172,7 +173,12 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
       );
     } catch (error) {
       this.logger.error(
-        { queue: spec.name, err: (error as Error).message },
+        {
+          queue: spec.name,
+          messageId: message.properties.messageId,
+          correlationId: message.properties.correlationId,
+          err: (error as Error).message,
+        },
         "Invalid message",
       );
       return this.moveTo(
@@ -183,12 +189,29 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
         "invalid",
       );
     }
+    // An event without a correlation id starts its own chain.
+    const correlationId = event.correlationId ?? event.eventId;
+    const context = {
+      queue: spec.name,
+      eventId: event.eventId,
+      type: event.type,
+      correlationId,
+      attempt,
+    };
     try {
-      await handler(event, {
-        attempt,
-        redelivered: message.fields.redelivered,
-      });
+      await runWithCorrelation(
+        { correlationId, causationId: event.eventId },
+        () =>
+          handler(event, {
+            attempt,
+            redelivered: message.fields.redelivered,
+          }),
+      );
       channel.ack(message);
+      this.logger.log(
+        { ...context, lagMs: Date.now() - Date.parse(event.occurredAt) },
+        "Event handled",
+      );
     } catch (error) {
       const reason = (error as Error).message ?? "error";
       const exhausted = attempt >= spec.retryDelaysMs.length;
@@ -197,14 +220,7 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
           ? deadLetterQueueName(spec.name)
           : retryQueueName(spec.name, attempt);
       this.logger.warn(
-        {
-          queue: spec.name,
-          eventId: event.eventId,
-          type: event.type,
-          attempt,
-          target,
-          err: reason,
-        },
+        { ...context, target, err: reason },
         "Event handling failed",
       );
       await this.moveTo(channel, message, target, attempt + 1, reason);

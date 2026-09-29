@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import { createEvent, notificationDeliveryChanged } from "@outegro/contracts";
-import { enqueueEvent } from "@outegro/db";
+import { enqueueEvent, runDetached } from "@outegro/db";
 import { CLOCK, type Clock, DATABASE, OutboxRelay } from "@outegro/nest-common";
 import { and, eq, sql } from "drizzle-orm";
 import { SettingsService } from "../admin/settings.service.js";
@@ -84,7 +84,8 @@ export class DeliveryWorker
   private schedule(delay: number) {
     if (this.stopped) return;
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.tick(), delay);
+    // Kicked by one intent: the pass also sends others, so it runs detached.
+    this.timer = runDetached(() => setTimeout(() => void this.tick(), delay));
   }
 
   /** One pass over due deliveries; returns how many were handled. */
