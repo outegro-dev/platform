@@ -12,6 +12,7 @@ import {
   type Executor,
   type PaymentsDatabase,
 } from "../common/database.js";
+import { PaymentsMetrics } from "../common/metrics.js";
 import { providerEvents } from "../db/schema.js";
 import { type Fact, factSchema, type PaymentFact } from "../domain/facts.js";
 import { normalizeLavaEvent, payloadHash } from "../lava/webhook-events.js";
@@ -50,6 +51,7 @@ export class ProviderEvents {
     private readonly refunds: RefundService,
     private readonly issues: IssueRegistry,
     private readonly relay: OutboxRelay,
+    private readonly metrics: PaymentsMetrics,
   ) {}
 
   /** Webhook entry point: durable write, then processing. */
@@ -88,10 +90,19 @@ export class ProviderEvents {
             { type: event.rawType, err: describeError(error) },
             "Provider event could not be stored",
           );
+          this.metrics.webhook(payload, "error");
           throw new AppError("DEPENDENCY_UNAVAILABLE");
         },
       );
-    if (!row) return { status: "duplicate" as const };
+    if (!row) {
+      this.metrics.webhook(payload, "duplicate");
+      return { status: "duplicate" as const };
+    }
+    // Unknown types are stored for review: accepted, as Lava sees it.
+    this.metrics.webhook(
+      payload,
+      event.status === "invalid" ? "rejected_schema" : "accepted",
+    );
     if (!received) {
       this.logger.warn(
         {

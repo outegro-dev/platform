@@ -10,8 +10,14 @@ import {
   notificationRequested,
 } from "@outegro/contracts";
 import { startPostgres, type TestPostgres } from "@outegro/db/testing";
-import { CLOCK, configureApp, ManualClock } from "@outegro/nest-common";
 import {
+  CLOCK,
+  configureApp,
+  ManualClock,
+  Metrics,
+} from "@outegro/nest-common";
+import {
+  metricValue,
   startRabbit,
   startValkey,
   type TestService,
@@ -88,6 +94,7 @@ export async function startHarness() {
   Object.assign(process.env, {
     NODE_ENV: "test",
     PORT: "4998",
+    METRICS_PORT: "0",
     LOG_LEVEL: "error",
     DATABASE_URL: pg.url,
     VALKEY_URL: valkey.url,
@@ -152,6 +159,12 @@ export async function startHarness() {
     rabbitUrl: rabbit.url,
     http: () => request(app.getHttpServer()),
     tokenFor,
+    /** What Prometheus would scrape now. */
+    scrape: () => app.get(Metrics).scrape(),
+    /** Sum of the series of `name` with these labels in a fresh scrape. */
+    async metric(name: string, labels: Record<string, string> = {}) {
+      return metricValue(await app.get(Metrics).scrape(), name, labels);
+    },
     async close() {
       await app.close();
       jwksServer.close();

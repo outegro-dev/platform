@@ -9,6 +9,7 @@ import {
   DatabaseModule,
   HealthModule,
   MessagingModule,
+  MetricsModule,
   OutboxModule,
   ValkeyModule,
   ValkeyThrottlerStorage,
@@ -16,6 +17,7 @@ import {
 import {
   authConfig,
   dbConfig,
+  metricsConfig,
   rabbitConfig,
   valkeyConfig,
 } from "./config/config.js";
@@ -34,6 +36,13 @@ import { NotificationsModule } from "./notifications.module.js";
       pretty: env().NODE_ENV === "development",
     }),
     HealthModule,
+    MetricsModule.forRootAsync({
+      inject: [metricsConfig.KEY],
+      useFactory: (metrics: ConfigType<typeof metricsConfig>) => ({
+        service: "notifications-backend",
+        port: metrics.port,
+      }),
+    }),
     DatabaseModule.forRootAsync({
       schema,
       service: "notifications-backend",

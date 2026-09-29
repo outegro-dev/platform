@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import { createEvent, notificationDeliveryChanged } from "@outegro/contracts";
-import { enqueueEvent } from "@outegro/db";
+import { enqueueEvent, runDetached } from "@outegro/db";
 import { CLOCK, type Clock, DATABASE, OutboxRelay } from "@outegro/nest-common";
 import { and, eq, sql } from "drizzle-orm";
 import { SettingsService } from "../admin/settings.service.js";
@@ -21,6 +21,7 @@ import {
   UnknownOutcomeError,
 } from "../channels/providers.js";
 import type { NotificationsDatabase } from "../common/database.js";
+import { NotificationsMetrics } from "../common/metrics.js";
 import { channelsConfig } from "../config/config.js";
 import {
   deliveries,
@@ -69,6 +70,7 @@ export class DeliveryWorker
     private readonly config: ConfigType<typeof channelsConfig>,
     private readonly relay: OutboxRelay,
     private readonly settings: SettingsService,
+    private readonly metrics: NotificationsMetrics,
   ) {}
 
   onApplicationBootstrap() {
@@ -84,7 +86,8 @@ export class DeliveryWorker
   private schedule(delay: number) {
     if (this.stopped) return;
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.tick(), delay);
+    // Kicked by one intent: the pass also sends others, so it runs detached.
+    this.timer = runDetached(() => setTimeout(() => void this.tick(), delay));
   }
 
   /** One pass over due deliveries; returns how many were handled. */
@@ -285,8 +288,10 @@ export class DeliveryWorker
       }
       return true;
     });
-    if (updated) this.relay.kick();
-    else
+    if (updated) {
+      this.metrics.delivery(delivery.channel, state);
+      this.relay.kick();
+    } else
       this.logger.warn(
         { deliveryId: delivery.id },
         "Lease lost before recording outcome",

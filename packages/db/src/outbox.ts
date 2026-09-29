@@ -3,18 +3,29 @@ import type { AnyEvent } from "@outegro/contracts";
 import { eventsExchange } from "@outegro/contracts";
 import { and, eq, lt, sql } from "drizzle-orm";
 import type { Executor } from "./client.js";
+import { currentCorrelation } from "./correlation.js";
 import { outbox } from "./schema.js";
 
 /**
  * Stores an event in the same transaction as the domain change (INV-13).
  * Call with the transaction handle, never with a separate connection.
+ * Missing correlation and causation ids are taken from the request or
+ * consumed event this runs for (`runWithCorrelation`).
  */
 export async function enqueueEvent(tx: Executor, event: AnyEvent) {
+  const correlation = currentCorrelation();
+  const envelope: AnyEvent = correlation
+    ? {
+        ...event,
+        correlationId: event.correlationId ?? correlation.correlationId,
+        causationId: event.causationId ?? correlation.causationId,
+      }
+    : event;
   await tx.insert(outbox).values({
-    eventId: event.eventId,
-    type: event.type,
-    exchange: eventsExchange(event.producer),
-    envelope: event,
+    eventId: envelope.eventId,
+    type: envelope.type,
+    exchange: eventsExchange(envelope.producer),
+    envelope,
   });
 }
 
@@ -116,4 +127,18 @@ export async function purgePublishedOutbox(db: Executor, olderThan: Date) {
     )
     .returning({ eventId: outbox.eventId });
   return rows.length;
+}
+
+/**
+ * Unpublished events and the age of the oldest in seconds (0 when none),
+ * from the partial pending index: cheap enough for every metrics scrape.
+ */
+export async function outboxBacklog(db: Executor) {
+  const result = await db.execute<{ pending: number; oldest: number }>(sql`
+    select count(*)::int as pending,
+           coalesce(extract(epoch from now() - min(created_at)), 0)::float8 as oldest
+      from outbox
+     where status = 'pending'`);
+  const [row] = result.rows;
+  return { pending: row?.pending ?? 0, oldestSeconds: row?.oldest ?? 0 };
 }

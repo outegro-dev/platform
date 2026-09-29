@@ -346,12 +346,20 @@ describe("reconnect (TC-BS-06)", () => {
 
 describe("clocks", () => {
   it("nobody placing a fleet in 90 seconds aborts the match without rating", async () => {
+    const aborted = () =>
+      h.metric("battleship_matches_finished_total", {
+        mode: "private",
+        outcome: "placement_timeout",
+      });
+    const abortedBefore = await aborted();
     const { a, b, matchId } = await room();
     await h.advance(90_000);
     for (const player of [a, b])
       expect((await player.next("match.aborted")).payload.reason).toBe(
         "placement_timeout",
       );
+    // Other tests' rooms still in placement may time out on this clock too.
+    expect(await aborted()).toBeGreaterThan(abortedBefore);
     const [row] = await h.db
       .select()
       .from(matches)
@@ -414,6 +422,12 @@ describe("clocks", () => {
 describe("bots", () => {
   it("a full match against the bot, unrated, stored and announced", async () => {
     const events = await h.captureEvents(battleshipMatchFinished.type);
+    const won = () =>
+      h.metric("battleship_matches_finished_total", {
+        mode: "bot",
+        outcome: "fleet_destroyed",
+      });
+    const wonBefore = await won();
     const human = await h.connect();
     human.send("bot.start", { level: "easy" });
     const state = (await human.next("match.state")).payload.match;
@@ -425,6 +439,9 @@ describe("bots", () => {
       opponentFleetPlaced: true,
       deadline: null,
     });
+    expect(
+      await h.metric("battleship_live_matches", { mode: "bot" }),
+    ).toBeGreaterThanOrEqual(1);
     human.send("fleet.place", { ships: fleets.a });
     let turn = (await human.next("match.started")).payload.turn;
     const known = new Set<string>();
@@ -459,6 +476,7 @@ describe("bots", () => {
     const end = (await human.next("match.finished")).payload;
     expect(end.reason).toBe("fleet_destroyed");
     expect(end.rating).toBeNull();
+    expect(await won()).toBeGreaterThan(wonBefore);
     const [row] = await h.db
       .select()
       .from(matches)

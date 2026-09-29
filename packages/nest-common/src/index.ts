@@ -8,5 +8,6 @@ export * from "./health.js";
 export * from "./internal.js";
 export * from "./logging.js";
 export * from "./messaging.js";
+export * from "./metrics.js";
 export * from "./outbox-relay.js";
 export * from "./valkey.js";

@@ -4,6 +4,7 @@ import {
   authConfig,
   channelsConfig,
   dbConfig,
+  metricsConfig,
   rabbitConfig,
   valkeyConfig,
 } from "./config.js";
@@ -15,6 +16,7 @@ import { env } from "./env.js";
       dbConfig,
       valkeyConfig,
       rabbitConfig,
+      metricsConfig,
       authConfig,
       channelsConfig,
     ]),

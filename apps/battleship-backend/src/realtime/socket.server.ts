@@ -11,6 +11,7 @@ import type { ConfigType } from "@nestjs/config";
 import { HttpAdapterHost } from "@nestjs/core";
 import { CLOCK, type Clock } from "@outegro/nest-common";
 import { type RawData, type WebSocket, WebSocketServer } from "ws";
+import { BattleshipMetrics } from "../common/metrics.js";
 import { realtimeConfig } from "../config/config.js";
 import { TokenBucket } from "../domain/token-bucket.js";
 import { PlayersService } from "../players/players.service.js";
@@ -74,6 +75,7 @@ export class GameSocketServer
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(realtimeConfig.KEY)
     private readonly config: ConfigType<typeof realtimeConfig>,
+    private readonly metrics: BattleshipMetrics,
   ) {}
 
   onApplicationBootstrap() {
@@ -145,6 +147,7 @@ export class GameSocketServer
     // A wrong path is a scanner; anything else is a client that could not play.
     if (status !== 404)
       this.logger.log({ status, ...detail }, "Upgrade refused");
+    this.metrics.upgradeRefused(status);
     if (socket.writable)
       socket.write(
         `HTTP/1.1 ${status} ${statusText[status] ?? "Error"}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`,

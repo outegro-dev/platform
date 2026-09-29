@@ -32,6 +32,11 @@ export const jwksEnvSchema = z.object({
   AUTH_AUDIENCE: z.string().min(1),
 });
 
+/** Port of the separate Prometheus listener (`GET /metrics`); 0 turns it off. */
+export const metricsEnvSchema = z.object({
+  METRICS_PORT: z.coerce.number().int().min(0).max(65_535).default(9464),
+});
+
 /**
  * One validated view of process.env per service.
  *

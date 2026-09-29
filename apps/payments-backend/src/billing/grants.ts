@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { and, eq, sql } from "drizzle-orm";
 import type { Executor, GrantRow } from "../common/database.js";
+import { PaymentsMetrics } from "../common/metrics.js";
 import { grants } from "../db/schema.js";
 import { grantChanged } from "./outbox-events.js";
 
@@ -22,6 +23,8 @@ const sameInstant = (a: Date | null, b: Date | null) =>
  */
 @Injectable()
 export class GrantLedger {
+  constructor(private readonly metrics: PaymentsMetrics) {}
+
   /**
    * Makes the source's grant active until `validUntil` (null = perpetual).
    * Repeating the same values changes nothing and publishes nothing; a
@@ -58,6 +61,7 @@ export class GrantLedger {
       .returning();
     if (created) {
       await grantChanged(tx, created, at, correlationId);
+      this.metrics.grantActivated(source.sourceType);
       return created;
     }
     const current = await this.lockSource(tx, source);
@@ -68,6 +72,9 @@ export class GrantLedger {
       sameInstant(current.validUntil, window.validUntil)
     )
       return current;
+    // An active grant only moves its end (renewal); an expired one comes back.
+    if (current.state !== "active")
+      this.metrics.grantActivated(source.sourceType);
     return this.change(
       tx,
       current,

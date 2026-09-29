@@ -3,6 +3,7 @@ import {
   databaseEnvSchema,
   defineEnv,
   jwksEnvSchema,
+  metricsEnvSchema,
   rabbitEnvSchema,
   valkeyEnvSchema,
 } from "@outegro/nest-common";
@@ -22,6 +23,7 @@ export const env = defineEnv(
     .extend(valkeyEnvSchema.shape)
     .extend(rabbitEnvSchema.shape)
     .extend(jwksEnvSchema.shape)
+    .extend(metricsEnvSchema.shape)
     .extend({
       INTERNAL_API_TOKEN: z.string().min(32),
       /** smtp for local Mailpit, resend in production. */

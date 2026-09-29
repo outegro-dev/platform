@@ -7,6 +7,7 @@ import {
   Module,
   type OnApplicationShutdown,
   type OnModuleInit,
+  Optional,
 } from "@nestjs/common";
 import {
   type AnyEvent,
@@ -18,6 +19,8 @@ import {
   type QueueSpec,
   retryQueueName,
 } from "@outegro/contracts";
+import { runWithCorrelation } from "@outegro/db";
+import type { Counter, Histogram } from "@prometheus-io/client";
 import {
   type AmqpConnectionManager,
   type ChannelWrapper,
@@ -25,6 +28,7 @@ import {
 } from "amqp-connection-manager";
 import type { ConfirmChannel, ConsumeMessage } from "amqplib";
 import { HealthRegistry } from "./health.js";
+import { Metrics } from "./metrics.js";
 
 export type MessagingOptions = {
   url: string;
@@ -63,10 +67,13 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
   private readonly connection: AmqpConnectionManager;
   private readonly publisher: ChannelWrapper;
   private readonly consumers: ChannelWrapper[] = [];
+  private readonly consumed: Counter<"queue" | "outcome"> | undefined;
+  private readonly lag: Histogram<"queue"> | undefined;
 
   constructor(
     @Inject(MESSAGING_OPTIONS) options: MessagingOptions,
     private readonly health: HealthRegistry,
+    @Optional() metrics?: Metrics,
   ) {
     this.connection = connect([options.url], {
       heartbeatIntervalInSeconds: 15,
@@ -82,6 +89,17 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
       confirm: true,
       setup: (channel: ConfirmChannel) =>
         assertExchanges(channel, [eventsExchange(options.service)]),
+    });
+    this.consumed = metrics?.counter({
+      name: "messaging_events_consumed_total",
+      help: "Consumed events by queue and outcome: processed, retried or dead_lettered.",
+      labelNames: ["queue", "outcome"],
+    });
+    this.lag = metrics?.histogram({
+      name: "messaging_event_lag_seconds",
+      help: "Time from an event's occurredAt until it was handled, by queue.",
+      labelNames: ["queue"],
+      buckets: [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 300, 900],
     });
   }
 
@@ -172,9 +190,15 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
       );
     } catch (error) {
       this.logger.error(
-        { queue: spec.name, err: (error as Error).message },
+        {
+          queue: spec.name,
+          messageId: message.properties.messageId,
+          correlationId: message.properties.correlationId,
+          err: (error as Error).message,
+        },
         "Invalid message",
       );
+      this.consumed?.inc({ queue: spec.name, outcome: "dead_lettered" });
       return this.moveTo(
         channel,
         message,
@@ -183,30 +207,44 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
         "invalid",
       );
     }
+    // An event without a correlation id starts its own chain.
+    const correlationId = event.correlationId ?? event.eventId;
+    const context = {
+      queue: spec.name,
+      eventId: event.eventId,
+      type: event.type,
+      correlationId,
+      attempt,
+    };
     try {
-      await handler(event, {
-        attempt,
-        redelivered: message.fields.redelivered,
-      });
+      await runWithCorrelation(
+        { correlationId, causationId: event.eventId },
+        () =>
+          handler(event, {
+            attempt,
+            redelivered: message.fields.redelivered,
+          }),
+      );
       channel.ack(message);
+      const lagMs = Date.now() - Date.parse(event.occurredAt);
+      this.consumed?.inc({ queue: spec.name, outcome: "processed" });
+      this.lag?.observe({ queue: spec.name }, Math.max(0, lagMs) / 1000);
+      this.logger.log({ ...context, lagMs }, "Event handled");
     } catch (error) {
       const reason = (error as Error).message ?? "error";
       const exhausted = attempt >= spec.retryDelaysMs.length;
-      const target =
-        error instanceof PermanentError || exhausted
-          ? deadLetterQueueName(spec.name)
-          : retryQueueName(spec.name, attempt);
+      const dead = error instanceof PermanentError || exhausted;
+      const target = dead
+        ? deadLetterQueueName(spec.name)
+        : retryQueueName(spec.name, attempt);
       this.logger.warn(
-        {
-          queue: spec.name,
-          eventId: event.eventId,
-          type: event.type,
-          attempt,
-          target,
-          err: reason,
-        },
+        { ...context, target, err: reason },
         "Event handling failed",
       );
+      this.consumed?.inc({
+        queue: spec.name,
+        outcome: dead ? "dead_lettered" : "retried",
+      });
       await this.moveTo(channel, message, target, attempt + 1, reason);
     }
   }

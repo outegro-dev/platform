@@ -21,6 +21,10 @@ export const rabbitConfig = registerAs("rabbit", () => ({
   url: env().RABBITMQ_URL,
 }));
 
+export const metricsConfig = registerAs("metrics", () => ({
+  port: env().METRICS_PORT,
+}));
+
 export const tokenConfig = registerAs("tokens", () => ({
   issuer: env().AUTH_ISSUER,
   audience: env().AUTH_AUDIENCE,

@@ -9,6 +9,7 @@ import {
 import type { ConfigType } from "@nestjs/config";
 import { AppError } from "@outegro/nest-common";
 import type { Request } from "express";
+import { PaymentsMetrics } from "../common/metrics.js";
 import { lavaConfig } from "../config/config.js";
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
@@ -24,7 +25,10 @@ export class LavaWebhookGuard implements CanActivate {
   private readonly logger = new Logger("LavaWebhook");
   private readonly expected: Buffer;
 
-  constructor(@Inject(lavaConfig.KEY) config: ConfigType<typeof lavaConfig>) {
+  constructor(
+    @Inject(lavaConfig.KEY) config: ConfigType<typeof lavaConfig>,
+    private readonly metrics: PaymentsMetrics,
+  ) {
     this.expected = digest(config.webhookSecret);
   }
 
@@ -37,6 +41,7 @@ export class LavaWebhookGuard implements CanActivate {
         { ip: request.ip },
         "Webhook with a wrong or missing credential",
       );
+      this.metrics.webhook(request.body, "rejected_auth");
       throw new AppError("UNAUTHENTICATED");
     }
     return true;

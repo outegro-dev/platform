@@ -20,6 +20,10 @@
 
 Images immutable by digest/commit. Migration Job получает отдельную role, lock и deadline. Failed migration блокирует соответствующий rollout. App readiness и migration success различаются. Secrets не хранятся plaintext в Git. Network policies проверены реальными запросами. Liveness не рестартует app только из-за временного provider outage.
 
+## Метрики
+
+Каждый NestJS-сервис (auth-backend, notifications-backend, payments-backend, battleship-backend) отдаёт метрики Prometheus на отдельном порту `METRICS_PORT`, по умолчанию `9464`: только `GET /metrics`, `0` выключает listener. Этот порт не входит в Ingress и Service для трафика пользователей: Prometheus собирает его внутри кластера, NetworkPolicy пускает к нему только Prometheus. Список метрик, правила меток и логи — [observability](../06-operations/observability.md).
+
 ## Адрес клиента
 
 От него зависят лимиты входа (`login:ip`) и список сеансов. Production работает за прокси Cloudflare (решение владельца 29.09.2026), поэтому цепочка такая:

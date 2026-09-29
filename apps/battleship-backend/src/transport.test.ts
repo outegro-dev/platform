@@ -3,6 +3,7 @@ import {
   defaultCosmetics,
   wsTicketSchema,
 } from "@outegro/contracts/battleship";
+import { idLikeLabelValues, metricValue } from "@outegro/nest-common/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import { ConnectionRegistry } from "./realtime/connection.registry.js";
@@ -19,6 +20,8 @@ afterAll(() => h?.close());
 
 const open = (ticket: string | null, origin: string | null = ORIGIN) =>
   TestSocket.open(h.socketUrl(ticket), origin);
+const refused = (status: string) =>
+  h.metric("battleship_socket_upgrades_refused_total", { status });
 
 describe("handshake", () => {
   it("a fresh ticket opens the socket once, and session.ready comes first", async () => {
@@ -63,6 +66,7 @@ describe("handshake", () => {
   });
 
   it("refuses missing and forged tickets and other paths", async () => {
+    const before = await Promise.all([refused("401"), refused("404")]);
     await expect(open(null)).rejects.toThrow("HTTP 401");
     await expect(open("A".repeat(43))).rejects.toThrow("HTTP 401");
     await expect(open("short")).rejects.toThrow("HTTP 401");
@@ -73,12 +77,19 @@ describe("handshake", () => {
         ORIGIN,
       ),
     ).rejects.toThrow("HTTP 404");
+    const [unauthorized = 0, notFound = 0] = before;
+    expect(await Promise.all([refused("401"), refused("404")])).toEqual([
+      unauthorized + 3,
+      notFound + 1,
+    ]);
   });
 
   it("refuses origins that are not allowed, without spending the ticket", async () => {
+    const forbidden = await refused("403");
     const ticket = await h.ticketFor(randomUUID());
     await expect(open(ticket, "https://evil.test")).rejects.toThrow("HTTP 403");
     await expect(open(ticket, null)).rejects.toThrow("HTTP 403");
+    expect(await refused("403")).toBe(forbidden + 2);
     const socket = await open(ticket);
     await socket.next("session.ready");
     await socket.close();
@@ -260,7 +271,12 @@ describe("service", () => {
     const tabs = await Promise.all(
       Array.from({ length: 8 }, () => h.connect(userId)),
     );
+    const tooMany = await refused("429");
     await expect(open(await h.ticketFor(userId))).rejects.toThrow("HTTP 429");
+    expect(await refused("429")).toBe(tooMany + 1);
+    await expect
+      .poll(() => h.metric("battleship_game_sockets"))
+      .toBeGreaterThanOrEqual(8);
     await tabs[0]?.close();
     await expect
       .poll(() => h.get(ConnectionRegistry).socketsOf(userId))
@@ -286,5 +302,34 @@ describe("shared Valkey", () => {
       expect(await h.valkey.pttl(key)).toBeGreaterThan(0);
     }
     await Promise.all([waiting.close(), host.close()]);
+  });
+});
+
+describe("metrics (OPS-04)", () => {
+  it("time routes by template, leave probes out and label nothing by id", async () => {
+    const userId = randomUUID();
+    await h.http().get(`/v1/admin/players/${userId}`).expect(401);
+    await h.http().get(`/v1/no-such/${userId}`).expect(404);
+    const scrape = await h.scrape();
+    const requests = (labels: Record<string, string>) =>
+      metricValue(scrape, "http_server_requests_total", labels);
+    expect(
+      requests({
+        method: "GET",
+        route: "/v1/admin/players/:id",
+        status_class: "4xx",
+      }),
+    ).toBe(1);
+    expect(
+      requests({
+        method: "POST",
+        route: "/v1/ws-tickets",
+        status_class: "2xx",
+      }),
+    ).toBeGreaterThan(0);
+    expect(requests({ route: "unmatched" })).toBeGreaterThan(0);
+    expect(scrape).not.toContain('route="/health');
+    expect(scrape).not.toContain(userId);
+    expect(idLikeLabelValues(scrape)).toEqual([]);
   });
 });

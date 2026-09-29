@@ -9,6 +9,7 @@ import {
   DatabaseModule,
   HealthModule,
   MessagingModule,
+  MetricsModule,
   OutboxModule,
   ValkeyModule,
   ValkeyThrottlerStorage,
@@ -18,6 +19,7 @@ import {
   authConfig,
   dbConfig,
   httpConfig,
+  metricsConfig,
   rabbitConfig,
   valkeyConfig,
 } from "./config/config.js";
@@ -35,6 +37,13 @@ import * as schema from "./db/schema.js";
       pretty: env().NODE_ENV === "development",
     }),
     HealthModule,
+    MetricsModule.forRootAsync({
+      inject: [metricsConfig.KEY],
+      useFactory: (metrics: ConfigType<typeof metricsConfig>) => ({
+        service: "battleship-backend",
+        port: metrics.port,
+      }),
+    }),
     DatabaseModule.forRootAsync({
       schema,
       service: "battleship-backend",

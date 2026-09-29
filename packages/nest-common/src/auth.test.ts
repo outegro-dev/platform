@@ -39,6 +39,7 @@ import {
 import { configureApp } from "./bootstrap.js";
 import { createServiceTokenGuard } from "./internal.js";
 import { createLoggerModule } from "./logging.js";
+import { MetricsModule } from "./metrics.js";
 
 const ISSUER = "https://id.outegro.dev";
 const AUDIENCE = "outegro";
@@ -165,6 +166,9 @@ beforeAll(async () => {
   @Module({
     imports: [
       createLoggerModule({ service: "test", level: "silent" }),
+      MetricsModule.forRootAsync({
+        useFactory: () => ({ service: "test", port: 0 }),
+      }),
       AuthModule.forRootAsync({
         useFactory: () => ({
           issuer: ISSUER,

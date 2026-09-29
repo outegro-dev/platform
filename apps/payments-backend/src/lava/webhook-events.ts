@@ -40,6 +40,24 @@ const paymentTypes = [
 ] as const;
 const SUCCESS_STATUSES = new Set(["completed", "subscription-active"]);
 
+/** Every event type this adapter understands. */
+const knownTypes: readonly unknown[] = [
+  ...paymentTypes,
+  "subscription.cancelled",
+  "refund.success",
+  "chargeback.initiated",
+];
+
+/** The type a payload claims when it is a known one, else `other` (metrics). */
+export function eventTypeLabel(payload: unknown): string {
+  const record =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
+  const type = record.eventType ?? record.event_type;
+  return knownTypes.includes(type) ? String(type) : "other";
+}
+
 const id = z.string().trim().min(1).max(128);
 const amount = z.union([
   z.number().finite().nonnegative(),

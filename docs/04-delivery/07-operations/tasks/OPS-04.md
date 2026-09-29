@@ -1,6 +1,6 @@
 # OPS-04. Метрики/логи/correlation
 
-Status: planned
+Status: in_progress
 Scope: base-release
 Stage: 07-operations
 

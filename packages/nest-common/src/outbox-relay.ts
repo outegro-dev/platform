@@ -6,15 +6,19 @@ import {
   Module,
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
+  Optional,
 } from "@nestjs/common";
 import {
   claimOutboxBatch,
   markOutboxPublished,
+  outboxBacklog,
   purgePublishedOutbox,
   releaseOutboxEvent,
+  runDetached,
 } from "@outegro/db";
 import { DATABASE, type DatabaseHandle } from "./database.js";
 import { Messaging } from "./messaging.js";
+import { Metrics } from "./metrics.js";
 
 export type OutboxRelayOptions = {
   /** Poll interval when idle (default 1 s); `kick()` publishes sooner. */
@@ -51,11 +55,30 @@ export class OutboxRelay
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     private readonly messaging: Messaging,
     @Inject(RELAY_OPTIONS) options: OutboxRelayOptions,
+    @Optional() metrics?: Metrics,
   ) {
     this.intervalMs = options.intervalMs ?? 1000;
     this.batchSize = options.batchSize ?? 50;
     this.leaseMs = options.leaseMs ?? 30_000;
     this.retentionMs = options.retentionMs ?? 7 * 24 * 3600 * 1000;
+    if (metrics) this.measure(metrics);
+  }
+
+  /** Backlog gauges: a growing age means the broker or the relay is stuck. */
+  private measure(metrics: Metrics) {
+    const pending = metrics.gauge({
+      name: "outbox_pending_events",
+      help: "Committed events not yet published to RabbitMQ.",
+    });
+    const oldest = metrics.gauge({
+      name: "outbox_oldest_pending_age_seconds",
+      help: "Age of the oldest unpublished event; 0 when none.",
+    });
+    metrics.readOnScrape("outbox", [pending, oldest], async () => {
+      const backlog = await outboxBacklog(this.database.db);
+      pending.set(backlog.pending);
+      oldest.set(backlog.oldestSeconds);
+    });
   }
 
   onApplicationBootstrap() {
@@ -75,7 +98,8 @@ export class OutboxRelay
   private schedule(delay: number) {
     if (this.stopped) return;
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.tick(), delay);
+    // Kicked from a request: later passes must not run as part of it.
+    this.timer = runDetached(() => setTimeout(() => void this.tick(), delay));
   }
 
   /** One relay pass; returns the number of events published. */

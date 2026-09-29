@@ -18,6 +18,7 @@ import {
 import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import type { ClientContext } from "../common/client-context.js";
 import type { AuthDatabase } from "../common/database.js";
+import { IdentityMetrics } from "../common/metrics.js";
 import { loginConfig } from "../config/config.js";
 import { loginChallenges } from "../db/schema.js";
 import { SessionsService } from "../sessions/sessions.service.js";
@@ -39,6 +40,7 @@ export class LoginService {
     private readonly users: UsersService,
     private readonly sessions: SessionsService,
     private readonly relay: OutboxRelay,
+    private readonly metrics: IdentityMetrics,
   ) {}
 
   /**
@@ -76,6 +78,7 @@ export class LoginService {
       { challengeId, email, code, locale, expiresAt: expiresAt.toISOString() },
       client.requestId,
     );
+    this.metrics.loginCode(status);
     await this.database.db
       .update(loginChallenges)
       .set({ deliveryStatus: status })
@@ -92,7 +95,18 @@ export class LoginService {
   }
 
   /** Step 2. A code works once, before expiry, within the attempt budget. */
-  async verify(challengeId: string, code: string, client: ClientContext) {
+  verify(challengeId: string, code: string, client: ClientContext) {
+    return this.metrics.signIn(
+      "email",
+      this.checkCode(challengeId, code, client),
+    );
+  }
+
+  private async checkCode(
+    challengeId: string,
+    code: string,
+    client: ClientContext,
+  ) {
     if (client.ip)
       await this.limit(`login:verify-ip:${client.ip}`, 30, 600_000);
     const now = this.clock.now();
