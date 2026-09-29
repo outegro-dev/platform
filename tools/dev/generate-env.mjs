@@ -12,6 +12,7 @@ const apps = [
   { dir: "apps/auth-backend", file: ".env" },
   { dir: "apps/notifications-backend", file: ".env" },
   { dir: "apps/id-web", file: ".env.local" },
+  { dir: "apps/admin-web", file: ".env.local" },
 ];
 const secret = () => randomBytes(32).toString("base64url");
 const { privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
