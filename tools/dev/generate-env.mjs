@@ -1,5 +1,6 @@
 // Writes local env files from each app's .env.example with fresh local
-// secrets (ES256 key, pepper, shared service token). Local development only.
+// secrets (ES256 key, pepper, shared service token, Lava webhook secret).
+// Local development only.
 //   pnpm env:local            create missing files; add variables that appeared
 //                             in .env.example to existing ones, keeping secrets
 //   pnpm env:local --force    regenerate everything
@@ -11,6 +12,7 @@ const force = process.argv.includes("--force");
 const apps = [
   { dir: "apps/auth-backend", file: ".env" },
   { dir: "apps/notifications-backend", file: ".env" },
+  { dir: "apps/payments-backend", file: ".env" },
   { dir: "apps/id-web", file: ".env.local" },
 ];
 const secret = () => randomBytes(32).toString("base64url");
@@ -19,6 +21,8 @@ const shared = {
   JWT_PRIVATE_KEY: JSON.stringify(privateKey.export({ type: "pkcs8", format: "pem" }).toString()),
   LOGIN_CODE_PEPPER: secret(),
   INTERNAL_API_TOKEN: secret(),
+  // What a local Lava webhook sender puts in X-Api-Key; never the API key itself.
+  LAVA_WEBHOOK_SECRET: secret(),
 };
 
 const variable = /^([A-Z][A-Z0-9_]*)=/;
