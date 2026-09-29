@@ -9,6 +9,7 @@ import {
   messageKeyFor,
   notificationRequested,
   permissionsOf,
+  platformRoles,
   retryQueueName,
 } from "./index.js";
 
@@ -122,6 +123,29 @@ describe("access", () => {
     expect(permissionsOf(["pro", "subscriber"]).size).toBe(0);
     expect(permissionsOf(["support"]).has("roles.assign")).toBe(false);
     expect(permissionsOf(["owner"]).has("roles.assign")).toBe(true);
+  });
+
+  it("opens monitoring to owners, auditors and service operators only", () => {
+    const withMonitoring = Object.keys(platformRoles).filter((role) =>
+      permissionsOf([role]).has("monitoring.read"),
+    );
+    expect(withMonitoring.sort()).toEqual([
+      "auditor",
+      "owner",
+      "service_operator",
+    ]);
+    // Monitoring is read access: it brings no other permission with it.
+    expect([...permissionsOf(["auditor"])].sort()).toEqual([
+      "audit.read",
+      "billing.read",
+      "monitoring.read",
+    ]);
+    expect([...permissionsOf(["service_operator"])].sort()).toEqual([
+      "events.replay",
+      "monitoring.read",
+      "services.flags",
+      "services.read",
+    ]);
   });
 });
 
