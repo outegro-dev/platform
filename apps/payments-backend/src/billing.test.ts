@@ -500,20 +500,24 @@ describe("checkout (PAY-03)", () => {
     expect(
       await db.select().from(orders).where(eq(orders.userId, user.userId)),
     ).toHaveLength(1);
-    // The one that waited saw the call in flight; asking again brings its page.
-    const waited = results.findIndex((res) => res.body.state === "requesting");
-    const other = results[1 - waited];
-    expect(waited).toBeGreaterThanOrEqual(0);
-    const again = await checkout(
-      user,
-      { productKey: PREMIUM, currency: "USD" },
-      keys[waited],
-    ).expect(200);
-    expect(again.body).toMatchObject({
-      orderId: other?.body.orderId,
+    // The one that waited may have seen the call in flight (no page yet);
+    // asked again, either key brings the same page.
+    const again = [];
+    for (const key of keys)
+      again.push(
+        await checkout(
+          user,
+          { productKey: PREMIUM, currency: "USD" },
+          key,
+        ).expect(200),
+      );
+    const [page, ...others] = again.map((res) => res.body);
+    expect(page).toMatchObject({
+      orderId: results[0]?.body.orderId,
       state: "ready",
-      paymentUrl: other?.body.paymentUrl,
+      paymentUrl: expect.stringMatching(/^https:\/\/app\.lava\.top\/pay\//),
     });
+    expect(others).toEqual([page]);
     expect(h.lava.createCalls - before).toBe(1);
   });
 
