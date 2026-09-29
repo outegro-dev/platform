@@ -3,6 +3,7 @@ import type { ConfigType } from "@nestjs/config";
 import { CLOCK, type Clock, DATABASE, OutboxRelay } from "@outegro/nest-common";
 import { and, eq, isNotNull, lte, ne, sql } from "drizzle-orm";
 import { GrantLedger } from "../billing/grants.js";
+import { BillingNotices } from "../billing/notices.js";
 import { subscriptionChanged } from "../billing/outbox-events.js";
 import type { PaymentsDatabase } from "../common/database.js";
 import { workersConfig } from "../config/config.js";
@@ -26,6 +27,7 @@ export class ExpiryWorker extends PeriodicWorker {
     @Inject(DATABASE) private readonly database: PaymentsDatabase,
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly grants: GrantLedger,
+    private readonly notices: BillingNotices,
     private readonly relay: OutboxRelay,
     @Inject(workersConfig.KEY) config: ConfigType<typeof workersConfig>,
   ) {
@@ -120,7 +122,10 @@ export class ExpiryWorker extends PeriodicWorker {
         })
         .where(eq(subscriptions.id, row.id))
         .returning();
-      if (updated) await subscriptionChanged(tx, updated, now);
+      if (updated) {
+        const eventId = await subscriptionChanged(tx, updated, now);
+        await this.notices.subscriptionExpired(tx, updated, eventId, now);
+      }
       const grant = await this.grants.lockSource(tx, {
         sourceType: "subscription",
         sourceId: row.id,

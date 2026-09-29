@@ -8,6 +8,7 @@ import { CurrentAccessGuard } from "./admin/current-access.guard.js";
 import { CancellationService } from "./billing/cancellation.js";
 import { GrantLedger } from "./billing/grants.js";
 import { IssueRegistry } from "./billing/issues.js";
+import { BillingNotices } from "./billing/notices.js";
 import { ProviderEvents } from "./billing/provider-events.js";
 import { RefundService } from "./billing/refunds.js";
 import { SettlementService } from "./billing/settlement.js";
@@ -53,6 +54,7 @@ import { ReconciliationWorker } from "./workers/reconciliation.worker.js";
     CustomersService,
     GrantLedger,
     IssueRegistry,
+    BillingNotices,
     SettlementService,
     CancellationService,
     RefundService,

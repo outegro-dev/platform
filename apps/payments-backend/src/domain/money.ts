@@ -65,7 +65,3 @@ export function moneyDto(minor: bigint, currency: Currency) {
     scale: currencyScale[currency],
   };
 }
-
-/** For messages to people: "0.59 USD". */
-export const displayMoney = (minor: bigint, currency: Currency) =>
-  `${formatMinor(minor, currency)} ${currency}`;

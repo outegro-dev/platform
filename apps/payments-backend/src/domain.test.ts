@@ -5,13 +5,7 @@ import {
   grantInForce,
   subscriptionLifecycle,
 } from "./domain/lifecycle.js";
-import {
-  displayMoney,
-  formatMinor,
-  MoneyError,
-  moneyDto,
-  toMinor,
-} from "./domain/money.js";
+import { formatMinor, MoneyError, moneyDto, toMinor } from "./domain/money.js";
 import { addMonthsUtc, paidInterval } from "./domain/periods.js";
 import { normalizeLavaEvent, payloadHash } from "./lava/webhook-events.js";
 import { lavaPayloads } from "./test/lava-payloads.js";
@@ -33,7 +27,6 @@ describe("money (PAY-02)", () => {
       currency: "USD",
       scale: 2,
     });
-    expect(displayMoney(5000n, "RUB")).toBe("50.00 RUB");
   });
 
   it("refuses values it would have to round or cannot read", () => {

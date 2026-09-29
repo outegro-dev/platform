@@ -36,6 +36,11 @@ export const checkoutConfig = registerAs("checkout", () => {
   };
 });
 
+/** pay-web: the pages that messages to buyers link to. */
+export const payWebConfig = registerAs("payWeb", () => ({
+  url: env().PAY_WEB_URL,
+}));
+
 export const lavaConfig = registerAs("lava", () => ({
   baseUrl: env().LAVA_API_URL,
   apiKey: env().LAVA_API_KEY,
