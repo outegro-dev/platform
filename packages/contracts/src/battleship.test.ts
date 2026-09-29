@@ -5,6 +5,7 @@ import {
   cosmeticUnlocked,
   defaultCosmetics,
   effectiveCosmetics,
+  leaderboardSchema,
   nicknameSchema,
   roomCodeSchema,
   serverMessageSchema,
@@ -60,6 +61,25 @@ describe("server messages", () => {
       },
     });
     expect(parsed.type).toBe("shot.result");
+  });
+
+  it("tells both players when a match ends without a result", () => {
+    for (const reason of ["placement_timeout", "moderation"]) {
+      expect(
+        serverMessageSchema.safeParse({
+          type: "match.aborted",
+          seq: 3,
+          payload: { reason },
+        }).success,
+      ).toBe(true);
+    }
+    expect(
+      serverMessageSchema.safeParse({
+        type: "match.aborted",
+        seq: 3,
+        payload: { reason: "bored" },
+      }).success,
+    ).toBe(false);
   });
 
   it("never carries user ids in a match snapshot", () => {
@@ -127,6 +147,33 @@ describe("profile input", () => {
     expect(nicknameSchema.safeParse("<script>").success).toBe(false);
     expect(roomCodeSchema.safeParse("K7M2QX").success).toBe(true);
     expect(roomCodeSchema.safeParse("K0M2QX").success).toBe(false);
+  });
+
+  it("ranks the weekly board by points gained, shown next to the rating", () => {
+    const row = {
+      rank: 1,
+      nickname: "Sailor 4821",
+      rating: 1048,
+      wins: 3,
+      matches: 4,
+      premium: false,
+    };
+    const week = leaderboardSchema.parse({
+      period: "week",
+      since: "2026-09-28T00:00:00.000Z",
+      items: [{ ...row, gained: 48 }],
+      you: { rank: null, rating: 1000, wins: 0, matches: 0, gained: 0 },
+    });
+    expect(week.items[0]?.gained).toBe(48);
+    // All-time rows need no weekly gain.
+    expect(
+      leaderboardSchema.safeParse({
+        period: "all",
+        since: null,
+        items: [row],
+        you: null,
+      }).success,
+    ).toBe(true);
   });
 
   it("rejects an empty update", () => {
