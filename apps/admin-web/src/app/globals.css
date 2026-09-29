@@ -30,17 +30,16 @@
 }
 
 @layer base {
-  /* The canvas carries the light, so the reserved scrollbar gutter (which
-     keeps streamed content from shifting) matches the page. Both glows fade
-     out inside the first screen and scroll away with it (no fixed
-     backgrounds: iOS ignores them and tall captures tile them); eased stops
-     keep the edge of each glow invisible. */
+  /* Two soft glows on the canvas. Both fade out inside the first screen and
+     well before the right edge: the reserved scrollbar gutter (which keeps
+     streamed content from shifting) only ever shows the base color, so it
+     never reads as a seam. Eased stops keep the rim of each glow invisible. */
   html {
     scrollbar-gutter: stable;
     background-color: var(--background);
     background-image:
       radial-gradient(
-        1100px 520px at 88% -8%,
+        900px 460px at 55% -12%,
         color-mix(in oklab, var(--secondary) 90%, transparent) 0%,
         color-mix(in oklab, var(--secondary) 55%, transparent) 30%,
         color-mix(in oklab, var(--secondary) 22%, transparent) 50%,

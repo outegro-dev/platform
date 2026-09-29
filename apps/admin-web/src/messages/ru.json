@@ -1054,6 +1054,7 @@
       "rate": "Доля оплат",
       "pending": "{count} ещё ожидают",
       "rangeLabel": "Период",
+      "connection": "Подключение",
       "days": "{count, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
     },
     "catalog": {

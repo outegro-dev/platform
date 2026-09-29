@@ -1054,6 +1054,7 @@
       "rate": "Paid share",
       "pending": "{count} still pending",
       "rangeLabel": "Period",
+      "connection": "Connection",
       "days": "{count} days"
     },
     "catalog": {

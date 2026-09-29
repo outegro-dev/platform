@@ -2,7 +2,7 @@ import { StorefrontIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Suspense } from "react";
+import { type ReactNode, Suspense } from "react";
 import { DailyBars } from "@/components/ui/charts";
 import { DataTable } from "@/components/ui/data";
 import { Panel, Stat, Status } from "@/components/ui/layout";
@@ -284,6 +284,22 @@ async function Stats({ range }: { range: (typeof RANGES)[number] }) {
   );
 }
 
+/**
+ * While Payments is not connected (unset, or not answering) the overview is
+ * one calm panel instead of one per section. The catalog read is the
+ * cheapest probe, and the Sales panel reuses it from the request cache.
+ */
+async function WhenConnected({ children }: { children: ReactNode }) {
+  const catalog = await paymentsCatalog();
+  if (catalog.ok || catalog.kind !== "not-connected") return children;
+  const t = await getTranslations("payments.overview");
+  return (
+    <Panel id="connection" title={t("connection")} kind="not-connected">
+      <FailureState failure={catalog} what={t("what")} service={t("service")} />
+    </Panel>
+  );
+}
+
 async function CatalogPanel() {
   const t = await getTranslations("payments.catalog");
   const label = await getLabels();
@@ -355,43 +371,43 @@ export default async function PaymentsOverviewPage({
   const range = oneOf(params, "range", RANGES) ?? "30";
   const t = await getTranslations("payments.overview");
   return (
-    <>
-      <Suspense
-        fallback={
-          <PanelSkeleton label={t("sales")} rows={0} className="h-panel-sm" />
-        }
-      >
+    <Suspense
+      fallback={
+        <PanelSkeleton label={t("sales")} rows={0} className="h-panel-sm" />
+      }
+    >
+      <WhenConnected>
         <Sales />
-      </Suspense>
-      <nav className="segmented self-start" aria-label={t("rangeLabel")}>
-        {RANGES.map((value) => (
-          <Link
-            key={value}
-            href={value === "30" ? "/payments" : `/payments?range=${value}`}
-            aria-current={value === range ? "true" : undefined}
-          >
-            {t("days", { count: Number(value) })}
-          </Link>
-        ))}
-      </nav>
-      <Suspense
-        key={range}
-        fallback={
-          <PanelSkeleton
-            label={t("revenue")}
-            chart
-            rows={2}
-            className="h-panel"
-          />
-        }
-      >
-        <Stats range={range} />
-      </Suspense>
-      <Suspense
-        fallback={<PanelSkeleton label={t("sales")} stats={0} rows={3} />}
-      >
-        <CatalogPanel />
-      </Suspense>
-    </>
+        <nav className="segmented self-start" aria-label={t("rangeLabel")}>
+          {RANGES.map((value) => (
+            <Link
+              key={value}
+              href={value === "30" ? "/payments" : `/payments?range=${value}`}
+              aria-current={value === range ? "true" : undefined}
+            >
+              {t("days", { count: Number(value) })}
+            </Link>
+          ))}
+        </nav>
+        <Suspense
+          key={range}
+          fallback={
+            <PanelSkeleton
+              label={t("revenue")}
+              chart
+              rows={2}
+              className="h-panel"
+            />
+          }
+        >
+          <Stats range={range} />
+        </Suspense>
+        <Suspense
+          fallback={<PanelSkeleton label={t("sales")} stats={0} rows={3} />}
+        >
+          <CatalogPanel />
+        </Suspense>
+      </WhenConnected>
+    </Suspense>
   );
 }
