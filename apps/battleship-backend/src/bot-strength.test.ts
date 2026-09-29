@@ -88,11 +88,23 @@ describe("bot strength over the socket (TC-BS-05)", () => {
     return wins.reduce((sum, n) => sum + n, 0) / games;
   }
 
-  it("the expert bot beats a random shooter in at least 95% of 200 games", async () => {
-    expect(await botWinRate("expert", 200)).toBeGreaterThanOrEqual(0.95);
-  }, 180_000);
+  // 200 games take 40-100 s on a busy machine and at times over 180 s: the
+  // budget covers a loaded runner, the assertion stays the same.
+  const budgetMs = 600_000;
 
-  it("the medium bot beats a random shooter in at least 70% of 200 games", async () => {
-    expect(await botWinRate("medium", 200)).toBeGreaterThanOrEqual(0.7);
-  }, 180_000);
+  it(
+    "the expert bot beats a random shooter in at least 95% of 200 games",
+    async () => {
+      expect(await botWinRate("expert", 200)).toBeGreaterThanOrEqual(0.95);
+    },
+    budgetMs,
+  );
+
+  it(
+    "the medium bot beats a random shooter in at least 70% of 200 games",
+    async () => {
+      expect(await botWinRate("medium", 200)).toBeGreaterThanOrEqual(0.7);
+    },
+    budgetMs,
+  );
 });
