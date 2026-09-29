@@ -34,6 +34,23 @@ function accessOf(grant: GrantRow, at: Date) {
 }
 
 /**
+ * What a refund left of the access its payment was for: still in force,
+ * ended, or withheld: the payment never opened any, because its grant was
+ * withheld as a duplicate, or had been revoked before the payment was
+ * recorded (a renewal charged after a revoke; its receipt said withheld
+ * too). A grant the refund itself revokes ended.
+ */
+function refundAccessOf(grant: GrantRow | null, payment: PaymentRow, at: Date) {
+  if (
+    grant &&
+    (neverGranted(grant) ||
+      (grant.revokedAt !== null && grant.revokedAt < payment.confirmedAt))
+  )
+    return "withheld";
+  return grant && grantInForce(grant, at) ? "active" : "ended";
+}
+
+/**
  * Messages to the buyer, requested through the outbox in the transaction
  * of the fact they report (INV-13). Access is described exactly as the
  * grant stands in that transaction, never ahead of it; amounts go in minor
@@ -153,7 +170,10 @@ export class BillingNotices {
     );
   }
 
-  /** A refund applied to its payment; `grant` is the payment's grant after it. */
+  /**
+   * A refund applied to its payment; `grant` is the payment's grant after
+   * it. A payment that never opened access is not told its access ended.
+   */
   async refundRecorded(
     tx: Executor,
     input: { refund: RefundRow; payment: PaymentRow; grant: GrantRow | null },
@@ -161,20 +181,23 @@ export class BillingNotices {
     correlationId?: string,
   ) {
     const { refund, payment, grant } = input;
+    const access = refundAccessOf(grant, payment, at);
     await this.request(
       tx,
       {
         // One message per refund, whichever event recorded it.
         sourceEventId: refund.id,
         userId: payment.userId,
-        templateKey: "billing.refund-recorded.v1",
+        templateKey: "billing.refund-recorded.v2",
         data: {
           ...(await this.product(tx, payment.orderId)),
           ...this.money(
             refund.amountMinor ?? payment.amountMinor,
             payment.currency,
           ),
-          accessUntil: this.inForceUntil(grant, at),
+          access,
+          accessUntil:
+            access === "active" ? this.inForceUntil(grant, at) : null,
           actionUrl: this.link(`/orders/${payment.orderId}`),
         },
       },

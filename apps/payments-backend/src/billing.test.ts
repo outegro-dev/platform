@@ -1152,6 +1152,26 @@ describe("duplicate purchases (QA H1)", () => {
     expect(
       (await grantsOf(user.userId)).find((g) => g.sourceId === first.orderId),
     ).toMatchObject({ state: "active" });
+    // The buyer hears about this payment only now, and is not told access
+    // ended: the duplicate never opened any.
+    const refundNotices = (await noticesOf(user.userId)).filter((n) =>
+      n.templateKey.startsWith("billing.refund-recorded"),
+    );
+    expect(refundNotices).toEqual([
+      expect.objectContaining({
+        templateKey: "billing.refund-recorded.v2",
+        data: {
+          productEn: "Silver Fleet",
+          productRu: "Серебряный флот",
+          amountMinor: "52",
+          amountScale: 2,
+          currency: "EUR",
+          access: "withheld",
+          accessUntil: null,
+          actionUrl: `https://pay.outegro.dev/orders/${second.orderId}`,
+        },
+      }),
+    ]);
   });
 
   it("a second paid subscription grants nothing and its renewal is cancelled at Lava", async () => {
@@ -1221,6 +1241,37 @@ describe("duplicate purchases (QA H1)", () => {
         (n) => n.templateKey,
       ),
     ).toEqual(["billing.subscription-expired.v1"]);
+
+    // The operator refunds the duplicate: its buyer is told the payment
+    // opened nothing, not that access from it ended.
+    const owner = await newCustomer({ roles: ["owner"] });
+    await h
+      .http()
+      .post(`/v1/admin/payments/${payment?.id}/refund-request`)
+      .set(owner.auth)
+      .send({ reason: "duplicate subscription, refunded in the Lava cabinet" })
+      .expect(201);
+    await webhook(
+      lavaPayloads.refund({
+        tierId: productOf(PREMIUM).providerOfferId,
+        email: user.email,
+        amount: Number(payment?.amountMinor ?? 0n) / 100,
+        currency: "EUR",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    const refundNotices = (await noticesOf(user.userId)).filter((n) =>
+      n.templateKey.startsWith("billing.refund-recorded"),
+    );
+    expect(refundNotices).toEqual([
+      expect.objectContaining({
+        templateKey: "billing.refund-recorded.v2",
+        data: expect.objectContaining({
+          access: "withheld",
+          accessUntil: null,
+        }),
+      }),
+    ]);
   });
 });
 
@@ -1562,6 +1613,16 @@ describe("subscriptions (PAY-07, PAY-08)", () => {
     // Refunded time carries no grace: access ends with the first period.
     const [grant] = await grantsOf(user.userId);
     expect(grant?.validUntil).toEqual(first.paidUntil);
+    // The refund notice says access stays until then.
+    const told = (await noticesOf(user.userId)).filter(
+      (n) => n.templateKey === "billing.refund-recorded.v2",
+    );
+    expect(told.map((n) => n.data)).toEqual([
+      expect.objectContaining({
+        access: "active",
+        accessUntil: first.paidUntil.toISOString(),
+      }),
+    ]);
     h.clock.set(new Date(first.paidUntil.getTime() + 3 * DAY_MS));
     await expiry.tick();
     expect(await subscriptionOf(orderId)).toMatchObject({ state: "expired" });
@@ -1846,21 +1907,61 @@ describe("refunds and disputes (PAY-09)", () => {
       );
     expect(entries).toHaveLength(1);
     expect(entries[0]?.amountMinor).toBe(-59n);
-    // One message for the refund, however many times it was delivered.
-    const told = (await noticesOf(user.userId)).filter(
-      (n) => n.templateKey === "billing.refund-recorded.v1",
+    // One message for the refund, however many times it was delivered: the
+    // purchase gave access, and the refund ended it.
+    const told = (await noticesOf(user.userId)).filter((n) =>
+      n.templateKey.startsWith("billing.refund-recorded"),
     );
-    expect(told.map((n) => n.data)).toEqual([
-      {
-        productEn: "Silver Fleet",
-        productRu: "Серебряный флот",
-        amountMinor: "59",
-        amountScale: 2,
-        currency: "USD",
-        accessUntil: null,
-        actionUrl: `https://pay.outegro.dev/orders/${orderId}`,
-      },
+    expect(told).toEqual([
+      expect.objectContaining({
+        templateKey: "billing.refund-recorded.v2",
+        data: {
+          productEn: "Silver Fleet",
+          productRu: "Серебряный флот",
+          amountMinor: "59",
+          amountScale: 2,
+          currency: "USD",
+          access: "ended",
+          accessUntil: null,
+          actionUrl: `https://pay.outegro.dev/orders/${orderId}`,
+        },
+      }),
     ]);
+  });
+
+  it("a refund after an operator's revoke says access ended: that purchase did open it", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const { orderId } = await buy(user, SILVER, "USD");
+    const [grant] = await grantsOf(user.userId);
+    h.clock.advance(DAY_MS);
+    await h
+      .http()
+      .post(`/v1/admin/grants/${grant?.id}/revoke`)
+      .set(owner.auth)
+      .send({ reason: "abuse of the ranked queue" })
+      .expect(200);
+    h.clock.advance(DAY_MS);
+    const [payment] = await paymentsOf(orderId);
+    await h
+      .http()
+      .post(`/v1/admin/payments/${payment?.id}/refund-request`)
+      .set(owner.auth)
+      .send({ reason: "refunded after the revoke" })
+      .expect(201);
+    await webhook(
+      lavaPayloads.refund({
+        tierId: productOf(SILVER).providerOfferId,
+        email: user.email,
+        amount: 0.59,
+        currency: "USD",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    const told = (await noticesOf(user.userId)).filter(
+      (n) => n.templateKey === "billing.refund-recorded.v2",
+    );
+    expect(told.map((n) => n.data.access)).toEqual(["ended"]);
   });
 
   it("TC-PAY-09-03: a partial refund waits for an operator and revokes nothing", async () => {
@@ -1896,8 +1997,10 @@ describe("refunds and disputes (PAY-09)", () => {
     expect(await orderRow(orderId)).toMatchObject({ status: "paid" });
     // Nothing is decided yet, so the buyer is not told about a refund.
     expect(
-      (await noticesOf(user.userId)).map((n) => n.templateKey),
-    ).not.toContain("billing.refund-recorded.v1");
+      (await noticesOf(user.userId)).filter((n) =>
+        n.templateKey.startsWith("billing.refund-recorded"),
+      ),
+    ).toEqual([]);
   });
 
   it("TC-PAY-09-04: a chargeback opens a case without deciding its outcome", async () => {

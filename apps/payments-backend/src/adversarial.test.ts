@@ -45,6 +45,8 @@ const PREMIUM = "battleship-premium";
 const SILVER = "battleship-silver-fleet";
 const SILVER_OFFER =
   catalog.find((p) => p.key === SILVER)?.providerOfferId ?? "";
+const PREMIUM_OFFER =
+  catalog.find((p) => p.key === PREMIUM)?.providerOfferId ?? "";
 const DAY_MS = 86_400_000;
 const MINUTE_MS = 60_000;
 
@@ -733,6 +735,48 @@ describe("grant lifecycle", () => {
       (e) => (e.payload.recipient as { userId: string }).userId === user.userId,
     );
     expect(receipt?.payload.data).toMatchObject({ access: "withheld" });
+
+    // Refunded, it is not reported as access that ended: it never opened any.
+    const renewal = (await paymentsOf(orderId)).find(
+      (payment) => payment.kind === "subscription_renewal",
+    );
+    await h
+      .http()
+      .post(`/v1/admin/payments/${renewal?.id}/refund-request`)
+      .set(owner.auth)
+      .send({ reason: "charged after the revoke" })
+      .expect(201);
+    const refunded = await webhook(
+      lavaPayloads.refund({
+        tierId: PREMIUM_OFFER,
+        email: user.email,
+        amount: 0.59,
+        currency: "USD",
+        at: h.clock.now(),
+      }),
+    ).expect(200);
+    expect(refunded.body.status).toBe("processed");
+    const [refund] = await db
+      .select()
+      .from(refunds)
+      .where(eq(refunds.paymentId, renewal?.id ?? ""));
+    expect(refund?.state).toBe("recorded");
+    const told = (
+      await outboxOf(
+        "notifications.intent.requested.v1",
+        "sourceEventId",
+        refund?.id ?? "",
+      )
+    ).map((e) => e.payload);
+    expect(told).toEqual([
+      expect.objectContaining({
+        templateKey: "billing.refund-recorded.v2",
+        data: expect.objectContaining({
+          access: "withheld",
+          accessUntil: null,
+        }),
+      }),
+    ]);
   });
 });
 
