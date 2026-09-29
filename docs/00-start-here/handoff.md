@@ -54,12 +54,12 @@
 - Морской бой: оба игрока не вернулись за 60 с (после рестарта или нет) — партия отменяется (`abandoned`) без рейтинга; если второй игрок вернулся в свои 60 с — проигрывает ушедший первым.
 - Платежи: второй checkout того же товара возвращает первую неоплаченную попытку; купленное или активную подписку купить повторно нельзя (`ALREADY_OWNED`); если Lava всё же подтвердила вторую оплату — грант не выдаётся, issue `duplicate_purchase` для возврата, квитанции нет. Отзыв гранта подписки отменяет продление в Lava (`DELETE /api/v1/subscriptions`), сбой — issue `renewal_cancel_failed` с повтором; списание после отзыва — `renewal_after_revoke`.
 
-## В работе на момент переноса (29.09, ~17:05 UTC)
+## Сделано 29.09 вечером
 
-- CI master `94a8152`: лендинг v0.3 и исправления по ревью (честные квитанции, ссылки, часы при форфейте, отключение продления при блокировке аккаунта). После зелёного CI Argo выкатывает сам; проверить: `outegro.dev`, `outegro.dev/stack`, миграция `battleship-migrate` (колонка `pending_forfeit`).
-- Ветка `feat/cross-site-navigation` (на GitHub, не слита, 12 коммитов от `775afce`): `AccountMenu` в `@outegro/ui` (EN/RU, роли → ссылка на админку), `safeReturnUrl` в `@outegro/bff`, `hasPlatformRole` в contracts; battleship-web — меню, статус Premium/Silver Fleet из payments, «Управлять подпиской»/«Ваши покупки» → pay с возвратом; pay-web — меню, приложение у каждой покупки, «Назад в Battleship» (cookie `og_return`, только разрешённые origin); id-web — меню, «Ваши приложения» и «Покупки и подписки». Тесты ветки: ui 16, bff 41, battleship-web 112 unit + 94 e2e, pay-web 133 unit + 48 e2e, id-web 31 e2e. При слиянии ждать конфликтов с уже слитой веткой доски/легенды Battleship: `apps/battleship-web/src/messages/{en,ru}.json`, `globals.css`, `e2e/support/fixtures.ts`, `e2e/quality.spec.ts`; после — `pnpm install` (перетряска lockfile) и полный e2e battleship-web и pay-web. Новые env (`PAY_URL`, `BATTLESHIP_URL`, `ADMIN_URL`) имеют production-значения по умолчанию, gitops менять не обязательно.
-- Hermes: управляемая политика (`gitops/apps/agents/hermes-policy`) — без терминала/файлов/кода, модель только Codex, ответы только в группе владельца и в личке. Владелец проверяет ответ в General и `/sethome`; для TC-H-04-01 нужен второй аккаунт Telegram.
-- После этого — приоритизация бэклога вместе с владельцем (18 карточек в Todo, 9 In Progress).
+- В production: лендинг v0.3 и `/stack` (CSP на всех страницах), исправления по ревью (честные квитанции, ссылки, часы при форфейте, форфейт переживает рестарт — колонка `matches.pending_forfeit`, продление отключается при блокировке или удалении аккаунта), доска и легенда Морского боя, пустые состояния и вход в Grafana в админке.
+- Слита и выкатывается ветка навигации между сайтами: `AccountMenu` в `@outegro/ui` в Battleship, pay и id, «Управлять подпиской» и «Ваши покупки» в Battleship, путь назад из pay в приложение (`og_return`, только разрешённые origin), «Ваши приложения» в id. Новые env (`PAY_URL`, `BATTLESHIP_URL`, `ADMIN_URL`) имеют production-значения по умолчанию.
+- Hermes: управляемая политика (`gitops/apps/agents/hermes-policy`) — без терминала/файлов/кода, модель только Codex, ответы только в группе владельца и в личке; осталось принять TC владельцем (`/sethome`, второй аккаунт для TC-H-04-01).
+- Доска: 72 Done, 8 In Progress, 16 Todo. Дальше — приоритизация с владельцем.
 
 ## Найдено по ходу (follow-up)
 
