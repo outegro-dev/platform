@@ -10,6 +10,7 @@ import path from "node:path";
 
 const force = process.argv.includes("--force");
 const apps = [
+  { dir: "apps/pay-web", file: ".env.local" },
   { dir: "apps/auth-backend", file: ".env" },
   { dir: "apps/notifications-backend", file: ".env" },
   { dir: "apps/payments-backend", file: ".env" },

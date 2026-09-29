@@ -1,0 +1,337 @@
+{
+  "meta": {
+    "title": "Payments — outegro",
+    "titleTemplate": "%s · outegro Payments",
+    "description": "Purchases, subscriptions and access across outegro.dev apps."
+  },
+  "brand": {
+    "product": "Payments",
+    "home": "outegro Payments, your purchases"
+  },
+  "nav": {
+    "skip": "Skip to content",
+    "sections": "Payments sections",
+    "orders": "Purchases",
+    "subscriptions": "Subscriptions",
+    "catalog": "Catalog",
+    "language": "Language",
+    "signOut": "Sign out",
+    "account": ", account settings",
+    "accountFallback": "Your account"
+  },
+  "footer": {
+    "site": "outegro.dev",
+    "privacy": "Privacy",
+    "account": "Account",
+    "provider": "Payments are processed by Lava.top"
+  },
+  "states": {
+    "retry": "Try again",
+    "retrying": "Trying again…",
+    "unavailableTitle": "Payments are temporarily unavailable",
+    "unavailableBody": "The payments service didn't answer. Nothing is lost: your purchases and access are safe, we just can't show them right now.",
+    "invalidTitle": "This link is out of date",
+    "invalidBody": "The list has changed since this page was opened.",
+    "invalidAction": "Back to the latest",
+    "offline": "You're offline. We'll carry on once the connection is back.",
+    "signedOut": "Your session has ended.",
+    "signIn": "Sign in again"
+  },
+  "orders": {
+    "metaTitle": "Purchases",
+    "index": "01",
+    "eyebrow": "Purchases",
+    "title": "Your",
+    "titleAccent": "purchases.",
+    "lead": "Everything you've bought with your outegro account, newest first. Access opens as soon as Lava confirms the payment.",
+    "listLabel": "Purchases",
+    "product": "Product",
+    "date": "Date",
+    "amount": "Amount",
+    "status": "Status",
+    "older": "Older purchases",
+    "latest": "Latest purchases",
+    "pages": "Purchase pages",
+    "loading": "Loading your purchases…",
+    "emptyTitle": "No purchases yet",
+    "emptyBody": "When you buy something in an outegro app, it shows up here with its status and a summary.",
+    "emptyAction": "Browse the catalog",
+    "unavailableBody": "The payments service didn't answer, so we can't list your purchases right now. Nothing is lost: your purchases and access are safe."
+  },
+  "order": {
+    "metaTitle": "Order",
+    "back": "All purchases",
+    "eyebrow": "Order from {date}",
+    "loading": "Loading the order…",
+    "notFoundTitle": "We couldn't find this order",
+    "notFoundBody": "It may belong to another account, or the link is incomplete.",
+    "notFoundAction": "All purchases",
+    "unavailableBody": "The payments service didn't answer, so we can't show this order right now. Nothing is lost: the payment and your access are safe.",
+    "progress": "Progress",
+    "benefit": "What you get",
+    "benefitFallback": "Access to {service}",
+    "openService": "Open {service}",
+    "manageSubscription": "Manage subscription",
+    "continuePayment": "Continue to payment",
+    "notPaidYet": "Haven't paid yet?"
+  },
+  "watch": {
+    "processingTitle": "Confirming your payment",
+    "processingBody": "We're waiting for Lava to confirm it. This usually takes a few seconds; you can keep this page open.",
+    "preparingTitle": "Preparing the payment",
+    "preparingBody": "Lava is creating the payment page for this order.",
+    "verifyingTitle": "Checking the payment",
+    "verifyingBody": "The payment provider hasn't answered yet. We're checking the result with Lava; you don't need to pay again.",
+    "leftTitle": "Payment not completed",
+    "leftBody": "You came back before the payment finished. If you did pay, this page updates by itself.",
+    "unpaidTitle": "Not paid yet",
+    "unpaidBody": "This order is still waiting for payment. If you have already paid, it updates here as soon as Lava confirms it.",
+    "activatingTitle": "Payment received, opening access",
+    "activatingBody": "Your payment is confirmed. We're switching on access in {service}.",
+    "paidTitle": "Access is active in {service}",
+    "paidBodyUntil": "{product} is yours until {date}.",
+    "paidBodyForever": "{product} is yours for good.",
+    "paidBodyGeneric": "The payment is confirmed and access is open.",
+    "failedTitle": "The payment didn't go through",
+    "failedBody": "Lava didn't confirm this payment, so nothing was activated. Check your card or choose another payment method, then try again.",
+    "failedAction": "Try again",
+    "refundedTitle": "This payment was refunded",
+    "refundedBody": "The money was returned through Lava and the access this purchase opened was closed.",
+    "unknownTitle": "We're checking this order",
+    "unknownBody": "Its status isn't one we recognise yet. It will show here as soon as it's confirmed.",
+    "timedOutTitle": "Still waiting for confirmation",
+    "timedOutBody": "Some payments take a few minutes. If you've paid, don't pay again: this order updates by itself.",
+    "timedOutActivatingBody": "Access is taking longer than usual to open. It switches on by itself; check again in a minute.",
+    "checkAgain": "Check again",
+    "checking": "Checking every 3 seconds",
+    "retrying": "Connection hiccup, retrying…",
+    "offline": "You're offline. We'll check again when you're back online.",
+    "signedOut": "Your session has ended. Sign in again to see the result.",
+    "gone": "This order is no longer available."
+  },
+  "timeline": {
+    "created": {
+      "done": "Order created"
+    },
+    "payment": {
+      "preparing": "Preparing the payment page",
+      "awaiting": "Waiting for payment confirmation",
+      "verifying": "Checking the payment with Lava",
+      "done": "Payment confirmed",
+      "failed": "Payment failed",
+      "unknown": "Payment status being checked"
+    },
+    "access": {
+      "upcoming": "Access opens after payment",
+      "activating": "Opening access",
+      "done": "Access opened",
+      "none": "No access was opened"
+    },
+    "refund": {
+      "done": "Payment refunded, access closed"
+    },
+    "stepDone": "done",
+    "stepCurrent": "in progress",
+    "stepFailed": "failed",
+    "stepUpcoming": "not yet"
+  },
+  "summary": {
+    "title": "Order summary",
+    "number": "Order number",
+    "product": "Product",
+    "service": "Service",
+    "type": "Type",
+    "created": "Created",
+    "paid": "Paid",
+    "notPaid": "Not paid",
+    "provider": "Payment provider",
+    "providerName": "Lava.top",
+    "total": "Total",
+    "note": "Lava emails the payment receipt. This summary is for your records and isn't a fiscal document."
+  },
+  "access": {
+    "active-forever": "Yours for good",
+    "active-until": "Active until {date}",
+    "activating": "Opening now",
+    "after-payment": "Opens after payment",
+    "none": "Not opened",
+    "expired": "Ended {date}",
+    "revoked": "Closed",
+    "unknown": "Being checked"
+  },
+  "subscriptions": {
+    "metaTitle": "Subscriptions",
+    "index": "02",
+    "eyebrow": "Subscriptions",
+    "title": "Your",
+    "titleAccent": "subscriptions.",
+    "lead": "Renewal, paid period and access for each subscription. Turning renewal off keeps everything you've already paid for.",
+    "current": "Current",
+    "past": "Past",
+    "loading": "Loading your subscriptions…",
+    "emptyTitle": "No subscriptions",
+    "emptyBody": "Subscriptions you start in outegro apps show up here with their renewal date and access period.",
+    "emptyAction": "Browse the catalog",
+    "unavailableBody": "The payments service didn't answer, so we can't list your subscriptions right now. Nothing changed: renewals and access keep working.",
+    "more": "Show more",
+    "pages": "Subscription pages",
+    "paidUntil": "Paid until",
+    "accessUntil": "Access until",
+    "grace": "includes {days, plural, one {# grace day} other {# grace days}}",
+    "renewal": "Auto-renewal",
+    "renewalOn": "On",
+    "renewalOff": "Off",
+    "renewalPending": "Turning off…",
+    "ended": "Ended",
+    "perPeriod": "{price} / {period}",
+    "order": "View order",
+    "cancel": "Cancel renewal",
+    "note": {
+      "renews": "Renews automatically on {paidUntil}.",
+      "ends": "Won't renew. Access stays until {accessUntil}.",
+      "pending": "Waiting for the first payment. Access opens once Lava confirms it.",
+      "past_due": "The last renewal isn't confirmed. Access stays until {accessUntil}.",
+      "cancel_requested": "Waiting for Lava to confirm. Access stays until {accessUntil}.",
+      "cancelling": "Renewal is off. Access stays until {accessUntil}.",
+      "expired": "Ended on {accessUntil}.",
+      "suspended": "Access is paused while this subscription is being reviewed.",
+      "unknown": "We're checking this subscription's status."
+    },
+    "done": {
+      "cancelling": "Renewal is off. You keep access until {accessUntil}.",
+      "cancel_requested": "Sent to Lava, awaiting confirmation. Access until {accessUntil}.",
+      "unchanged": "Nothing to change: this subscription already won't renew."
+    }
+  },
+  "cancel": {
+    "title": "Cancel renewal?",
+    "body": "{product} won't renew after {paidUntil}. You keep access until {accessUntil}: everything you've paid for stays yours.",
+    "notRefund": "This isn't a refund, and nothing is charged for turning renewal off.",
+    "confirm": "Cancel renewal",
+    "confirming": "Cancelling…",
+    "keep": "Keep subscription",
+    "close": "Close",
+    "unavailable": "We couldn't confirm the result. Trying again is safe: renewal won't be cancelled twice.",
+    "offline": "You're offline. Nothing was sent; try again when you're back online.",
+    "signedOut": "Your session has ended. Sign in again to manage this subscription.",
+    "gone": "This subscription is no longer available. Refresh the page."
+  },
+  "catalog": {
+    "metaTitle": "Catalog",
+    "index": "03",
+    "eyebrow": "Catalog",
+    "title": "What you",
+    "titleAccent": "can get.",
+    "lead": "Products across outegro apps. You pay on Lava's secure page; access opens as soon as the payment is confirmed.",
+    "loading": "Loading the catalog…",
+    "emptyTitle": "Nothing for sale yet",
+    "emptyBody": "Products appear here once an outegro app starts selling them.",
+    "unavailableBody": "The payments service didn't answer, so we can't show the catalog right now.",
+    "closedTitle": "Sales haven't opened yet",
+    "closedBody": "You can look around; buying opens soon.",
+    "open": "Open {service}",
+    "currency": "Currency",
+    "perPeriod": "/ {period}",
+    "oneTime": "once",
+    "subscribe": "Subscribe",
+    "buy": "Buy",
+    "secure": "Secure payment on Lava.top",
+    "owned": "Yours",
+    "subscribed": "Subscribed",
+    "viewOrder": "View purchase",
+    "manage": "Manage",
+    "status": {
+      "starting": "Starting the purchase…",
+      "preparing": "Preparing the payment page…",
+      "redirecting": "Opening Lava…"
+    },
+    "problem": {
+      "owned": "You already have this. See Purchases.",
+      "closed": "Sales are closed right now.",
+      "gone": "This product or currency is no longer offered. Refresh the page.",
+      "blocked": "The payment page address isn't one we trust, so we didn't open it. Nothing was charged.",
+      "failed": "Lava couldn't start this payment. Try again.",
+      "slow": "The payment page is taking a while. Your order is saved.",
+      "openOrder": "Open the order",
+      "unavailable": "Couldn't reach the payments service. Nothing was charged; try again.",
+      "signedOut": "Your session has ended.",
+      "signIn": "Sign in again",
+      "offline": "You're offline. Try again when you're back online."
+    }
+  },
+  "status": {
+    "order": {
+      "processing": "Processing",
+      "unpaid": "Awaiting payment",
+      "activating": "Activating",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "unknown": "Being checked"
+    },
+    "subscription": {
+      "pending": "Awaiting payment",
+      "active": "Active",
+      "past_due": "Renewal overdue",
+      "cancel_requested": "Cancelling",
+      "cancelling": "Renewal off",
+      "expired": "Ended",
+      "suspended": "Suspended",
+      "unknown": "Being checked"
+    }
+  },
+  "kinds": {
+    "subscription": "Subscription",
+    "one_time": "One-time purchase",
+    "unknown": "Purchase"
+  },
+  "periods": {
+    "ONE_TIME": "once",
+    "MONTHLY": "month",
+    "PERIOD_90_DAYS": "90 days",
+    "PERIOD_180_DAYS": "180 days",
+    "PERIOD_YEAR": "year",
+    "unknown": "period"
+  },
+  "periodic": {
+    "ONE_TIME": "One-time",
+    "MONTHLY": "Monthly",
+    "PERIOD_90_DAYS": "Every 90 days",
+    "PERIOD_180_DAYS": "Every 180 days",
+    "PERIOD_YEAR": "Yearly",
+    "unknown": "Recurring"
+  },
+  "services": {
+    "battleship": "Battleship"
+  },
+  "auth": {
+    "errorMetaTitle": "Sign-in",
+    "errorTitle": "Sign-in didn't",
+    "errorAccent": "finish.",
+    "errorBody": {
+      "state_mismatch": "The sign-in link expired or was opened in another browser.",
+      "missing_code": "The account service didn't confirm the sign-in.",
+      "invalid_grant": "The account service didn't confirm the sign-in.",
+      "unavailable": "The account service didn't answer in time.",
+      "unknown": "Something interrupted the sign-in."
+    },
+    "errorAction": "Try again",
+    "signedOutMetaTitle": "Signed out",
+    "signedOutTitle": "You're signed",
+    "signedOutAccent": "out.",
+    "signedOutBody": "You've signed out of Payments on this device. Your outegro account itself stays signed in, so signing back in takes one click.",
+    "signIn": "Sign in again"
+  },
+  "errors": {
+    "title": "Something is temporarily unavailable",
+    "body": "Your purchases and access are safe. The page didn't load in time.",
+    "retry": "Try again"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "lead": "Page not",
+    "accent": "found.",
+    "body": "The address may be mistyped, or the page has moved.",
+    "home": "Go to your purchases"
+  }
+}
