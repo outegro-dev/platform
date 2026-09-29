@@ -24,8 +24,9 @@
   },
   "dependencies": {
     "@outegro/contracts": "workspace:*",
-    "@standard-schema/spec": "1.1.0",
     "@outegro/db": "workspace:*",
+    "@prometheus-io/client": "0.16.1",
+    "@standard-schema/spec": "1.1.0",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "2.2.0",
     "helmet": "8.3.0",

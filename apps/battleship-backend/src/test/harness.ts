@@ -85,6 +85,7 @@ export async function startHarness(options: { seed?: number } = {}) {
   Object.assign(process.env, {
     NODE_ENV: "test",
     PORT: "4997",
+    METRICS_PORT: "0",
     LOG_LEVEL: "error",
     DATABASE_URL: pg.url,
     VALKEY_URL: valkey.url,

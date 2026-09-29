@@ -2,6 +2,7 @@ import {
   baseEnvSchema,
   databaseEnvSchema,
   defineEnv,
+  metricsEnvSchema,
   rabbitEnvSchema,
   valkeyEnvSchema,
 } from "@outegro/nest-common";
@@ -21,6 +22,7 @@ export const env = defineEnv(
     .extend(databaseEnvSchema.shape)
     .extend(valkeyEnvSchema.shape)
     .extend(rabbitEnvSchema.shape)
+    .extend(metricsEnvSchema.shape)
     .extend({
       AUTH_ISSUER: z.url().default("https://id.outegro.dev"),
       AUTH_AUDIENCE: z.string().min(1).default("outegro"),

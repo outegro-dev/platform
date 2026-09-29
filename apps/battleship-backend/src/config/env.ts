@@ -3,6 +3,7 @@ import {
   databaseEnvSchema,
   defineEnv,
   jwksEnvSchema,
+  metricsEnvSchema,
   rabbitEnvSchema,
   valkeyEnvSchema,
 } from "@outegro/nest-common";
@@ -41,6 +42,7 @@ export const env = defineEnv(
     .extend(valkeyEnvSchema.shape)
     .extend(rabbitEnvSchema.shape)
     .extend(jwksEnvSchema.shape)
+    .extend(metricsEnvSchema.shape)
     .extend({
       /** Browser origins allowed to open the game socket (battleship-web). */
       WS_ALLOWED_ORIGINS: originList,

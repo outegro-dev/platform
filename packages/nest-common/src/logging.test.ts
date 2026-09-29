@@ -14,6 +14,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { configureApp } from "./bootstrap.js";
 import { createLoggerModule } from "./logging.js";
+import { MetricsModule } from "./metrics.js";
 
 type Line = Record<string, unknown>;
 const lines: Line[] = [];
@@ -42,6 +43,9 @@ beforeAll(async () => {
   @Module({
     imports: [
       createLoggerModule({ service: "test", level: "info", destination }),
+      MetricsModule.forRootAsync({
+        useFactory: () => ({ service: "test", port: 0 }),
+      }),
     ],
     controllers: [SessionsController],
   })

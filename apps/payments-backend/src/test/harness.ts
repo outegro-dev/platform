@@ -83,6 +83,7 @@ export async function startHarness() {
     INTERNAL_API_TOKEN: internalToken,
     NODE_ENV: "test",
     PORT: "4997",
+    METRICS_PORT: "0",
     LOG_LEVEL: "error",
     DATABASE_URL: pg.url,
     VALKEY_URL: valkey.url,

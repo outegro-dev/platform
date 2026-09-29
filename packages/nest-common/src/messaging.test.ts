@@ -16,8 +16,9 @@ import { connect } from "amqp-connection-manager";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { HealthRegistry } from "./health.js";
 import { Messaging, PermanentError } from "./messaging.js";
+import { Metrics } from "./metrics.js";
 import { OutboxRelay } from "./outbox-relay.js";
-import { startRabbit, type TestService } from "./testing.js";
+import { metricValue, startRabbit, type TestService } from "./testing.js";
 
 const event = (type = "identity.user.created.v1"): AnyEvent => ({
   eventId: randomUUID(),
@@ -204,6 +205,55 @@ describe("Messaging", () => {
     );
     logged.mockRestore();
   });
+
+  it("counts consumed events by queue and outcome", async () => {
+    const metrics = new Metrics({ service: "test", port: 0 });
+    const counted = new Messaging(
+      { url: rabbit.url, service: "notifications" },
+      new HealthRegistry(),
+      metrics,
+    );
+    try {
+      let calls = 0;
+      await counted.subscribe(
+        defineQueue(
+          "notifications",
+          "t7",
+          [{ producer: "identity", types: ["identity.metrics.counted.v1"] }],
+          { retryDelaysMs: [] },
+        ),
+        async (e) => {
+          calls++;
+          if (e.aggregateVersion > 1) throw new PermanentError("stale");
+        },
+      );
+      const good = event("identity.metrics.counted.v1");
+      await publisher.publish("identity.events", good);
+      await publisher.publish("identity.events", {
+        ...event("identity.metrics.counted.v1"),
+        aggregateVersion: 2,
+      });
+      await waitFor(() => calls === 2);
+      const outcome = async (name: string) =>
+        metricValue(await metrics.scrape(), "messaging_events_consumed_total", {
+          queue: "notifications.t7",
+          outcome: name,
+        });
+      await expect.poll(() => outcome("dead_lettered")).toBe(1);
+      expect(await outcome("processed")).toBe(1);
+      expect(
+        metricValue(
+          await metrics.scrape(),
+          "messaging_event_lag_seconds_count",
+          {
+            queue: "notifications.t7",
+          },
+        ),
+      ).toBe(1);
+    } finally {
+      await counted.onApplicationShutdown();
+    }
+  });
 });
 
 describe("OutboxRelay", () => {
@@ -264,6 +314,8 @@ describe("OutboxRelay", () => {
       () => database.db.transaction((tx) => enqueueEvent(tx, caused)),
     );
     const relay = new OutboxRelay(database, publisher, { intervalMs: 50 });
+    // Passes by hand only.
+    relay.onApplicationShutdown();
     const started = event("identity.chain.started.v1");
     await runWithCorrelation(
       { correlationId: "req-chain-0002", causationId: "req-chain-0002" },
@@ -289,6 +341,34 @@ describe("OutboxRelay", () => {
       correlationId: "req-chain-0002",
       causationId: started.eventId,
     });
+  });
+
+  it("reports the backlog of unpublished events on every scrape", async () => {
+    const metrics = new Metrics({ service: "test", port: 0 });
+    const relay = new OutboxRelay(
+      database,
+      publisher,
+      { intervalMs: 50 },
+      metrics,
+    );
+    // Passes by hand only; the first one publishes what earlier tests left.
     relay.onApplicationShutdown();
+    await relay.tick();
+    const backlog = async () => {
+      const scrape = await metrics.scrape();
+      return [
+        metricValue(scrape, "outbox_pending_events"),
+        metricValue(scrape, "outbox_oldest_pending_age_seconds"),
+      ];
+    };
+    expect(await backlog()).toEqual([0, 0]);
+    await database.db.transaction((tx) =>
+      enqueueEvent(tx, event("identity.metrics.pending.v1")),
+    );
+    const [pending, age] = await backlog();
+    expect(pending).toBe(1);
+    expect(age).toBeGreaterThan(0);
+    expect(await relay.tick()).toBe(1);
+    expect(await backlog()).toEqual([0, 0]);
   });
 });

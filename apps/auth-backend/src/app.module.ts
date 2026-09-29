@@ -9,12 +9,14 @@ import {
   DatabaseModule,
   HealthModule,
   MessagingModule,
+  MetricsModule,
   OutboxModule,
   ValkeyModule,
   ValkeyThrottlerStorage,
 } from "@outegro/nest-common";
 import {
   dbConfig,
+  metricsConfig,
   rabbitConfig,
   tokenConfig,
   valkeyConfig,
@@ -38,6 +40,13 @@ import { SessionStoreModule } from "./sessions/session-store.module.js";
       pretty: env().NODE_ENV === "development",
     }),
     HealthModule,
+    MetricsModule.forRootAsync({
+      inject: [metricsConfig.KEY],
+      useFactory: (metrics: ConfigType<typeof metricsConfig>) => ({
+        service: "auth-backend",
+        port: metrics.port,
+      }),
+    }),
     DatabaseModule.forRootAsync({
       schema,
       service: "auth-backend",

@@ -17,6 +17,8 @@ import { configureApp } from "./bootstrap.js";
 import { AppError } from "./errors.js";
 import { HealthModule, HealthRegistry } from "./health.js";
 import { createLoggerModule } from "./logging.js";
+import { Metrics, MetricsModule } from "./metrics.js";
+import { metricValue } from "./testing.js";
 
 const createNoteSchema = z.object({
   title: z.string().min(3),
@@ -81,6 +83,9 @@ beforeAll(async () => {
     imports: [
       createLoggerModule({ service: "test", level: "silent" }),
       HealthModule,
+      MetricsModule.forRootAsync({
+        useFactory: () => ({ service: "test", port: 0 }),
+      }),
       AuthModule.forRootAsync({
         useFactory: () => ({
           issuer: "https://id.outegro.dev",
@@ -208,5 +213,21 @@ describe("health", () => {
     expect(down.body.error.postgres.message).toBe("connection refused");
     await request(app.getHttpServer()).get("/health").expect(200);
     failing = false;
+  });
+});
+
+describe("metrics", () => {
+  it("counts requests a guard or a handler refused under their route template", async () => {
+    const scrape = await app.get(Metrics).scrape();
+    const count = (route: string, status_class: string) =>
+      metricValue(scrape, "http_server_requests_total", {
+        method: "GET",
+        route,
+        status_class,
+      });
+    expect(count("/v1/notes/me", "4xx")).toBeGreaterThanOrEqual(3);
+    expect(count("/v1/notes/admin", "4xx")).toBeGreaterThanOrEqual(1);
+    expect(count("/v1/notes/boom", "5xx")).toBeGreaterThanOrEqual(1);
+    expect(scrape).not.toContain('route="/health');
   });
 });

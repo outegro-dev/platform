@@ -3,6 +3,7 @@ import {
   databaseEnvSchema,
   defineEnv,
   jwksEnvSchema,
+  metricsEnvSchema,
   rabbitEnvSchema,
   valkeyEnvSchema,
 } from "@outegro/nest-common";
@@ -32,6 +33,7 @@ export const env = defineEnv(
     .extend(valkeyEnvSchema.shape)
     .extend(rabbitEnvSchema.shape)
     .extend(jwksEnvSchema.shape)
+    .extend(metricsEnvSchema.shape)
     .extend({
       /** Sales stay closed until the owner opens them (checkpoint 6). */
       CHECKOUT_ENABLED: z.stringbool().default(false),
