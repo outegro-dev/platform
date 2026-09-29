@@ -345,7 +345,8 @@
     },
     "abortReason": {
       "placement_timeout": "Nobody placed a fleet in time",
-      "moderation": "Stopped by a moderator"
+      "moderation": "Stopped by a moderator",
+      "abandoned": "Both players disconnected"
     },
     "botLevel": {
       "easy": "Easy",

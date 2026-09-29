@@ -345,7 +345,8 @@
     },
     "abortReason": {
       "placement_timeout": "Никто не расставил флот вовремя",
-      "moderation": "Остановлен модератором"
+      "moderation": "Остановлен модератором",
+      "abandoned": "Оба игрока отключились"
     },
     "botLevel": {
       "easy": "Лёгкий",

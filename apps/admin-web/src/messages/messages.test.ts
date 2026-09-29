@@ -1,3 +1,4 @@
+import { matchAbortReasonSchema } from "@outegro/contracts/battleship";
 import { describe, expect, it } from "vitest";
 import en from "./en.json";
 import ru from "./ru.json";
@@ -43,5 +44,14 @@ describe("messages", () => {
       (key) => (at(en as Tree, key) ?? at(ru as Tree, key)) === "",
     );
     expect(empty).toEqual([]);
+  });
+
+  it("label every reason a match is aborted", () => {
+    for (const reason of matchAbortReasonSchema.options)
+      for (const messages of [en, ru])
+        expect(
+          at(messages as Tree, `labels.abortReason.${reason}`),
+          reason,
+        ).toBeTruthy();
   });
 });
