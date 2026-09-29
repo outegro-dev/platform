@@ -1,8 +1,10 @@
 import {
   Inject,
   Injectable,
+  Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
+import type { ConfigType } from "@nestjs/config";
 import {
   type AnyEvent,
   defineQueue,
@@ -17,13 +19,26 @@ import {
   AppError,
   CLOCK,
   type Clock,
+  callInternal,
   DATABASE,
   Messaging,
   PermanentError,
 } from "@outegro/nest-common";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import type { CustomerRow, PaymentsDatabase } from "../common/database.js";
+import { authConfig } from "../config/config.js";
 import { customers } from "../db/schema.js";
+
+/** auth-backend `POST /v1/internal/users/lookup`. */
+const identityUserSchema = z.object({
+  userId: z.uuid(),
+  email: z.string().nullable(),
+  emailVerified: z.boolean(),
+  locale: z.enum(["en", "ru"]),
+  status: z.enum(["active", "suspended", "deleted"]),
+  accessVersion: z.number().int().nonnegative(),
+});
 
 export const identityQueue = defineQueue("payments", "identity-events", [
   {
@@ -53,10 +68,14 @@ type Fields = {
  */
 @Injectable()
 export class CustomersService implements OnApplicationBootstrap {
+  private readonly logger = new Logger("Customers");
+
   constructor(
     @Inject(DATABASE) private readonly database: PaymentsDatabase,
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly messaging: Messaging,
+    @Inject(authConfig.KEY)
+    private readonly auth: ConfigType<typeof authConfig>,
   ) {}
 
   async onApplicationBootstrap() {
@@ -102,10 +121,18 @@ export class CustomersService implements OnApplicationBootstrap {
 
   /** The buyer data a checkout needs; errors follow the HTTP contract. */
   async forCheckout(userId: string) {
-    const [customer] = await this.database.db
-      .select()
-      .from(customers)
-      .where(eq(customers.userId, userId));
+    const find = async () =>
+      (
+        await this.database.db
+          .select()
+          .from(customers)
+          .where(eq(customers.userId, userId))
+      )[0];
+    let customer = await find();
+    if (!customer) {
+      await this.syncFromIdentity(userId);
+      customer = await find();
+    }
     // Identity events may still be on their way.
     if (!customer)
       throw new AppError("DEPENDENCY_UNAVAILABLE", {
@@ -118,6 +145,34 @@ export class CustomersService implements OnApplicationBootstrap {
         fieldErrors: { email: ["a verified email is required"] },
       });
     return { email: customer.email, locale: customer.locale };
+  }
+
+  /**
+   * A buyer who signed up before this service subscribed to Identity events
+   * has no row; ask Identity once. An event that lands meanwhile wins.
+   */
+  private async syncFromIdentity(userId: string) {
+    const { internalUrl, internalToken } = this.auth;
+    if (!internalUrl || !internalToken) return;
+    let user: z.infer<typeof identityUserSchema>;
+    try {
+      user = identityUserSchema.parse(
+        await callInternal(`${internalUrl}/v1/internal/users/lookup`, {
+          token: internalToken,
+          body: { userId },
+        }),
+      );
+    } catch (error) {
+      this.logger.warn(
+        { err: (error as Error).message },
+        "Identity lookup for a buyer failed",
+      );
+      return;
+    }
+    await this.database.db
+      .insert(customers)
+      .values({ ...user, updatedAt: this.clock.now() })
+      .onConflictDoNothing();
   }
 
   private fieldsOf(event: AnyEvent): Fields {

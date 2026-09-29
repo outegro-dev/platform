@@ -21,6 +21,15 @@ import { FakeLava } from "./fake-lava.js";
 
 export type Harness = Awaited<ReturnType<typeof startHarness>>;
 
+export type IdentityUser = {
+  userId: string;
+  email: string | null;
+  emailVerified: boolean;
+  locale: "en" | "ru";
+  status: "active" | "suspended" | "deleted";
+  accessVersion: number;
+};
+
 /** Real PostgreSQL, Valkey and RabbitMQ; a manual clock; a fake Lava. */
 export async function startHarness() {
   const schema = await import("../db/schema.js");
@@ -42,8 +51,36 @@ export async function startHarness() {
   );
   const jwksPort = (jwksServer.address() as AddressInfo).port;
 
+  // Identity's internal lookup, for buyers who signed up before payments existed.
+  const internalToken = randomBytes(32).toString("hex");
+  const identityUsers = new Map<string, IdentityUser>();
+  const identityServer = createServer((req, res) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      const allowed =
+        req.method === "POST" &&
+        req.url === "/v1/internal/users/lookup" &&
+        req.headers.authorization === `Bearer ${internalToken}`;
+      const user = allowed
+        ? identityUsers.get(JSON.parse(body || "{}").userId)
+        : undefined;
+      res.statusCode = !allowed ? 401 : user ? 200 : 404;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify(user ?? { error: { code: "NOT_FOUND" } }));
+    });
+  });
+  await new Promise<void>((resolve) =>
+    identityServer.listen(0, "127.0.0.1", resolve),
+  );
+  const identityPort = (identityServer.address() as AddressInfo).port;
+
   const webhookSecret = randomBytes(32).toString("hex");
   Object.assign(process.env, {
+    AUTH_INTERNAL_URL: `http://127.0.0.1:${identityPort}`,
+    INTERNAL_API_TOKEN: internalToken,
     NODE_ENV: "test",
     PORT: "4997",
     LOG_LEVEL: "error",
@@ -97,12 +134,14 @@ export async function startHarness() {
     clock,
     lava,
     webhookSecret,
+    identityUsers,
     rabbitUrl: rabbit.url,
     http: () => request(app.getHttpServer()),
     tokenFor,
     async close() {
       await app.close();
       jwksServer.close();
+      identityServer.close();
       await Promise.all([pg.stop(), valkey.stop(), rabbit.stop()]);
     },
   };

@@ -35,6 +35,16 @@ export const env = defineEnv(
     .extend({
       /** Sales stay closed until the owner opens them (checkpoint 6). */
       CHECKOUT_ENABLED: z.stringbool().default(false),
+      /**
+       * auth-backend's internal API, for buyers whose Identity events predate
+       * this service. Both unset: such buyers wait for events.
+       */
+      AUTH_INTERNAL_URL: z
+        .string()
+        .optional()
+        .transform((value) => (value ? value : undefined))
+        .pipe(z.url().optional()),
+      INTERNAL_API_TOKEN: optionalSecret.pipe(z.string().min(32).optional()),
       /** pay-web: where buyers come back after the Lava page. */
       PAY_WEB_URL: z.url().default("https://pay.outegro.dev"),
       /** Origins a client may pass as `returnUrl`; PAY_WEB_URL is always allowed. */

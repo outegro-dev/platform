@@ -18,6 +18,8 @@ export const authConfig = registerAs("auth", () => ({
   jwksUrl: env().AUTH_JWKS_URL,
   issuer: env().AUTH_ISSUER,
   audience: env().AUTH_AUDIENCE,
+  internalUrl: env().AUTH_INTERNAL_URL,
+  internalToken: env().INTERNAL_API_TOKEN,
 }));
 
 export const checkoutConfig = registerAs("checkout", () => {

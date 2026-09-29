@@ -125,6 +125,29 @@ describe("roles and permissions", () => {
       .expect(200);
   });
 
+  it("answers service lookups only with the internal token", async () => {
+    const user = await h.signIn(uniqueEmail("lookup"));
+    const lookup = (token: string, userId: string) =>
+      h
+        .http()
+        .post("/v1/internal/users/lookup")
+        .set("authorization", `Bearer ${token}`)
+        .send({ userId });
+    await lookup("x".repeat(64), user.user.id).expect(401);
+    await lookup(user.accessToken, user.user.id).expect(401);
+    const internal = process.env.INTERNAL_API_TOKEN ?? "";
+    const found = await lookup(internal, user.user.id).expect(200);
+    expect(found.body).toEqual({
+      userId: user.user.id,
+      email: user.user.email,
+      emailVerified: true,
+      locale: "en",
+      status: "active",
+      accessVersion: expect.any(Number),
+    });
+    await lookup(internal, randomUUID()).expect(404);
+  });
+
   it("gives the dashboard numbers and the audit trail by permission", async () => {
     const owner = await signInAs("owner");
     const overview = await h

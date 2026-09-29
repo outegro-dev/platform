@@ -423,6 +423,26 @@ describe("checkout (PAY-03)", () => {
       .send({ productKey: SILVER, currency: "USD" })
       .expect(503);
     expect(res.body.error.retryable).toBe(true);
+    // Someone who signed up before payments existed: Identity is asked once.
+    const early = randomUUID();
+    const earlyEmail = `early.${early.slice(0, 8)}@example.test`;
+    h.identityUsers.set(early, {
+      userId: early,
+      email: earlyEmail,
+      emailVerified: true,
+      locale: "ru",
+      status: "active",
+      accessVersion: 3,
+    });
+    const earlyRes = await h
+      .http()
+      .post("/v1/checkout")
+      .set({ authorization: `Bearer ${await h.tokenFor(early, [], 3)}` })
+      .set("idempotency-key", newKey())
+      .send({ productKey: SILVER, currency: "RUB" })
+      .expect(200);
+    expect(earlyRes.body).toMatchObject({ state: "ready", status: "pending" });
+    expect(h.lava.last().input.email).toBe(earlyEmail);
     await h
       .http()
       .post("/v1/checkout")

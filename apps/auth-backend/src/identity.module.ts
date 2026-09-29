@@ -15,6 +15,7 @@ import { OAuthService } from "./oauth/oauth.service.js";
 import { SessionStoreModule } from "./sessions/session-store.module.js";
 import { SessionsController } from "./sessions/sessions.controller.js";
 import { SessionsService } from "./sessions/sessions.service.js";
+import { InternalUsersController } from "./users/internal-users.controller.js";
 import { MeController } from "./users/me.controller.js";
 import { UsersService } from "./users/users.service.js";
 
@@ -27,6 +28,7 @@ import { UsersService } from "./users/users.service.js";
     AdminController,
     OAuthController,
     IdentitiesController,
+    InternalUsersController,
   ],
   providers: [
     RolesService,
