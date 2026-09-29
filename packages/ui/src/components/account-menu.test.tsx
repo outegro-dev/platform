@@ -43,7 +43,7 @@ describe("AccountMenu", () => {
       'aria-label="Nick Lukashik, аккаунт и приложения"',
     );
     expect(render({ user: {}, locale: "ru" })).toContain(
-      'aria-label="Ваш аккаунт, аккаунт и приложения"',
+      'aria-label="Аккаунт и приложения"',
     );
   });
 

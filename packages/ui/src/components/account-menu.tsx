@@ -139,7 +139,7 @@ function SignedInMenu({
           <button
             type="button"
             data-slot="account-menu-trigger"
-            aria-label={`${person.title}, ${messages.menu}`}
+            aria-label={person.label}
             aria-busy={signingOut || undefined}
             title={signingOut ? messages.signingOut : undefined}
             className={cn(triggerClass, className)}

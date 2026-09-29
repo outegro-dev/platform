@@ -101,16 +101,27 @@ describe("account menu model", () => {
       title: "Nick Lukashik",
       subtitle: "nick@outegro.test",
       initials: "NL",
+      label: "Nick Lukashik, account and apps",
     });
     expect(
       model({ user: { name: "  ", email: "anna@outegro.test" } }).person,
-    ).toEqual({ title: "anna@outegro.test", subtitle: null, initials: "A" });
+    ).toEqual({
+      title: "anna@outegro.test",
+      subtitle: null,
+      initials: "A",
+      label: "anna@outegro.test, account and apps",
+    });
+    // Identity did not answer: a generic title, the button named by its role.
     expect(model({ user: {} }).person).toEqual({
       title: "Your account",
       subtitle: null,
       initials: "",
+      label: "Account and apps",
     });
-    expect(model({ user: {}, locale: "ru" }).person.title).toBe("Ваш аккаунт");
+    expect(model({ user: {}, locale: "ru" }).person).toMatchObject({
+      title: "Ваш аккаунт",
+      label: "Аккаунт и приложения",
+    });
   });
 
   it("speaks the host app's language, English by default", () => {

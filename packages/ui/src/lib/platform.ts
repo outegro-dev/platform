@@ -113,6 +113,8 @@ export function initialsOf(value: string | null | undefined): string {
 export type AccountMenuMessages = {
   /** Second half of the trigger's accessible name: "<who>, account and apps". */
   menu: string;
+  /** The trigger's name when nobody could be named. */
+  menuTitle: string;
   signIn: string;
   signOut: string;
   signingOut: string;
@@ -134,6 +136,7 @@ export type AccountMenuMessages = {
 export const accountMenuMessages = {
   en: {
     menu: "account and apps",
+    menuTitle: "Account and apps",
     signIn: "Sign in",
     signOut: "Sign out",
     signingOut: "Signing out…",
@@ -156,6 +159,7 @@ export const accountMenuMessages = {
   },
   ru: {
     menu: "аккаунт и приложения",
+    menuTitle: "Аккаунт и приложения",
     signIn: "Войти",
     signOut: "Выйти",
     signingOut: "Выходим…",
@@ -221,7 +225,13 @@ export type AccountMenuGroup = {
 
 export type AccountMenuModel = {
   messages: AccountMenuMessages;
-  person: { title: string; subtitle: string | null; initials: string };
+  person: {
+    title: string;
+    subtitle: string | null;
+    initials: string;
+    /** The menu button's accessible name. */
+    label: string;
+  };
   groups: AccountMenuGroup[];
 };
 
@@ -269,12 +279,14 @@ export function accountMenuModel({
   });
   const apps: PlatformApp[] = ["battleship", "id", "pay"];
   if (hasPlatformRole(user.roles)) apps.push("admin");
+  const who = name ?? email;
   return {
     messages,
     person: {
-      title: name ?? email ?? messages.unknownUser,
+      title: who ?? messages.unknownUser,
       subtitle: name && email ? email : null,
-      initials: initialsOf(name ?? email),
+      initials: initialsOf(who),
+      label: who ? `${who}, ${messages.menu}` : messages.menuTitle,
     },
     groups: [
       {
