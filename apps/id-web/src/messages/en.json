@@ -64,10 +64,8 @@
     "sessions": "Sessions",
     "inbox": "Inbox",
     "notifications": "Notifications",
-    "signOut": "Sign out",
     "language": "Language",
     "sections": "Account sections",
-    "signingOut": "Signing out…",
     "languageFailed": "Couldn't switch the language. Try again.",
     "security": "Security"
   },
@@ -87,6 +85,22 @@
     "memberSince": "Member since {date}",
     "invalid": "Check the fields and try again.",
     "unavailable": "Could not save right now. Try again shortly."
+  },
+  "platform": {
+    "appsTitle": "Your apps",
+    "appsLead": "One sign-in opens every outegro app.",
+    "battleship": {
+      "name": "Battleship",
+      "body": "Naval battle online: against bots or players, with a rating."
+    },
+    "admin": {
+      "name": "Admin console",
+      "body": "Operator tools your platform role opens."
+    },
+    "purchasesTitle": "Purchases & subscriptions",
+    "purchasesBody": "Orders, receipts, renewal and cancellation of subscriptions are on {host}.",
+    "purchases": "Your purchases",
+    "subscriptions": "Manage subscriptions"
   },
   "sessions": {
     "title": "Sessions",

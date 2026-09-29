@@ -21,6 +21,8 @@ test("security lists the sign-in methods of the account", async ({ page }) => {
   await expect(page.getByText(`${email} · always available`)).toBeVisible();
   await expect(page.getByText("Not available right now")).toBeVisible();
   await expect(page.getByRole("link", { name: "Connect" })).toHaveCount(0);
+  // Metadata streams after a client navigation: scan once the title is in.
+  await expect(page).toHaveTitle(/Security/);
   const axe = await new AxeBuilder({ page }).analyze();
   expect(
     axe.violations.filter((v) =>
