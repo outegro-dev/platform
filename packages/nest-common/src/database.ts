@@ -3,6 +3,7 @@ import {
   Global,
   Inject,
   Injectable,
+  Logger,
   Module,
   type OnApplicationShutdown,
   type OnModuleInit,
@@ -11,6 +12,7 @@ import { createDatabase } from "@outegro/db";
 import { HealthRegistry } from "./health.js";
 
 export const DATABASE = Symbol("DATABASE");
+const logger = new Logger("Database");
 
 /** Inject with `@Inject(DATABASE) database: DatabaseHandle<typeof schema>`. */
 export type DatabaseHandle<
@@ -51,6 +53,11 @@ export class DatabaseModule {
               ...options.useFactory(...args),
               schema: options.schema,
               applicationName: options.service,
+              onIdleError: (error) =>
+                logger.warn(
+                  { err: error.message },
+                  "Idle PostgreSQL connection lost; reconnecting on next use",
+                ),
             }),
         },
         DatabaseLifecycle,

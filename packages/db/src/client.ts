@@ -18,6 +18,8 @@ export type DatabaseOptions<TSchema extends Record<string, unknown>> = {
   /** Pool size; one VPS, so keep it small (default 10). */
   max?: number;
   applicationName?: string;
+  /** An idle connection was lost (restart, failover, network); the pool reconnects on next use. */
+  onIdleError?: (error: Error) => void;
 };
 
 export function createDatabase<TSchema extends Record<string, unknown>>(
@@ -30,6 +32,9 @@ export function createDatabase<TSchema extends Record<string, unknown>>(
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
   });
+  // Without a listener, pg re-throws an idle client's error and the process
+  // dies, e.g. on every PostgreSQL restart (node-postgres Pool docs).
+  pool.on("error", (error) => options.onIdleError?.(error));
   const db = drizzle({
     client: pool,
     ...(options.schema ? { schema: options.schema } : {}),
