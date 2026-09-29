@@ -24,6 +24,11 @@ import {
   GoogleUnavailable,
 } from "../identities/google.provider.js";
 import type { CodeMessage, DeliveryStatus } from "../login/code-delivery.js";
+import {
+  type SoftwareAuthenticator,
+  TEST_ORIGIN,
+  TEST_RP_ID,
+} from "./authenticator.js";
 
 /** Captures login codes instead of emailing them. */
 export class FakeCodeDelivery {
@@ -94,6 +99,9 @@ export async function startHarness() {
     NOTIFICATIONS_INTERNAL_URL: "http://notifications.test",
     INTERNAL_API_TOKEN: randomBytes(32).toString("hex"),
     REFRESH_GRACE_MS: "1000",
+    // Passkeys as in local development: id-web on localhost:3002.
+    WEBAUTHN_RP_ID: TEST_RP_ID,
+    WEBAUTHN_ORIGIN: TEST_ORIGIN,
     OAUTH_CLIENTS: JSON.stringify([
       {
         id: "pay-web",
@@ -144,15 +152,25 @@ export async function startHarness() {
   const valkeyClient = new Redis(valkey.url);
   const http = () => request(app.getHttpServer());
 
-  /** Full email-code sign-in; returns the token pair and user. */
-  async function signIn(email: string, locale: "en" | "ru" = "en") {
+  /**
+   * Full email-code sign-in; returns the token pair and user. `ip` is the
+   * client address the BFF forwards (default: the test process itself).
+   */
+  async function signIn(
+    email: string,
+    locale: "en" | "ru" = "en",
+    ip?: string,
+  ) {
+    const from = ip ? { "x-forwarded-for": ip } : {};
     const challenge = await http()
       .post("/v1/login/challenges")
+      .set(from)
       .send({ email, locale })
       .expect(201);
     const { code } = delivery.codeFor(email);
     const verified = await http()
       .post("/v1/login/challenges/verify")
+      .set(from)
       .send({ challengeId: challenge.body.challengeId, code })
       .expect(200);
     return verified.body as {
@@ -161,6 +179,61 @@ export async function startHarness() {
       sessionId: string;
       user: { id: string; email: string };
     };
+  }
+
+  /**
+   * Adds a passkey from this authenticator to the signed-in user, the way
+   * id-web does: options, the authenticator's answer, then the name.
+   */
+  async function registerPasskey(
+    accessToken: string,
+    authenticator: SoftwareAuthenticator,
+    name = "Test laptop",
+    ceremony: Parameters<SoftwareAuthenticator["register"]>[1] = {},
+  ) {
+    const headers = {
+      authorization: `Bearer ${accessToken}`,
+      "x-forwarded-for": randomIp(),
+    };
+    const begun = await http()
+      .post("/v1/me/passkeys/options")
+      .set(headers)
+      .expect(200);
+    return http()
+      .post("/v1/me/passkeys")
+      .set(headers)
+      .send({
+        challengeId: begun.body.challengeId,
+        name,
+        response: authenticator.register(begun.body.options, ceremony),
+      });
+  }
+
+  /**
+   * Starts a usernameless passkey sign-in from a client address of its own
+   * (as the BFF forwards it), so route limits of other tests never apply.
+   */
+  async function passkeyChallenge(ip = randomIp()) {
+    const res = await http()
+      .post("/v1/login/passkey/options")
+      .set({ "x-forwarded-for": ip })
+      .expect(200);
+    return {
+      ip,
+      challengeId: res.body.challengeId as string,
+      options: res.body.options,
+    };
+  }
+
+  function passkeyVerify(
+    challengeId: string,
+    response: unknown,
+    ip = randomIp(),
+  ) {
+    return http()
+      .post("/v1/login/passkey/verify")
+      .set({ "x-forwarded-for": ip })
+      .send({ challengeId, response });
   }
 
   /** Clears business rate limits (resend cooldown etc.) but keeps sessions. */
@@ -181,6 +254,9 @@ export async function startHarness() {
     google,
     http,
     signIn,
+    registerPasskey,
+    passkeyChallenge,
+    passkeyVerify,
     valkey: valkeyClient,
     auth: (token: string) => ({ authorization: `Bearer ${token}` }),
     /** What Prometheus would scrape now. */
@@ -200,3 +276,7 @@ export async function startHarness() {
 let seq = 0;
 export const uniqueEmail = (prefix = "user") =>
   `${prefix}.${Date.now()}.${seq++}@example.test`;
+
+/** A client address from the benchmarking range (RFC 2544), one per call. */
+export const randomIp = () =>
+  `198.18.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;

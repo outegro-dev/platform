@@ -20,6 +20,7 @@ import type { AuthDatabase, AuthTx } from "../common/database.js";
 import { IdentityMetrics } from "../common/metrics.js";
 import { identities, users } from "../db/schema.js";
 import { SessionsService } from "../sessions/sessions.service.js";
+import { SignInMethods } from "../users/sign-in-methods.js";
 import { UsersService } from "../users/users.service.js";
 import {
   GOOGLE_PROVIDER,
@@ -43,6 +44,7 @@ export class IdentitiesService {
     @Inject(GOOGLE_PROVIDER) private readonly google: GoogleProvider,
     private readonly users: UsersService,
     private readonly sessions: SessionsService,
+    private readonly methods: SignInMethods,
     private readonly relay: OutboxRelay,
     private readonly limiter: RateLimiter,
     private readonly metrics: IdentityMetrics,
@@ -144,7 +146,7 @@ export class IdentitiesService {
     return this.list(userId);
   }
 
-  /** Refuses to remove the last way to sign in (TC-ID-02-03). */
+  /** Refuses to remove the last way to sign in (TC-ID-02-03, SignInMethods). */
   async unlink(userId: string) {
     const now = this.clock.now();
     await this.database.db.transaction(async (tx) => {
@@ -154,14 +156,16 @@ export class IdentitiesService {
         .where(eq(users.id, userId))
         .for("update");
       if (!user) throw new AppError("NOT_FOUND");
-      const linked = await tx
+      const [google] = await tx
         .select()
         .from(identities)
-        .where(eq(identities.userId, userId));
-      const google = linked.find((identity) => identity.provider === "google");
+        .where(
+          and(eq(identities.userId, userId), eq(identities.provider, "google")),
+        );
       if (!google) throw new AppError("NOT_FOUND");
-      // A verified email always allows signing in with a code.
-      const others = linked.length - 1 + (user.emailVerified ? 1 : 0);
+      const others = await this.methods.remainingAfter(tx, user, {
+        google: true,
+      });
       if (others === 0)
         throw new AppError("CONFLICT", {
           fieldErrors: { identity: ["last_method"] },

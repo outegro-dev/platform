@@ -74,3 +74,38 @@ export const googleConfig = registerAs("google", () => ({
   clientSecret: env().GOOGLE_CLIENT_SECRET,
   redirectUri: env().GOOGLE_REDIRECT_URI,
 }));
+
+/**
+ * The passkey relying party, checked before anything is registered: the
+ * origin is a bare scheme and host (HTTPS, or HTTP on localhost only) and
+ * the RP ID is that host or a parent domain of it, as browsers require.
+ * Browsers take no IP address as an RP ID, so local development is
+ * `localhost` with `http://localhost:<port>`.
+ */
+export function relyingParty(rpId: string, originValue: string) {
+  const url = new URL(originValue);
+  if (originValue.replace(/\/$/, "") !== url.origin)
+    throw new Error("WEBAUTHN_ORIGIN must be a bare origin: scheme and host");
+  if (
+    url.protocol !== "https:" &&
+    !(url.protocol === "http:" && url.hostname === "localhost")
+  )
+    throw new Error("WEBAUTHN_ORIGIN must use HTTPS outside localhost");
+  if (url.hostname !== rpId && !url.hostname.endsWith(`.${rpId}`))
+    throw new Error("WEBAUTHN_RP_ID must be the origin's host or its parent");
+  return { rpId, origin: url.origin };
+}
+
+/** Passkeys (ID-05). Durations are policy, not settings: one value for code and tests. */
+export const webauthnConfig = registerAs("webauthn", () => ({
+  ...relyingParty(env().WEBAUTHN_RP_ID, env().WEBAUTHN_ORIGIN),
+  rpName: "outegro.dev",
+  /** How long a ceremony may take; also the WebAuthn `timeout` (W3C: 5–10 min with UV). */
+  challengeTtlMs: 5 * 60_000,
+  /**
+   * Registering a passkey needs a sign-in on id.outegro.dev at most this
+   * long ago, the same window as the admin step-up (identity-access.md).
+   */
+  freshSignInMs: 5 * 60_000,
+  maxPerUser: 20,
+}));

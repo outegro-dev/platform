@@ -1,7 +1,9 @@
 import { platformTables } from "@outegro/db/schema";
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -14,6 +16,16 @@ import {
 
 const at = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
+
+/** Raw bytes; node-postgres returns bytea as a Buffer. */
+const bytea = customType<{
+  data: Uint8Array<ArrayBuffer>;
+  driverData: Buffer;
+}>({
+  dataType: () => "bytea",
+  toDriver: (value) => Buffer.from(value),
+  fromDriver: (value) => new Uint8Array(value),
+});
 
 export const { outbox, inbox } = platformTables;
 
@@ -106,6 +118,43 @@ export const identities = pgTable(
   (t) => [
     uniqueIndex("identities_provider_subject_uq").on(t.provider, t.subject),
     uniqueIndex("identities_user_provider_uq").on(t.userId, t.provider),
+  ],
+);
+
+/**
+ * Passkeys (ID-05): WebAuthn credentials from a verified registration. Only
+ * public data is stored; the credential id is unique across all users. A
+ * credential is bound to the RP it was created for (`rp_id`) and is usable
+ * only while that is the configured RP.
+ */
+export const passkeys = pgTable(
+  "passkeys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** base64url, as the authenticator reports it. */
+    credentialId: text("credential_id").notNull(),
+    /** COSE-encoded public key. */
+    publicKey: bytea("public_key").notNull(),
+    /** Signature counter (uint32); 0 when the authenticator does not count. */
+    signCount: bigint("sign_count", { mode: "number" }).notNull().default(0),
+    transports: text("transports").array().notNull().default(sql`'{}'::text[]`),
+    /** Authenticator model; all zeros when the authenticator hides it. */
+    aaguid: uuid("aaguid").notNull(),
+    rpId: text("rp_id").notNull(),
+    /** Synced passkey (backup eligible), and whether it is backed up now. */
+    backupEligible: boolean("backup_eligible").notNull(),
+    backedUp: boolean("backed_up").notNull(),
+    /** Chosen by the user; shown only to them. */
+    name: text("name").notNull(),
+    createdAt: at("created_at").notNull(),
+    lastUsedAt: at("last_used_at"),
+  },
+  (t) => [
+    uniqueIndex("passkeys_credential_id_uq").on(t.credentialId),
+    index("passkeys_user_idx").on(t.userId, t.createdAt),
   ],
 );
 

@@ -262,6 +262,15 @@
   .login-google {
     width: 100%;
   }
+  /* The hint below the passkey button keeps two lines: an error that
+     replaces it moves nothing. */
+  .passkey-sign-in {
+    display: grid;
+    gap: 8px;
+  }
+  .passkey-sign-in > button {
+    width: 100%;
+  }
 
   /* Sign-in methods and linked channels. */
   .methods {
@@ -294,6 +303,45 @@
     color: var(--muted-foreground);
     font-size: 14px;
     overflow-wrap: anywhere;
+  }
+  /* Passkeys on the Security page. */
+  .passkey-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    overflow-wrap: anywhere;
+  }
+  .method-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+  .passkey-add {
+    display: grid;
+    gap: 16px;
+  }
+  .panel-head h2:focus {
+    outline: none;
+  }
+  .panel-head h2:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+  }
+  .dialog-form {
+    display: grid;
+    gap: 16px;
+  }
+  .dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .text-link {
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
   /* Reserved height: status changes never move the rest of the page. */
   .channel-status {
@@ -776,6 +824,15 @@
     /* Under the text, a ghost button lines its label up with it. */
     .row > form,
     .row > .row-done {
+      margin-inline-start: -20px;
+    }
+    /* A passkey's actions go under its name, level with the text. */
+    .method.passkey {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .method.passkey .method-actions {
+      grid-column: 2;
+      justify-content: flex-start;
       margin-inline-start: -20px;
     }
     .account-nav a {

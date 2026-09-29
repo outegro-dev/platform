@@ -8,7 +8,9 @@ Identity отвечает за человека, способы входа, sess
 
 | Параметр | Проектный начальный вариант | Где подтвердить |
 |---|---|---|
-| Passkey RP | id.outegro.dev | ID-05 до первой регистрации |
+| Passkey RP | `id.outegro.dev`, единственный origin `https://id.outegro.dev` (`WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, проверяются при старте); user verification обязательна при регистрации и входе; challenge одноразовый, 5 минут ([runbook](../06-operations/passkeys.md)) | ID-05 |
+| Добавление passkey | Только сессия id.outegro.dev с входом не старше 5 минут (окно admin step-up), иначе 403 `session: reauthentication_required` и повторный вход `/login?reauth=1`; новая сессия заменяет прежнюю | ID-05 |
+| Последний способ входа | Удаление Google или passkey отклоняется (409 `last_method`), если не остаётся пригодного способа: подтверждённый email (код приходит на этот адрес), привязанная identity, passkey текущего RP | ID-02, ID-05 |
 | Cookies | Host-only, Secure, HttpOnly; SameSite по выбранному redirect flow | ID-04 browser tests |
 | Email code TTL | 10 минут, resend cooldown 60 секунд | ID-01 threat/rate-limit tests |
 | Code attempts | 5 на challenge; account/IP budget отдельно | ID-01 abuse simulation |

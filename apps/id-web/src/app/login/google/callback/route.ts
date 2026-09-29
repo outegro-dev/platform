@@ -2,6 +2,7 @@ import { BackendError } from "@outegro/bff/backend";
 import {
   ACCESS_COOKIE,
   isSecureRequest,
+  REFRESH_COOKIE,
   type SessionTokens,
   writeSession,
 } from "@outegro/bff/session";
@@ -16,6 +17,7 @@ import {
   sameState,
 } from "@/lib/google";
 import { redirectTo } from "@/lib/redirect";
+import { endSession } from "@/lib/session";
 
 /**
  * Google redirects here (registered redirect URI). The state must match the
@@ -69,6 +71,9 @@ export async function GET(request: NextRequest) {
       tokens,
       isSecureRequest(request.headers, request.url),
     );
+    // Signed in again to confirm it is you: the new session replaces the old.
+    const previous = request.cookies.get(REFRESH_COOKIE)?.value;
+    if (previous) await endSession(previous);
     return response;
   }
 

@@ -31,7 +31,7 @@ async function signIn(page: Page, email = uniqueEmail()) {
   await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Send code" }).click();
   await page.getByLabel("Six-digit code").fill(await codeFor(email, since));
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   return email;
 }
 
@@ -456,7 +456,7 @@ test("the sign-in form keeps its layout while focusing, typing and failing", asy
   const step = await codeAround();
   await code.pressSequentially("123", { delay: 20 });
   expect(await codeAround(), "typing").toEqual(step);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.locator("#code-message")).toHaveText(
     "Enter all six digits of the code.",
   );
@@ -464,7 +464,7 @@ test("the sign-in form keeps its layout while focusing, typing and failing", asy
   // A pasted code keeps only its digits.
   await code.fill("000 000");
   await expect(code).toHaveValue("000000");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.locator("#code-message")).toHaveText(
     "That code is not right. Check it and try again.",
   );
@@ -581,7 +581,7 @@ test("sign-in states pass an accessibility scan", async ({ page }) => {
   await page.getByLabel("Email").fill(uniqueEmail());
   await page.getByRole("button", { name: "Send code" }).click();
   await page.getByLabel("Six-digit code").fill("000000");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.locator("#code-message")).toHaveText(
     "That code is not right. Check it and try again.",
   );

@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { AppError, type Counter, Metrics } from "@outegro/nest-common";
 import type { DeliveryStatus } from "../login/code-delivery.js";
 
-export type SignInMethod = "email" | "google";
+export type SignInMethod = "email" | "google" | "passkey";
 
 /** How a sign-in ended: a small fixed set, never a user or an email. */
 type SignInResult =
@@ -27,6 +27,8 @@ function resultOf(error: unknown): SignInResult {
   if (!(error instanceof AppError)) return "error";
   switch (error.code) {
     case "UNPROCESSABLE": {
+      // A passkey challenge that was used or timed out ended like an expired code.
+      if (error.fieldErrors.challenge?.includes("stale")) return "expired";
       const reason = error.fieldErrors.code?.[0] ?? "";
       return codeReasons.includes(reason)
         ? (reason as SignInResult)
@@ -56,7 +58,7 @@ export class IdentityMetrics {
   constructor(metrics: Metrics) {
     this.signIns = metrics.counter({
       name: "identity_sign_in_attempts_total",
-      help: "Sign-in attempts by method (email code, Google) and result.",
+      help: "Sign-in attempts by method (email code, Google, passkey) and result.",
       labelNames: ["method", "result"],
     });
     this.codes = metrics.counter({

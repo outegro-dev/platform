@@ -19,18 +19,27 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { RolesService } from "./access/roles.service.js";
 import type { AuthDatabase } from "./common/database.js";
 import {
+  auditLog,
   authorizationCodes,
   outbox,
+  passkeys,
   roleBindings,
   sessions,
   users,
 } from "./db/schema.js";
-import { type Harness, startHarness, uniqueEmail } from "./test/harness.js";
+import { SoftwareAuthenticator } from "./test/authenticator.js";
+import {
+  type Harness,
+  randomIp,
+  startHarness,
+  uniqueEmail,
+} from "./test/harness.js";
 
 /**
  * ID-10: what an attacker (or a mistaken operator) tries after the pieces
  * are integrated. Key rotation, cross-site requests, token confusion and
  * revocation, each checked for the refusal and for the absence of effects.
+ * Passkeys (ID-05) at the end: phishing, replay, cloned keys, planting a key.
  */
 
 let h: Harness;
@@ -556,5 +565,185 @@ describe("TC-ID-10-04: revoke", () => {
       .from(sessions)
       .where(eq(sessions.userId, target.user.id));
     expect(targetSessions).toEqual([{ revokedAt: null }]);
+  });
+});
+
+describe("ID-05 passkeys: phishing, replay, cloned keys, planted keys", () => {
+  const sessionIds = async (userId: string) =>
+    (
+      await db
+        .select({ id: sessions.id })
+        .from(sessions)
+        .where(eq(sessions.userId, userId))
+    )
+      .map((row) => row.id)
+      .sort();
+  const keysOf = (userId: string) =>
+    db.select().from(passkeys).where(eq(passkeys.userId, userId));
+
+  /** A victim who registered a passkey on their own device. */
+  async function victim(key = new SoftwareAuthenticator()) {
+    const session = await h.signIn(uniqueEmail("victim"), "en", randomIp());
+    const added = await h.registerPasskey(session.accessToken, key);
+    expect(added.status).toBe(201);
+    return { session, key };
+  }
+
+  it("a look-alike site relaying the victim's ceremony gets no session (TC-ID-10-02)", async () => {
+    const { session, key } = await victim();
+    const before = await sessionIds(session.user.id);
+    // The phishing page asks our options and has the victim's browser
+    // answer on its own origin; the authenticator signs for that site.
+    for (const ceremony of [
+      { origin: "https://id.outegro.dev.evil.test" },
+      {
+        origin: "https://id.outegro.dev.evil.test",
+        rpId: "id.outegro.dev.evil.test",
+      },
+    ]) {
+      const { challengeId, options } = await h.passkeyChallenge();
+      const res = await h.passkeyVerify(
+        challengeId,
+        key.assert(options, ceremony),
+      );
+      expect(res.status).toBe(422);
+      expect(res.body.accessToken).toBeUndefined();
+    }
+    expect(await sessionIds(session.user.id)).toEqual(before);
+  });
+
+  it("an assertion captured on the wire never signs in again", async () => {
+    const { session, key } = await victim();
+    const { challengeId, options } = await h.passkeyChallenge();
+    const captured = key.assert(options);
+    await h.passkeyVerify(challengeId, captured).expect(200);
+    const before = await sessionIds(session.user.id);
+    await h.passkeyVerify(challengeId, captured).expect(422);
+    const next = await h.passkeyChallenge();
+    await h.passkeyVerify(next.challengeId, captured).expect(422);
+    // Forcing the new challenge into the signed data breaks the signature.
+    const bent = {
+      ...captured,
+      response: {
+        ...captured.response,
+        clientDataJSON: Buffer.from(
+          JSON.stringify({
+            type: "webauthn.get",
+            challenge: next.options.challenge,
+            origin: "http://localhost:3002",
+            crossOrigin: false,
+          }),
+        ).toString("base64url"),
+      },
+    };
+    const third = await h.passkeyChallenge();
+    await h.passkeyVerify(third.challengeId, bent).expect(422);
+    expect(await sessionIds(session.user.id)).toEqual(before);
+  });
+
+  it("a cloned security key is refused once the original has moved on", async () => {
+    const original = new SoftwareAuthenticator({ counting: true });
+    const { session } = await victim(original);
+    for (let i = 0; i < 3; i++) {
+      const { challengeId, options } = await h.passkeyChallenge();
+      await h.passkeyVerify(challengeId, original.assert(options)).expect(200);
+    }
+    const before = await sessionIds(session.user.id);
+    // The copy was taken at counter 1.
+    const { challengeId, options } = await h.passkeyChallenge();
+    await h
+      .passkeyVerify(challengeId, original.assert(options, { counter: 2 }))
+      .expect(422);
+    expect(await sessionIds(session.user.id)).toEqual(before);
+    const [record] = await db
+      .select({ data: auditLog.data })
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.action, "passkey.counter_regression"),
+          eq(auditLog.targetId, session.user.id),
+        ),
+      );
+    expect(record?.data).toMatchObject({
+      storedCounter: 3,
+      presentedCounter: 2,
+    });
+  });
+
+  it("a stolen older session, an app session or a cookie cannot plant a passkey", async () => {
+    const session = await h.signIn(uniqueEmail("planted"), "en", randomIp());
+    const attacker = new SoftwareAuthenticator();
+    const cookie = `og_at=${session.accessToken}; og_rt=${session.refreshToken}`;
+
+    // Only cookies, as a foreign page would have the browser send.
+    await h
+      .http()
+      .post("/v1/me/passkeys/options")
+      .set({ cookie, origin: "https://evil.test" })
+      .expect(401);
+    // The service token is no user.
+    await h
+      .http()
+      .post("/v1/me/passkeys/options")
+      .set(bearer(process.env.INTERNAL_API_TOKEN ?? ""))
+      .expect(401);
+
+    // Token of a session signed in six minutes ago (copied from a laptop).
+    h.clock.advance(6 * 60_000);
+    const stale = await h
+      .http()
+      .post("/v1/me/passkeys/options")
+      .set({ ...bearer(session.accessToken), "x-forwarded-for": randomIp() })
+      .expect(403);
+    expect(stale.body.error.fieldErrors).toEqual({
+      session: ["reauthentication_required"],
+    });
+    // And a challenge begun while it was fresh is useless to another session.
+    h.clock.set(new Date());
+    await h.resetLimits();
+    const fresh = await h.signIn(session.user.email, "en", randomIp());
+    const begun = await h
+      .http()
+      .post("/v1/me/passkeys/options")
+      .set({ ...bearer(fresh.accessToken), "x-forwarded-for": randomIp() })
+      .expect(200);
+    await h
+      .http()
+      .post("/v1/me/passkeys")
+      .set({ ...bearer(session.accessToken), "x-forwarded-for": randomIp() })
+      .send({
+        challengeId: begun.body.challengeId,
+        name: "Attacker key",
+        response: attacker.register(begun.body.options),
+      })
+      .expect(422);
+    expect(await keysOf(session.user.id)).toEqual([]);
+  });
+
+  it("a stolen security key without its PIN, or a suspended owner, signs nobody in (TC-ID-10-04)", async () => {
+    const { session, key } = await victim();
+    const before = await sessionIds(session.user.id);
+    const noPin = await h.passkeyChallenge();
+    await h
+      .passkeyVerify(
+        noPin.challengeId,
+        key.assert(noPin.options, { userVerified: false }),
+      )
+      .expect(422);
+
+    const owner = await signInAs("owner");
+    await h
+      .http()
+      .post(`/v1/admin/users/${session.user.id}/status`)
+      .set(bearer(owner.accessToken))
+      .send({ status: "suspended", reason: "account takeover report" })
+      .expect(200);
+    const suspended = await h.passkeyChallenge();
+    await h
+      .passkeyVerify(suspended.challengeId, key.assert(suspended.options))
+      .expect(403);
+    // Only the sessions the suspension revoked; nothing new.
+    expect(await sessionIds(session.user.id)).toEqual(before);
+    expect((await keysOf(session.user.id))[0]?.lastUsedAt).toBeNull();
   });
 });

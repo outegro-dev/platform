@@ -13,11 +13,15 @@ import { LoginController } from "./login/login.controller.js";
 import { LoginService } from "./login/login.service.js";
 import { OAuthController } from "./oauth/oauth.controller.js";
 import { OAuthService } from "./oauth/oauth.service.js";
+import { ChallengeStore } from "./passkeys/challenge-store.js";
+import { PasskeysController } from "./passkeys/passkeys.controller.js";
+import { PasskeysService } from "./passkeys/passkeys.service.js";
 import { SessionStoreModule } from "./sessions/session-store.module.js";
 import { SessionsController } from "./sessions/sessions.controller.js";
 import { SessionsService } from "./sessions/sessions.service.js";
 import { InternalUsersController } from "./users/internal-users.controller.js";
 import { MeController } from "./users/me.controller.js";
+import { SignInMethods } from "./users/sign-in-methods.js";
 import { UsersService } from "./users/users.service.js";
 
 @Module({
@@ -29,6 +33,7 @@ import { UsersService } from "./users/users.service.js";
     AdminController,
     OAuthController,
     IdentitiesController,
+    PasskeysController,
     InternalUsersController,
   ],
   providers: [
@@ -39,6 +44,9 @@ import { UsersService } from "./users/users.service.js";
     GrantsService,
     OAuthService,
     IdentitiesService,
+    PasskeysService,
+    ChallengeStore,
+    SignInMethods,
     googleProvider,
     FreshPermissionsGuard,
     IdentityMetrics,
