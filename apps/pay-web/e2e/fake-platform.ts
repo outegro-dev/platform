@@ -600,10 +600,16 @@ const scenarios: Record<string, (persona: Persona) => void> = {
     paid(p, silver, "USD", now - 3 * DAY - 45 * MINUTE);
     paid(p, premium, "RUB", now - 20 * DAY - 7 * 60 * MINUTE);
   },
-  // Just back from Lava: one pending Premium order, one older purchase.
+  // Just back from Lava, after an abandoned attempt three days ago.
   returning: (p) => {
     const now = Date.now();
     paid(p, silver, "RUB", now - 12 * DAY);
+    addOrder(p, {
+      product: premium,
+      currency: "USD",
+      status: "pending",
+      createdAt: now - 3 * DAY,
+    });
     addOrder(p, {
       product: premium,
       currency: "RUB",

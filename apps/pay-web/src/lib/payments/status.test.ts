@@ -9,6 +9,7 @@ import {
   graceDays,
   groupSubscriptions,
   isSettled,
+  isStalePending,
   type OrderPhase,
   orderPhase,
   orderTimeline,
@@ -62,6 +63,21 @@ describe("order wording", () => {
     [{ status: "unknown" }, "unknown"],
   ])("%o reads as %s", (overrides, phase) => {
     expect(orderPhase(order(overrides))).toBe(phase);
+  });
+
+  it("calls a long-pending order 'awaiting payment', not 'processing'", () => {
+    const now = Date.parse("2026-09-29T12:00:00.000Z");
+    const fresh = order({ createdAt: "2026-09-29T11:30:00.000Z" });
+    const abandoned = order({ createdAt: "2026-09-26T09:00:00.000Z" });
+    expect(isStalePending(fresh, now)).toBe(false);
+    expect(isStalePending(abandoned, now)).toBe(true);
+    expect(orderPhase(abandoned, isStalePending(abandoned, now))).toBe(
+      "unpaid",
+    );
+    // Staleness never hides a server answer.
+    const paidLate = order({ ...abandoned, status: "paid", access });
+    expect(isStalePending(paidLate, now)).toBe(false);
+    expect(orderPhase(paidLate, true)).toBe("paid");
   });
 
   it("stops watching only when nothing more can happen", () => {
@@ -214,6 +230,7 @@ describe("messages", () => {
   it("word every order, access and subscription state", () => {
     const phases: OrderPhase[] = [
       "processing",
+      "unpaid",
       "activating",
       "paid",
       "failed",

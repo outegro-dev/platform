@@ -122,6 +122,19 @@ export function OrderHero(props: HeroProps) {
       actions = payLink;
       break;
     }
+    // Pending for long: an abandoned checkout, unless Lava confirms now.
+    case "unpaid":
+      title = t("unpaidTitle");
+      body = t("unpaidBody");
+      actions = props.paymentUrl ? (
+        <Button asChild size="lg" variant="outline">
+          <a href={props.paymentUrl} rel="noopener">
+            {order("continuePayment")}
+            <ArrowSquareOutIcon aria-hidden="true" />
+          </a>
+        </Button>
+      ) : null;
+      break;
     case "activating":
       title = t("activatingTitle", { service });
       body = props.timedOut

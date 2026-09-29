@@ -83,6 +83,8 @@
     "verifyingBody": "The payment provider hasn't answered yet. We're checking the result with Lava; you don't need to pay again.",
     "leftTitle": "Payment not completed",
     "leftBody": "You came back before the payment finished. If you did pay, this page updates by itself.",
+    "unpaidTitle": "Not paid yet",
+    "unpaidBody": "This order is still waiting for payment. If you have already paid, it updates here as soon as Lava confirms it.",
     "activatingTitle": "Payment received, opening access",
     "activatingBody": "Your payment is confirmed. We're switching on access in {service}.",
     "paidTitle": "Access is active in {service}",
@@ -259,6 +261,7 @@
   "status": {
     "order": {
       "processing": "Processing",
+      "unpaid": "Awaiting payment",
       "activating": "Activating",
       "paid": "Paid",
       "failed": "Failed",

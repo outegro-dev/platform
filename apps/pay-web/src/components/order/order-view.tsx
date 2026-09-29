@@ -36,6 +36,8 @@ export type OrderContext = {
   periodicity: Periodicity | null;
   /** Lava said the buyer cancelled or the payment failed: a hint only. */
   leftPayment: boolean;
+  /** Pending for over an hour when the server rendered it. */
+  stalePending: boolean;
 };
 
 /**
@@ -51,7 +53,11 @@ export function OrderView({
   context: OrderContext;
 }) {
   const [store] = useState(
-    () => new OrderWatchStore(initial, { load: pollOrder }),
+    () =>
+      new OrderWatchStore(initial, {
+        load: pollOrder,
+        stalePending: context.stalePending,
+      }),
   );
   useEffect(() => {
     const online = () => store.setOnline(true);

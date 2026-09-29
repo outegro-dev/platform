@@ -20,7 +20,7 @@ import { payments, requireToken } from "@/lib/api";
 import { pick } from "@/lib/i18n";
 import { getFormat, getServiceName } from "@/lib/i18n-server";
 import type { Order } from "@/lib/payments/model";
-import { orderPhase } from "@/lib/payments/status";
+import { isStalePending, orderPhase } from "@/lib/payments/status";
 import { orderIdFrom, returnPath } from "@/lib/routes";
 import { signInPath } from "@/lib/sso";
 
@@ -202,7 +202,9 @@ async function OrderRow({
         <div className="order-cell order-cell-status">
           <span className="sr-only">{t("status")}: </span>
           <span className="order-status">
-            <OrderStatusBadge phase={orderPhase(order)} />
+            <OrderStatusBadge
+              phase={orderPhase(order, isStalePending(order, Date.now()))}
+            />
           </span>
         </div>
         <CaretRightIcon className="order-chevron" aria-hidden="true" />

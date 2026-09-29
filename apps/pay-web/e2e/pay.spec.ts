@@ -175,6 +175,29 @@ test.describe("purchases", () => {
     await expectAccessible(page, "order detail");
   });
 
+  test("an abandoned checkout reads 'awaiting payment', not 'processing'", async ({
+    page,
+  }) => {
+    const buyer = await persona(page, { scenario: "returning" });
+    await page.goto("/orders");
+    const rows = page.locator("article.order-row");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0)).toContainText("Processing");
+    await expect(rows.nth(1)).toContainText("Awaiting payment");
+    const abandoned = buyer.orders.filter((o) => o.status === "pending")[1];
+    await page.goto(`/orders/${abandoned?.id}`);
+    await expect(
+      page.getByRole("heading", { name: "Not paid yet" }),
+    ).toBeVisible();
+    await expect(page.locator(".order-head-meta")).toContainText(
+      "Awaiting payment",
+    );
+    await expect(
+      page.getByRole("link", { name: "Continue to payment" }),
+    ).toHaveAttribute("href", /^https:\/\/app\.lava\.top\/pay\//);
+    await expectAccessible(page, "unpaid order");
+  });
+
   test("shows older purchases page by page", async ({ page }) => {
     await persona(page, { scenario: "many" });
     await page.goto("/orders");

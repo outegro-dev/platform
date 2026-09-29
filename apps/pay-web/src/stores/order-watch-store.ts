@@ -30,6 +30,8 @@ type Deps = {
   scheduler?: Scheduler;
   intervalMs?: number;
   windowMs?: number;
+  /** The server found the order pending for long: an abandoned checkout. */
+  stalePending?: boolean;
 };
 
 /**
@@ -52,6 +54,7 @@ export class OrderWatchStore {
   private readonly scheduler: Scheduler;
   private readonly intervalMs: number;
   private readonly windowMs: number;
+  private readonly stalePending: boolean;
   private generation = 0;
   private request = 0;
   private startedAt = 0;
@@ -63,12 +66,14 @@ export class OrderWatchStore {
     this.scheduler = deps.scheduler ?? browserScheduler;
     this.intervalMs = deps.intervalMs ?? POLL_INTERVAL_MS;
     this.windowMs = deps.windowMs ?? POLL_WINDOW_MS;
+    this.stalePending = deps.stalePending ?? false;
     makeAutoObservable<
       this,
       | "load"
       | "scheduler"
       | "intervalMs"
       | "windowMs"
+      | "stalePending"
       | "generation"
       | "request"
       | "startedAt"
@@ -81,6 +86,7 @@ export class OrderWatchStore {
         scheduler: false,
         intervalMs: false,
         windowMs: false,
+        stalePending: false,
         generation: false,
         request: false,
         startedAt: false,
@@ -90,9 +96,9 @@ export class OrderWatchStore {
     );
   }
 
-  /** The order in one word: processing, activating, paid, failed… */
+  /** The order in one word: processing, unpaid, activating, paid, failed… */
   get outcome() {
-    return orderPhase(this.order);
+    return orderPhase(this.order, this.stalePending);
   }
 
   /** Begin (or resume after unmount) watching. Settled orders are not polled. */

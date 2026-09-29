@@ -3,6 +3,7 @@ import {
   CalendarXIcon,
   CheckCircleIcon,
   ClockCounterClockwiseIcon,
+  HourglassMediumIcon,
   PauseCircleIcon,
   QuestionIcon,
   WarningCircleIcon,
@@ -40,6 +41,7 @@ const Pending = () => <span className="status-dot" aria-hidden="true" />;
 
 const orderIcons: Record<OrderPhase, ReactNode> = {
   processing: <Pending />,
+  unpaid: <HourglassMediumIcon weight="bold" aria-hidden="true" />,
   activating: <Pending />,
   paid: <CheckCircleIcon weight="fill" aria-hidden="true" />,
   failed: <XCircleIcon weight="fill" aria-hidden="true" />,

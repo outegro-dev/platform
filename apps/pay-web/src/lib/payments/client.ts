@@ -277,7 +277,8 @@ export class PaymentsClient {
     if (!parsed.ok) return { kind: "unavailable" };
     const { orderId, state, status, paymentUrl } = parsed.data;
     if (status === "paid") return { kind: "paid", orderId };
-    if (status === "failed" || state === "failed")
+    // A replayed key whose order is over: the next attempt needs a new key.
+    if (status === "failed" || status === "refunded" || state === "failed")
       return { kind: "failed", orderId };
     if (!paymentUrl) return { kind: "preparing", orderId };
     if (!this.isAllowedPaymentUrl(paymentUrl)) {

@@ -11,18 +11,38 @@ export type Tone = "neutral" | "pending" | "success" | "warning" | "danger";
 /** One word for an order in lists and headings. */
 export type OrderPhase =
   | "processing"
+  /** Pending for over an hour: most likely never paid. */
+  | "unpaid"
   | "activating"
   | "paid"
   | "failed"
   | "refunded"
   | "unknown";
 
+/** After this long a pending order reads "awaiting payment", not "processing". */
+export const STALE_PENDING_MS = 60 * 60_000;
+
+/**
+ * Whether a pending order is old enough to be an abandoned checkout. Takes
+ * the server's clock from the caller, so server and browser agree.
+ */
+export function isStalePending(
+  order: Pick<Order, "status" | "createdAt">,
+  now: number,
+) {
+  return (
+    order.status === "pending" &&
+    now - Date.parse(order.createdAt) > STALE_PENDING_MS
+  );
+}
+
 export function orderPhase(
   order: Pick<Order, "status" | "access">,
+  stale = false,
 ): OrderPhase {
   switch (order.status) {
     case "pending":
-      return "processing";
+      return stale ? "unpaid" : "processing";
     // Money is confirmed; the access grant may still be on its way.
     case "paid":
       return order.access ? "paid" : "activating";
@@ -37,6 +57,7 @@ export function orderPhase(
 
 export const orderTone: Record<OrderPhase, Tone> = {
   processing: "pending",
+  unpaid: "neutral",
   activating: "pending",
   paid: "success",
   failed: "danger",

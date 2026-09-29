@@ -159,6 +159,19 @@ describe("OrderWatchStore", () => {
     expect(load).toHaveBeenCalledTimes(1);
   });
 
+  it("words an abandoned order as unpaid until the server says otherwise", async () => {
+    const store = new OrderWatchStore(pending, {
+      load: answers(ok(pending), ok(paid)),
+      stalePending: true,
+    });
+    expect(store.outcome).toBe("unpaid");
+    store.start();
+    await tick(POLL_INTERVAL_MS);
+    expect(store.outcome).toBe("unpaid");
+    await tick(POLL_INTERVAL_MS);
+    expect(store.outcome).toBe("paid");
+  });
+
   it("does not poll an order that is already settled", async () => {
     const load = answers(ok(paid));
     const store = new OrderWatchStore(paid, { load });

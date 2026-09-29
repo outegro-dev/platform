@@ -7,6 +7,7 @@ import { OrderView } from "@/components/order/order-view";
 import { RetryButton } from "@/components/retry-button";
 import { StatePanel } from "@/components/state-panel";
 import { forBrowser, payments, requireToken } from "@/lib/api";
+import { isStalePending } from "@/lib/payments/status";
 import { leftPayment } from "@/lib/routes";
 import { serviceLink } from "@/lib/services";
 import { signInPath } from "@/lib/sso";
@@ -64,6 +65,8 @@ export default async function OrderPage({
   const service = product?.service ?? order.data.access?.service ?? null;
   return (
     <OrderView
+      // One watch per order: another order id always gets a fresh store.
+      key={order.data.id}
       initial={forBrowser(order.data)}
       context={{
         service,
@@ -71,6 +74,7 @@ export default async function OrderPage({
         description: product?.description ?? null,
         periodicity: product?.periodicity ?? null,
         leftPayment: left,
+        stalePending: isStalePending(order.data, Date.now()),
       }}
     />
   );
