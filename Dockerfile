@@ -14,6 +14,8 @@ WORKDIR /repo
 
 FROM base AS build
 COPY . .
+# Git keeps no empty folders; the runtime stages copy public/ unconditionally.
+RUN mkdir -p apps/landing-web/public
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 RUN pnpm turbo run build \
