@@ -81,6 +81,10 @@ test.describe("shop", () => {
     await expect(banner).toContainText("Silver Fleet is active.");
     await expect(page.getByTestId("owned-silver")).toHaveText("Owned");
     await expect(page.getByTestId("cosmetic-ships-silver")).toBeEnabled();
+    // Back in the game after checkout: one click to play.
+    await banner.getByRole("link", { name: "Play now" }).click();
+    await expect(page).toHaveURL(`${APP}/`);
+    await expect(page.getByTestId("start-bot")).toBeVisible();
   });
 
   test("a cancelled payment says so calmly and the product can be bought again", async ({
@@ -93,9 +97,11 @@ test.describe("shop", () => {
     await page.waitForURL(`${CHECKOUT}/**`);
     await page.getByRole("link", { name: "Cancel" }).click();
     await page.waitForURL(/\/shop\?orderId=[0-9a-f-]{36}&result=cancel$/);
-    await expect(page.getByTestId("shop-banner")).toContainText(
-      "Payment cancelled",
-    );
+    const banner = page.getByTestId("shop-banner");
+    await expect(banner).toContainText("Payment cancelled");
+    await expect(
+      banner.getByRole("link", { name: "Back to the game" }),
+    ).toHaveAttribute("href", "/");
     await expect(page.getByTestId("buy-premium")).toBeEnabled();
   });
 
@@ -119,8 +125,9 @@ test.describe("shop", () => {
     game,
   }) => {
     await signInAndConnect(page, game, "premium", "/shop");
-    await expect(page.getByTestId("owned-premium")).toContainText(
-      "Active until",
+    // The renewal date comes from payments' subscription.
+    await expect(page.getByTestId("owned-premium")).toHaveText(
+      "Active · renews Oct 29, 2026",
     );
     await expect(page.getByTestId("buy-silver")).toBeVisible();
     // Premium unlocks every cosmetic while it lasts.

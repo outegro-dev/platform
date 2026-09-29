@@ -65,7 +65,8 @@ test("TC-ID-09-02: the profile language becomes the account language", async ({
   await page.goto("/login");
   const email = await signIn(page);
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
-  await expect(page.getByText(email)).toBeVisible();
+  // The profile's email (the header's account menu shows it too).
+  await expect(page.getByRole("main").getByText(email)).toBeVisible();
   await page.getByLabel("Display name").fill("E2E Person");
   await page.getByRole("radio", { name: "Русский" }).check();
   await page.getByRole("button", { name: "Save changes" }).click();

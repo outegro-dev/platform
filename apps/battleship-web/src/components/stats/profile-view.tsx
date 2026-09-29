@@ -22,6 +22,7 @@ import {
 import { useTimeZone } from "@/lib/use-time-zone";
 import { initialOf, PremiumBadge } from "../chrome/player-chip";
 import { useRoot } from "../providers";
+import { type ProfilePurchases, PurchasesCard } from "./purchases-card";
 import { AccountCard, Settings } from "./settings";
 
 /** A fixed sample, shown blurred behind the Premium lock. */
@@ -315,13 +316,18 @@ const History = observer(function History({
   );
 });
 
-/** Service record: stats, bot wins, heatmap (Premium), history and settings. */
+/**
+ * Service record: stats, bot wins, heatmap (Premium), history, settings,
+ * what the account owns and the account itself.
+ */
 export const ProfileView = observer(function ProfileView({
   stats,
   history,
+  purchases,
 }: {
   stats: PlayerStats | null;
   history: HistoryPage | null;
+  purchases: ProfilePurchases;
 }) {
   const { session } = useRoot();
   const t = useTranslations("profile");
@@ -365,8 +371,9 @@ export const ProfileView = observer(function ProfileView({
         </div>
         <div className="profile-col">
           <Settings />
+          <PurchasesCard purchases={purchases} />
           {stats ? <BotWins stats={stats} /> : null}
-          <AccountCard />
+          <AccountCard accountUrl={purchases.accountUrl} />
         </div>
       </div>
     </>

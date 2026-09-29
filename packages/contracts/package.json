@@ -11,6 +11,10 @@
     "./battleship": {
       "types": "./dist/battleship.d.ts",
       "default": "./dist/battleship.js"
+    },
+    "./access": {
+      "types": "./dist/access.d.ts",
+      "default": "./dist/access.js"
     }
   },
   "files": [

@@ -6,6 +6,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { PageHead } from "@/components/page-head";
 import { authApi, type Me, withSession } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { PlatformLinks } from "./platform-links";
 import { ProfileForm } from "./profile-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -58,6 +59,7 @@ export default async function ProfilePage() {
           locale={me.locale}
         />
       </Surface>
+      <PlatformLinks roles={me.roles} />
     </>
   );
 }

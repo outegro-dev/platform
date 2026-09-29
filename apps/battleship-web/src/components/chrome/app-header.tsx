@@ -1,16 +1,19 @@
-import { Button } from "@outegro/ui/button";
-import { SignInIcon, SignOutIcon } from "@phosphor-icons/react/dist/ssr";
+import { AccountMenu, AccountMenuPlaceholder } from "@outegro/ui/account-menu";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { Suspense } from "react";
+import { loadAccount } from "@/lib/api";
+import { env, platformUrls } from "@/lib/env";
+import { signInHref } from "@/lib/routes";
 import { BrandMark } from "./brand-mark";
 import { LocaleSwitcher } from "./locale-switcher";
 import { MainNav } from "./nav";
 import { PlayerChip } from "./player-chip";
 
-/** Wordmark, sections, language, and the player (or "Sign in"). */
+/** Wordmark, sections, language, the player and the account menu (or "Sign in"). */
 export async function AppHeader({ signedIn }: { signedIn: boolean }) {
   const t = await getTranslations("brand");
-  const nav = await getTranslations("nav");
+  const locale = await getLocale();
   return (
     <header className="app-header og-container">
       <Link href="/" className="brand" aria-label={t("home")}>
@@ -26,31 +29,46 @@ export async function AppHeader({ signedIn }: { signedIn: boolean }) {
         {signedIn ? (
           <>
             <PlayerChip />
-            <form
-              action="/auth/sign-out"
-              method="post"
-              className="header-signout"
-            >
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon"
-                aria-label={nav("signOut")}
-                title={nav("signOut")}
-              >
-                <SignOutIcon />
-              </Button>
-            </form>
+            {/* Identity answers after the page has started streaming. */}
+            <Suspense fallback={<AccountMenuPlaceholder compact />}>
+              <PlayerAccountMenu locale={locale} />
+            </Suspense>
           </>
         ) : (
-          <Button asChild size="sm">
-            <a href="/auth/sign-in?returnTo=%2F">
-              <SignInIcon />
-              {nav("signIn")}
-            </a>
-          </Button>
+          <AccountMenu
+            user={null}
+            current="battleship"
+            urls={platformUrls}
+            locale={locale}
+            signInHref={signInHref("/")}
+            signOut="/auth/sign-out"
+          />
         )}
       </div>
     </header>
+  );
+}
+
+/**
+ * The platform account behind the player. The chip next to it already
+ * shows the nickname, so the menu button keeps only the avatar.
+ */
+async function PlayerAccountMenu({ locale }: { locale: string }) {
+  const account = await loadAccount();
+  return (
+    <AccountMenu
+      user={{
+        name: account?.displayName,
+        email: account?.email,
+        roles: account?.roles,
+      }}
+      current="battleship"
+      urls={platformUrls}
+      locale={locale}
+      signInHref={signInHref("/")}
+      signOut="/auth/sign-out"
+      returnTo={env.APP_URL}
+      compact
+    />
   );
 }

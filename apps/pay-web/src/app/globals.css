@@ -170,48 +170,73 @@
     gap: 8px;
     min-width: 0;
   }
-  .account-chip {
+  /* Below the widest layouts the account button keeps the avatar only. */
+  @media (max-width: 1240px) {
+    .header-actions [data-slot="account-menu-name"] {
+      display: none;
+    }
+  }
+  /* "Back to Battleship": the app the buyer came from. */
+  .return-bar {
+    display: flex;
+    margin-bottom: -8px;
+  }
+  /* Phones: the sections bar sits right above it. */
+  @media (max-width: 900px) {
+    .return-bar {
+      margin-top: 14px;
+    }
+  }
+  .return-link {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    min-width: 0;
     min-height: 44px;
-    padding: 4px 14px 4px 4px;
+    padding-inline: 14px 18px;
     border-radius: var(--radius-pill);
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
   }
-  .account-chip:focus-visible {
+  .return-link svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+  .return-link:hover svg {
+    transform: translateX(-3px);
+  }
+  .return-link:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
-  .account-avatar {
-    display: grid;
-    place-items: center;
+  /* The app a purchase belongs to, opened from its row or card. Above the
+     row's own link, which covers the whole card. */
+  .service-link {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding-block: 6px;
+    margin-block: -6px;
+    border-radius: var(--radius-sm);
+    color: var(--foreground);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 3px;
+  }
+  .service-link:hover {
+    text-decoration-color: currentColor;
+  }
+  .service-link:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .service-link svg {
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--primary);
-    color: var(--primary-foreground);
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-  .account-name {
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  /* Below the widest layouts the chip keeps only the initial. */
-  @media (max-width: 1240px) {
-    .account-name {
-      display: none;
-    }
-    .account-chip {
-      padding-inline-end: 4px;
-    }
   }
   .app-main {
     flex: 1;
@@ -690,6 +715,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* Room for the app link's taller hit area inside the clipped line. */
+    padding-block: 6px;
+    margin-block: -6px;
   }
   .order-cell {
     display: grid;
@@ -1633,6 +1661,13 @@
     }
     .order-meta {
       white-space: normal;
+    }
+    /* The app and the kind of purchase on lines of their own. */
+    .order-meta-sep {
+      display: none;
+    }
+    .order-kind {
+      display: block;
     }
     .orb,
     .medallion {

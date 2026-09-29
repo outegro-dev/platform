@@ -297,4 +297,72 @@ describe("PaymentsClient", () => {
       reason: "unavailable",
     });
   });
+
+  it("reads the buyer's subscriptions with the session's token", async () => {
+    respond(200, {
+      items: [
+        {
+          id: "7d0f1b1e-0000-4000-8000-000000000001",
+          orderId: "7d0f1b1e-0000-4000-8000-000000000002",
+          productKey: "battleship-premium",
+          title: { en: "Battleship Premium", ru: "Морской бой Premium" },
+          state: "cancel_requested",
+          autoRenew: true,
+          paidUntil: "2026-10-29T12:00:00.000Z",
+          accessUntil: "2026-11-01T12:00:00.000Z",
+          periodicity: "MONTHLY",
+        },
+        {
+          productKey: "battleship-premium",
+          state: "paused_by_provider",
+          autoRenew: false,
+          paidUntil: "2026-08-29T12:00:00.000Z",
+          accessUntil: "2026-09-01T12:00:00.000Z",
+        },
+      ],
+      nextCursor: null,
+    });
+    expect(await client().subscriptions("token")).toEqual([
+      {
+        productKey: "battleship-premium",
+        state: "cancel_requested",
+        autoRenew: true,
+        paidUntil: "2026-10-29T12:00:00.000Z",
+        accessUntil: "2026-11-01T12:00:00.000Z",
+      },
+      {
+        productKey: "battleship-premium",
+        state: "unknown",
+        autoRenew: false,
+        paidUntil: "2026-08-29T12:00:00.000Z",
+        accessUntil: "2026-09-01T12:00:00.000Z",
+      },
+    ]);
+    const [url, init] = calls()[0] ?? [];
+    expect(url).toBe("http://payments.internal/v1/me/subscriptions?limit=20");
+    expect(new Headers(init?.headers).get("authorization")).toBe(
+      "Bearer token",
+    );
+  });
+
+  it("has no subscriptions to show when payments cannot say", async () => {
+    expect(await client(null).subscriptions("token")).toBeNull();
+    respond(200, { items: [{ productKey: "x", state: "active" }] });
+    expect(await client().subscriptions("token")).toBeNull();
+    respond(401, {
+      error: {
+        code: "UNAUTHENTICATED",
+        messageKey: "x",
+        fieldErrors: {},
+        requestId: "r",
+        retryable: false,
+      },
+    });
+    expect(await client().subscriptions("token")).toBeNull();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Promise.reject(new TypeError("down"))),
+    );
+    expect(await client().subscriptions("token")).toBeNull();
+  });
 });

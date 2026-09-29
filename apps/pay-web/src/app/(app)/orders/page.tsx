@@ -2,6 +2,7 @@ import { Button } from "@outegro/ui/button";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  ArrowUpRightIcon,
   CaretRightIcon,
   ClockCounterClockwiseIcon,
   CloudSlashIcon,
@@ -17,11 +18,13 @@ import { ServiceMark } from "@/components/service-mark";
 import { StatePanel } from "@/components/state-panel";
 import { OrderStatusBadge } from "@/components/status-badge";
 import { payments, requireToken } from "@/lib/api";
+import { platformUrls } from "@/lib/env";
 import { pick } from "@/lib/i18n";
 import { getFormat, getServiceName } from "@/lib/i18n-server";
 import type { Order } from "@/lib/payments/model";
 import { isStalePending, orderPhase } from "@/lib/payments/status";
 import { orderIdFrom, returnPath } from "@/lib/routes";
+import { serviceLink } from "@/lib/services";
 import { signInPath } from "@/lib/sso";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -173,9 +176,11 @@ async function OrderRow({
   const locale = await getLocale();
   const t = await getTranslations("orders");
   const kinds = await getTranslations("kinds");
+  const detail = await getTranslations("order");
   const format = await getFormat();
   const nameOf = await getServiceName();
   const title = pick(order.title, locale);
+  const app = serviceLink(service, platformUrls);
   return (
     <li>
       <article className="card order-row">
@@ -185,8 +190,29 @@ async function OrderRow({
             <Link href={`/orders/${order.id}`}>{title}</Link>
           </h2>
           <p className="order-meta og-eyebrow">
-            {service ? <span>{nameOf(service)} · </span> : null}
-            <span>{kinds(order.kind)}</span>
+            {service ? (
+              <>
+                {app ? (
+                  <a
+                    className="service-link"
+                    href={app.home}
+                    aria-label={detail("openService", {
+                      service: nameOf(service),
+                    })}
+                    data-testid="order-app-link"
+                  >
+                    {nameOf(service)}
+                    <ArrowUpRightIcon aria-hidden="true" />
+                  </a>
+                ) : (
+                  <span>{nameOf(service)}</span>
+                )}
+                <span className="order-meta-sep" aria-hidden="true">
+                  {" · "}
+                </span>
+              </>
+            ) : null}
+            <span className="order-kind">{kinds(order.kind)}</span>
           </p>
         </div>
         <div className="order-cell order-cell-date">

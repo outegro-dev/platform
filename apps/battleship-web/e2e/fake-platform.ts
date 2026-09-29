@@ -21,7 +21,7 @@ import {
   RandomPlacement,
   SeededRandom,
 } from "@outegro/battleship-engine";
-import { pageSchema } from "@outegro/contracts";
+import { pageSchema, permissionsOf } from "@outegro/contracts";
 import {
   cosmeticUnlocked,
   effectiveCosmetics,
@@ -35,6 +35,8 @@ import {
 } from "@outegro/contracts/battleship";
 import { z } from "zod";
 import {
+  accounts,
+  emailOf,
   encodeTicket,
   isPersona,
   type Persona,
@@ -62,6 +64,8 @@ type User = {
   features: Set<string>;
   equipped: Cosmetics;
   failTickets: number;
+  /** The Premium subscription payments holds (renewal and cancellation). */
+  subscription: { state: string; autoRenew: boolean } | null;
 };
 
 const users = new Map<string, User>();
@@ -196,9 +200,41 @@ function createUser(persona: Persona): User {
     features: new Set(base.features),
     equipped: { ...base.equipped },
     failTickets: persona === "unlucky" ? 3 : 0,
+    // Premium comes from a renewing subscription, except for the persona
+    // whose grant outlived it.
+    subscription:
+      persona === "premium" ? { state: "active", autoRenew: true } : null,
   };
   users.set(user.id, user);
   return user;
+}
+
+/** Payments' view of the user's subscriptions (GET /v1/me/subscriptions). */
+function subscriptionsOf(user: User) {
+  const sub = user.subscription;
+  return {
+    items: sub
+      ? [
+          {
+            id: "5e0c0de0-0000-4000-8000-000000000001",
+            orderId: "5e0c0de0-0000-4000-8000-000000000002",
+            productKey: "battleship-premium",
+            title: { en: "Battleship Premium", ru: "Battleship Premium" },
+            state: sub.state,
+            autoRenew: sub.autoRenew,
+            paidUntil: "2026-10-29T12:00:00.000Z",
+            accessUntil: "2026-11-01T12:00:00.000Z",
+            money: { minor: "5000", currency: "RUB", scale: 2 },
+            periodicity: "MONTHLY",
+            cancelRequestedAt: null,
+            cancelledAt: null,
+            expiredAt: null,
+            createdAt: "2026-09-29T12:00:00.000Z",
+          },
+        ]
+      : [],
+    nextCursor: null,
+  };
 }
 
 function profileOf(user: User) {
@@ -460,10 +496,32 @@ const checkoutBodySchema = z
 
 async function handle(req: IncomingMessage, res: ServerResponse) {
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
-  const path = url.pathname;
+  // Identity's API (AUTH_API_URL) lives under /identity: its /v1/me must not
+  // collide with the game server's /v1/me on this one port.
+  const identity = url.pathname.startsWith("/identity/");
+  const path = identity ? url.pathname.slice("/identity".length) : url.pathname;
   const method = req.method ?? "GET";
 
   if (path === "/health") return send(res, 200, { status: "ok" });
+
+  // Identity: who is signed in, for the account menu.
+  if (identity && path === "/v1/me" && method === "GET") {
+    const user = userFrom(req);
+    if (!user) return error(res, 401, "UNAUTHENTICATED");
+    const account = accounts[user.persona];
+    return send(res, 200, {
+      id: user.id,
+      email: emailOf(user.persona),
+      emailVerified: true,
+      displayName: account.displayName,
+      locale: "en",
+      status: "active",
+      version: 1,
+      createdAt: "2026-06-01T10:00:00.000Z",
+      roles: account.roles,
+      permissions: [...permissionsOf(account.roles)].sort(),
+    });
+  }
 
   // Identity: the SSO entry id.outegro.dev would show; here it signs in at once.
   if (path === "/authorize" && method === "GET") {
@@ -641,16 +699,36 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
     });
   }
 
-  // Test control: grants (the webhook), failing tickets, user state.
+  if (path === "/v1/me/subscriptions" && method === "GET") {
+    const user = userFrom(req);
+    if (!user) return error(res, 401, "UNAUTHENTICATED");
+    return send(res, 200, subscriptionsOf(user));
+  }
+
+  // Test control: grants (the webhook), failing tickets, subscriptions, user state.
   const control =
-    /^\/__test\/users\/([0-9a-f-]{36})(?:\/(grant|tickets))?$/.exec(path);
+    /^\/__test\/users\/([0-9a-f-]{36})(?:\/(grant|tickets|subscription))?$/.exec(
+      path,
+    );
   if (control) {
     const user = users.get(control[1] ?? "");
     if (!user) return send(res, 404, { error: "no such user" });
     if (control[2] === "grant" && method === "POST") {
       const body = (await readBody(req)) as { feature?: string } | undefined;
       if (body?.feature) user.features.add(body.feature);
+      // A Premium grant comes from a subscription payments now holds.
+      if (body?.feature === "premium")
+        user.subscription = { state: "active", autoRenew: true };
       return send(res, 200, profileOf(user));
+    }
+    if (control[2] === "subscription" && method === "POST") {
+      const body = (await readBody(req)) as
+        | { state?: string; autoRenew?: boolean }
+        | undefined;
+      user.subscription = body?.state
+        ? { state: body.state, autoRenew: body.autoRenew ?? true }
+        : null;
+      return send(res, 200, subscriptionsOf(user));
     }
     if (control[2] === "tickets" && method === "POST") {
       const body = (await readBody(req)) as { fail?: number } | undefined;

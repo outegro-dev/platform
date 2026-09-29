@@ -46,7 +46,9 @@ test.describe("sign-in", () => {
       page.getByRole("heading", { name: "Your subscriptions." }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /nick@outegro\.test/ }),
+      page.getByRole("button", {
+        name: "nick@outegro.test, account and apps",
+      }),
     ).toBeVisible();
 
     const cookies = await page.context().cookies(APP);
@@ -79,7 +81,8 @@ test.describe("sign-in", () => {
   }) => {
     const buyer = await persona(page);
     await page.goto("/orders");
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: /account and apps$/ }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
     await expect(page).toHaveURL(`${APP}/signed-out`);
     await expect(
       page.getByRole("heading", { name: "You're signed out" }),
@@ -157,7 +160,7 @@ test.describe("purchases", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Open Battleship" }).first(),
-    ).toHaveAttribute("href", "https://battleship.outegro.dev/shop");
+    ).toHaveAttribute("href", "https://battleship.fake.test/shop");
     const steps = page.locator(".timeline-step");
     await expect(steps).toHaveText([
       /Order created/,
@@ -537,7 +540,10 @@ test.describe("catalog", () => {
     await expect(
       page.getByRole("button", { name: "Subscribe" }),
     ).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Buy" })).toBeDisabled();
+    // Exact: the account menu is named after the buyer's email ("buyer.…").
+    await expect(
+      page.getByRole("button", { name: "Buy", exact: true }),
+    ).toBeDisabled();
   });
 });
 

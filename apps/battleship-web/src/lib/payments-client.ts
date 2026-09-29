@@ -14,6 +14,11 @@ import {
   currencies,
   type OrderStatus,
 } from "./catalog";
+import {
+  type SubscriptionState,
+  type SubscriptionSummary,
+  subscriptionStates,
+} from "./ownership";
 
 /*
  * The payments API as this app uses it. Everything that knows its shape
@@ -22,6 +27,8 @@ import {
  *   POST {PAYMENTS_API_URL}/v1/checkout  { productKey, currency, returnUrl }
  *        + Authorization: Bearer, Idempotency-Key
  *   GET  {PAYMENTS_API_URL}/v1/me/orders/{orderId}          (Bearer)
+ *   GET  {PAYMENTS_API_URL}/v1/me/subscriptions?limit=…     (Bearer)
+ *        → { items: [{ productKey, state, autoRenew, paidUntil, accessUntil, … }] }
  * After the provider's page the buyer lands on returnUrl with
  * ?orderId=…&result=success|failure|cancel appended by payments.
  */
@@ -62,6 +69,30 @@ const orderSchema = z
     productKey: z.string().optional(),
   })
   .passthrough();
+
+const instant = z
+  .string()
+  .refine((value) => !Number.isNaN(Date.parse(value)), "not a date");
+
+// Unknown states read as "unknown": a newer payments never breaks the shop.
+const subscriptionsSchema = z.object({
+  items: z.array(
+    z.object({
+      productKey: z.string(),
+      state: z
+        .string()
+        .transform(
+          (value): SubscriptionState =>
+            (subscriptionStates as readonly string[]).includes(value)
+              ? (value as SubscriptionState)
+              : "unknown",
+        ),
+      autoRenew: z.boolean(),
+      paidUntil: instant,
+      accessUntil: instant,
+    }),
+  ),
+});
 
 const paidStatuses = new Set([
   "paid",
@@ -273,5 +304,38 @@ export class PaymentsClient {
           : "pending",
       feature,
     };
+  }
+
+  /**
+   * The buyer's subscriptions, newest first, with renewal and the paid
+   * period. Null when payments is not wired, unreachable or answers outside
+   * the contract: the game then shows only what the grant says.
+   */
+  async subscriptions(
+    accessToken: string,
+  ): Promise<SubscriptionSummary[] | null> {
+    if (!this.call) return null;
+    let raw: unknown;
+    try {
+      raw = await this.call<unknown>("/v1/me/subscriptions?limit=20", {
+        accessToken,
+        timeoutMs: 5000,
+      });
+    } catch (error) {
+      if (
+        !(error instanceof BackendUnavailable || error instanceof BackendError)
+      )
+        this.logger.error("[payments] subscriptions failed", error);
+      return null;
+    }
+    const parsed = subscriptionsSchema.safeParse(raw);
+    if (!parsed.success) {
+      this.logger.error(
+        "[payments] subscriptions outside the contract",
+        parsed.error.issues[0],
+      );
+      return null;
+    }
+    return parsed.data.items;
   }
 }

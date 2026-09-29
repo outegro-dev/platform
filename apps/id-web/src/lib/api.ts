@@ -3,6 +3,7 @@ import { clientHeaders } from "@outegro/bff/client";
 import { ACCESS_COOKIE } from "@outegro/bff/session";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { env } from "./env";
 
 // Every call runs inside a request, so the browser identity is always at hand.
@@ -60,6 +61,21 @@ export type Preferences = {
 export async function accessToken() {
   return (await cookies()).get(ACCESS_COOKIE)?.value ?? null;
 }
+
+/**
+ * The signed-in account for the header menu and the overview's links, once
+ * per request. Optional: when it cannot be read the menu says "Your
+ * account"; the page itself still asks with `withSession`.
+ */
+export const loadMe = cache(async (): Promise<Me | null> => {
+  const token = await accessToken();
+  if (!token) return null;
+  try {
+    return await authApi<Me>("/v1/me", { accessToken: token, timeoutMs: 3000 });
+  } catch {
+    return null;
+  }
+});
 
 /**
  * Calls a user endpoint with the session token. A missing or rejected

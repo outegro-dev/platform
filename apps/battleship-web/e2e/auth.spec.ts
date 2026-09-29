@@ -54,7 +54,8 @@ test.describe("sign-in through id.outegro.dev", () => {
     expect(byName.og_rt?.httpOnly).toBe(true);
     expect(byName.og_sso).toBeUndefined();
 
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: /account and apps$/ }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
     await expect(page.getByTestId("sign-in-cta")).toBeVisible();
     const after = (await context.cookies(APP)).map((cookie) => cookie.name);
     expect(after).not.toContain("og_at");

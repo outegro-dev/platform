@@ -38,6 +38,14 @@ export default defineConfig({
       url: "http://localhost:3002/health",
       reuseExistingServer: true,
       timeout: 60000,
+      // Sibling apps are only linked to (platform.spec.ts checks the links).
+      env: {
+        ...process.env,
+        ID_URL: "http://localhost:3002",
+        PAY_URL: "https://pay.fake.test",
+        BATTLESHIP_URL: "https://battleship.fake.test",
+        ADMIN_URL: "https://admin.fake.test",
+      } as Record<string, string>,
     },
   ],
 });

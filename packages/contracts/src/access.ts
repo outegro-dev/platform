@@ -61,6 +61,17 @@ export function permissionsOf(roles: readonly string[]): Set<Permission> {
   return granted;
 }
 
+/**
+ * The user holds at least one platform role, so the admin console has
+ * something for them. A hint for navigation only: the console and every
+ * service check permissions again on their side.
+ */
+export function hasPlatformRole(
+  roles: readonly string[] | null | undefined,
+): boolean {
+  return (roles ?? []).some((role) => Object.hasOwn(platformRoles, role));
+}
+
 /** Claims carried by platform access tokens (ES256, 5 min). */
 export type AccessTokenClaims = {
   sub: string;

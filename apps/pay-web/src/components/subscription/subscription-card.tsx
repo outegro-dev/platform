@@ -13,7 +13,10 @@ import {
   DialogTrigger,
 } from "@outegro/ui/dialog";
 import { FormMessage } from "@outegro/ui/form-message";
-import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowUpRightIcon,
+  CheckCircleIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import { observer } from "mobx-react-lite";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
@@ -32,26 +35,30 @@ import { SubscriptionStore } from "@/stores/subscription-store";
 type CardProps = {
   initial: Subscription;
   service: string | null;
+  /** The app the subscription belongs to, to open it from here. */
+  serviceUrl: string | null;
 };
 
 /** One subscription: state, paid period, access, renewal and its cancel flow. */
-export function SubscriptionCard({ initial, service }: CardProps) {
+export function SubscriptionCard({ initial, service, serviceUrl }: CardProps) {
   const [store] = useState(
     () => new SubscriptionStore(initial, { cancel: cancelSubscription }),
   );
   return (
     <SubscriptionContext.Provider value={store}>
-      <CardBody service={service} />
+      <CardBody service={service} serviceUrl={serviceUrl} />
     </SubscriptionContext.Provider>
   );
 }
 
 const CardBody = observer(function CardBody({
   service,
+  serviceUrl,
 }: Omit<CardProps, "initial">) {
   const store = useSubscription();
   const sub = store.subscription;
   const t = useTranslations("subscriptions");
+  const order = useTranslations("order");
   const periods = useTranslations("periods");
   const locale = useLocale();
   const format = useFormat();
@@ -89,7 +96,26 @@ const CardBody = observer(function CardBody({
         <div className="sub-name">
           <h3 id={`sub-${sub.id}`}>{title}</h3>
           <p className="og-eyebrow">
-            {service ? `${nameOf(service)} · ` : ""}
+            {service && serviceUrl ? (
+              <>
+                <a
+                  className="service-link"
+                  href={serviceUrl}
+                  aria-label={order("openService", {
+                    service: nameOf(service),
+                  })}
+                  data-testid="subscription-app-link"
+                >
+                  {nameOf(service)}
+                  <ArrowUpRightIcon aria-hidden="true" />
+                </a>
+                <span aria-hidden="true"> · </span>
+              </>
+            ) : service ? (
+              `${nameOf(service)} · `
+            ) : (
+              ""
+            )}
             {price}
           </p>
         </div>

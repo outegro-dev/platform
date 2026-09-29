@@ -15,6 +15,10 @@ export type PersonaOptions = {
   latencyMs?: number;
   displayName?: string;
   email?: string;
+  /** Platform roles, e.g. ["support"]: the account menu links the admin console. */
+  roles?: string[];
+  /** Identity's /v1/me fails while the session keeps working. */
+  identity?: "up" | "down";
 };
 
 export type Persona = {

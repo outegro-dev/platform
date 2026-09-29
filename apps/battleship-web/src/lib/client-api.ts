@@ -8,6 +8,7 @@ import { equipCosmetics, startCheckout } from "@/app/actions";
 import type { ProfileSource } from "@/game/stores/session-store";
 import type { ShopApi } from "@/game/stores/shop-store";
 import type { StatsApi } from "@/game/stores/stats-store";
+import { type SubscriptionSummary, subscriptionStates } from "./ownership";
 
 /*
  * Browser-side adapters for the stores' server calls: BFF routes for reads,
@@ -74,3 +75,28 @@ export const shopApi: ShopApi = {
   equip: (change) => equipCosmetics(change),
   fetchProfile: () => profileSource.fetchProfile(),
 };
+
+const subscriptionsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productKey: z.string(),
+        state: z.enum([...subscriptionStates, "unknown"]),
+        autoRenew: z.boolean(),
+        paidUntil: z.string(),
+        accessUntil: z.string(),
+      }),
+    )
+    .nullable(),
+});
+
+/** The player's subscriptions (renewal, cancellation); null when unknown. */
+export async function fetchSubscriptions(): Promise<
+  SubscriptionSummary[] | null
+> {
+  try {
+    return subscriptionsSchema.parse(await getJson("/api/subscriptions")).items;
+  } catch {
+    return null;
+  }
+}

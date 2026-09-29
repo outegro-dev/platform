@@ -3,9 +3,13 @@ import { test as base, expect, type Page } from "@playwright/test";
 import { type FakeGame, GameHarness } from "./fake-game.ts";
 import type { Persona } from "./personas.ts";
 
-export const PLATFORM = "http://localhost:4195";
-export const APP = "http://localhost:3195";
+// Same defaults and overrides as playwright.config.ts.
+export const PLATFORM = `http://localhost:${process.env.E2E_PLATFORM_PORT ?? 4195}`;
+export const APP = `http://localhost:${process.env.E2E_APP_PORT ?? 3195}`;
 export const CHECKOUT = "https://checkout.fake.test";
+/** PAY_URL and ADMIN_URL of the app under test: linked, never opened. */
+export const PAY = "https://pay.fake.test";
+export const ADMIN = "https://admin.fake.test";
 
 type Fixtures = {
   game: GameHarness;
@@ -106,6 +110,17 @@ export async function signInAndConnect(
 
 /** No serious or critical accessibility violations (WCAG 2.2 AA rules). */
 export async function expectAccessible(page: Page, where: string) {
+  // Contrast is measured on final colours: fades and zooms (dialogs, the
+  // status pill, the account menu) end first. Endless ones never do.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (animation) =>
+          animation.playState !== "running" ||
+          animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY,
+      ),
+  );
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();

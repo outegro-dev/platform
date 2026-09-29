@@ -55,6 +55,28 @@ const screens: Screen[] = [
     },
   },
   {
+    // Sent here by Battleship's "Manage subscription": the way back on top.
+    name: "subscriptions-from-battleship",
+    ru: true,
+    open: async (page) => {
+      const shop = encodeURIComponent("https://battleship.fake.test/shop");
+      await page.goto(`/subscriptions?return=${shop}`);
+      await expect(page.getByTestId("return-link")).toBeVisible();
+    },
+  },
+  {
+    name: "account-menu",
+    ru: true,
+    viewportOnly: true,
+    persona: { roles: ["support"] },
+    open: async (page) => {
+      await page.goto("/orders");
+      await page.getByRole("button", { name: /and apps$|приложения$/ }).click();
+      await expect(page.getByRole("menu")).toBeVisible();
+      await page.waitForTimeout(300);
+    },
+  },
+  {
     name: "orders-empty",
     persona: { scenario: "empty" },
     open: async (page) => {
@@ -240,7 +262,8 @@ const screens: Screen[] = [
     name: "signed-out",
     open: async (page) => {
       await page.goto("/orders");
-      await page.locator("form button[type=submit]").click();
+      await page.getByRole("button", { name: /and apps$/ }).click();
+      await page.getByRole("menuitem", { name: "Sign out" }).click();
       await expect(page).toHaveURL(/signed-out/);
     },
   },

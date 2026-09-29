@@ -14,7 +14,9 @@ import { RetryButton } from "@/components/retry-button";
 import { StatePanel } from "@/components/state-panel";
 import { SubscriptionCard } from "@/components/subscription/subscription-card";
 import { payments, requireToken } from "@/lib/api";
+import { platformUrls } from "@/lib/env";
 import { groupSubscriptions } from "@/lib/payments/status";
+import { serviceLink } from "@/lib/services";
 import { signInPath } from "@/lib/sso";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -110,7 +112,11 @@ export default async function SubscriptionsPage({
     const service = services.get(sub.productKey) ?? null;
     return (
       <li key={sub.id}>
-        <SubscriptionCard initial={sub} service={service} />
+        <SubscriptionCard
+          initial={sub}
+          service={service}
+          serviceUrl={serviceLink(service, platformUrls)?.home ?? null}
+        />
       </li>
     );
   };

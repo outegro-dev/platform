@@ -13,6 +13,7 @@ import {
   ClockIcon,
   CrownSimpleIcon,
   HourglassIcon,
+  InfoIcon,
   LockSimpleIcon,
   SealCheckIcon,
   SignInIcon,
@@ -22,6 +23,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { observer } from "mobx-react-lite";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { ShopStore } from "@/game/stores/shop-store";
@@ -32,14 +34,22 @@ import {
   type Currency,
   defaultCurrency,
 } from "@/lib/catalog";
-import { formatDate } from "@/lib/format";
+import { fetchSubscriptions } from "@/lib/client-api";
 import { formatMoney } from "@/lib/money";
+import {
+  currentPremium,
+  premiumProductKey,
+  premiumStatus,
+  type SubscriptionSummary,
+} from "@/lib/ownership";
+import type { PayLinks } from "@/lib/pay-links";
 import { signInHref } from "@/lib/routes";
 import { DemoBoard } from "../board/demo-board";
 import { CellMark } from "../board/marks";
 import { ShipArt } from "../board/ship";
 import { StableLabel } from "../home/modes";
 import { useRoot } from "../providers";
+import { PayLink, usePremiumStatusText } from "./ownership";
 
 const PRODUCTS = [
   {
@@ -64,6 +74,19 @@ const Banner = observer(function Banner({ shop }: { shop: ShopStore }) {
       : t("silver.title"));
   let content: React.ReactNode = null;
   let tone: "info" | "success" | "error" = "info";
+  // Back from checkout, however it went: the way back to the game is here.
+  const backToGame = (
+    <Button
+      asChild
+      size="sm"
+      variant={shop.phase === "success" ? "primary" : "outline"}
+      className="shop-banner-cta"
+    >
+      <Link href="/" data-testid="back-to-game">
+        {shop.phase === "success" ? t("playNow") : t("backToGame")}
+      </Link>
+    </Button>
+  );
   if (shop.phase === "processing") {
     content = (
       <>
@@ -74,6 +97,7 @@ const Banner = observer(function Banner({ shop }: { shop: ShopStore }) {
           <strong>{t("processing")}</strong>
           <span>{t("processingBody")}</span>
         </span>
+        {backToGame}
       </>
     );
   } else if (shop.phase === "success") {
@@ -87,6 +111,7 @@ const Banner = observer(function Banner({ shop }: { shop: ShopStore }) {
           <strong>{t("success")}</strong>
           <span>{t("successBody", { product: name })}</span>
         </span>
+        {backToGame}
         <Button
           variant="ghost"
           size="icon"
@@ -107,6 +132,7 @@ const Banner = observer(function Banner({ shop }: { shop: ShopStore }) {
           <strong>{t("slow")}</strong>
           <span>{t("slowBody")}</span>
         </span>
+        {backToGame}
         <Button
           variant="ghost"
           size="icon"
@@ -149,6 +175,7 @@ const Banner = observer(function Banner({ shop }: { shop: ShopStore }) {
           <strong>{t(shop.phase)}</strong>
           <span>{t(`${shop.phase}Body`)}</span>
         </span>
+        {backToGame}
         <Button
           variant="ghost"
           size="icon"
@@ -197,32 +224,52 @@ const Banner = observer(function Banner({ shop }: { shop: ShopStore }) {
 const ProductCard = observer(function ProductCard({
   shop,
   spec,
+  plan,
+  links,
 }: {
   shop: ShopStore;
   spec: (typeof PRODUCTS)[number];
+  plan: SubscriptionSummary | null;
+  links: PayLinks;
 }) {
   const { session } = useRoot();
   const t = useTranslations("shop");
   const locale = useLocale();
+  const statusText = usePremiumStatusText();
   const product: CatalogProduct | null = shop.productFor(spec.feature);
   const price = product ? shop.priceOf(product) : null;
   const premium = spec.key === "premium";
   const owned = shop.owns(spec.feature);
   const catalog = shop.catalog;
   const buying = shop.buying === product?.key;
-  const until = premium ? session.profile?.premiumUntil : null;
 
   let action: React.ReactNode;
   if (owned) {
+    // What the player has, and where it is managed: pay.outegro.dev.
     action = (
-      <span className="owned-tag" data-testid={`owned-${spec.key}`}>
-        <CheckCircleIcon weight="fill" aria-hidden="true" />
-        {premium
-          ? until
-            ? t("activeUntil", { date: formatDate(until, locale) })
-            : t("active")
-          : t("owned")}
-      </span>
+      <div className="owned-block">
+        <span className="owned-tag" data-testid={`owned-${spec.key}`}>
+          <CheckCircleIcon weight="fill" aria-hidden="true" />
+          {premium
+            ? statusText(
+                premiumStatus({
+                  owned,
+                  premiumUntil: session.profile?.premiumUntil,
+                  subscription: plan,
+                }),
+              )
+            : t("owned")}
+        </span>
+        {premium ? (
+          <PayLink href={links.subscriptions} testId="manage-subscription">
+            {t("manageSubscription")}
+          </PayLink>
+        ) : (
+          <PayLink href={links.purchases} testId="your-purchases">
+            {t("yourPurchases")}
+          </PayLink>
+        )}
+      </div>
     );
   } else if (catalog.status === "unconfigured" || !product) {
     action = (
@@ -465,9 +512,15 @@ const CurrencySwitch = observer(function CurrencySwitch({
 export const ShopView = observer(function ShopView({
   catalog,
   returned,
+  premiumPlan,
+  links,
 }: {
   catalog: Catalog;
   returned: { orderId: string; result: CheckoutResult | null } | null;
+  /** The Premium subscription behind the grant, from payments (renewal, cancel). */
+  premiumPlan: SubscriptionSummary | null;
+  /** pay.outegro.dev pages that lead back to the shop. */
+  links: PayLinks;
 }) {
   const root = useRoot();
   const locale = useLocale();
@@ -475,8 +528,10 @@ export const ShopView = observer(function ShopView({
   const [shop] = useState(() =>
     root.createShop({ catalog, currency: defaultCurrency(locale), returned }),
   );
+  const [plan, setPlan] = useState(premiumPlan);
   const orderId = returned?.orderId ?? null;
   const result = returned?.result ?? null;
+  const phase = shop.phase;
 
   useEffect(() => {
     if (orderId) shop.returnFromCheckout(orderId, result);
@@ -486,6 +541,20 @@ export const ShopView = observer(function ShopView({
   useEffect(() => {
     shop.setCatalog(catalog);
   }, [shop, catalog]);
+
+  // A purchase went through: payments now holds the new subscription and
+  // its renewal date (a page refresh would restart the checkout return).
+  useEffect(() => {
+    if (phase !== "success") return;
+    let live = true;
+    void fetchSubscriptions().then((items) => {
+      if (live && items)
+        setPlan(currentPremium(items, premiumProductKey(catalog)));
+    });
+    return () => {
+      live = false;
+    };
+  }, [phase, catalog]);
 
   return (
     <>
@@ -513,9 +582,24 @@ export const ShopView = observer(function ShopView({
       </div>
       <div className="products">
         {PRODUCTS.map((spec) => (
-          <ProductCard key={spec.key} shop={shop} spec={spec} />
+          <ProductCard
+            key={spec.key}
+            shop={shop}
+            spec={spec}
+            plan={plan}
+            links={links}
+          />
         ))}
       </div>
+      <p className="shop-note" data-testid="payments-note">
+        <InfoIcon aria-hidden="true" />
+        <span>
+          {t.rich("paymentsNote", {
+            host: links.host,
+            pay: (chunks) => <a href={links.purchases}>{chunks}</a>,
+          })}
+        </span>
+      </p>
       <CosmeticsPicker shop={shop} />
     </>
   );

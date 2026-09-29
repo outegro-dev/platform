@@ -57,11 +57,13 @@ export async function requireToken(from: string): Promise<string> {
 const meSchema = z.object({
   email: z.string().nullable().catch(null),
   displayName: z.string().nullable().catch(null),
+  /** Platform roles: the account menu then links the admin console. */
+  roles: z.array(z.string()).catch([]),
 });
 
 /**
- * Who is signed in, for the header. Optional: when Identity is slow or down
- * the header falls back to a generic account label, the page still works.
+ * Who is signed in, for the header's account menu. Optional: when Identity
+ * is slow or down the menu says "Your account" and the page still works.
  */
 export const loadMe = cache(async () => {
   const token = await accessToken();

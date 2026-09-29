@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ShopView } from "@/components/shop/shop-view";
-import { payments } from "@/lib/api";
+import { loadSubscriptions, payments } from "@/lib/api";
+import { currentPremium, premiumProductKey } from "@/lib/ownership";
+import { payLinks } from "@/lib/pay-links";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("shop");
@@ -32,7 +34,11 @@ export default async function ShopPage({
     query.result === "cancel"
       ? query.result
       : null;
-  const catalog = await payments.catalog(locale);
+  // Renewal and cancellation come from payments; ownership from the game.
+  const [catalog, subscriptions] = await Promise.all([
+    payments.catalog(locale),
+    loadSubscriptions(),
+  ]);
   return (
     <main id="main" className="app-main og-container">
       <header className="page-head">
@@ -46,6 +52,8 @@ export default async function ShopPage({
       <ShopView
         catalog={catalog}
         returned={orderId ? { orderId, result } : null}
+        premiumPlan={currentPremium(subscriptions, premiumProductKey(catalog))}
+        links={payLinks("/shop")}
       />
     </main>
   );

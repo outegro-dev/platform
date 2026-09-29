@@ -14,10 +14,15 @@
     "orders": "Purchases",
     "subscriptions": "Subscriptions",
     "catalog": "Catalog",
-    "language": "Language",
-    "signOut": "Sign out",
-    "account": ", account settings",
-    "accountFallback": "Your account"
+    "language": "Language"
+  },
+  "return": {
+    "label": "Back to the app you came from",
+    "to": {
+      "battleship": "Back to Battleship",
+      "id": "Back to your account",
+      "admin": "Back to the admin console"
+    }
   },
   "footer": {
     "site": "outegro.dev",

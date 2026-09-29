@@ -63,6 +63,9 @@ export default defineConfig({
         CHECKOUT_ORIGINS: "https://app.lava.top",
         CLIENT_IP_SOURCE: "x-forwarded-for",
         SITE_URL: "https://outegro.dev",
+        // Sibling apps: linked to and allowed as ways back, never opened.
+        BATTLESHIP_URL: "https://battleship.fake.test",
+        ADMIN_URL: "https://admin.fake.test",
       },
     },
   ],
