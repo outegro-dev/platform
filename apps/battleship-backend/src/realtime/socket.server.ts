@@ -188,9 +188,10 @@ export class GameSocketServer
 
   private receive(connection: Connection, data: RawData, isBinary: boolean) {
     if (!connection.budget.take()) {
-      connection.error("rate_limited", seqOf(decodeFrame(data, isBinary)));
+      connection.refuse(seqOf(decodeFrame(data, isBinary)));
       return;
     }
+    connection.accepted();
     connection.enqueue(() => this.router.handle(connection, data, isBinary));
   }
 

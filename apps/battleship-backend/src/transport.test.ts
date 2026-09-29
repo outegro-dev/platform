@@ -180,13 +180,23 @@ describe("messages", () => {
     const socket = await h.connect();
     const registry = h.get(ConnectionRegistry);
     // The client stops reading: every refused frame's reply stays queued
-    // on the server (about 75 bytes for each 7-byte frame).
+    // on the server (about 75 bytes for each 7-byte frame). Kernel buffers
+    // may absorb megabytes first, so the flood cap usually ends it sooner.
     (socket.ws as unknown as { _socket: { pause(): void } })._socket.pause();
     for (let i = 0; i < 40_000; i++) socket.ws.send("x");
     await expect
       .poll(() => registry.socketsOf(socket.userId), { timeout: 15_000 })
       .toBe(0);
     socket.ws.terminate();
+  });
+
+  it("drops a client that keeps sending after 100 refusals in a row", async () => {
+    const socket = await h.connect();
+    const registry = h.get(ConnectionRegistry);
+    for (let t = 0; t < 400; t++) socket.send("ping", { t });
+    await expect.poll(() => registry.socketsOf(socket.userId)).toBe(0);
+    // The burst of 40 is served, then at most 100 refusals are answered.
+    expect(socket.pending("error").length).toBeLessThanOrEqual(100);
   });
 
   it("pings every socket and drops the ones that stop answering", async () => {

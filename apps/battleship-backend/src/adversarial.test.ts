@@ -689,11 +689,15 @@ describe("resources", () => {
     await expect.poll(() => h.get(ConnectionRegistry).stats().sockets).toBe(0);
     // Every live match ends by its clocks (60 s grace, 15 min bot idle).
     await h.advance(16 * 60_000);
-    expect(h.get(SessionRegistry).all()).toHaveLength(0);
-    expect(h.scheduler.pending).toBe(0);
     const field = (service: unknown, name: string) =>
       (service as Record<string, Map<unknown, unknown>>)[name]?.size;
-    expect(field(h.get(KeyedMutex), "tails")).toBe(0);
+    // Finishes write to the database under the players' locks after the
+    // clocks fire; on a slow machine they are still running here.
+    await expect
+      .poll(() => field(h.get(KeyedMutex), "tails"), { timeout: 15_000 })
+      .toBe(0);
+    expect(h.get(SessionRegistry).all()).toHaveLength(0);
+    expect(h.scheduler.pending).toBe(0);
     expect(field(h.get(EntitlementWatch), "timers")).toBe(0);
     expect(field(h.get(LobbyService), "roomTimers")).toBe(0);
     expect(field(h.get(MatchmakerService), "pairing")).toBe(0);
