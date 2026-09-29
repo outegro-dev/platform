@@ -32,7 +32,7 @@
 ## 16.3. Рейтинг и статистика
 
 - Рейтинг Elo для быстрых матчей: старт 1000, K = 32 (K = 16 после 30 матчей). Приватные комнаты и боты рейтинг не меняют.
-- Лидерборд: за всё время и за текущую неделю (понедельник 00:00 UTC), топ-100 и своё место.
+- Лидерборд: за всё время (по рейтингу) и за текущую неделю (понедельник 00:00 UTC; по набранным за неделю очкам `gained`, при равенстве — по победам за неделю), топ-100 и своё место. В таблицу попадают игроки хотя бы с одним рейтинговым матчем; скрытые модератором и заблокированные — нет.
 - Статистика игрока: матчи, победы, процент побед, точность, самая длинная серия побед, среднее число ходов до победы, победы над каждым уровнем ботов, тепловая карта выстрелов. Расширенная статистика (тепловая карта, история матчей с разбором) — Premium.
 
 ## 16.4. Монетизация
@@ -63,9 +63,9 @@
 
 Клиент → сервер: `queue.join { mode: quick }`, `queue.leave`, `bot.start { level }`, `room.create`, `room.join { code }`, `room.cancel`, `fleet.place { ships }`, `shot.fire { x, y }`, `match.resign`, `match.sync` (запросить полный снимок), `ping { t }`.
 
-Сервер → клиент: `session.ready` (первое сообщение: игрок, активная партия, очередь, комната, время сервера), `player.updated` (рейтинг, Premium, косметика изменились — покупка видна без перезахода), `queue.joined`, `queue.left`, `queue.matched { matchId }`, `room.created { code, expiresAt }`, `room.cancelled`, `match.state { match }` (полный снимок при подключении и по `match.sync`), `fleet.placed { side }`, `match.started { turn, deadline }`, `shot.result { by, x, y, outcome, ship?, revealed, nextTurn, deadline }`, `turn.skipped`, `opponent.presence { connected, graceUntil }`, `match.finished { winner, reason, rating, opponentFleet }`, `error { code, ref }`, `pong`.
+Сервер → клиент: `session.ready` (первое сообщение: игрок, активная партия, очередь, комната, время сервера), `player.updated` (рейтинг, Premium, косметика изменились — покупка видна без перезахода), `queue.joined`, `queue.left`, `queue.matched { matchId }`, `room.created { code, expiresAt }`, `room.cancelled`, `match.state { match }` (полный снимок при подключении и по `match.sync`), `fleet.placed { side }`, `match.started { turn, deadline }`, `shot.result { by, x, y, outcome, ship?, revealed, nextTurn, deadline }`, `turn.skipped`, `opponent.presence { connected, graceUntil }`, `match.finished { winner, reason, rating, opponentFleet }`, `match.aborted { reason }` (партия закончилась без результата и без изменения рейтинга: `placement_timeout` — никто не расставил флот вовремя, `moderation` — остановил модератор), `error { code, ref }`, `pong`.
 
-Таймеры онлайн: расстановка 90 секунд, ход 30 секунд. С ботом таймера хода нет, брошенная партия закрывается через 15 минут бездействия. Переподключение: в течение 60 секунд игрок возвращается в партию и получает `match.state`; иначе — поражение (`disconnected`). Команды ограничены по частоте (`rate_limited`).
+Таймеры онлайн: расстановка 90 секунд (не расставил один — поражение `timeout`; не расставил никто — `match.aborted`), ход 30 секунд. С ботом таймера хода нет, брошенная партия закрывается через 15 минут бездействия. Переподключение: в течение 60 секунд игрок возвращается в партию и получает `match.state`; иначе — поражение (`disconnected`). Команды ограничены по частоте (`rate_limited`).
 
 Ник: у игры свой ник (3–20 символов, буквы, цифры, пробел, `-`, `_`; уникален без учёта регистра). По умолчанию — «Sailor NNNN». Имя и почта из identity в игру не попадают.
 

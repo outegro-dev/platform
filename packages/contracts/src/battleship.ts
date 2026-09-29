@@ -28,6 +28,11 @@ export const finishReasonSchema = z.enum([
   "timeout",
   "disconnected",
 ]);
+/** Why a match ended without a winner (`match.aborted`). */
+export const matchAbortReasonSchema = z.enum([
+  "placement_timeout",
+  "moderation",
+]);
 /** Players are "you" and "opponent" on the wire: user ids never reach the other side. */
 export const sideSchema = z.enum(["you", "opponent"]);
 
@@ -329,6 +334,11 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
       opponentFleet: z.array(shipPlacementSchema),
     }),
   ),
+  /**
+   * The match ended without a result and without rating changes: nobody
+   * placed a fleet in time, or a moderator stopped it.
+   */
+  serverMessage("match.aborted", z.object({ reason: matchAbortReasonSchema })),
   serverMessage(
     "error",
     z.object({
@@ -401,15 +411,22 @@ export const leaderboardSchema = z.object({
       wins: z.number().int().nonnegative(),
       matches: z.number().int().nonnegative(),
       premium: z.boolean(),
+      /** Rating points won this week (period "week" only; it decides the rank). */
+      gained: z.number().int().optional(),
     }),
   ),
-  /** The caller's own place; null when signed out or unranked. */
+  /**
+   * The caller's own place; null when signed out. `rank` is null while the
+   * caller is not ranked (no rated match in the period, or hidden).
+   */
   you: z
     .object({
       rank: z.number().int().positive().nullable(),
       rating: z.number().int(),
       wins: z.number().int().nonnegative(),
       matches: z.number().int().nonnegative(),
+      /** Rating points won this week (period "week" only). */
+      gained: z.number().int().optional(),
     })
     .nullable(),
 });
