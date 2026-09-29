@@ -14,6 +14,8 @@ export const permissions = [
   "billing.read",
   "subscriptions.cancel",
   "refunds.request",
+  /** Manual commercial grants: give or revoke access without a payment. */
+  "grants.assign",
   "audit.read",
   "services.read",
   "services.flags",

@@ -35,6 +35,42 @@ Legacy events без event_id требуют semantic source key по прове
 
 До PAY-12 не считать доказанными sandbox, create idempotency/recovery, все currency/method combinations, period mapping, refund initiation API и merchant available balance. Refund без однозначной покупки остаётся unmatched. Две одинаковые покупки одного email специально присутствуют в fixtures.
 
+## Решения реализации (payments-backend, 29.09.2026)
+
+Проектные решения там, где контракт оставлял выбор. Меняются только вместе с кодом и тестами `apps/payments-backend`.
+
+**Каталог.** Продукты и цены — в коде (`src/domain/catalog.ts`), при старте синхронизируются в `products`/`prices`. Новая сумма закрывает текущую версию цены (`validUntil`) и открывает следующую. Заказ хранит снимок: priceId, версию, сумму, валюту, offerId, service/feature, graceDays. Клиент покупает по `productKey` + `currency`, а не по priceId. Деньги — bigint в minor units. Сумма от Lava читается из текста числа (`String(n)` у JSON number); лишние знаки после запятой считаются ошибкой, округления нет.
+
+**Checkout.** `POST /v1/checkout { productKey, currency, returnUrl? }`. Заголовок `Idempotency-Key` обязателен: 8–128 символов `[A-Za-z0-9._:-]`, область действия — пользователь + checkout. Fingerprint считается как sha256 от (productKey, currency, returnUrl). Тот же ввод возвращает тот же заказ, другой ввод с тем же ключом — 409 `IDEMPOTENCY_CONFLICT`. Ответ: `{ orderId, attemptId, state, status, paymentUrl }`. `returnUrl` принимается только с разрешённых origin (`PAY_WEB_URL` + `CHECKOUT_RETURN_ORIGINS`). В Lava уходят три адреса с `orderId` и `result`, это подсказка для UI (INV-17). Ответ Lava 4xx или запрос, который точно не ушёл (DNS, connection refused), дают `failed`. Timeout, обрыв после отправки, 5xx и нечитаемый 2xx дают `unknown`, повторного POST нет (INV-16). 2xx без `paymentUrl` или с не-https адресом тоже `failed`, invoice id при этом сохраняется. Уже купленную разовую покупку (активный purchase grant) и вторую живую подписку того же продукта (active, past_due, cancel_requested) купить нельзя, ответ 422. Продажи закрыты, пока `CHECKOUT_ENABLED=false` (по умолчанию) или нет `LAVA_API_KEY`. Вебхуки и сверка работают всегда. Отдельного environment у Lava ID нет: sandbox не подтверждён, окружение — это отдельная БД деплоя.
+
+**Вебхук `POST /webhooks/lava`** (вне `/v1`, без сессии). Аутентификация — заголовок `X-Api-Key`, равный `LAVA_WEBHOOK_SECRET`; сравниваются SHA-256 дайджесты через timingSafeEqual. Basic не принимается. Без ключа или с неверным — 401, ничего не сохраняется. Ключи дедупликации:
+
+- flat-события — `eventType:contractId:status`;
+- отмена — `subscription.cancelled:contractId`;
+- envelope — `event:<event_id>`;
+- неизвестные и невалидные события — sha256 канонического JSON с отсортированными ключами;
+- факты сверки — `reconcile:<invoiceId>:<STATUS>`.
+
+Событие сначала записывается (unique), затем обрабатывается в своей транзакции. 200 возвращается после записи, со статусом `processed | ignored | unmatched | mismatch | quarantined | invalid | duplicate | failed`. Ошибка БД при записи даёт 5xx, и Lava повторяет доставку. Unmatched платёж или отмена повторно сопоставляются через 1, 5, 15 мин, 1, 6, 24 ч; issue заводится после 3 попыток. Unmatched refund и chargeback не повторяются, они ждут оператора в своём case.
+
+**Предположения о Lava (проверить в PAY-12).** `contractId` первого платежа совпадает с `id` из `POST /api/v3/invoice`, с `parentContractId` продлений и с `contractId` в `DELETE /api/v1/subscriptions` — так в примерах OpenAPI. `subscription.cancelled` может называть родительский контракт или контракт продления; поиск идёт по родителю, по оплатам и по сохранённым событиям продления. `tier_id` в refund/chargeback — это offerId.
+
+**Подписки и доступ.** Подписка создаётся первым подтверждённым платежом. MONTHLY — это +1 календарный месяц UTC, день обрезается (31 января → 28/29 февраля). Первый период начинается во время платежа у провайдера, но не позже now. Продление продолжает текущий paidUntil, а если подписка уже просрочена — начинается с момента платежа. На каждый контракт — один BillingPeriod. Grant подписки действует до paidUntil + graceDays продукта. У Premium grace 3 дня (решение владельца, отличается от общего default 0), grace действует и для отменённой подписки. Разовая покупка даёт бессрочный grant (`validUntil = null`). Без продления в момент paidUntil состояние `active` меняется на `past_due`, а в paidUntil + grace — на `expired`; grant тоже становится `expired`, с событием. Доступ проверяется по validUntil без cron (INV-12). Отказ продления старше последнего подтверждённого платежа игнорируется. Продление после истечения снова активирует expired grant; revoked grant платёж не восстанавливает. Отмена: до ответа Lava — `cancel_requested`, потом `cancelling` (autoRenew=false). При timeout вызов повторяется через 1, 5, 15 мин, 1, 6 ч, затем заводится issue; при 400/404 issue заводится сразу. `willExpireAt` от Lava сохраняется, paidUntil не меняется; расхождение больше суток — issue.
+
+**Сверка.** Открытые попытки проверяются через 1, 2, 5, 15, 30 мин, 1, 2, 6, 12, 24 ч. Для `ready` запрашивается `GET /api/v2/invoices/{id}`; COMPLETED и FAILED применяются тем же кодом, что и вебхук. `requesting` дольше 2×timeout + 30 с считается `unknown`. Для `unknown` запрашивается `GET /api/v2/invoices` по email покупателя, который мы сами отправили: все статусы, окно от момента запроса −2 мин. Invoice принимается, только если он ровно один, не привязан к другой попытке и совпадает по сумме, валюте и типу; неоплаченный invoice должен быть создан не позже 15 мин после запроса. Иначе attempt остаётся `unknown`, после 3 проверок заводится issue `checkout_unknown`. Это инженерное правило, владелец может его ужесточить. Сверка подписок по `GET /api/v1/subscriptions/{id}` (пропущенное продление) не реализована — follow-up PAY-10.
+
+**Возвраты и споры.** Refund применяется только при проверенной связи. Их три вида:
+
+- точный contract id в payload (в документированном примере его нет);
+- ровно одна заявка оператора «refund requested» на оплату того же offer (`tier_id`) с тем же email покупателя, валютой и суммой;
+- ручная привязка оператором с причиной и audit.
+
+Иначе case становится `unmatched`, заводится issue, похожие оплаты попадают в evidence. Полный возврат разовой покупки переводит payment и order в `refunded`, отзывает только её grant и пишет −amount в журнал. Возврат периода подписки помечает период `refunded` и пересчитывает paidUntil по оставшимся оплаченным периодам, без grace. Частичный возврат уходит в `review_required`. Chargeback открывает case `open`, grants не трогает; payment становится `disputed` только при точной связи.
+
+**Admin.** Чтение требует `billing.read`. Ручной grant и отзыв — новое право `grants.assign`, по умолчанию только у owner. Отмена продления — `subscriptions.cancel`, заявка и привязка возврата — `refunds.request`. Команды требуют reason и пишут audit. Токен для команды должен быть не старше последнего accessVersion из событий Identity (`identity.role.binding.changed.v1`, `identity.user.status.changed.v1`), иначе 401 и refresh. У пользователя может быть только один активный ручной grant на (service, feature).
+
+**События.** Публикуются `billing.payment.confirmed.v1`, `billing.subscription.changed.v1` и `billing.grant.changed.v1`; aggregateVersion grant растёт при каждом изменении. Вместе с подтверждением оплаты уходит `notifications.intent.requested.v1` (шаблон `billing.payment-confirmed`). `billing.refund.recorded.v1` и `billing.reconciliation.issue.v1` пока не публикуются: у них нет потребителей.
+
 ## Wallet
 
 По умолчанию выключен. Условные W-01…06 не входят в обязательную base acceptance. Paid/refunded totals админки — история, не тратимый баланс. При включении требуются merchant support, double-entry ledger, serialization, reserve/capture/release и debt policy. Пользовательские переводы и вывод денег не входят в исходный wallet scope.

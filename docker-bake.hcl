@@ -9,7 +9,7 @@ variable "REGISTRY" {
 }
 
 group "default" {
-  targets = ["landing-web", "id-web", "auth-backend", "notifications-backend"]
+  targets = ["landing-web", "id-web", "auth-backend", "notifications-backend", "payments-backend"]
 }
 
 target "_common" {
@@ -43,4 +43,10 @@ target "notifications-backend" {
   inherits = ["_common"]
   target   = "notifications-backend"
   tags     = ["${REGISTRY}/notifications-backend:${TAG}"]
+}
+
+target "payments-backend" {
+  inherits = ["_common"]
+  target   = "payments-backend"
+  tags     = ["${REGISTRY}/payments-backend:${TAG}"]
 }

@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # One build for every app; each target copies only what its runtime needs.
 #   docker build --target landing-web -t outegro/landing-web:<tag> .
-# Targets: landing-web, id-web, auth-backend, notifications-backend.
+# Targets: landing-web, id-web, auth-backend, notifications-backend,
+#          payments-backend.
 
 FROM node:24-bookworm-slim AS base
 ENV CI=1 \
@@ -20,9 +21,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 RUN pnpm turbo run build \
       --filter=@outegro/landing-web --filter=@outegro/id-web \
-      --filter=@outegro/auth-backend --filter=@outegro/notifications-backend
+      --filter=@outegro/auth-backend --filter=@outegro/notifications-backend \
+      --filter=@outegro/payments-backend
 # Backends: production dependencies only, plus build output and migrations.
-RUN for app in auth-backend notifications-backend; do \
+RUN for app in auth-backend notifications-backend payments-backend; do \
       pnpm --filter "@outegro/$app" deploy --prod "/out/$app" && \
       cp -r "apps/$app/dist" "apps/$app/drizzle" "/out/$app/"; \
     done
@@ -65,4 +67,10 @@ FROM service AS notifications-backend
 COPY --from=build --chown=node:node /out/notifications-backend ./
 ENV PORT=4002
 EXPOSE 4002
+CMD ["node", "dist/main.js"]
+
+FROM service AS payments-backend
+COPY --from=build --chown=node:node /out/payments-backend ./
+ENV PORT=4003
+EXPOSE 4003
 CMD ["node", "dist/main.js"]
