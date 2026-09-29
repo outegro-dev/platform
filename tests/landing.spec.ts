@@ -223,6 +223,9 @@ test("services show the stack and where each one runs, without hidden disclosure
   const services = page.locator("#services");
   await services.scrollIntoViewIfNeeded();
   await expect(services.locator(".service")).toHaveCount(6);
+  await expect(services.locator(".services-intro")).toContainText(
+    "6+ years in the JavaScript ecosystem",
+  );
   for (const tech of ["NestJS", "PostgreSQL", "K3s", "Argo CD", "Lava"])
     await expect(
       services.getByText(tech, { exact: true }).first(),
