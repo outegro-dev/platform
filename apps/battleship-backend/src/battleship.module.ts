@@ -3,6 +3,7 @@ import { MathRandom } from "@outegro/battleship-engine";
 import { CLOCK, type Clock } from "@outegro/nest-common";
 import { AdminController } from "./admin/admin.controller.js";
 import { AdminService } from "./admin/admin.service.js";
+import { BattleshipMetrics } from "./common/metrics.js";
 import { GAME_TIMINGS, RANDOM, SCHEDULER } from "./common/tokens.js";
 import { defaultTimings } from "./domain/game/types.js";
 import { SystemScheduler } from "./domain/scheduler.js";
@@ -55,6 +56,7 @@ const schedulerLog = new Logger("Scheduler");
     },
     { provide: RANDOM, useValue: new MathRandom() },
     { provide: GAME_TIMINGS, useValue: defaultTimings },
+    BattleshipMetrics,
     // Players and grants
     EntitlementsService,
     EntitlementWatch,

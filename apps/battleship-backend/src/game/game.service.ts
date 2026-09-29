@@ -11,6 +11,7 @@ import type {
   ShipPlacement,
 } from "@outegro/battleship-engine";
 import { CLOCK, type Clock } from "@outegro/nest-common";
+import { BattleshipMetrics } from "../common/metrics.js";
 import { GAME_TIMINGS, RANDOM, SCHEDULER } from "../common/tokens.js";
 import { GameError } from "../domain/errors.js";
 import { BotPlayer } from "../domain/game/bot-player.js";
@@ -52,6 +53,7 @@ export class GameService implements OnModuleDestroy {
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(RANDOM) private readonly random: Random,
     @Inject(GAME_TIMINGS) private readonly timings: GameTimings,
+    private readonly metrics: BattleshipMetrics,
   ) {}
 
   active(userId: string): GameSession | undefined {
@@ -126,6 +128,7 @@ export class GameService implements OnModuleDestroy {
 
   private ended(session: GameSession, end: SessionEnd) {
     this.sessions.remove(session);
+    this.metrics.matchEnded(session.record.mode, end);
     // A rated result changed both ratings: show them without a reload.
     if (end.kind === "finished" && session.record.rated) {
       for (const userId of session.userIds)

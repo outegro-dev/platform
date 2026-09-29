@@ -21,8 +21,10 @@ import {
   DATABASE,
   ManualClock,
   Messaging,
+  Metrics,
 } from "@outegro/nest-common";
 import {
+  metricValue,
   startRabbit,
   startValkey,
   type TestService,
@@ -250,6 +252,12 @@ export async function startHarness(options: { seed?: number } = {}) {
     captureEvents,
     grantEvent,
     statusEvent,
+    /** What Prometheus would scrape now. */
+    scrape: () => running.app.get(Metrics).scrape(),
+    /** Sum of the series of `name` with these labels in a fresh scrape. */
+    async metric(name: string, labels: Record<string, string> = {}) {
+      return metricValue(await running.app.get(Metrics).scrape(), name, labels);
+    },
     /** Advances the clock, running every timer that falls due. */
     advance(ms: number): Promise<void> {
       const step = advancing.then(() => running.scheduler.advance(ms));
