@@ -22,7 +22,13 @@ import { and, desc, eq, ilike, isNull, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { audit } from "../common/audit.js";
 import type { AuthDatabase } from "../common/database.js";
-import { roleBindings, sessions, users } from "../db/schema.js";
+import {
+  auditLog,
+  identities,
+  roleBindings,
+  sessions,
+  users,
+} from "../db/schema.js";
 import { GrantsService } from "../grants/grants.service.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import { UsersService } from "../users/users.service.js";
@@ -50,13 +56,21 @@ const statusSchema = z.object({
   status: z.enum(["active", "suspended"]),
   reason,
 });
+const auditQuerySchema = z.object({
+  targetId: z.string().max(100).optional(),
+  actorId: z.uuid().optional(),
+  action: z.string().max(100).optional(),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+});
 
 const encodeCursor = (createdAt: Date, id: string) =>
   Buffer.from(`${createdAt.toISOString()}|${id}`).toString("base64url");
 const decodeCursor = (cursor: string) => {
   const [at, id] = Buffer.from(cursor, "base64url").toString().split("|");
   const date = new Date(at ?? "");
-  if (!id || Number.isNaN(date.getTime()))
+  // The id goes into a uuid comparison; anything else would be a 500.
+  if (!id || !idParam.safeParse(id).success || Number.isNaN(date.getTime()))
     throw new AppError("VALIDATION_FAILED");
   return { at: date, id };
 };
@@ -73,6 +87,114 @@ export class AdminController {
     private readonly sessions: SessionsService,
     private readonly grants: GrantsService,
   ) {}
+
+  /** Numbers for the admin dashboard: accounts, sessions, sign-in methods. */
+  @Get("overview")
+  @RequireFreshPermissions("users.read")
+  async overview() {
+    const db = this.database.db;
+    const now = this.clock.now();
+    const dayAgo = new Date(now.getTime() - 24 * 3600_000).toISOString();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 3600_000).toISOString();
+    const [accounts] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        active: sql<number>`count(*) filter (where ${users.status} = 'active')::int`,
+        suspended: sql<number>`count(*) filter (where ${users.status} = 'suspended')::int`,
+        new24h: sql<number>`count(*) filter (where ${users.createdAt} >= ${dayAgo})::int`,
+        new7d: sql<number>`count(*) filter (where ${users.createdAt} >= ${weekAgo})::int`,
+      })
+      .from(users);
+    const [live] = await db
+      .select({
+        active: sql<number>`count(*) filter (where ${sessions.revokedAt} is null)::int`,
+        seen24h: sql<number>`count(*) filter (where ${sessions.revokedAt} is null and ${sessions.lastActiveAt} >= ${dayAgo})::int`,
+      })
+      .from(sessions);
+    const methods = await db
+      .select({ method: sessions.authMethod, n: sql<number>`count(*)::int` })
+      .from(sessions)
+      .where(sql`${sessions.createdAt} >= ${weekAgo}`)
+      .groupBy(sessions.authMethod);
+    const clients = await db
+      .select({ clientId: sessions.clientId, n: sql<number>`count(*)::int` })
+      .from(sessions)
+      .where(isNull(sessions.revokedAt))
+      .groupBy(sessions.clientId);
+    const roles = await db
+      .select({ role: roleBindings.role, n: sql<number>`count(*)::int` })
+      .from(roleBindings)
+      .where(eq(roleBindings.state, "active"))
+      .groupBy(roleBindings.role);
+    const [linked] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(identities);
+    const daily = await db.execute<{ day: string; n: number }>(sql`
+      select to_char(date_trunc('day', created_at at time zone 'UTC'), 'YYYY-MM-DD') as day,
+             count(*)::int as n
+        from users
+       where created_at >= ${weekAgo}
+       group by 1
+       order by 1`);
+    return {
+      generatedAt: now.toISOString(),
+      users: accounts,
+      sessions: {
+        ...live,
+        byClient: Object.fromEntries(
+          clients.map((row) => [row.clientId ?? "id-web", row.n]),
+        ),
+      },
+      signIns7d: Object.fromEntries(methods.map((row) => [row.method, row.n])),
+      roleBindings: Object.fromEntries(roles.map((row) => [row.role, row.n])),
+      googleLinked: linked?.n ?? 0,
+      dailySignups: daily.rows,
+    };
+  }
+
+  /** Security and administrative actions, newest first. */
+  @Get("audit")
+  @RequireFreshPermissions("audit.read")
+  async auditTrail(
+    @Query({ schema: auditQuerySchema }) query: z.infer<
+      typeof auditQuerySchema
+    >,
+  ) {
+    const cursor = query.cursor ? decodeCursor(query.cursor) : null;
+    const rows = await this.database.db
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          query.targetId ? eq(auditLog.targetId, query.targetId) : undefined,
+          query.actorId ? eq(auditLog.actorId, query.actorId) : undefined,
+          query.action ? eq(auditLog.action, query.action) : undefined,
+          cursor
+            ? or(
+                lt(auditLog.createdAt, cursor.at),
+                and(
+                  eq(auditLog.createdAt, cursor.at),
+                  lt(auditLog.id, cursor.id),
+                ),
+              )
+            : undefined,
+        ),
+      )
+      .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
+      .limit(query.limit + 1);
+    const page = rows.slice(0, query.limit);
+    const last = page.at(-1);
+    return {
+      items: page.map((row) => ({
+        ...row,
+        createdAt: row.createdAt.toISOString(),
+      })),
+      nextCursor:
+        rows.length > query.limit && last
+          ? encodeCursor(last.createdAt, last.id)
+          : null,
+    };
+  }
 
   @Get("users")
   @RequireFreshPermissions("users.read")

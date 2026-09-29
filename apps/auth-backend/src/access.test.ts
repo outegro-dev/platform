@@ -125,6 +125,45 @@ describe("roles and permissions", () => {
       .expect(200);
   });
 
+  it("gives the dashboard numbers and the audit trail by permission", async () => {
+    const owner = await signInAs("owner");
+    const overview = await h
+      .http()
+      .get("/v1/admin/overview")
+      .set(h.auth(owner.accessToken))
+      .expect(200);
+    expect(overview.body.users.total).toBeGreaterThan(0);
+    expect(overview.body.sessions.active).toBeGreaterThan(0);
+    expect(overview.body.signIns7d.email).toBeGreaterThan(0);
+    expect(overview.body.roleBindings.owner).toBeGreaterThan(0);
+
+    const trail = await h
+      .http()
+      .get(`/v1/admin/audit?targetId=${owner.user.id}`)
+      .set(h.auth(owner.accessToken))
+      .expect(200);
+    expect(trail.body.items.map((i: { action: string }) => i.action)).toContain(
+      "role.granted",
+    );
+    await h
+      .http()
+      .get("/v1/admin/audit?cursor=bm90LWEtY3Vyc29y")
+      .set(h.auth(owner.accessToken))
+      .expect(400);
+
+    const support = await signInAs("support");
+    await h
+      .http()
+      .get("/v1/admin/audit")
+      .set(h.auth(support.accessToken))
+      .expect(403);
+    await h
+      .http()
+      .get("/v1/admin/overview")
+      .set(h.auth(support.accessToken))
+      .expect(200);
+  });
+
   it("TC-ID-06-03: an expired binding stops working while its token is still valid", async () => {
     const support = await signInAs("support", {
       expiresAt: new Date(Date.now() + 5_000),
