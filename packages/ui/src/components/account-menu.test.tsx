@@ -56,4 +56,11 @@ describe("AccountMenu", () => {
       /<form hidden="" action="\/auth\/sign-out" method="post">/,
     );
   });
+
+  it("keeps sign-out one button away without JavaScript", () => {
+    expect(render()).toMatch(
+      /<noscript><form action="\/auth\/sign-out" method="post"><button type="submit"[^>]*>Sign out<\/button><\/form><\/noscript>/,
+    );
+    expect(render({ locale: "ru" })).toMatch(/<noscript>.*>Выйти<\/button>/);
+  });
 });

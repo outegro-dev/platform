@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@outegro/ui/button";
+import { Button, buttonVariants } from "@outegro/ui/button";
 import {
   type AccountMenuIcon,
   type AccountMenuLink,
@@ -245,6 +245,18 @@ function SignedInMenu({
       >
         {serverAction ? <SignOutProgress onSettled={setSigningOut} /> : null}
       </form>
+      {/* Without JavaScript the menu cannot open: sign-out stays a plain
+          form next to it (server-rendered only; the client ignores it). */}
+      <noscript>
+        <form action={signOut} {...(serverAction ? {} : { method: "post" })}>
+          <button
+            type="submit"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            {messages.signOut}
+          </button>
+        </form>
+      </noscript>
     </>
   );
 }

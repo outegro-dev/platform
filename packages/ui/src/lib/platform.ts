@@ -1,5 +1,8 @@
 import { hasPlatformRole } from "@outegro/contracts/access";
 
+/** Whether to link the admin console: the same rule for every app. */
+export { hasPlatformRole };
+
 /*
  * The outegro.dev platform as its frontends link to one another: public
  * addresses of the apps, the pages other apps open, and the words of the
