@@ -298,6 +298,95 @@ describe("MatchStore", () => {
     expect(sound.play).toHaveBeenCalledWith("win");
   });
 
+  describe("a fleet not deployed in time is not three missed turns", () => {
+    const placing = () =>
+      snapshot({
+        mode: "quick",
+        rated: true,
+        phase: "placement",
+        opponent: {
+          kind: "human",
+          nickname: "Nemo",
+          rating: 1512,
+          premium: true,
+        },
+        turn: null,
+        deadline: deadline(90_000),
+        own: null,
+        target: null,
+        yourFleetPlaced: false,
+        opponentFleetPlaced: false,
+      });
+    const ended = (
+      winner: "you" | "opponent",
+      reason: "timeout" | "resigned" = "timeout",
+    ) =>
+      server("match.finished", {
+        winner,
+        reason,
+        rating:
+          winner === "you"
+            ? { before: 1000, after: 1016, delta: 16 }
+            : { before: 1000, after: 984, delta: -16 },
+        opponentFleet: [],
+      });
+
+    it("the opponent's fleet is missing: they did not deploy in time", async () => {
+      const { match } = setup();
+      match.handle(server("match.state", { match: placing() }));
+      match.handle(server("fleet.placed", { side: "you" }));
+      match.handle(ended("you"));
+      await vi.runAllTimersAsync();
+      expect(match.reason).toBe("timeout");
+      expect(match.resultReason).toBe("deploy_timeout");
+    });
+
+    it("your fleet is missing: you did not deploy in time", async () => {
+      const { match } = setup();
+      match.handle(server("match.state", { match: placing() }));
+      match.handle(server("fleet.placed", { side: "opponent" }));
+      match.handle(ended("opponent"));
+      await vi.runAllTimersAsync();
+      expect(match.won).toBe(false);
+      expect(match.resultReason).toBe("deploy_timeout");
+    });
+
+    it("in battle both fleets are down: the turns ran out", async () => {
+      const { match } = setup();
+      match.handle(server("match.state", { match: snapshot() }));
+      match.handle(ended("opponent"));
+      await vi.runAllTimersAsync();
+      expect(match.resultReason).toBe("timeout");
+    });
+
+    it("a finished snapshot (after a reconnect) tells them apart too", () => {
+      const { match } = setup();
+      const finished = {
+        phase: "finished",
+        turn: null,
+        winner: "opponent",
+        reason: "timeout",
+      } as const;
+      match.handle(
+        server("match.state", {
+          match: snapshot({ ...finished, own: null, yourFleetPlaced: false }),
+        }),
+      );
+      expect(match.resultReason).toBe("deploy_timeout");
+      match.handle(server("match.state", { match: snapshot(finished) }));
+      expect(match.resultReason).toBe("timeout");
+    });
+
+    it("any other end while placing keeps its own reason", async () => {
+      const { match } = setup();
+      match.handle(server("match.state", { match: placing() }));
+      expect(match.resultReason).toBeNull();
+      match.handle(ended("opponent", "resigned"));
+      await vi.runAllTimersAsync();
+      expect(match.resultReason).toBe("resigned");
+    });
+  });
+
   it.each(matchAbortReasonSchema.options)(
     "ends without a result when the match is aborted (%s)",
     async (reason) => {

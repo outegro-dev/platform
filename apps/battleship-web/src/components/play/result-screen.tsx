@@ -114,7 +114,9 @@ export const ResultScreen = observer(function ResultScreen() {
           )}
         </h1>
         <p data-testid="result-reason">
-          {match.reason ? t(`reasons.${outcome}.${match.reason}`) : null}
+          {match.resultReason
+            ? t(`reasons.${outcome}.${match.resultReason}`)
+            : null}
         </p>
         <span
           className="rating-delta"

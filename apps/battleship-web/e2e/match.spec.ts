@@ -52,6 +52,13 @@ async function inBattle(page: Page, fake: FakeGame, level = "Easy") {
   expect(fake.match?.currentPhase).toBe("battle");
 }
 
+const nemo = {
+  kind: "human",
+  nickname: "Nemo",
+  rating: 1512,
+  premium: true,
+} as const;
+
 test.describe("match", () => {
   test("a full match against a bot, to victory, then play again", async ({
     page,
@@ -409,6 +416,66 @@ test.describe("match", () => {
     await expect(page.getByTestId("result-reason")).toHaveText("You resigned.");
     await page.getByTestId("back-to-lobby").click();
     await expect(page).toHaveURL(`${APP}/`);
+  });
+
+  test("a fleet not deployed before the clock runs out loses, and says so", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    fake.startHumanMatch(nemo);
+    await expect(page.getByTestId("placement")).toBeVisible();
+    fake.opponentDeploys();
+    await expect(page.getByTestId("opponent-status")).toHaveText(
+      "Opponent is ready",
+    );
+    fake.placementClockRunsOut();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Defeat.");
+    // Not "three turns in a row": no turn was ever played.
+    await expect(page.getByTestId("result-reason")).toHaveText(
+      "You didn't deploy your fleet in time.",
+    );
+    await expect(page.getByTestId("rating-delta")).toContainText("−16");
+  });
+
+  test("an opponent who does not deploy in time loses, and it says so", async ({
+    page,
+    game,
+  }) => {
+    const fake = await signInAndConnect(page, game, "free");
+    fake.script.opponentPlaceDelayMs = 60_000;
+    fake.startHumanMatch(nemo);
+    await page.getByTestId("random-fleet").click();
+    await page.getByTestId("ready").click();
+    await expect(page.getByTestId("fleet-deployed")).toBeVisible();
+    fake.placementClockRunsOut();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Victory.",
+    );
+    await expect(page.getByTestId("result-reason")).toHaveText(
+      "Your opponent didn't deploy their fleet in time.",
+    );
+  });
+
+  test("Russian: a fleet not deployed in time", async ({
+    page,
+    game,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "og_locale", value: "ru", domain: "localhost", path: "/" },
+    ]);
+    const fake = await signInAndConnect(page, game, "free");
+    fake.startHumanMatch(nemo);
+    await expect(page.getByTestId("placement")).toBeVisible();
+    fake.opponentDeploys();
+    fake.placementClockRunsOut();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Поражение.",
+    );
+    await expect(page.getByTestId("result-reason")).toHaveText(
+      "Вы не успели расставить флот.",
+    );
   });
 
   test("a match the server aborts is cancelled calmly", async ({

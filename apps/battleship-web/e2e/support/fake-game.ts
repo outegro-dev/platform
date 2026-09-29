@@ -174,6 +174,36 @@ export class FakeGame {
     this.send("match.state", { match: this.snapshot() });
   }
 
+  /** The opponent deploys its fleet now (a human may be ready first). */
+  opponentDeploys(): void {
+    const match = this.match;
+    if (!match || this.finished || match.hasPlacedFleet("opponent")) return;
+    const events = match.placeFleet("opponent", this.opponentFleet);
+    this.send("fleet.placed", { side: "opponent" });
+    if (events.some((event) => event.type === "battle_started"))
+      this.startBattle();
+  }
+
+  /**
+   * The placement clock runs out while one fleet is still missing: that
+   * side loses on time, as on the server (reason "timeout").
+   */
+  placementClockRunsOut(): void {
+    const match = this.match;
+    if (!match || this.finished) throw new Error("no match being placed");
+    const missing = (["you", "opponent"] as const).filter(
+      (side) => !match.hasPlacedFleet(side),
+    );
+    const [side] = missing;
+    if (missing.length !== 1 || !side)
+      throw new Error("exactly one fleet must be missing");
+    // An opponent still about to deploy never does.
+    this.dispose();
+    for (const event of match.timeOut(side))
+      if (event.type === "finished")
+        this.finish(event.winner as "you" | "opponent", event.reason);
+  }
+
   dispose(): void {
     for (const timer of this.timers) clearTimeout(timer);
     this.timers = [];
@@ -222,7 +252,7 @@ export class FakeGame {
           }
         : null,
       opponentFleet: this.finished
-        ? this.opponentFleet.map((ship) => ({ ...ship }))
+        ? this.finished.opponentFleet.map((ship) => ({ ...ship }))
         : null,
     };
   }
@@ -374,8 +404,9 @@ export class FakeGame {
       this.error("no_active_match", ref);
       return;
     }
+    let events: ReturnType<Match["placeFleet"]>;
     try {
-      match.placeFleet("you", ships);
+      events = match.placeFleet("you", ships);
     } catch (failure) {
       if (failure instanceof MatchError) {
         this.error(failure.code as ServerPayload<"error">["code"], ref);
@@ -384,12 +415,18 @@ export class FakeGame {
       throw failure;
     }
     this.send("fleet.placed", { side: "you" });
-    this.later(() => {
-      match.placeFleet("opponent", this.opponentFleet);
-      this.send("fleet.placed", { side: "opponent" });
-      this.deadline = this.turnDeadline();
-      this.send("match.started", { turn: "you", deadline: this.deadline });
-    }, this.script.opponentPlaceDelayMs);
+    if (events.some((event) => event.type === "battle_started"))
+      this.startBattle();
+    else
+      this.later(
+        () => this.opponentDeploys(),
+        this.script.opponentPlaceDelayMs,
+      );
+  }
+
+  private startBattle(): void {
+    this.deadline = this.turnDeadline();
+    this.send("match.started", { turn: "you", deadline: this.deadline });
   }
 
   private fire(x: number, y: number, ref: number): void {
@@ -481,7 +518,10 @@ export class FakeGame {
             delta,
           }
         : null,
-      opponentFleet: this.opponentFleet.map((ship) => ({ ...ship })),
+      // As on the server: the fleet the opponent deployed, none if it never did.
+      opponentFleet: this.match?.hasPlacedFleet("opponent")
+        ? this.opponentFleet.map((ship) => ({ ...ship }))
+        : [],
     };
     if (rated)
       this.player = { ...this.player, rating: this.player.rating + delta };

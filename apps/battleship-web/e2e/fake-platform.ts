@@ -385,8 +385,32 @@ function history(cursor: string | null, limit: number) {
   return { items, nextCursor: next };
 }
 
+/** A quick match the opponent lost on the placement clock: no fleet, no shots. */
+const UNDEPLOYED_MATCH = "00000000-0000-4000-8000-000000002000";
+
 /** A realistic replay: two random fleets and medium bots, played by the engine. */
 function replay(matchId: string) {
+  if (matchId === UNDEPLOYED_MATCH) {
+    return {
+      matchId,
+      mode: "quick",
+      opponent: {
+        kind: "human",
+        nickname: "Ahab",
+        rating: 1150,
+        premium: false,
+      },
+      winner: "you",
+      reason: "timeout",
+      fleets: {
+        you: new RandomPlacement(new SeededRandom(3)).place(classicRules),
+        opponent: [],
+      },
+      moves: [],
+      startedAt: "2026-09-29T10:00:00.000Z",
+      finishedAt: "2026-09-29T10:01:30.000Z",
+    };
+  }
   const random = new SeededRandom(matchId.length + 7);
   const match = new Match(matchId, ["you", "opponent"], classicRules, "you");
   const fleets = {

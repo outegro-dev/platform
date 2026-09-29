@@ -292,12 +292,14 @@
         "fleet_destroyed": "You sank the whole enemy fleet.",
         "resigned": "Your opponent resigned.",
         "timeout": "Your opponent ran out of time three turns in a row.",
+        "deploy_timeout": "Your opponent didn't deploy their fleet in time.",
         "disconnected": "Your opponent left and did not come back."
       },
       "loss": {
         "fleet_destroyed": "Your whole fleet was sunk.",
         "resigned": "You resigned.",
         "timeout": "You ran out of time three turns in a row.",
+        "deploy_timeout": "You didn't deploy your fleet in time.",
         "disconnected": "You were disconnected for too long."
       }
     },

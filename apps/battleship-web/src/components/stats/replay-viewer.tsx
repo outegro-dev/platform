@@ -220,7 +220,7 @@ export const ReplayViewer = observer(function ReplayViewer({
           {p("vs")} {opponent}
           <span className="og-accent">{won ? r("victory") : r("defeat")}</span>
         </h1>
-        <p>{r(`reasons.${won ? "win" : "loss"}.${replay.reason}`)}</p>
+        <p>{r(`reasons.${won ? "win" : "loss"}.${cursor.reason}`)}</p>
       </header>
       <Controls cursor={cursor} />
       <div className="boards">

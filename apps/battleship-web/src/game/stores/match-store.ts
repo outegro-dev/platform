@@ -25,6 +25,8 @@ export type Opponent = MatchSnapshot["opponent"];
 export type MatchMode = MatchSnapshot["mode"];
 export type MatchPhase = MatchSnapshot["phase"];
 export type FinishReason = NonNullable<MatchSnapshot["reason"]>;
+/** Why a match ended, as players are told (see resultReasonOf). */
+export type ResultReason = FinishReason | "deploy_timeout";
 export type AbortReason = ServerPayload<"match.aborted">["reason"];
 export type RatingChange = NonNullable<
   ServerPayload<"match.finished">["rating"]
@@ -67,6 +69,21 @@ export const timing = {
 
 /** Standard clocks (§16.6), for the countdown ring's full circle. */
 export const clocks = { placementMs: 90_000, turnMs: 30_000 } as const;
+
+/**
+ * The server ends a match with `timeout` in two ways: three missed turns in
+ * a row in battle, or a fleet not deployed before the placement clock ran
+ * out. A battle starts only once both fleets are down, so a timeout with a
+ * fleet still missing is the second: "deploy_timeout".
+ */
+export function resultReasonOf(
+  reason: FinishReason,
+  bothFleetsDeployed: boolean,
+): ResultReason {
+  return reason === "timeout" && !bothFleetsDeployed
+    ? "deploy_timeout"
+    : reason;
+}
 
 const SIZE = classicRules.boardSize;
 const emptyGrid = (): CellState[][] =>
@@ -203,6 +220,16 @@ export class MatchStore {
 
   get won(): boolean | null {
     return this.winner === null ? null : this.winner === "you";
+  }
+
+  /** Why the match ended, as the result screen tells it. */
+  get resultReason(): ResultReason | null {
+    return this.reason === null
+      ? null
+      : resultReasonOf(
+          this.reason,
+          this.yourFleetPlaced && this.opponentFleetPlaced,
+        );
   }
 
   get shipsSunkByYou(): number {
