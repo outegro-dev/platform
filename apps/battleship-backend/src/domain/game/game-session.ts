@@ -82,10 +82,15 @@ export class GameSession {
     SideKey,
     { until: Date; timer: TimerHandle }
   >();
+  /**
+   * A side whose grace ran out while the opponent was away too: it loses if
+   * the opponent is back in time, and nobody wins if not.
+   */
+  private forfeiting: SideKey | null = null;
   private readonly retries = new Set<TimerHandle>();
   private chain: Promise<unknown> = Promise.resolve();
   private ended = false;
-  private abortReason: AbortReason | null = null;
+  private outcome: SessionEnd | null = null;
 
   constructor(
     readonly record: MatchRecord,
@@ -184,8 +189,8 @@ export class GameSession {
   /**
    * What a (re)joining player needs, in order with broadcasts: the full
    * snapshot, then the opponent's reconnect deadline when the opponent is away.
-   * A match aborted meanwhile still looks live to the engine, so the abort
-   * follows its snapshot.
+   * Once the match has ended, its end follows the snapshot: an aborted match
+   * still looks live to the engine, and a snapshot carries no rating.
    */
   stateFor(userId: string): Promise<Outgoing[]> {
     return this.run(async () => {
@@ -199,11 +204,7 @@ export class GameSession {
             ? this.fleetOf(opponent)
             : null,
       });
-      if (this.abortReason)
-        return [
-          state,
-          { type: "match.aborted", payload: { reason: this.abortReason } },
-        ];
+      if (this.outcome) return [state, this.endMessage(side, this.outcome)];
       const away = this.grace.get(opponent);
       return away && !this.ended
         ? [state, this.projector.presence(false, away.until)]
@@ -234,6 +235,11 @@ export class GameSession {
     if (!side || !entry) return;
     entry.timer.cancel();
     this.grace.delete(side);
+    // Back in time while the opponent's forfeit waited: it takes effect now.
+    if (this.forfeiting === otherSide(side) && !this.ended) {
+      void this.onOpponentBack(otherSide(side));
+      return;
+    }
     const opponent = userIdOf(this.record, otherSide(side));
     if (opponent && !this.ended)
       this.deps.outlet.send(opponent, this.projector.presence(true, null));
@@ -286,6 +292,9 @@ export class GameSession {
    */
   private async act(action: MatchAction, byHuman: boolean): Promise<void> {
     if (this.ended) throw new GameError("wrong_phase");
+    // Back too late: the waiting forfeit is decided by the opponent alone.
+    if (byHuman && action.side === this.forfeiting)
+      throw new GameError("wrong_phase");
     let events: MatchEvent[];
     try {
       events = applyAction(this.match, this.record, action);
@@ -394,7 +403,13 @@ export class GameSession {
   ) {
     this.ended = true;
     this.disarmAll();
-    const winner = sideOfPlayer(this.record, finished.winner);
+    const outcome: SessionEnd = {
+      kind: "finished",
+      winner: sideOfPlayer(this.record, finished.winner),
+      reason: finished.reason,
+      result,
+    };
+    this.outcome = outcome;
     for (const side of SIDES) {
       const userId = userIdOf(this.record, side);
       if (!userId) continue;
@@ -402,37 +417,36 @@ export class GameSession {
         const message = this.projector.event(side, event, null);
         if (message) this.deps.outlet.send(userId, message);
       }
-      this.deps.outlet.send(
-        userId,
-        this.projector.finished(
-          side,
-          winner,
-          finished.reason,
-          result.ratings[side] ?? null,
-          this.fleetOf(otherSide(side)),
-        ),
-      );
+      this.deps.outlet.send(userId, this.endMessage(side, outcome));
     }
-    this.deps.onEnd(this, {
-      kind: "finished",
-      winner,
-      reason: finished.reason,
-      result,
-    });
+    this.deps.onEnd(this, outcome);
   }
 
   private async abortNow(reason: AbortReason, audit: AuditEntry | null) {
     if (this.ended) throw new GameError("wrong_phase");
     await this.deps.store.abort(this.id, reason, this.deps.clock.now(), audit);
+    const outcome: SessionEnd = { kind: "aborted", reason };
     this.ended = true;
-    this.abortReason = reason;
+    this.outcome = outcome;
     this.disarmAll();
-    for (const userId of this.userIds)
-      this.deps.outlet.send(userId, {
-        type: "match.aborted",
-        payload: { reason },
-      });
-    this.deps.onEnd(this, { kind: "aborted", reason });
+    for (const side of SIDES) {
+      const userId = userIdOf(this.record, side);
+      if (userId) this.deps.outlet.send(userId, this.endMessage(side, outcome));
+    }
+    this.deps.onEnd(this, outcome);
+  }
+
+  /** `match.finished` or `match.aborted`, as one side sees it. */
+  private endMessage(side: SideKey, outcome: SessionEnd): Outgoing {
+    return outcome.kind === "finished"
+      ? this.projector.finished(
+          side,
+          outcome.winner,
+          outcome.reason,
+          outcome.result.ratings[side] ?? null,
+          this.fleetOf(otherSide(side)),
+        )
+      : { type: "match.aborted", payload: { reason: outcome.reason } };
   }
 
   private fleetOf(side: SideKey): readonly ShipPlacement[] {
@@ -563,18 +577,35 @@ export class GameSession {
   }
 
   /**
-   * Not back in time: the player loses, unless the opponent is away too (its
-   * grace still runs, or ends at the same instant after a restart). Then
-   * nobody earned the win, and the match is aborted.
+   * Not back in time: the player loses. While the opponent is away too but
+   * still within its grace, the forfeit waits for it (`onOpponentBack`). When
+   * the opponent's grace runs out as well (after a restart both end at the
+   * same instant), nobody earned the win, and the match is aborted.
    */
   private onGraceExpired(side: SideKey): Promise<void> {
     return this.run(async () => {
       if (this.ended || !this.grace.has(side)) return;
-      if (this.grace.has(otherSide(side)))
+      const opponent = otherSide(side);
+      if (this.forfeiting === opponent) {
         await this.abortNow("abandoned", null);
-      else await this.act({ kind: "abandon", side }, false);
+      } else if (this.grace.has(opponent)) {
+        this.grace.delete(side);
+        this.forfeiting = side;
+      } else {
+        await this.act({ kind: "abandon", side }, false);
+      }
     }).catch((error) =>
       this.retryLater(error, () => this.onGraceExpired(side)),
+    );
+  }
+
+  /** The opponent of a waiting forfeit is back in time: the side loses now. */
+  private onOpponentBack(side: SideKey): Promise<void> {
+    return this.run(async () => {
+      if (this.ended || this.forfeiting !== side) return;
+      await this.act({ kind: "abandon", side }, false);
+    }).catch((error) =>
+      this.retryLater(error, () => this.onOpponentBack(side)),
     );
   }
 

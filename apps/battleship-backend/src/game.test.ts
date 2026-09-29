@@ -267,6 +267,40 @@ describe("reconnect (TC-BS-06)", () => {
     });
   });
 
+  it("when both left, the one back in time wins at once, even after the other's grace ran out", async () => {
+    const a = await h.connect();
+    const b = await h.connect();
+    a.send("queue.join", { mode: "quick" });
+    await a.next("queue.joined");
+    b.send("queue.join", { mode: "quick" });
+    const { matchId } = (await a.next("queue.matched")).payload;
+    await a.next("match.state");
+    await b.next("match.state");
+    await battle(a, b);
+    await a.close();
+    await b.next("opponent.presence", (m) => !m.payload.connected);
+    await h.advance(50_000);
+    await b.close();
+    await expect
+      .poll(() => h.get(ConnectionRegistry).socketsOf(b.userId))
+      .toBe(0);
+    const row = async () =>
+      (await h.db.select().from(matches).where(eq(matches.id, matchId)))[0];
+    // a's grace runs out while b is away within his own: nothing is decided.
+    await h.advance(10_000);
+    expect((await row())?.status).toBe("battle");
+    await h.advance(10_000);
+    const back = await h.connect(b.userId);
+    expect((await back.next("match.finished")).payload).toMatchObject({
+      winner: "you",
+      reason: "disconnected",
+      rating: { before: 1000, after: 1016, delta: 16 },
+    });
+    const ended = await row();
+    expect(ended).toMatchObject({ status: "finished", reason: "disconnected" });
+    expect(ended?.winner).toBe(ended?.playerA === b.userId ? "a" : "b");
+  });
+
   it("a guest joining an absent owner's room sees the owner's deadline after the snapshot", async () => {
     const host = await h.connect();
     host.send("room.create", {});
