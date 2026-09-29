@@ -46,6 +46,8 @@ export const env = defineEnv(
       PUBLIC_WEB_URL: z.url().default("https://outegro.dev"),
       /** id-web: sessions and notification settings linked from emails. */
       ACCOUNT_URL: z.url().default("https://id.outegro.dev"),
+      /** pay-web: orders and subscriptions linked from billing emails. */
+      PAY_WEB_URL: z.url().default("https://pay.outegro.dev"),
     })
     .refine((e) => e.EMAIL_PROVIDER !== "resend" || !!e.RESEND_API_KEY, {
       message: "RESEND_API_KEY is required when EMAIL_PROVIDER=resend",

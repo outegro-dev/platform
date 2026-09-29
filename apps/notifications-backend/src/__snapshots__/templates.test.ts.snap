@@ -1,0 +1,296 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`templates > C2.4: what each template says, in English and Russian 1`] = `
+{
+  "auth.login-code en": {
+    "links": [
+      "https://outegro.dev",
+    ],
+    "subject": "Your sign-in code: 482913",
+    "text": "Sign-in code: 482913. Valid for 10 min.",
+    "title": "Sign-in code",
+  },
+  "auth.login-code ru": {
+    "links": [
+      "https://outegro.dev",
+    ],
+    "subject": "Код входа: 482913",
+    "text": "Код входа: 482913. Действует 10 мин.",
+    "title": "Код входа",
+  },
+  "billing.payment-confirmed en": {
+    "links": [
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Payment received: Battleship Premium",
+    "text": "We received 50 ₽ for “Battleship Premium”.",
+    "title": "Payment received",
+  },
+  "billing.payment-confirmed ru": {
+    "links": [
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Оплата получена: Battleship Premium",
+    "text": "Мы получили оплату 50 ₽ за «Battleship Premium».",
+    "title": "Оплата получена",
+  },
+  "billing.payment-confirmed.v2 en": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Payment received: Silver Fleet",
+    "text": "We received ₽50.00 for “Silver Fleet” on Sep 29, 2026, 2:03 PM UTC. Access is active with no end date.",
+    "title": "Payment received",
+  },
+  "billing.payment-confirmed.v2 ru": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Оплата получена: Серебряный флот",
+    "text": "Оплата 50,00 ₽ за «Серебряный флот» получена 29 сент. 2026, 14:03 UTC. Доступ открыт бессрочно.",
+    "title": "Оплата получена",
+  },
+  "billing.refund-recorded.v1 en": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Refund recorded: Silver Fleet",
+    "text": "We recorded a refund of €0.52 for “Silver Fleet”. Access from this purchase has ended.",
+    "title": "Refund recorded",
+  },
+  "billing.refund-recorded.v1 ru": {
+    "links": [
+      "https://pay.outegro.dev/orders/00000000-0000-4000-8000-000000000001",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Возврат учтён: Серебряный флот",
+    "text": "Мы учли возврат 0,52 € за «Серебряный флот». Доступ по этой покупке закрыт.",
+    "title": "Возврат учтён",
+  },
+  "billing.renewal-failed.v1 en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Renewal payment failed: Battleship Premium",
+    "text": "The payment to renew “Battleship Premium” did not go through. Access stays active until Nov 1, 2026, 2:03 PM UTC and ends then unless a payment arrives.",
+    "title": "Renewal payment failed",
+  },
+  "billing.renewal-failed.v1 ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Продление не оплачено: Морской бой Premium",
+    "text": "Платёж за продление «Морской бой Premium» не прошёл. Доступ сохранится до 1 нояб. 2026, 14:03 UTC; если оплата не поступит, он закончится.",
+    "title": "Продление не оплачено",
+  },
+  "billing.subscription-cancelled.v1 en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Renewal turned off: Battleship Premium",
+    "text": "Renewal of “Battleship Premium” is off: no further payments will be taken. Access stays active until Nov 1, 2026, 2:03 PM UTC.",
+    "title": "Renewal turned off",
+  },
+  "billing.subscription-cancelled.v1 ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Автопродление отключено: Морской бой Premium",
+    "text": "Автопродление «Морской бой Premium» отключено: новых списаний не будет. Доступ сохранится до 1 нояб. 2026, 14:03 UTC.",
+    "title": "Автопродление отключено",
+  },
+  "billing.subscription-expired.v1 en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Subscription ended: Battleship Premium",
+    "text": "The subscription to “Battleship Premium” has ended: access from it closed on Nov 1, 2026, 2:03 PM UTC. You can subscribe again at any time.",
+    "title": "Subscription ended",
+  },
+  "billing.subscription-expired.v1 ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Подписка закончилась: Морской бой Premium",
+    "text": "Подписка «Морской бой Premium» закончилась: доступ по ней закрыт 1 нояб. 2026, 14:03 UTC. Оформить её снова можно в любой момент.",
+    "title": "Подписка закончилась",
+  },
+  "billing.subscription-renewed.v1 en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Subscription renewed: Battleship Premium",
+    "text": "We received $0.59 for “Battleship Premium” on Oct 29, 2026, 2:03 PM UTC. The subscription is now paid until Nov 29, 2026, 2:03 PM UTC. Access is active.",
+    "title": "Subscription renewed",
+  },
+  "billing.subscription-renewed.v1 ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Подписка продлена: Морской бой Premium",
+    "text": "Оплата 0,59 $ за «Морской бой Premium» получена 29 окт. 2026, 14:03 UTC. Теперь подписка оплачена до 29 нояб. 2026, 14:03 UTC. Доступ открыт.",
+    "title": "Подписка продлена",
+  },
+  "billing.subscription-started.v1 en": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Subscription started: Battleship Premium",
+    "text": "We received ₽50.00 for “Battleship Premium” on Sep 29, 2026, 2:03 PM UTC. The subscription is paid until Oct 29, 2026, 2:03 PM UTC and renews automatically. Access is active.",
+    "title": "Subscription started",
+  },
+  "billing.subscription-started.v1 ru": {
+    "links": [
+      "https://pay.outegro.dev/subscriptions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Подписка оформлена: Морской бой Premium",
+    "text": "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Подписка оплачена до 29 окт. 2026, 14:03 UTC и продлевается автоматически. Доступ открыт.",
+    "title": "Подписка оформлена",
+  },
+  "security.google-linked.v1 en": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Google sign-in was added to your account",
+    "text": "A Google account was linked to your outegro.dev account on Sep 29, 2026, 2:03 PM UTC and can now be used to sign in. If this was not you, unlink it under Security and end your other sessions.",
+    "title": "Google sign-in added",
+  },
+  "security.google-linked.v1 ru": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "К аккаунту добавлен вход через Google",
+    "text": "К вашему аккаунту outegro.dev привязан аккаунт Google (29 сент. 2026, 14:03 UTC), теперь с ним можно входить. Если это были не вы, отвяжите его в разделе «Безопасность» и завершите остальные сеансы.",
+    "title": "Добавлен вход через Google",
+  },
+  "security.google-unlinked.v1 en": {
+    "links": [
+      "https://id.outegro.dev/account/sessions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Google sign-in was removed from your account",
+    "text": "The Google account was unlinked from your outegro.dev account on Sep 29, 2026, 2:03 PM UTC. If this was not you, sign in with your email and review your sessions.",
+    "title": "Google sign-in removed",
+  },
+  "security.google-unlinked.v1 ru": {
+    "links": [
+      "https://id.outegro.dev/account/sessions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Вход через Google отвязан от аккаунта",
+    "text": "Аккаунт Google отвязан от вашего аккаунта outegro.dev (29 сент. 2026, 14:03 UTC). Если это были не вы, войдите по почте и проверьте сеансы.",
+    "title": "Вход через Google отвязан",
+  },
+  "security.session-revoked en": {
+    "links": [
+      "https://id.outegro.dev/account/sessions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "A session was ended for your security",
+    "text": "We saw a session token being reused and ended that session (IP 203.0.113.7). If this was not you, sign in again and end your other sessions.",
+    "title": "Session ended",
+  },
+  "security.session-revoked ru": {
+    "links": [
+      "https://id.outegro.dev/account/sessions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Сеанс завершён из соображений безопасности",
+    "text": "Мы заметили повторное использование токена сеанса и завершили его (IP 203.0.113.7). Если это были не вы, войдите заново и завершите остальные сеансы.",
+    "title": "Сеанс завершён",
+  },
+  "security.telegram-linked.v1 en": {
+    "links": [
+      "https://id.outegro.dev/account/notifications",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Telegram was connected to your account",
+    "text": "A Telegram chat was connected to your outegro.dev account on Sep 29, 2026, 2:03 PM UTC, and notifications will arrive there too. If this was not you, disconnect it in notification settings.",
+    "title": "Telegram connected",
+  },
+  "security.telegram-linked.v1 ru": {
+    "links": [
+      "https://id.outegro.dev/account/notifications",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "К аккаунту подключён Telegram",
+    "text": "К вашему аккаунту outegro.dev подключён чат Telegram (29 сент. 2026, 14:03 UTC), уведомления будут приходить и туда. Если это были не вы, отключите его в настройках уведомлений.",
+    "title": "Telegram подключён",
+  },
+  "service.message en": {
+    "links": [
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Scheduled maintenance",
+    "text": "outegro.dev will be read-only for ten minutes tonight at 23:00 UTC.",
+    "title": "Scheduled maintenance",
+  },
+  "service.message ru": {
+    "links": [
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Scheduled maintenance",
+    "text": "outegro.dev will be read-only for ten minutes tonight at 23:00 UTC.",
+    "title": "Scheduled maintenance",
+  },
+  "service.test en": {
+    "links": [
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "outegro.dev channel check",
+    "text": "A test message from the admin console (email). If you can read it, the channel works.",
+    "title": "Channel check",
+  },
+  "service.test ru": {
+    "links": [
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Проверка канала outegro.dev",
+    "text": "Тестовое сообщение из админки (email). Если вы его видите, канал работает.",
+    "title": "Проверка канала",
+  },
+}
+`;

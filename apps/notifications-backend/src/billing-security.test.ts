@@ -1,0 +1,290 @@
+import { randomUUID } from "node:crypto";
+import { DATABASE, HealthRegistry, Messaging } from "@outegro/nest-common";
+import { eq } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import type { NotificationsDatabase } from "./common/database.js";
+import { deliveries, inboxItems, intents, recipients } from "./db/schema.js";
+import { DeliveryWorker } from "./delivery/delivery.worker.js";
+import { IntentsService } from "./intents/intents.service.js";
+import { RecipientsService } from "./recipients/recipients.service.js";
+import {
+  type Harness,
+  intentEvent,
+  startHarness,
+  userEvents,
+} from "./test/harness.js";
+
+let h: Harness;
+let db: NotificationsDatabase["db"];
+let worker: DeliveryWorker;
+let intentsService: IntentsService;
+let recipientsService: RecipientsService;
+
+beforeAll(async () => {
+  h = await startHarness();
+  db = h.app.get<NotificationsDatabase>(DATABASE).db;
+  worker = h.app.get(DeliveryWorker);
+  intentsService = h.app.get(IntentsService);
+  recipientsService = h.app.get(RecipientsService);
+});
+afterAll(() => h?.close());
+beforeEach(() => {
+  h.clock.set(new Date());
+  h.email.fail = null;
+});
+
+async function newUser(locale: "en" | "ru" = "en") {
+  const userId = randomUUID();
+  const email = `u.${userId.slice(0, 8)}@example.test`;
+  for (const event of userEvents(userId, email, locale))
+    await recipientsService.apply(event);
+  return { userId, email };
+}
+// ICU puts no-break spaces in amounts and times; compare words.
+const plain = (text = "") => text.replace(/\s+/g, " ").trim();
+const mailTo = (to: string) => h.email.sent.filter((m) => m.to === to);
+const inboxOf = async (userId: string) =>
+  (
+    await h
+      .http()
+      .get("/v1/me/inbox")
+      .set("authorization", `Bearer ${await h.tokenFor(userId)}`)
+      .expect(200)
+  ).body.items as { title: string; body: string; category: string }[];
+
+const renewal = (userId: string) =>
+  intentEvent({
+    producer: "payments",
+    userId,
+    templateKey: "billing.subscription-renewed.v1",
+    category: "billing",
+    data: {
+      productEn: "Battleship Premium",
+      productRu: "Морской бой Premium",
+      amountMinor: "5000",
+      amountScale: 2,
+      currency: "RUB",
+      paidAt: "2026-09-29T14:03:00.000Z",
+      paidUntil: "2026-10-29T14:03:00.000Z",
+      access: "active",
+      actionUrl: "https://pay.outegro.dev/subscriptions",
+    },
+  });
+const purchase = (
+  userId: string,
+  data: Record<string, string | number | boolean | null> = {},
+) =>
+  intentEvent({
+    producer: "payments",
+    userId,
+    templateKey: "billing.payment-confirmed.v2",
+    category: "billing",
+    data: {
+      productEn: "Silver Fleet",
+      productRu: "Серебряный флот",
+      amountMinor: "59",
+      amountScale: 2,
+      currency: "USD",
+      paidAt: "2026-09-29T14:03:00.000Z",
+      access: "active",
+      accessUntil: null,
+      actionUrl: `https://pay.outegro.dev/orders/${randomUUID()}`,
+      ...data,
+    },
+  });
+
+describe("billing notices (N-06)", () => {
+  it("TC-N-06-01: one renewal reads right in English and in Russian", async () => {
+    const en = await newUser("en");
+    const ru = await newUser("ru");
+    const chatId = String(Date.now());
+    await db
+      .update(recipients)
+      .set({ telegramChatId: chatId, telegramLinkedAt: new Date() })
+      .where(eq(recipients.userId, ru.userId));
+    await intentsService.accept(renewal(en.userId));
+    await intentsService.accept(renewal(ru.userId));
+    await worker.tick();
+
+    const [english] = mailTo(en.email);
+    expect(english?.subject).toBe("Subscription renewed: Battleship Premium");
+    expect(plain(english?.text)).toContain(
+      "We received ₽50.00 for “Battleship Premium” on Sep 29, 2026, 2:03 PM UTC. The subscription is now paid until Oct 29, 2026, 2:03 PM UTC. Access is active.",
+    );
+    expect(english?.html).toContain(
+      'href="https://pay.outegro.dev/subscriptions"',
+    );
+
+    const [russian] = mailTo(ru.email);
+    const text =
+      "Оплата 50,00 ₽ за «Морской бой Premium» получена 29 сент. 2026, 14:03 UTC. Теперь подписка оплачена до 29 окт. 2026, 14:03 UTC. Доступ открыт.";
+    expect(russian?.subject).toBe("Подписка продлена: Морской бой Premium");
+    expect(plain(russian?.text)).toContain(text);
+    expect(russian?.html).toContain('lang="ru"');
+    const chat = h.telegram.sent.filter((m) => m.chatId === chatId);
+    expect(chat.map((m) => plain(m.text))).toEqual([text]);
+
+    expect(await inboxOf(en.userId)).toEqual([
+      expect.objectContaining({
+        category: "billing",
+        title: "Subscription renewed",
+      }),
+    ]);
+    const [item] = await inboxOf(ru.userId);
+    expect(item?.title).toBe("Подписка продлена");
+    expect(plain(item?.body)).toBe(text);
+    const states = await db
+      .select({ channel: deliveries.channel, state: deliveries.state })
+      .from(deliveries)
+      .where(eq(deliveries.userId, ru.userId));
+    expect(states.sort((a, b) => a.channel.localeCompare(b.channel))).toEqual([
+      { channel: "email", state: "accepted" },
+      { channel: "telegram", state: "accepted" },
+    ]);
+  });
+
+  it("TC-N-06-02: a payment whose grant is not active yet promises no access", async () => {
+    const user = await newUser("en");
+    await intentsService.accept(purchase(user.userId, { access: "pending" }));
+    await worker.tick();
+    const [sent] = mailTo(user.email);
+    expect(plain(sent?.text)).toContain(
+      "We received $0.59 for “Silver Fleet” on Sep 29, 2026, 2:03 PM UTC. Access is not active yet: it opens once activation completes.",
+    );
+    expect(sent?.text).not.toContain("Access is active");
+    const [item] = await inboxOf(user.userId);
+    expect(item?.body).not.toContain("Access is active");
+  });
+
+  it("TC-N-06-03: a name with HTML is sent as text", async () => {
+    const user = await newUser("en");
+    const hostile = '<img src=x onerror="alert(1)">Fleet';
+    await intentsService.accept(purchase(user.userId, { productEn: hostile }));
+    await worker.tick();
+    const [sent] = mailTo(user.email);
+    expect(sent?.subject).toBe(`Payment received: ${hostile}`);
+    expect(sent?.html).not.toContain("<img");
+    expect(sent?.html).toContain("&lt;img src=x onerror=");
+    const [item] = await inboxOf(user.userId);
+    // JSON for id-web, which renders it as text.
+    expect(item?.body).toContain(hostile);
+  });
+
+  it("TC-N-06-03: a link to someone else's site is refused before anything is stored", async () => {
+    const user = await newUser("en");
+    for (const actionUrl of [
+      "https://evil.example/orders/1",
+      "https://pay.outegro.dev.evil.example/orders/1",
+      "https://user:pw@pay.outegro.dev/orders/1",
+      "javascript:alert(1)",
+    ]) {
+      await expect(
+        intentsService.accept(purchase(user.userId, { actionUrl })),
+      ).rejects.toThrow("action link not allowed");
+    }
+    await worker.tick();
+    expect(
+      await db.select().from(intents).where(eq(intents.userId, user.userId)),
+    ).toHaveLength(0);
+    expect(
+      await db
+        .select()
+        .from(inboxItems)
+        .where(eq(inboxItems.userId, user.userId)),
+    ).toHaveLength(0);
+    expect(mailTo(user.email)).toHaveLength(0);
+  });
+
+  it("refuses data a template cannot show exactly", async () => {
+    const user = await newUser("en");
+    const broken: Record<string, string>[] = [
+      { amountMinor: "0.59" },
+      { currency: "rub" },
+      { paidAt: "yesterday" },
+      { access: "maybe" },
+    ];
+    for (const data of broken) {
+      await expect(
+        intentsService.accept(purchase(user.userId, data)),
+      ).rejects.toThrow("invalid data for billing.payment-confirmed.v2");
+    }
+    expect(
+      await db.select().from(intents).where(eq(intents.userId, user.userId)),
+    ).toHaveLength(0);
+  });
+
+  it("keeps rendering payment messages stored in the v1 shape, without claiming access", async () => {
+    const user = await newUser("ru");
+    await intentsService.accept(
+      intentEvent({
+        producer: "payments",
+        userId: user.userId,
+        templateKey: "billing.payment-confirmed",
+        category: "billing",
+        data: { product: "Серебряный флот", amount: "0.59 USD" },
+      }),
+    );
+    const [item] = await inboxOf(user.userId);
+    expect(item).toMatchObject({
+      title: "Оплата получена",
+      body: "Мы получили оплату 0.59 USD за «Серебряный флот».",
+    });
+  });
+});
+
+describe("consumer path (N-06)", () => {
+  it("a billing notice from payments and a security notice from identity arrive over RabbitMQ", async () => {
+    const payments = new Messaging(
+      { url: h.rabbitUrl, service: "payments" },
+      new HealthRegistry(),
+    );
+    const identity = new Messaging(
+      { url: h.rabbitUrl, service: "identity" },
+      new HealthRegistry(),
+    );
+    const user = await newUser("en");
+    const billing = purchase(user.userId);
+    await payments.publish("payments.events", billing);
+    await identity.publish(
+      "identity.events",
+      intentEvent({
+        userId: user.userId,
+        templateKey: "security.google-linked.v1",
+        category: "security",
+        data: { at: "2026-09-29T14:03:00.000Z" },
+      }),
+    );
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline && mailTo(user.email).length < 2) {
+      await worker.tick();
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    expect(mailTo(user.email).map((m) => m.subject)).toEqual(
+      expect.arrayContaining([
+        "Payment received: Silver Fleet",
+        "Google sign-in was added to your account",
+      ]),
+    );
+    const google = mailTo(user.email).find((m) => m.subject.includes("Google"));
+    expect(google?.html).toContain(
+      'href="https://id.outegro.dev/account/security"',
+    );
+    const stored = await db
+      .select({ producer: intents.producer, key: intents.templateKey })
+      .from(intents)
+      .where(eq(intents.userId, user.userId));
+    expect(stored).toEqual(
+      expect.arrayContaining([
+        { producer: "payments", key: "billing.payment-confirmed.v2" },
+        { producer: "identity", key: "security.google-linked.v1" },
+      ]),
+    );
+    // The same event again is acknowledged without a second message.
+    await payments.publish("payments.events", billing);
+    await new Promise((r) => setTimeout(r, 1000));
+    await worker.tick();
+    expect(mailTo(user.email)).toHaveLength(2);
+    await payments.onApplicationShutdown();
+    await identity.onApplicationShutdown();
+  });
+});
