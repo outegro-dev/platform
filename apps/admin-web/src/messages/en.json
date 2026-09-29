@@ -370,6 +370,9 @@
       "payment": "Payment",
       "refund": "Refund"
     },
+    "settingsTarget": {
+      "channels": "Channel switches"
+    },
     "action": {
       "role_granted": "Role granted",
       "role_revoked": "Role revoked",

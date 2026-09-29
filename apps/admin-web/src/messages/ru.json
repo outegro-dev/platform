@@ -370,6 +370,9 @@
       "payment": "Платёж",
       "refund": "Возврат"
     },
+    "settingsTarget": {
+      "channels": "Переключатели каналов"
+    },
     "action": {
       "role_granted": "Роль выдана",
       "role_revoked": "Роль отозвана",

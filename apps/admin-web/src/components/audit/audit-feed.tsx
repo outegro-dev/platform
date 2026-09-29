@@ -67,7 +67,11 @@ export async function AuditFeed({
     <ul className="feed">
       {entries.map((entry) => {
         const href = targetHref(entry);
-        const target = `${label("target", entry.targetType)} ${shortId(entry.targetId)}`;
+        // Settings are one record each ("channels"), not an ID to shorten.
+        const target =
+          entry.targetType === "settings"
+            ? label("settingsTarget", entry.targetId)
+            : `${label("target", entry.targetType)} ${shortId(entry.targetId)}`;
         return (
           <li
             key={`${entry.source}-${entry.id}`}
