@@ -63,7 +63,7 @@ Gauges из БД (outbox, очереди, checkout, provider inbox) читают
 | `payments_reconciliation_last_success_timestamp_seconds` | gauge | — | Unix-время последнего завершённого прохода reconciliation; 0 до первого прохода после старта |
 | `payments_grants_activated_total` | counter | source (purchase, subscription, manual) | Grant стал активным: новый или после истечения; продление срока не считается |
 
-HTTP 200 на вебхук — durable acceptance, а не обработанный платёж: обработку показывает provider inbox. `unmatched` законно ждёт часами (webhook раньше checkout, возврат ждёт оператора); `received` и `failed` должны уходить за минуты. `ready` — покупатель ещё не оплатил, `unknown` — ответ Lava потерян, его ищет reconciliation. Счётчик grant увеличивается внутри транзакции: откат после активации с повтором worker'ом посчитается дважды — счётчик для rate, не для сверки.
+HTTP 200 на вебхук — durable acceptance, а не обработанный платёж: обработку показывает provider inbox. `unmatched` законно ждёт часами (webhook раньше checkout, возврат ждёт оператора); `received` и `failed` должны уходить за минуты. `ready` — покупатель ещё не оплатил, `unknown` — ответ Lava потерян, его ищет reconciliation. Счётчик grant увеличивается после коммита транзакции, которая активировала grant: откат с повтором worker'ом не считается дважды. Это всё равно счётчик для rate, не для сверки: сверка — по grants и журналу.
 
 ## battleship-backend
 

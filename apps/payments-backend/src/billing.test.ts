@@ -2,7 +2,16 @@ import { randomUUID } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
 import { idLikeLabelValues, metricValue } from "@outegro/nest-common/testing";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+import { BillingNotices } from "./billing/notices.js";
 import { CatalogService } from "./catalog/catalog.service.js";
 import type { PaymentsDatabase } from "./common/database.js";
 import { CustomersService } from "./customers/customers.service.js";
@@ -2010,6 +2019,50 @@ describe("metrics and correlation (OPS-04)", () => {
     expect(
       await eventsOf("billing.grant.changed.v1", "sourceId", orderId),
     ).toEqual([expect.objectContaining(chain)]);
+  });
+
+  it("a grant counts as activated once its transaction commits, not per attempt", async () => {
+    const owner = await newCustomer({ roles: ["owner"] });
+    const user = await newCustomer();
+    const activated = (source: string) =>
+      h.metric("payments_grants_activated_total", { source });
+    const before = await activated("purchase");
+    const { invoice } = await startPurchase(user, SILVER, "USD");
+    // The receipt is the last write of the payment's transaction: failing
+    // there rolls back the grant it has just activated.
+    const receipt = vi
+      .spyOn(h.app.get(BillingNotices), "paymentConfirmed")
+      .mockRejectedValueOnce(new Error("connection reset"));
+    try {
+      const res = await webhook(paidWebhook(user, invoice)).expect(200);
+      expect(res.body.status).toBe("failed");
+    } finally {
+      receipt.mockRestore();
+    }
+    expect(await grantsOf(user.userId)).toEqual([]);
+    expect(await activated("purchase")).toBe(before);
+    // The worker applies the event again; now it commits, and counts once.
+    h.clock.advance(31_000);
+    await reconciliation.tick();
+    expect(await grantsOf(user.userId)).toEqual([
+      expect.objectContaining({ state: "active" }),
+    ]);
+    expect(await activated("purchase")).toBe(before + 1);
+
+    // A manual grant counts after its commit too.
+    const manual = await activated("manual");
+    await h
+      .http()
+      .post("/v1/admin/grants")
+      .set(owner.auth)
+      .send({
+        userId: user.userId,
+        service: "battleship",
+        feature: "premium",
+        reason: "tester access for the beta",
+      })
+      .expect(201);
+    expect(await activated("manual")).toBe(manual + 1);
   });
 
   it("webhooks count by known type and outcome at the door", async () => {

@@ -20,6 +20,7 @@ import {
   type ProviderEventRow,
   type RefundRow,
 } from "../common/database.js";
+import { PaymentsMetrics } from "../common/metrics.js";
 import {
   auditLog,
   checkoutAttempts,
@@ -89,6 +90,7 @@ export class AdminService {
     private readonly grants: GrantLedger,
     private readonly cancellation: CancellationService,
     private readonly relay: OutboxRelay,
+    private readonly metrics: PaymentsMetrics,
   ) {}
 
   async orders(
@@ -485,7 +487,7 @@ export class AdminService {
         fieldErrors: { validUntil: ["must be in the future"] },
       });
     try {
-      const grant = await this.database.db.transaction(async (tx) => {
+      const activation = await this.database.db.transaction(async (tx) => {
         const [active] = await tx
           .select({ id: grants.id })
           .from(grants)
@@ -503,7 +505,7 @@ export class AdminService {
           throw new AppError("CONFLICT", {
             message: "an active manual grant exists",
           });
-        const row = await this.grants.activate(
+        const created = await this.grants.activate(
           tx,
           {
             userId: input.userId,
@@ -521,7 +523,7 @@ export class AdminService {
           actor,
           action: "grant.created",
           targetType: "grant",
-          targetId: row.id,
+          targetId: created.grant.id,
           reason: input.reason,
           data: {
             userId: input.userId,
@@ -531,10 +533,12 @@ export class AdminService {
           },
           at: now,
         });
-        return row;
+        return created;
       });
       this.relay.kick();
-      return grantView(grant);
+      // Counted once committed, like every grant activation.
+      if (activation.activated) this.metrics.grantActivated("manual");
+      return grantView(activation.grant);
     } catch (error) {
       if (isUniqueViolation(error, "grants_manual_active_uq"))
         throw new AppError("CONFLICT", {
