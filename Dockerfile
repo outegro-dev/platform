@@ -20,14 +20,13 @@ COPY . .
 RUN mkdir -p apps/landing-web/public
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
-RUN pnpm turbo run build \
-      --filter=@outegro/landing-web --filter=@outegro/id-web \
-      --filter=@outegro/pay-web --filter=@outegro/admin-web \
-      --filter=@outegro/battleship-web \
-      --filter=@outegro/auth-backend --filter=@outegro/notifications-backend \
-      --filter=@outegro/payments-backend --filter=@outegro/battleship-backend
+# CI builds only the apps a change affects (docker-bake BUILD_APPS); a plain
+# build still builds all of them.
+ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web auth-backend notifications-backend payments-backend battleship-backend"
+RUN pnpm turbo run build $(for app in $BUILD_APPS; do printf -- '--filter=@outegro/%s ' "$app"; done)
 # Backends: production dependencies only, plus build output and migrations.
 RUN for app in auth-backend notifications-backend payments-backend battleship-backend; do \
+      case " $BUILD_APPS " in *" $app "*) ;; *) continue ;; esac; \
       pnpm --filter "@outegro/$app" deploy --prod "/out/$app" && \
       cp -r "apps/$app/dist" "apps/$app/drizzle" "/out/$app/"; \
     done

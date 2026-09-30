@@ -1,5 +1,7 @@
 # Every app image from one build graph: the shared build stage runs once.
 #   TAG=<commit> docker buildx bake --push
+# CI passes only the affected targets and the same list as
+# *.args.BUILD_APPS, so the build stage compiles just those apps.
 variable "TAG" {
   default = "dev"
 }
