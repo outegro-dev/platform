@@ -215,6 +215,18 @@ describe("roles and permissions", () => {
       .expect(400);
     expect(res.body.error.code).toBe("VALIDATION_FAILED");
   });
+
+  it("role names inherited from Object are unknown roles too", async () => {
+    const target = await h.signIn(uniqueEmail("proto"));
+    for (const role of ["constructor", "toString", "__proto__", "valueOf"])
+      await expect(
+        roles.grant(
+          { userId: null },
+          { userId: target.user.id, role, reason: "hardening" },
+        ),
+        role,
+      ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+  });
 });
 
 describe("owner protection", () => {

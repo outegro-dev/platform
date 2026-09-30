@@ -64,7 +64,8 @@ export class RolesService {
     },
     tx?: AuthTx,
   ) {
-    if (!(input.role in platformRoles)) {
+    // Own keys only: `in` also finds constructor, toString and the like.
+    if (!Object.hasOwn(platformRoles, input.role)) {
       throw new AppError("VALIDATION_FAILED", {
         fieldErrors: { role: ["unknown role"] },
       });
