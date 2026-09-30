@@ -1,5 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { DATABASE, HealthRegistry, Messaging } from "@outegro/nest-common";
+import {
+  DATABASE,
+  HealthRegistry,
+  Messaging,
+  PermanentError,
+} from "@outegro/nest-common";
 import { idLikeLabelValues, metricValue } from "@outegro/nest-common/testing";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -208,6 +213,37 @@ describe("intents (N-01)", () => {
         }),
       ),
     ).rejects.toThrow("auth templates are private");
+  });
+
+  it("refuses keys every object inherits as unknown templates, storing nothing", async () => {
+    const { userId } = await newUser();
+    for (const templateKey of [
+      "constructor",
+      "toString",
+      "__proto__",
+      "hasOwnProperty",
+    ]) {
+      const sourceEventId = randomUUID();
+      const error = await db
+        .transaction((tx) =>
+          intentsService.record(tx, {
+            sourceEventId,
+            producer: "identity",
+            templateKey,
+            category: "security",
+            userId,
+            data: {},
+          }),
+        )
+        .catch((e: unknown) => e);
+      expect(error, templateKey).toBeInstanceOf(PermanentError);
+      expect((error as Error).message).toBe(`unknown template ${templateKey}`);
+      const stored = await db
+        .select()
+        .from(intents)
+        .where(eq(intents.sourceEventId, sourceEventId));
+      expect(stored).toHaveLength(0);
+    }
   });
 });
 

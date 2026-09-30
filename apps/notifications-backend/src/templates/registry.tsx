@@ -798,8 +798,18 @@ export const templates: Record<string, Template> = {
   "billing.refund-recorded.v2": refundRecordedV2,
 };
 
+/**
+ * The template stored under `key`, or undefined. Only the registry's own
+ * keys count: `templates[key]` would also find what every object inherits
+ * (`constructor`, `toString`, `__proto__`) and hand back a function or
+ * Object.prototype as a template.
+ */
+export function templateOf(key: string): Template | undefined {
+  return Object.hasOwn(templates, key) ? templates[key] : undefined;
+}
+
 export function templateFor(key: string) {
-  const template = templates[key];
+  const template = templateOf(key);
   if (!template) throw new Error(`Unknown template ${key}`);
   return template;
 }

@@ -24,7 +24,11 @@ import { NotificationsMetrics } from "../common/metrics.js";
 import { channelsConfig } from "../config/config.js";
 import { deliveries, inboxItems, intents } from "../db/schema.js";
 import { DeliveryWorker } from "../delivery/delivery.worker.js";
-import { allowedLink, type Channel, templates } from "../templates/registry.js";
+import {
+  allowedLink,
+  type Channel,
+  templateOf,
+} from "../templates/registry.js";
 import { contextOf } from "../templates/render.js";
 
 const requesters: Producer[] = ["identity", "payments", "admin", "assistant"];
@@ -137,7 +141,7 @@ export class IntentsService implements OnApplicationBootstrap {
     tx: Executor,
     request: IntentRequest,
   ): Promise<{ droppedLink: string | null }> {
-    const template = templates[request.templateKey];
+    const template = templateOf(request.templateKey);
     if (!template)
       throw new PermanentError(`unknown template ${request.templateKey}`);
     if (template.category !== request.category)

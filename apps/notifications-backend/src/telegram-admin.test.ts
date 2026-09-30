@@ -465,6 +465,20 @@ describe("admin console", () => {
       .get("/v1/admin/templates/nope/preview")
       .set("authorization", owner)
       .expect(404);
+    // Only the registry's own keys: what every object inherits is unknown.
+    for (const key of [
+      "constructor",
+      "toString",
+      "__proto__",
+      "hasOwnProperty",
+    ]) {
+      const res = await h
+        .http()
+        .get(`/v1/admin/templates/${key}/preview`)
+        .set("authorization", owner);
+      expect(res.status, key).toBe(404);
+      expect(res.body.error.code, key).toBe("NOT_FOUND");
+    }
     // Every template, in both languages, previews from its own sample.
     for (const { key } of list.body.items as { key: string }[]) {
       for (const locale of ["en", "ru"]) {
