@@ -1,4 +1,12 @@
-import { APP, expect, PLATFORM, signIn, test } from "./support/fixtures.ts";
+import type { Page } from "@playwright/test";
+import {
+  APP,
+  expect,
+  PLATFORM,
+  signIn,
+  signInAndConnect,
+  test,
+} from "./support/fixtures.ts";
 
 test.describe("sign-in through id.outegro.dev", () => {
   test("signed-out visitors see the game, the leaderboard and a clear way in", async ({
@@ -112,6 +120,82 @@ test.describe("sign-in through id.outegro.dev", () => {
     await signIn(page, "free", "/leaderboard");
     await page.goto("/auth/sign-in?returnTo=%2Fshop");
     await expect(page).toHaveURL(`${APP}/shop`);
+  });
+
+  test.describe("a session ended elsewhere while its access token is valid", () => {
+    /** Ends the game's session in Identity (another tab, an operator, a suspension). */
+    async function endSessionElsewhere(page: Page) {
+      const refresh = (await page.context().cookies(APP)).find(
+        (cookie) => cookie.name === "og_rt",
+      )?.value;
+      const ended = await page.request.post(
+        `${PLATFORM}/identity/v1/sessions/logout`,
+        { data: { refreshToken: refresh } },
+      );
+      expect(ended.status()).toBe(204);
+    }
+
+    /** Every document the tab loads from the game, in order. */
+    function documents(page: Page) {
+      const hops: string[] = [];
+      page.on("request", (request) => {
+        const url = new URL(request.url());
+        if (
+          request.isNavigationRequest() &&
+          request.frame() === page.mainFrame() &&
+          url.origin === APP
+        )
+          hops.push(url.pathname);
+      });
+      return hops;
+    }
+
+    const accessCookie = async (page: Page) =>
+      (await page.context().cookies(APP)).find((c) => c.name === "og_at")
+        ?.value;
+
+    test("opening a game page signs in again once and returns to it", async ({
+      page,
+      game,
+    }) => {
+      // Connected first: the socket's ticket is not refused mid-test.
+      await signInAndConnect(page, game, "premium", "/leaderboard");
+      const revoked = await accessCookie(page);
+      await endSessionElsewhere(page);
+      const hops = documents(page);
+
+      await page.goto("/profile");
+      await expect(page).toHaveURL(`${APP}/profile`);
+      await expect(page.getByTestId("profile-nickname")).toHaveText(
+        "Admiral Nelson",
+      );
+      expect(hops).toEqual([
+        "/profile",
+        "/auth/sign-in",
+        "/auth/callback",
+        "/profile",
+      ]);
+      expect(await accessCookie(page)).not.toBe(revoked);
+    });
+
+    test("following a section link does the same", async ({ page, game }) => {
+      await signInAndConnect(page, game, "premium", "/leaderboard");
+      const revoked = await accessCookie(page);
+      await endSessionElsewhere(page);
+      const hops = documents(page);
+
+      await page
+        .getByRole("navigation", { name: "Game sections" })
+        .getByRole("link", { name: "Profile" })
+        .click();
+      await expect(page).toHaveURL(`${APP}/profile`);
+      await expect(page.getByTestId("profile-nickname")).toHaveText(
+        "Admiral Nelson",
+      );
+      // The router fetches the page and then sign-in; the browser loads sign-in once.
+      expect(hops).toEqual(["/auth/sign-in", "/auth/callback", "/profile"]);
+      expect(await accessCookie(page)).not.toBe(revoked);
+    });
   });
 
   test("sign-out refuses cross-site posts", async ({ page }) => {

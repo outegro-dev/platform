@@ -1,7 +1,8 @@
 /**
  * Hermetic stand-in for the platform services during e2e tests (port 4195):
- * identity (SSO /authorize page, code exchange with PKCE, refresh, logout),
- * battleship-backend HTTP and payments. Every battleship response is parsed
+ * identity (SSO /authorize page, code exchange with PKCE, refresh, logout
+ * that revokes the session, access token included), battleship-backend HTTP
+ * and payments. Every battleship response is parsed
  * with the contract schemas before it is sent, so the app is tested against
  * the real wire format. The game WebSocket is mocked inside the browser by
  * Playwright (page.routeWebSocket), not here.
@@ -73,6 +74,9 @@ const codes = new Map<
   string,
   { persona: Persona; challenge: string; redirectUri: string; clientId: string }
 >();
+/** Identity sessions by id; a logout revokes one, access token included. */
+const sessions = new Map<string, { userId: string; revoked: boolean }>();
+/** Refresh token → session id. */
 const refreshTokens = new Map<string, string>();
 type Order = {
   orderId: string;
@@ -160,27 +164,33 @@ function jwt(payload: Record<string, unknown>): string {
   return `${head}.${body}.${randomBytes(16).toString("base64url")}`;
 }
 
-function issueTokens(userId: string) {
+/** Tokens of a new session for `userId`, or rotated ones of session `sid`. */
+function issueTokens(userId: string, sid: string = randomUUID()) {
   const now = Date.now();
   const refreshToken = randomBytes(32).toString("base64url");
-  refreshTokens.set(refreshToken, userId);
+  sessions.set(sid, { userId, revoked: false });
+  refreshTokens.set(refreshToken, sid);
   return {
-    sessionId: randomUUID(),
-    accessToken: jwt({ sub: userId, exp: Math.floor(now / 1000) + 900 }),
+    sessionId: sid,
+    accessToken: jwt({ sub: userId, sid, exp: Math.floor(now / 1000) + 900 }),
     accessTokenExpiresAt: new Date(now + 900_000).toISOString(),
     refreshToken,
     refreshTokenExpiresAt: new Date(now + 30 * 86_400_000).toISOString(),
   };
 }
 
+/** The user behind a Bearer token of a live session (every service checks it). */
 function userFrom(req: IncomingMessage): User | null {
   const header = req.headers.authorization ?? "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
   try {
     const payload = JSON.parse(
       Buffer.from(token.split(".")[1] ?? "", "base64url").toString("utf8"),
-    ) as { sub?: string; exp?: number };
+    ) as { sub?: string; sid?: string; exp?: number };
     if (!payload.sub || !payload.exp || payload.exp * 1000 < Date.now())
+      return null;
+    const session = payload.sid ? sessions.get(payload.sid) : undefined;
+    if (!session || session.revoked || session.userId !== payload.sub)
       return null;
     return users.get(payload.sub) ?? null;
   } catch {
@@ -602,17 +612,23 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
 
   if (path === "/v1/sessions/refresh" && method === "POST") {
     const body = (await readBody(req)) as { refreshToken?: string } | undefined;
-    const userId = body?.refreshToken
+    const sid = body?.refreshToken
       ? refreshTokens.get(body.refreshToken)
       : undefined;
-    if (!userId || !body?.refreshToken)
+    const session = sid ? sessions.get(sid) : undefined;
+    if (!sid || !session || session.revoked || !body?.refreshToken)
       return error(res, 401, "UNAUTHENTICATED");
     refreshTokens.delete(body.refreshToken);
-    return send(res, 200, issueTokens(userId));
+    return send(res, 200, issueTokens(session.userId, sid));
   }
 
   if (path === "/v1/sessions/logout" && method === "POST") {
     const body = (await readBody(req)) as { refreshToken?: string } | undefined;
+    const sid = body?.refreshToken
+      ? refreshTokens.get(body.refreshToken)
+      : undefined;
+    const session = sid ? sessions.get(sid) : undefined;
+    if (session) session.revoked = true;
     if (body?.refreshToken) refreshTokens.delete(body.refreshToken);
     return send(res, 204);
   }
