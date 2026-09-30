@@ -1,4 +1,4 @@
-import { expect, settle, signIn, test } from "./fixtures";
+import { expect, settle, signIn, test, useRussian } from "./fixtures";
 
 test("a finished match shows both boards and steps through the moves", async ({
   page,
@@ -26,6 +26,35 @@ test("a finished match shows both boards and steps through the moves", async ({
   await expect(moves.nth(4)).toHaveAttribute("aria-current", "step");
   await expect(page.getByRole("slider", { name: "Move" })).toHaveValue("5");
   await page.keyboard.press("Tab");
+});
+
+test("a loss on the placement clock reads as not deploying in time", async ({
+  page,
+  context,
+}) => {
+  await signIn(page, "owner", "/battleship/matches?status=finished");
+  const row = page
+    .getByRole("row")
+    .filter({ hasText: "Did not deploy in time" });
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText("Captain Mira");
+  await row.locator(".row-link").click();
+  await settle(page);
+  await expect(page.locator("#match")).toContainText(
+    "Winner: Captain Mira · Did not deploy in time",
+  );
+
+  await useRussian(context);
+  await page.reload();
+  await settle(page);
+  await expect(page.locator("#match")).toContainText(
+    "Победитель: Captain Mira · Не расставил флот вовремя",
+  );
+  await page.goto("/battleship/matches?status=finished");
+  await settle(page);
+  await expect(
+    page.getByRole("row").filter({ hasText: "Не расставил флот вовремя" }),
+  ).toHaveCount(1);
 });
 
 test("a live match can be aborted with a reason", async ({ page }) => {

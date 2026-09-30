@@ -368,6 +368,7 @@
       "fleet_destroyed": "Флот уничтожен",
       "resigned": "Сдался",
       "timeout": "Время вышло",
+      "not_deployed": "Не расставил флот вовремя",
       "disconnected": "Отключился"
     },
     "abortReason": {

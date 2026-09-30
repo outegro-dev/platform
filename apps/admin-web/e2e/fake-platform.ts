@@ -1111,6 +1111,52 @@ addMatch({
   a: players[10] as Player,
   b: players[12] as Player,
 });
+/**
+ * Lost on the placement clock: side a placed a fleet, side b did not, and
+ * the battle never started. The server calls it `timeout`, like a timeout
+ * in battle, with no battleStartedAt. Built without the shared generator so
+ * the rest of the seed stays the same; it lists right after the newest
+ * finished match.
+ */
+const newestFinished = Math.max(
+  ...matches
+    .filter((m) => m.status === "finished")
+    .map((m) => Date.parse(m.createdAt)),
+);
+const notDeployedAt = newestFinished - MINUTE;
+matches.push({
+  matchId: uuidFrom(prngFor("not-deployed")),
+  mode: "private",
+  status: "finished",
+  a: mira.id,
+  b: (players.find((p) => p.nickname === "Nordwind") as Player).userId,
+  botLevel: null,
+  winner: "a",
+  reason: "timeout",
+  abortReason: null,
+  rated: false,
+  ratingDelta: null,
+  createdAt: iso(notDeployedAt),
+  battleStartedAt: null,
+  finishedAt: iso(notDeployedAt + 90_000),
+  firstTurn: "a",
+  fleets: {
+    a: [
+      { x: 0, y: 0, length: 4, orientation: "horizontal" },
+      { x: 5, y: 0, length: 3, orientation: "horizontal" },
+      { x: 0, y: 2, length: 3, orientation: "horizontal" },
+      { x: 4, y: 2, length: 2, orientation: "horizontal" },
+      { x: 7, y: 2, length: 2, orientation: "horizontal" },
+      { x: 0, y: 4, length: 2, orientation: "horizontal" },
+      { x: 3, y: 4, length: 1, orientation: "horizontal" },
+      { x: 5, y: 4, length: 1, orientation: "horizontal" },
+      { x: 7, y: 4, length: 1, orientation: "horizontal" },
+      { x: 9, y: 4, length: 1, orientation: "horizontal" },
+    ],
+    b: null,
+  },
+  moves: [],
+});
 matches.sort((m1, m2) => (m1.createdAt < m2.createdAt ? 1 : -1));
 audit(battleshipAudit, {
   actorId: personaIds.support,
