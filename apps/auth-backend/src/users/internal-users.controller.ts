@@ -31,6 +31,11 @@ export class InternalUsersController {
       locale: user.locale,
       status: user.status,
       accessVersion: user.accessVersion,
+      /**
+       * The aggregateVersion user events carry: a projection stores it with
+       * this data, so an older event arriving later changes nothing.
+       */
+      version: user.version,
     };
   }
 }

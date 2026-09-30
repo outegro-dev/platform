@@ -1,7 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { billingGrantChanged, createEvent } from "@outegro/contracts";
+import {
+  billingGrantChanged,
+  createEvent,
+  identityUserLocaleChanged,
+} from "@outegro/contracts";
+import { DATABASE } from "@outegro/nest-common";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { RolesService } from "./access/roles.service.js";
+import type { AuthDatabase } from "./common/database.js";
+import { outbox } from "./db/schema.js";
 import { GrantsService } from "./grants/grants.service.js";
 import { type Harness, startHarness, uniqueEmail } from "./test/harness.js";
 
@@ -144,8 +152,38 @@ describe("roles and permissions", () => {
       locale: "en",
       status: "active",
       accessVersion: expect.any(Number),
+      version: 1,
     });
     await lookup(internal, randomUUID()).expect(404);
+  });
+
+  it("gives lookups the version its user events carry, so projections can order them", async () => {
+    const user = await h.signIn(uniqueEmail("lookup-version"));
+    await h
+      .http()
+      .patch("/v1/me")
+      .set(h.auth(user.accessToken))
+      .send({ expectedVersion: 1, locale: "ru" })
+      .expect(200);
+    const found = await h
+      .http()
+      .post("/v1/internal/users/lookup")
+      .set("authorization", `Bearer ${process.env.INTERNAL_API_TOKEN ?? ""}`)
+      .send({ userId: user.user.id })
+      .expect(200);
+    expect(found.body).toMatchObject({ locale: "ru", version: 2 });
+    // The locale change went out with the same number as aggregateVersion.
+    const [published] = await h.app
+      .get<AuthDatabase>(DATABASE)
+      .db.select({ envelope: outbox.envelope })
+      .from(outbox)
+      .where(
+        and(
+          eq(outbox.type, identityUserLocaleChanged.type),
+          sql`${outbox.envelope}->>'aggregateId' = ${user.user.id}`,
+        ),
+      );
+    expect(published?.envelope).toMatchObject({ aggregateVersion: 2 });
   });
 
   it("gives the dashboard numbers and the audit trail by permission", async () => {
