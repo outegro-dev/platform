@@ -3,9 +3,11 @@
 import type { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/browser";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { accessToken, authApi } from "@/lib/api";
+import { accessToken, authApi, type Me } from "@/lib/api";
 import { passkeyName } from "@/lib/passkey-name";
 import {
+  type AcceptedPasskeys,
+  acceptedPasskeysSignal,
   ceremonyResponse,
   type PasskeyItem,
   passkeyOutcome,
@@ -88,4 +90,21 @@ export async function removePasskey(id: string): Promise<Result> {
   });
   if (result.ok || result.error === "not_found") revalidatePath(PAGE);
   return result;
+}
+
+/**
+ * The passkeys the account still accepts, for this device after a removal
+ * (WebAuthn Signal API); null when that cannot be said in full.
+ */
+export async function acceptedPasskeys(): Promise<AcceptedPasskeys | null> {
+  const result = await asUser(async (token) => {
+    const [me, passkeys] = await Promise.all([
+      authApi<Me>("/v1/me", { accessToken: token }),
+      authApi<{ items: PasskeyItem[] }>("/v1/me/passkeys", {
+        accessToken: token,
+      }),
+    ]);
+    return { accepted: acceptedPasskeysSignal(me.id, passkeys.items) };
+  });
+  return result.ok ? result.accepted : null;
 }

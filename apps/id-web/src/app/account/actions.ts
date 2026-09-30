@@ -7,11 +7,14 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { authApi, notificationsApi, withSession } from "@/lib/api";
+import { authApi, type Me, notificationsApi, withSession } from "@/lib/api";
+import { type UserDetails, userDetailsSignal } from "@/lib/passkeys";
 
 export type FormState = {
   status: "idle" | "saved" | "conflict" | "error" | "invalid";
   message?: string;
+  /** Saved: the account as this device's passkeys should now show it. */
+  passkeyUser?: UserDetails;
 };
 
 /** A service that failed on its side: the UI offers a retry, not an error page. */
@@ -40,9 +43,10 @@ export async function updateProfile(
 ): Promise<FormState> {
   const input = profileSchema.safeParse(Object.fromEntries(form));
   if (!input.success) return { status: "invalid" };
+  let profile: Pick<Me, "id" | "email" | "displayName">;
   try {
-    await withSession("/account", (token) =>
-      authApi("/v1/me", {
+    profile = await withSession("/account", (token) =>
+      authApi<typeof profile>("/v1/me", {
         method: "PATCH",
         accessToken: token,
         body: {
@@ -58,7 +62,7 @@ export async function updateProfile(
   // The account language also becomes this browser's language (TC-ID-09-02).
   await setLocale(input.data.locale);
   revalidatePath("/account", "layout");
-  return { status: "saved" };
+  return { status: "saved", passkeyUser: userDetailsSignal(profile) };
 }
 
 export type SessionsState =

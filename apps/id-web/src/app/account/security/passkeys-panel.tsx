@@ -31,8 +31,10 @@ import { useActionStatus } from "@/components/action-status";
 import { isOffline } from "@/lib/online";
 import { ceremonyError } from "@/lib/passkey-ceremony";
 import { PASSKEY_NAME_MAX, passkeyName } from "@/lib/passkey-name";
+import { signalAcceptedPasskeys } from "@/lib/passkey-signals";
 import type { PasskeyError, PasskeyItem, PasskeyOutcome } from "@/lib/passkeys";
 import {
+  acceptedPasskeys,
   passkeyRegistrationOptions,
   registerPasskey,
   removePasskey,
@@ -254,6 +256,7 @@ function RenameDialog({ item }: { item: PasskeyRow }) {
         if (result.error === "not_found") return setOpen(false);
         return setError(listError(result.error));
       }
+      // The name is ours alone: no WebAuthn signal carries it to the device.
       setOpen(false);
       show(t("renamed"), "success");
     });
@@ -344,6 +347,8 @@ function RemoveDialog({ item }: { item: PasskeyRow }) {
       }
       setOpen(false);
       show(t("removed"), "success");
+      // Gone either way: the device may hide it too (Signal API, in the background).
+      signalAcceptedPasskeys(acceptedPasskeys);
     });
   };
 

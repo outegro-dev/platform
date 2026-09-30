@@ -5,9 +5,10 @@ import { Input } from "@outegro/ui/input";
 import { Label } from "@outegro/ui/label";
 import { WifiSlashIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { SubmitButton } from "@/components/submit-button";
 import { useFormFeedback } from "@/lib/form-feedback";
+import { signalUserDetails } from "@/lib/passkey-signals";
 import { type FormState, updateProfile } from "./actions";
 
 export function ProfileForm(props: {
@@ -21,6 +22,10 @@ export function ProfileForm(props: {
     updateProfile,
     { status: "idle" },
   );
+  // Each save also lets this device's passkeys show the new name (Signal API).
+  useEffect(() => {
+    if (state.status === "saved") signalUserDetails(state.passkeyUser);
+  }, [state]);
   const feedback = useFormFeedback(state, pending);
   // Controlled, so React's form reset after a failed save keeps the edits.
   const [displayName, setDisplayName] = useState(props.displayName ?? "");

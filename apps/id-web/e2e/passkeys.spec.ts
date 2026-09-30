@@ -59,6 +59,19 @@ const withoutAutofill = (page: Page) =>
     );
   });
 
+/**
+ * A browser without the WebAuthn Signal API for the account's passkeys
+ * (signalUnknownCredential stays): the device keeps a passkey removed here.
+ */
+const withoutSignals = (page: Page) =>
+  page.addInitScript(() => {
+    for (const method of [
+      "signalAllAcceptedCredentials",
+      "signalCurrentUserDetails",
+    ])
+      Object.defineProperty(PublicKeyCredential, method, { value: undefined });
+  });
+
 const menuButton = (page: Page) =>
   page.getByRole("button", { name: /(and apps|и приложения)$/i });
 
@@ -88,6 +101,8 @@ test("TC-ID-05-01: add a passkey, sign out, sign in with it, rename it and remov
   page,
 }) => {
   await withoutAutofill(page);
+  // So the device still holds the removed passkey at the end.
+  await withoutSignals(page);
   const key = await virtualAuthenticator(page);
   const { panel } = await withPasskey(page, "E2E laptop");
   const row = panel.getByRole("listitem").filter({ hasText: "E2E laptop" });
@@ -141,7 +156,7 @@ test("TC-ID-05-01: add a passkey, sign out, sign in with it, rename it and remov
   await expect(page.getByText("Passkey removed.")).toBeVisible();
   await expect(panel.getByText("No passkeys yet.")).toBeVisible();
 
-  // The device may still hold it; the account no longer takes it.
+  // The device still holds it (no Signal API); the account no longer takes it.
   await signOut(page);
   await expect(page).toHaveURL(/\/login$/);
   await page.getByRole("button", { name: "Sign in with a passkey" }).click();
@@ -151,6 +166,46 @@ test("TC-ID-05-01: add a passkey, sign out, sign in with it, rename it and remov
     ),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);
+});
+
+test("the device hears of a new display name and of a removed passkey (Signal API)", async ({
+  page,
+}) => {
+  await withoutAutofill(page);
+  const key = await virtualAuthenticator(page);
+  const { email, panel } = await withPasskey(page, "Signal laptop");
+  const [created] = await key.credentials();
+  // Without a display name the account shows its email.
+  expect(created).toMatchObject({ userName: email, userDisplayName: email });
+
+  await page.goto("/account");
+  await page.getByLabel("Display name").fill("Nick Signal");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+  await expect
+    .poll(async () => (await key.credentials())[0]?.userDisplayName)
+    .toBe("Nick Signal");
+
+  // A rename stays here: the device keeps the account's names.
+  await page.goto("/account/security");
+  const row = panel.getByRole("listitem").filter({ hasText: "Signal laptop" });
+  await row.getByRole("button", { name: /^Rename/ }).click();
+  await page.getByRole("dialog").getByLabel("Passkey name").fill("Old laptop");
+  await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Passkey renamed.")).toBeVisible();
+  expect(await key.credentials()).toMatchObject([
+    { userName: email, userDisplayName: "Nick Signal" },
+  ]);
+
+  // Removed here, forgotten there: no passkey is left on the account.
+  const renamed = panel.getByRole("listitem").filter({ hasText: "Old laptop" });
+  await renamed.getByRole("button", { name: /^Remove/ }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Remove passkey" })
+    .click();
+  await expect(page.getByText("Passkey removed.")).toBeVisible();
+  await expect.poll(async () => (await key.credentials()).length).toBe(0);
 });
 
 test("the email field's autofill signs in with a passkey (conditional mediation)", async ({
