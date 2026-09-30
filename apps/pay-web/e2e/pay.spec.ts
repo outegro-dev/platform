@@ -5,6 +5,7 @@ import {
   expect,
   expectAccessible,
   expectNoHorizontalScroll,
+  FAKE,
   layoutShift,
   persona,
   preferRussian,
@@ -95,6 +96,92 @@ test.describe("sign-in", () => {
 
     await page.getByRole("link", { name: "Sign in again" }).click();
     await expect(page).toHaveURL(`${APP}/orders`);
+  });
+
+  test.describe("a session ended elsewhere while its access token is valid", () => {
+    /** Ends pay-web's session in Identity (another tab, an operator, a suspension). */
+    async function endSessionElsewhere(page: Page) {
+      const refresh = (await page.context().cookies(APP)).find(
+        (cookie) => cookie.name === "og_rt",
+      )?.value;
+      const ended = await page.request.post(`${FAKE}/v1/sessions/logout`, {
+        data: { refreshToken: refresh },
+      });
+      expect(ended.status()).toBe(204);
+    }
+
+    /** Every document the tab loads from pay-web, in order. */
+    function documents(page: Page) {
+      const hops: string[] = [];
+      page.on("request", (request) => {
+        const url = new URL(request.url());
+        if (
+          request.isNavigationRequest() &&
+          request.frame() === page.mainFrame() &&
+          url.origin === APP
+        )
+          hops.push(url.pathname);
+      });
+      return hops;
+    }
+
+    const accessCookie = async (page: Page) =>
+      (await page.context().cookies(APP)).find((c) => c.name === "og_at")
+        ?.value;
+
+    /** The subscriptions page with its list, not its loading state (same heading). */
+    async function expectSubscriptions(page: Page) {
+      await expect(page).toHaveURL(`${APP}/subscriptions`);
+      await expect(
+        page.getByRole("heading", { name: "Your subscriptions." }),
+      ).toBeVisible();
+      await expect(page.getByText("Battleship Premium").first()).toBeVisible();
+    }
+
+    test("opening a page signs in again once and returns to it", async ({
+      page,
+    }) => {
+      const buyer = await persona(page);
+      await page.goto("/orders");
+      await expect(
+        page.getByRole("heading", { name: "Your purchases." }),
+      ).toBeVisible();
+      const revoked = await accessCookie(page);
+      await endSessionElsewhere(page);
+      const hops = documents(page);
+
+      await page.goto("/subscriptions");
+      await expectSubscriptions(page);
+      expect(hops).toEqual([
+        "/subscriptions",
+        "/auth/sign-in",
+        "/auth/callback",
+        "/subscriptions",
+      ]);
+      expect(await accessCookie(page)).not.toBe(revoked);
+      expect((await readPersona(buyer.id)).log.logouts).toBe(1);
+    });
+
+    test("following a section link does the same", async ({ page }) => {
+      await persona(page);
+      await page.goto("/orders");
+      await expect(
+        page.getByRole("heading", { name: "Your purchases." }),
+      ).toBeVisible();
+      const revoked = await accessCookie(page);
+      await endSessionElsewhere(page);
+      const hops = documents(page);
+
+      await section(page, "Subscriptions").click();
+      await expectSubscriptions(page);
+      // The router fetches the page and then sign-in; the browser loads sign-in once.
+      expect(hops).toEqual([
+        "/auth/sign-in",
+        "/auth/callback",
+        "/subscriptions",
+      ]);
+      expect(await accessCookie(page)).not.toBe(revoked);
+    });
   });
 
   test("a broken sign-in explains itself and offers a new start", async ({
