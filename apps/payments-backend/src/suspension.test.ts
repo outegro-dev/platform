@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import {
   createEvent,
   identityRoleBindingChanged,
+  identityUserContactChanged,
+  identityUserCreated,
+  identityUserLocaleChanged,
   identityUserStatusChanged,
 } from "@outegro/contracts";
 import { DATABASE } from "@outegro/nest-common";
@@ -506,6 +509,186 @@ describe("account statuses from Identity apply in version order", () => {
     expect(await stored(buyer.userId)).toEqual({
       status: "active",
       accessVersion: 5,
+    });
+  });
+});
+
+describe("the buyer's locale and email from Identity apply in version order", () => {
+  // Identity publishes every user event with the user's row version as
+  // aggregateVersion: creation and its first contact are 1, each later
+  // change of the row is one more.
+  const created = (userId: string, locale: "en" | "ru", version = 1) =>
+    createEvent(identityUserCreated, {
+      aggregateId: userId,
+      aggregateVersion: version,
+      payload: { userId, locale, status: "active" },
+    });
+  const localeChanged = (
+    userId: string,
+    locale: "en" | "ru",
+    version: number,
+  ) =>
+    createEvent(identityUserLocaleChanged, {
+      aggregateId: userId,
+      aggregateVersion: version,
+      payload: { userId, locale },
+    });
+  const contactChanged = (userId: string, email: string, version: number) =>
+    createEvent(identityUserContactChanged, {
+      aggregateId: userId,
+      aggregateVersion: version,
+      payload: { userId, email, emailVerified: true },
+    });
+  const profile = async (userId: string) =>
+    (
+      await db
+        .select({
+          email: customerTable.email,
+          emailVerified: customerTable.emailVerified,
+          locale: customerTable.locale,
+        })
+        .from(customerTable)
+        .where(eq(customerTable.userId, userId))
+    )[0];
+  /** What Lava is told about the buyer at checkout. */
+  const lavaSees = async (userId: string) => {
+    await h
+      .http()
+      .post("/v1/checkout")
+      .set({ authorization: `Bearer ${await h.tokenFor(userId)}` })
+      .set("idempotency-key", `profile-${randomUUID()}`)
+      .send({ productKey: PREMIUM, currency: "USD" })
+      .expect(200);
+    const { email, buyerLanguage } = h.lava.last().input;
+    return { email, buyerLanguage };
+  };
+
+  it("the account's creation delivered late does not reset a changed locale", async () => {
+    const buyer = await newCustomer();
+    await customers.apply(localeChanged(buyer.userId, "ru", 2));
+    // A late copy of the creation, as a republish would bring it.
+    await customers.apply(created(buyer.userId, "en"));
+    expect((await profile(buyer.userId))?.locale).toBe("ru");
+    expect(await lavaSees(buyer.userId)).toEqual({
+      email: buyer.email,
+      buyerLanguage: "RU",
+    });
+  });
+
+  it("events of a new account delivered in reverse leave the newest locale and email", async () => {
+    const userId = randomUUID();
+    const first = `first.${userId.slice(0, 8)}@example.test`;
+    const second = `second.${userId.slice(0, 8)}@example.test`;
+    for (const event of [
+      localeChanged(userId, "ru", 3),
+      contactChanged(userId, second, 2),
+      contactChanged(userId, first, 1),
+      created(userId, "en"),
+    ])
+      await customers.apply(event);
+    expect(await profile(userId)).toEqual({
+      email: second,
+      emailVerified: true,
+      locale: "ru",
+    });
+    expect(await lavaSees(userId)).toEqual({
+      email: second,
+      buyerLanguage: "RU",
+    });
+  });
+
+  it("an older locale or email change delivered after a newer one changes nothing", async () => {
+    const buyer = await newCustomer();
+    const newer = `newer.${buyer.userId.slice(0, 8)}@example.test`;
+    const older = `older.${buyer.userId.slice(0, 8)}@example.test`;
+    await customers.apply(localeChanged(buyer.userId, "en", 4));
+    await customers.apply(localeChanged(buyer.userId, "ru", 3));
+    await customers.apply(contactChanged(buyer.userId, newer, 6));
+    await customers.apply(contactChanged(buyer.userId, older, 5));
+    expect(await profile(buyer.userId)).toEqual({
+      email: newer,
+      emailVerified: true,
+      locale: "en",
+    });
+    expect(await lavaSees(buyer.userId)).toEqual({
+      email: newer,
+      buyerLanguage: "EN",
+    });
+  });
+
+  it("a change delivered twice, even under a new event id, never undoes a newer one", async () => {
+    const buyer = await newCustomer();
+    const russian = localeChanged(buyer.userId, "ru", 2);
+    await customers.apply(russian);
+    await customers.apply(russian);
+    expect((await profile(buyer.userId))?.locale).toBe("ru");
+    await customers.apply(localeChanged(buyer.userId, "en", 3));
+    await customers.apply(russian);
+    await customers.apply({ ...russian, eventId: randomUUID() });
+    expect((await profile(buyer.userId))?.locale).toBe("en");
+
+    const changed = `changed.${buyer.userId.slice(0, 8)}@example.test`;
+    const email = contactChanged(buyer.userId, changed, 4);
+    await customers.apply(email);
+    await customers.apply(contactChanged(buyer.userId, buyer.email, 1));
+    await customers.apply({ ...email, eventId: randomUUID() });
+    expect((await profile(buyer.userId))?.email).toBe(changed);
+  });
+
+  it("a status change, newer on the same counter, never holds a profile change back", async () => {
+    const buyer = await newCustomer();
+    // Identity: locale changed (2), suspended (3), reactivated (4); both
+    // status changes overtake the locale change.
+    await customers.apply(
+      createEvent(identityUserStatusChanged, {
+        aggregateId: buyer.userId,
+        aggregateVersion: 3,
+        payload: {
+          userId: buyer.userId,
+          status: "suspended",
+          accessVersion: 1,
+        },
+      }),
+    );
+    await customers.apply(
+      createEvent(identityUserStatusChanged, {
+        aggregateId: buyer.userId,
+        aggregateVersion: 4,
+        payload: { userId: buyer.userId, status: "active", accessVersion: 2 },
+      }),
+    );
+    await customers.apply(localeChanged(buyer.userId, "ru", 2));
+    expect((await profile(buyer.userId))?.locale).toBe("ru");
+  });
+
+  it("a buyer read from Identity keeps that data when older events arrive after it", async () => {
+    const userId = randomUUID();
+    const current = `current.${userId.slice(0, 8)}@example.test`;
+    h.identityUsers.set(userId, {
+      userId,
+      email: current,
+      emailVerified: true,
+      locale: "ru",
+      status: "active",
+      accessVersion: 0,
+      version: 4,
+    });
+    // The first checkout finds no row yet and asks Identity.
+    expect(await lavaSees(userId)).toEqual({
+      email: current,
+      buyerLanguage: "RU",
+    });
+    // The account's first events were still on their way.
+    for (const event of customerEvents(
+      userId,
+      `signup.${userId.slice(0, 8)}@example.test`,
+      "en",
+    ))
+      await customers.apply(event);
+    expect(await profile(userId)).toEqual({
+      email: current,
+      emailVerified: true,
+      locale: "ru",
     });
   });
 });

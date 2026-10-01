@@ -5,6 +5,7 @@ import { Panel, Status } from "@/components/ui/layout";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import type { MatchFilter } from "@/lib/adapters/battleship";
 import { getLabels } from "@/lib/labels";
+import { finishReasonOf } from "@/lib/match";
 import { getFormatter } from "@/lib/request";
 import { load } from "@/lib/result";
 import { services } from "@/lib/server";
@@ -75,6 +76,7 @@ export async function MatchesTable({
           {items.map((match) => {
             const end = match.finishedAt ?? null;
             const start = match.battleStartedAt ?? match.createdAt;
+            const finish = finishReasonOf(match);
             return (
               <tr key={match.id}>
                 <td data-primary="">
@@ -109,9 +111,9 @@ export async function MatchesTable({
                   ) : (
                     <span className="muted">—</span>
                   )}
-                  {match.reason && (
+                  {finish && (
                     <span className="cell-sub">
-                      {label("finishReason", match.reason)}
+                      {label("finishReason", finish)}
                     </span>
                   )}
                   {match.abortReason && (

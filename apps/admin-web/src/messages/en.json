@@ -368,6 +368,7 @@
       "fleet_destroyed": "Fleet destroyed",
       "resigned": "Resigned",
       "timeout": "Timed out",
+      "not_deployed": "Did not deploy in time",
       "disconnected": "Disconnected"
     },
     "abortReason": {

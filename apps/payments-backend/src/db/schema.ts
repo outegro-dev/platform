@@ -84,6 +84,13 @@ export const customers = pgTable("customers", {
    * older than it changes nothing. Role changes leave it alone.
    */
   statusVersion: integer("status_version").notNull().default(0),
+  /**
+   * The user's aggregateVersion in Identity when the email (with its
+   * verification) and the locale stored here were published: an event not
+   * newer than it leaves that field alone. 0: not known yet.
+   */
+  contactVersion: integer("contact_version").notNull().default(0),
+  localeVersion: integer("locale_version").notNull().default(0),
   updatedAt: at("updated_at").notNull(),
 });
 

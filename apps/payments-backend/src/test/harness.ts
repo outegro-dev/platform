@@ -34,6 +34,8 @@ export type IdentityUser = {
   locale: "en" | "ru";
   status: "active" | "suspended" | "deleted";
   accessVersion: number;
+  /** The user's aggregateVersion; Identity before it answered without one. */
+  version?: number;
 };
 
 /** Real PostgreSQL, Valkey and RabbitMQ; a manual clock; a fake Lava. */

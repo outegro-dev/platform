@@ -51,7 +51,7 @@ import { DeliveryWorker } from "../delivery/delivery.worker.js";
 import { IntentsService } from "../intents/intents.service.js";
 import { TELEGRAM_BOT, type TelegramBot } from "../telegram/telegram-bot.js";
 import { TelegramLinkService } from "../telegram/telegram-link.service.js";
-import { templateFor, templates } from "../templates/registry.js";
+import { templateFor, templateOf, templates } from "../templates/registry.js";
 import { contextOf, renderEmail } from "../templates/render.js";
 import { channelSettingsSchema, SettingsService } from "./settings.service.js";
 
@@ -420,7 +420,7 @@ export class NotificationsAdminController {
     @Param("key") key: string,
     @Query({ schema: previewQuery }) query: z.infer<typeof previewQuery>,
   ) {
-    const template = templates[key];
+    const template = templateOf(key);
     if (!template) throw new AppError("NOT_FOUND");
     const email = await renderEmail(
       key,

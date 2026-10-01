@@ -16,6 +16,7 @@ import { FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
+import { finishReasonOf } from "@/lib/match";
 import type { Params } from "@/lib/params";
 import { getFormatter } from "@/lib/request";
 import { load } from "@/lib/result";
@@ -68,6 +69,7 @@ export default async function MatchPage({ params }: { params: Params<"id"> }) {
   };
   const live = match.status === "placement" || match.status === "battle";
   const start = match.battleStartedAt ?? match.createdAt;
+  const finish = finishReasonOf(match);
 
   return (
     <>
@@ -84,7 +86,7 @@ export default async function MatchPage({ params }: { params: Params<"id"> }) {
           {match.winner && (
             <span className="small">
               {t("winner")} <strong>{names[match.winner]}</strong>
-              {match.reason && <> · {label("finishReason", match.reason)}</>}
+              {finish && <> · {label("finishReason", finish)}</>}
             </span>
           )}
           {match.abortReason && (

@@ -44,6 +44,8 @@ const identityUserSchema = z.object({
   locale: z.enum(["en", "ru"]),
   status: z.enum(["active", "suspended", "deleted"]),
   accessVersion: z.number().int().nonnegative(),
+  /** The user's aggregateVersion; an Identity before it does not send it. */
+  version: z.number().int().nonnegative().optional(),
 });
 
 export const identityQueue = defineQueue("payments", "identity-events", [
@@ -63,7 +65,10 @@ type AccountStatus = "active" | "suspended" | "deleted";
 
 type Fields = {
   userId: string;
-  set: Partial<Pick<CustomerRow, "email" | "emailVerified" | "locale">>;
+  /** Email and its verification, and the user's aggregateVersion they carry. */
+  contact?: { email: string | null; emailVerified: boolean; version: number };
+  /** The locale and the user's aggregateVersion it carries. */
+  locale?: { value: CustomerRow["locale"]; version: number };
   /** The account status and Identity's accessVersion it was set at. */
   status?: { value: AccountStatus; version: number };
   accessVersion?: number;
@@ -72,13 +77,17 @@ type Fields = {
 /**
  * Buyer projection from Identity events: the email Lava needs, the locale
  * for its pages and emails, status, and the latest access version. Events
- * may arrive in any order; each sets only its own fields. A status replaces
- * the stored one only if it is not older: Identity bumps accessVersion with
- * every status change, and user.created carries the status from before any
- * change (version 0). Role changes bump accessVersion too, but say nothing
- * about the status, so they never hold a status back. An account suspended
- * or deleted stops the renewal of its subscriptions in the same
- * transaction, when that status is the one stored.
+ * may arrive in any order; each sets only its own fields. The email and the
+ * locale are each kept with the user's aggregateVersion they came with
+ * (Identity bumps it with every change of the user), and only a newer one
+ * replaces them: a late user.created or an older change delivered again
+ * leaves the newer data. A status replaces the stored one only if it is
+ * not older: Identity bumps accessVersion with every status change, and
+ * user.created carries the status from before any change (version 0). Role
+ * changes bump accessVersion too, but say nothing about the status, so they
+ * never hold a status back. An account suspended or deleted stops the
+ * renewal of its subscriptions in the same transaction, when that status is
+ * the one stored.
  */
 @Injectable()
 export class CustomersService implements OnApplicationBootstrap {
@@ -101,7 +110,7 @@ export class CustomersService implements OnApplicationBootstrap {
   async apply(event: AnyEvent) {
     const fields = this.fieldsOf(event);
     const now = this.clock.now();
-    const { status, accessVersion } = fields;
+    const { contact, locale, status, accessVersion } = fields;
     let stopped = 0;
     await processOnce(
       this.database.db,
@@ -117,7 +126,16 @@ export class CustomersService implements OnApplicationBootstrap {
           .insert(customers)
           .values({
             userId: fields.userId,
-            ...fields.set,
+            ...(contact
+              ? {
+                  email: contact.email,
+                  emailVerified: contact.emailVerified,
+                  contactVersion: contact.version,
+                }
+              : {}),
+            ...(locale
+              ? { locale: locale.value, localeVersion: locale.version }
+              : {}),
             ...(status
               ? { status: status.value, statusVersion: status.version }
               : {}),
@@ -127,7 +145,21 @@ export class CustomersService implements OnApplicationBootstrap {
           .onConflictDoUpdate({
             target: customers.userId,
             set: {
-              ...fields.set,
+              // A contact or locale not newer than the stored one (a late
+              // or repeated event) is dropped. SET reads the row as it was.
+              ...(contact
+                ? {
+                    email: sql`case when ${contact.version} > ${customers.contactVersion} then ${contact.email}::text else ${customers.email} end`,
+                    emailVerified: sql`case when ${contact.version} > ${customers.contactVersion} then ${contact.emailVerified}::boolean else ${customers.emailVerified} end`,
+                    contactVersion: sql`greatest(${customers.contactVersion}, ${contact.version})`,
+                  }
+                : {}),
+              ...(locale
+                ? {
+                    locale: sql`case when ${locale.version} > ${customers.localeVersion} then ${locale.value}::text else ${customers.locale} end`,
+                    localeVersion: sql`greatest(${customers.localeVersion}, ${locale.version})`,
+                  }
+                : {}),
               ...(status
                 ? {
                     // An older status (a late or repeated event) is dropped.
@@ -218,12 +250,16 @@ export class CustomersService implements OnApplicationBootstrap {
       );
       return;
     }
-    // The status Identity reports is current as of its accessVersion.
+    // The status Identity reports is current as of its accessVersion, the
+    // contact and locale as of the user's version (0 when not sent).
+    const { version = 0, ...current } = user;
     await this.database.db
       .insert(customers)
       .values({
-        ...user,
+        ...current,
         statusVersion: user.accessVersion,
+        contactVersion: version,
+        localeVersion: version,
         updatedAt: this.clock.now(),
       })
       .onConflictDoNothing();
@@ -232,41 +268,46 @@ export class CustomersService implements OnApplicationBootstrap {
   private fieldsOf(event: AnyEvent): Fields {
     switch (event.type) {
       case identityUserCreated.type: {
-        const { payload } = identityUserCreated.schema.parse(event);
+        const { payload, aggregateVersion } =
+          identityUserCreated.schema.parse(event);
         return {
           userId: payload.userId,
-          set: { locale: payload.locale },
+          locale: { value: payload.locale, version: aggregateVersion },
           // The status an account starts with, before any change.
           status: { value: payload.status, version: 0 },
         };
       }
       case identityUserContactChanged.type: {
-        const { payload } = identityUserContactChanged.schema.parse(event);
+        const { payload, aggregateVersion } =
+          identityUserContactChanged.schema.parse(event);
         return {
           userId: payload.userId,
-          set: { email: payload.email, emailVerified: payload.emailVerified },
+          contact: {
+            email: payload.email,
+            emailVerified: payload.emailVerified,
+            version: aggregateVersion,
+          },
         };
       }
       case identityUserLocaleChanged.type: {
-        const { payload } = identityUserLocaleChanged.schema.parse(event);
-        return { userId: payload.userId, set: { locale: payload.locale } };
+        const { payload, aggregateVersion } =
+          identityUserLocaleChanged.schema.parse(event);
+        return {
+          userId: payload.userId,
+          locale: { value: payload.locale, version: aggregateVersion },
+        };
       }
       case identityUserStatusChanged.type: {
         const { payload } = identityUserStatusChanged.schema.parse(event);
         return {
           userId: payload.userId,
-          set: {},
           status: { value: payload.status, version: payload.accessVersion },
           accessVersion: payload.accessVersion,
         };
       }
       case identityRoleBindingChanged.type: {
         const { payload } = identityRoleBindingChanged.schema.parse(event);
-        return {
-          userId: payload.userId,
-          set: {},
-          accessVersion: payload.accessVersion,
-        };
+        return { userId: payload.userId, accessVersion: payload.accessVersion };
       }
       default:
         throw new PermanentError(`unexpected event ${event.type}`);

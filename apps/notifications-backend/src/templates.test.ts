@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { redact } from "./admin/admin.controller.js";
 import { formatDateTime, formatMoney } from "./templates/format.js";
-import { allowedLink, type Locale, templates } from "./templates/registry.js";
+import {
+  allowedLink,
+  type Locale,
+  templateFor,
+  templateOf,
+  templates,
+} from "./templates/registry.js";
 import { renderEmail } from "./templates/render.js";
 
 const context = {
@@ -90,6 +96,24 @@ describe("templates", () => {
     expect(
       redact("security", templates["security.session-revoked"]?.sample ?? {}),
     ).toEqual({ ip: "[redacted]" });
+  });
+
+  it("knows only its own keys, never what every object inherits", async () => {
+    expect(templateOf("service.test")).toBe(templates["service.test"]);
+    for (const key of [
+      "constructor",
+      "toString",
+      "__proto__",
+      "hasOwnProperty",
+      "valueOf",
+      "nope",
+    ]) {
+      expect(templateOf(key), key).toBeUndefined();
+      expect(() => templateFor(key), key).toThrow(`Unknown template ${key}`);
+      await expect(renderEmail(key, "en", {}, context), key).rejects.toThrow(
+        `Unknown template ${key}`,
+      );
+    }
   });
 });
 
