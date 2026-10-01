@@ -29,14 +29,42 @@ export async function signOut() {
   redirect("/signed-out");
 }
 
+/**
+ * Writes an action's outcome to the log unless it is an ordinary one. The
+ * page shows a message the buyer may miss; without this line an action that
+ * never reached payments (no session, a malformed id) leaves no trace. Only
+ * the action, the outcome and an order or subscription id: no email, no token.
+ */
+function logged<T extends { kind: string }>(
+  action: string,
+  outcome: T,
+  ordinary: readonly T["kind"][],
+  ref?: string,
+): T {
+  if (!ordinary.includes(outcome.kind))
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        msg: "server action did not succeed",
+        action,
+        outcome: outcome.kind,
+        ref: ref ?? ("orderId" in outcome ? outcome.orderId : undefined),
+      }),
+    );
+  return outcome;
+}
+
 /** Turns renewal off; the returned state is the server's. */
 export async function cancelSubscription(
   subscriptionId: unknown,
 ): Promise<CancelOutcome> {
-  if (typeof subscriptionId !== "string") return { kind: "not-found" };
+  const ref = typeof subscriptionId === "string" ? subscriptionId : undefined;
+  const done = (outcome: CancelOutcome) =>
+    logged("cancelSubscription", outcome, ["ok"], ref?.slice(0, 64));
+  if (typeof subscriptionId !== "string") return done({ kind: "not-found" });
   const token = await accessToken();
-  if (!token) return { kind: "unauthorized" };
-  return payments.cancelSubscription(token, subscriptionId);
+  if (!token) return done({ kind: "unauthorized" });
+  return done(await payments.cancelSubscription(token, subscriptionId));
 }
 
 const checkoutSchema = z.object({
@@ -50,10 +78,17 @@ const checkoutSchema = z.object({
  * against CHECKOUT_ORIGINS; without any allowed origin buying stays off.
  */
 export async function startCheckout(input: unknown): Promise<CheckoutOutcome> {
+  const done = (outcome: CheckoutOutcome) =>
+    logged("startCheckout", outcome, [
+      "redirect",
+      "preparing",
+      "paid",
+      "owned",
+    ]);
   const parsed = checkoutSchema.safeParse(input);
-  if (!parsed.success) return { kind: "gone" };
-  if (!payments.checkoutConfigured) return { kind: "closed" };
+  if (!parsed.success) return done({ kind: "gone" });
+  if (!payments.checkoutConfigured) return done({ kind: "closed" });
   const token = await accessToken();
-  if (!token) return { kind: "unauthorized" };
-  return payments.checkout(token, parsed.data);
+  if (!token) return done({ kind: "unauthorized" });
+  return done(await payments.checkout(token, parsed.data));
 }
