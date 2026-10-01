@@ -8,6 +8,7 @@ import {
   SkeletonLabel,
   SkeletonText,
 } from "@/components/skeletons";
+import { PlatformLinksSkeleton } from "./platform-links";
 
 /** Profile while it loads: the same head and panels, values still pending. */
 export default function ProfileLoading() {
@@ -48,6 +49,7 @@ export default function ProfileLoading() {
           </div>
         </div>
       </Surface>
+      <PlatformLinksSkeleton />
     </>
   );
 }

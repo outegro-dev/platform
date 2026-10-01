@@ -13,7 +13,9 @@ import {
   ReceiptIcon,
   WrenchIcon,
 } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { Skeleton, SkeletonText } from "@/components/skeletons";
 import { platformUrls } from "@/lib/env";
 
 /**
@@ -99,6 +101,59 @@ export async function PlatformLinks({ roles }: { roles: readonly string[] }) {
                 <ArrowUpRightIcon aria-hidden="true" />
               </a>
             </Button>
+          </div>
+        </section>
+      </Surface>
+    </div>
+  );
+}
+
+/**
+ * The same two panels while the profile loads: the headings are known, the
+ * app rows (the admin console depends on the roles) and the links are not.
+ * Without it the loaded page grows by both panels at once.
+ */
+export function PlatformLinksSkeleton() {
+  const t = useTranslations("platform");
+  return (
+    <div className="platform-links" aria-hidden="true">
+      <Surface asChild className="panel">
+        <section>
+          <div className="panel-head">
+            <h2>{t("appsTitle")}</h2>
+            <p className="muted small">{t("appsLead")}</p>
+          </div>
+          <ul className="app-links">
+            <li className="app-link">
+              <Skeleton className="size-11 rounded-md" />
+              <span className="app-link-text">
+                <span className="app-link-name">
+                  <SkeletonText className="w-28" />
+                </span>
+                <span className="muted small">
+                  <SkeletonText className="w-full max-w-56" />
+                  <br />
+                  <SkeletonText className="w-24" />
+                </span>
+                <span className="mono small">
+                  <SkeletonText className="w-36" />
+                </span>
+              </span>
+            </li>
+          </ul>
+        </section>
+      </Surface>
+      <Surface asChild className="panel">
+        <section>
+          <div className="panel-head">
+            <h2>{t("purchasesTitle")}</h2>
+            <p className="muted small">
+              {t("purchasesBody", { host: hostOf(platformUrls.pay) ?? "" })}
+            </p>
+          </div>
+          <div className="platform-actions">
+            <Skeleton className="h-12 w-54 rounded-full" />
+            <Skeleton className="h-12 w-50 rounded-full" />
           </div>
         </section>
       </Surface>

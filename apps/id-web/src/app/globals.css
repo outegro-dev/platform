@@ -4,6 +4,14 @@
  */
 
 @layer base {
+  /* A page that grows past the screen once its data arrives (profile, a
+     longer list of sessions) would show a classic scrollbar only then and
+     move the whole layout sideways. The scrollbar stays. A reserved
+     scrollbar-gutter would do the same, but the gutter shows the base
+     colour only and would cut the glow below at the right edge. */
+  html {
+    overflow-y: scroll;
+  }
   body {
     margin: 0;
     min-height: 100dvh;
