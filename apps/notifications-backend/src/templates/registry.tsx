@@ -1,3 +1,4 @@
+import { browsers, operatingSystems } from "@outegro/contracts";
 import type { ReactElement } from "react";
 import { z } from "zod";
 import { formatDateTime, formatMoney } from "./format.js";
@@ -753,6 +754,83 @@ const passkeyRemoved = notice({
   action: reviewMethods,
 });
 
+/** An operator removed it (a lost device): the reason stays in the audit log. */
+const passkeyRevoked = notice({
+  ...security,
+  schema: whenSchema,
+  sample: securitySample,
+  subject: (l) =>
+    l === "ru"
+      ? "Поддержка удалила ключ доступа из аккаунта"
+      : "Support removed a passkey from your account",
+  title: (l) =>
+    l === "ru"
+      ? "Ключ доступа удалён поддержкой"
+      : "Passkey removed by support",
+  text: (l, d) =>
+    l === "ru"
+      ? `Поддержка удалила ключ доступа из вашего аккаунта outegro.dev (${at(l, d.at)}), входить с ним больше нельзя. Так делают, когда устройство потеряно. Если вы об этом не просили, войдите по коду из письма и проверьте способы входа и сеансы.`
+      : `Support removed a passkey from your outegro.dev account on ${at(l, d.at)}, and it can no longer be used to sign in. This is done when a device is lost. If you did not ask for it, sign in with an email code and review your sign-in methods and sessions.`,
+  action: reviewMethods,
+});
+
+/*
+ * A sign-in no email preceded: a passkey or Google. The browser and the
+ * system come from a fixed list (deviceOf in contracts), never the raw
+ * User-Agent, which is whatever the client sent.
+ */
+const signInSchema = z.object({
+  at: iso,
+  method: z.enum(["passkey", "google"]),
+  browser: z.enum(browsers).nullable(),
+  os: z.enum(operatingSystems).nullable(),
+});
+const signInMethod = (l: Locale, d: Data) =>
+  d.method === "google"
+    ? l === "ru"
+      ? "через Google"
+      : "with Google"
+    : l === "ru"
+      ? "по ключу доступа"
+      : "with a passkey";
+const signInDevice = (l: Locale, d: Data) => {
+  const browser = d.browser ? str(d.browser) : null;
+  const os = d.os ? str(d.os) : null;
+  if (l === "ru")
+    return browser && os ? `${browser} на ${os}` : (browser ?? os);
+  if (browser && os) return `from ${browser} on ${os}`;
+  if (browser) return `from ${browser}`;
+  return os ? `from a device on ${os}` : null;
+};
+
+const signIn = notice({
+  ...security,
+  schema: signInSchema,
+  sample: {
+    at: "2026-09-29T14:03:00.000Z",
+    method: "passkey",
+    browser: "Chrome",
+    os: "Windows",
+  },
+  subject: (l, d) =>
+    l === "ru"
+      ? `Новый вход в аккаунт ${signInMethod(l, d)}`
+      : `New sign-in to your account ${signInMethod(l, d)}`,
+  title: (l) => (l === "ru" ? "Новый вход" : "New sign-in"),
+  text: (l, d) => {
+    const parts = [signInMethod(l, d), signInDevice(l, d), at(l, d.at)].filter(
+      Boolean,
+    );
+    return l === "ru"
+      ? `Новый вход в ваш аккаунт outegro.dev: ${parts.join(", ")}. Если это были не вы, завершите этот сеанс в разделе «Сеансы» и проверьте способы входа.`
+      : `New sign-in to your outegro.dev account: ${parts.join(", ")}. If this was not you, end that session under Sessions and review your sign-in methods.`;
+  },
+  action: {
+    label: { en: "Review your sessions", ru: "Проверить сеансы" },
+    href: (_d, c) => `${c.accountUrl}/account/sessions`,
+  },
+});
+
 /** Told by email, not in the chat that was just linked. */
 const telegramLinked = notice({
   ...security,
@@ -781,6 +859,8 @@ export const templates: Record<string, Template> = {
   "security.google-unlinked.v1": googleUnlinked,
   "security.passkey-added.v1": passkeyAdded,
   "security.passkey-removed.v1": passkeyRemoved,
+  "security.passkey-revoked.v1": passkeyRevoked,
+  "security.sign-in.v1": signIn,
   "security.telegram-linked.v1": telegramLinked,
   "service.message": serviceMessage,
   "service.test": serviceTest,

@@ -416,6 +416,26 @@ exports[`templates > C2.4: what each template says, in English and Russian 1`] =
     "text": "Из вашего аккаунта outegro.dev удалён ключ доступа (29 сент. 2026, 14:03 UTC), входить с ним больше нельзя. Если это были не вы, войдите по коду из письма и проверьте способы входа и сеансы.",
     "title": "Ключ доступа удалён",
   },
+  "security.passkey-revoked.v1 en": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Support removed a passkey from your account",
+    "text": "Support removed a passkey from your outegro.dev account on Sep 29, 2026, 2:03 PM UTC, and it can no longer be used to sign in. This is done when a device is lost. If you did not ask for it, sign in with an email code and review your sign-in methods and sessions.",
+    "title": "Passkey removed by support",
+  },
+  "security.passkey-revoked.v1 ru": {
+    "links": [
+      "https://id.outegro.dev/account/security",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Поддержка удалила ключ доступа из аккаунта",
+    "text": "Поддержка удалила ключ доступа из вашего аккаунта outegro.dev (29 сент. 2026, 14:03 UTC), входить с ним больше нельзя. Так делают, когда устройство потеряно. Если вы об этом не просили, войдите по коду из письма и проверьте способы входа и сеансы.",
+    "title": "Ключ доступа удалён поддержкой",
+  },
   "security.session-revoked en": {
     "links": [
       "https://id.outegro.dev/account/sessions",
@@ -435,6 +455,26 @@ exports[`templates > C2.4: what each template says, in English and Russian 1`] =
     "subject": "Сеанс завершён из соображений безопасности",
     "text": "Мы заметили повторное использование токена сеанса и завершили его (IP 203.0.113.7). Если это были не вы, войдите заново и завершите остальные сеансы.",
     "title": "Сеанс завершён",
+  },
+  "security.sign-in.v1 en": {
+    "links": [
+      "https://id.outegro.dev/account/sessions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "New sign-in to your account with a passkey",
+    "text": "New sign-in to your outegro.dev account: with a passkey, from Chrome on Windows, Sep 29, 2026, 2:03 PM UTC. If this was not you, end that session under Sessions and review your sign-in methods.",
+    "title": "New sign-in",
+  },
+  "security.sign-in.v1 ru": {
+    "links": [
+      "https://id.outegro.dev/account/sessions",
+      "https://outegro.dev",
+      "https://id.outegro.dev/account/notifications",
+    ],
+    "subject": "Новый вход в аккаунт по ключу доступа",
+    "text": "Новый вход в ваш аккаунт outegro.dev: по ключу доступа, Chrome на Windows, 29 сент. 2026, 14:03 UTC. Если это были не вы, завершите этот сеанс в разделе «Сеансы» и проверьте способы входа.",
+    "title": "Новый вход",
   },
   "security.telegram-linked.v1 en": {
     "links": [

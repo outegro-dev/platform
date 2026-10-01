@@ -430,6 +430,130 @@ describe("passkey notices (ID-05)", () => {
   });
 });
 
+describe("support removes a passkey; a sign-in no email preceded", () => {
+  it("a passkey removed by support is told on its own, with the time only", async () => {
+    const en = await newUser("en");
+    const ru = await newUser("ru");
+    for (const user of [en, ru])
+      await intentsService.accept(
+        intentEvent({
+          userId: user.userId,
+          templateKey: "security.passkey-revoked.v1",
+          category: "security",
+          sourceEventId: randomUUID(),
+          // The operator's reason stays in Identity's audit log.
+          data: { at: "2026-09-29T14:03:00.000Z", reason: "ticket 4521" },
+        }),
+      );
+    await worker.tick();
+    const [mailEn] = mailTo(en.email);
+    expect(plain(mailEn?.subject ?? "")).toBe(
+      "Support removed a passkey from your account",
+    );
+    expect(plain(mailEn?.text ?? "")).toContain(
+      "Support removed a passkey from your outegro.dev account on Sep 29, 2026, 2:03 PM UTC, and it can no longer be used to sign in. This is done when a device is lost. If you did not ask for it, sign in with an email code and review your sign-in methods and sessions.",
+    );
+    expect(mailEn?.html).toContain(
+      'href="https://id.outegro.dev/account/security"',
+    );
+    const [mailRu] = mailTo(ru.email);
+    expect(plain(mailRu?.subject ?? "")).toBe(
+      "Поддержка удалила ключ доступа из аккаунта",
+    );
+    expect(plain(mailRu?.text ?? "")).toContain(
+      "Поддержка удалила ключ доступа из вашего аккаунта outegro.dev (29 сент. 2026, 14:03 UTC), входить с ним больше нельзя.",
+    );
+    for (const mail of [mailEn, mailRu])
+      expect(mail?.text).not.toContain("4521");
+    const stored = await db
+      .select({ data: intents.data })
+      .from(intents)
+      .where(eq(intents.userId, en.userId));
+    expect(stored.map((row) => row.data)).toEqual([
+      { at: "2026-09-29T14:03:00.000Z" },
+    ]);
+  });
+
+  it("a passkey or Google sign-in names the method, a browser and a system from the list, and the time", async () => {
+    const en = await newUser("en");
+    const ru = await newUser("ru");
+    const signIn = (userId: string, data: Record<string, string | null>) =>
+      intentsService.accept(
+        intentEvent({
+          userId,
+          templateKey: "security.sign-in.v1",
+          category: "security",
+          sourceEventId: randomUUID(),
+          data: { at: "2026-09-29T14:03:00.000Z", ...data },
+        }),
+      );
+    await signIn(en.userId, {
+      method: "passkey",
+      browser: "Chrome",
+      os: "Windows",
+    });
+    await signIn(en.userId, { method: "google", browser: null, os: null });
+    await signIn(ru.userId, { method: "google", browser: "Safari", os: "iOS" });
+    await signIn(ru.userId, {
+      method: "passkey",
+      browser: null,
+      os: "Android",
+    });
+    await worker.tick();
+
+    const texts = (to: string) =>
+      mailTo(to)
+        .map((m) => [plain(m.subject), plain(m.text)] as const)
+        .sort(([a], [b]) => a.localeCompare(b));
+    const en_ = texts(en.email);
+    expect(en_.map(([subject]) => subject)).toEqual([
+      "New sign-in to your account with a passkey",
+      "New sign-in to your account with Google",
+    ]);
+    expect(en_[0]?.[1]).toContain(
+      "New sign-in to your outegro.dev account: with a passkey, from Chrome on Windows, Sep 29, 2026, 2:03 PM UTC. If this was not you, end that session under Sessions and review your sign-in methods.",
+    );
+    expect(en_[1]?.[1]).toContain(
+      "New sign-in to your outegro.dev account: with Google, Sep 29, 2026, 2:03 PM UTC.",
+    );
+    const ru_ = texts(ru.email);
+    const ruTexts = ru_.map(([, text]) => text).join(" | ");
+    expect(ruTexts).toContain(
+      "Новый вход в ваш аккаунт outegro.dev: через Google, Safari на iOS, 29 сент. 2026, 14:03 UTC.",
+    );
+    expect(ruTexts).toContain(
+      "Новый вход в ваш аккаунт outegro.dev: по ключу доступа, Android, 29 сент. 2026, 14:03 UTC. Если это были не вы, завершите этот сеанс в разделе «Сеансы» и проверьте способы входа.",
+    );
+    for (const mail of [...mailTo(en.email), ...mailTo(ru.email)])
+      expect(mail.html).toContain(
+        'href="https://id.outegro.dev/account/sessions"',
+      );
+  });
+
+  it("refuses a browser or a system that is not on the list: the header never reaches a message", async () => {
+    const user = await newUser("en");
+    for (const data of [
+      { method: "passkey", browser: "<b>Evil</b>", os: null },
+      { method: "passkey", browser: null, os: "Windows 95; DROP TABLE" },
+      { method: "email", browser: null, os: null },
+    ])
+      await expect(
+        intentsService.accept(
+          intentEvent({
+            userId: user.userId,
+            templateKey: "security.sign-in.v1",
+            category: "security",
+            sourceEventId: randomUUID(),
+            data: { at: "2026-09-29T14:03:00.000Z", ...data },
+          }),
+        ),
+      ).rejects.toThrow("invalid data for security.sign-in.v1");
+    expect(
+      await db.select().from(intents).where(eq(intents.userId, user.userId)),
+    ).toHaveLength(0);
+  });
+});
+
 describe("consumer path (N-06)", () => {
   it("a billing notice from payments and a security notice from identity arrive over RabbitMQ", async () => {
     const payments = new Messaging(
