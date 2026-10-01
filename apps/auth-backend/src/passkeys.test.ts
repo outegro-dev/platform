@@ -900,17 +900,15 @@ describe("an operator removes a user's lost passkey", () => {
    */
   async function operator(role: string) {
     const session = await signIn(uniqueEmail(role));
-    await h.app
-      .get(RolesService)
-      .grant(
-        { userId: null },
-        {
-          userId: session.user.id,
-          role,
-          reason: "test setup",
-          expiresAt: null,
-        },
-      );
+    await h.app.get(RolesService).grant(
+      { userId: null },
+      {
+        userId: session.user.id,
+        role,
+        reason: "test setup",
+        expiresAt: null,
+      },
+    );
     return session;
   }
   const listFor = (by: Session, userId: string) =>
