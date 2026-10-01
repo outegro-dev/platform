@@ -5,6 +5,7 @@ import {
   deadLetterQueueName,
   defineEvent,
   defineQueue,
+  deviceOf,
   hasPlatformRole,
   identityUserCreated,
   messageKeyFor,
@@ -166,6 +167,13 @@ describe("access", () => {
     ]);
   });
 
+  it("lets owners and support remove a user's passkey, and nobody else", () => {
+    const withPasskeys = Object.keys(platformRoles).filter((role) =>
+      permissionsOf([role]).has("passkeys.revoke"),
+    );
+    expect(withPasskeys.sort()).toEqual(["owner", "support"]);
+  });
+
   it("tells whether someone holds a platform role (admin console link)", () => {
     for (const role of Object.keys(platformRoles))
       expect(hasPlatformRole([role]), role).toBe(true);
@@ -186,5 +194,47 @@ describe("errors", () => {
       "errors.idempotencyConflict",
     );
     expect(messageKeyFor("ALREADY_OWNED")).toBe("errors.alreadyOwned");
+  });
+});
+
+describe("deviceOf", () => {
+  it("names the browser and the system from a fixed list", () => {
+    const cases: [string, ReturnType<typeof deviceOf>][] = [
+      [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        { browser: "Chrome", os: "Windows" },
+      ],
+      [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+        { browser: "Edge", os: "Windows" },
+      ],
+      [
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Safari/605.1.15",
+        { browser: "Safari", os: "macOS" },
+      ],
+      [
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/141.0 Mobile/15E148 Safari/604.1",
+        { browser: "Chrome", os: "iOS" },
+      ],
+      [
+        "Mozilla/5.0 (Android 16; Mobile; rv:143.0) Gecko/143.0 Firefox/143.0",
+        { browser: "Firefox", os: "Android" },
+      ],
+      [
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 OPR/125.0.0.0",
+        { browser: "Opera", os: "Linux" },
+      ],
+    ];
+    for (const [ua, expected] of cases)
+      expect(deviceOf(ua), ua).toEqual(expected);
+  });
+
+  it("names nothing it does not know, and never repeats the header", () => {
+    expect(deviceOf(null)).toEqual({ browser: null, os: null });
+    expect(deviceOf("curl/8.9.1")).toEqual({ browser: null, os: null });
+    expect(deviceOf("<script>alert(1)</script> Chrome/1")).toEqual({
+      browser: "Chrome",
+      os: null,
+    });
   });
 });

@@ -7,6 +7,11 @@ export const permissions = [
   "users.read.sensitive",
   "users.suspend",
   "sessions.revoke",
+  /**
+   * Remove a user's passkey (a lost device) with a reason. Separate from
+   * sessions.revoke: it takes a way in away for good, not just a sign-in.
+   */
+  "passkeys.revoke",
   "roles.read",
   "roles.assign",
   "notifications.read",
@@ -35,6 +40,7 @@ export const platformRoles = {
   support: [
     "users.read",
     "sessions.revoke",
+    "passkeys.revoke",
     "notifications.read",
     "notifications.retry",
     "battleship.read",

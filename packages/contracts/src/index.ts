@@ -1,4 +1,5 @@
 export * from "./access.js";
+export * from "./device.js";
 export * from "./envelope.js";
 export * from "./errors.js";
 export * from "./events/battleship.js";
