@@ -1,4 +1,4 @@
-# Handoff: где остановились и как продолжить (29.09.2026)
+# Handoff: где остановились и как продолжить (01.10.2026)
 
 Документ для продолжения работы на другом компьютере или в облачной сессии. Что нужно от владельца — [owner-checklist.md](owner-checklist.md), эксплуатация — [production.md](../06-operations/production.md). Задачи и статусы — доска [outegro.dev](https://github.com/orgs/outegro-dev/projects/1) (issue на каждую карточку `docs/04-delivery`).
 
@@ -46,7 +46,8 @@
 - Коммиты только от имени владельца, conventional commits, без упоминания AI-инструментов и без `Co-Authored-By`; lint проверять кодом возврата (в пайпе ошибка теряется).
 - Секреты — только Sealed Secrets; значения не печатать и не коммитить. Старый VPS и проект OuteGro — только чтение. Реальные платежи делает владелец.
 - Выкатка изменений контракта уведомлений: сначала notifications-backend, потом производители (payments, auth).
-- Новое приложение: цель в `Dockerfile` и в списке `APPS` в `docker-bake.hcl`, манифест и запись `images` в gitops — CI сам обновит все образы `outegro/*`.
+- Новое приложение: цель в `Dockerfile`, в `BUILD_APPS` там же, в списке `APPS` в `docker-bake.hcl` и в `tools/ci/scope.mjs`, манифест и запись `images` в gitops. CI собирает и выкатывает только затронутые приложения (`turbo --affected`); изменение вне `apps/` и `packages/` (кроме docs) пересобирает всё.
+- Одна рабочая копия на репозиторий: ветки — в `outegro-dev-showcase` и `outegro-gitops`. Незаконченное — в ветку `wip/*` на GitHub, а не в отдельную папку.
 - Стек — [ADR-009](../03-decisions/adr/009-backend-stack.md). Библиотечные API — через Context7, как в AGENTS.md.
 
 ## Решения QA (сделано 29.09)
@@ -61,18 +62,23 @@
 - Hermes: управляемая политика (`gitops/apps/agents/hermes-policy`) — без терминала/файлов/кода, модель только Codex, ответы только в группе владельца и в личке; осталось принять TC владельцем (`/sethome`, второй аккаунт для TC-H-04-01).
 - Доска: 72 Done, 8 In Progress, 16 Todo. Дальше — приоритизация с владельцем.
 
+## Сделано 30.09–01.10
+
+- Passkeys (ID-05): вход и добавление на id.outegro.dev (SimpleWebAuthn, RP `id.outegro.dev`), нельзя удалить последний способ входа, уведомления о добавлении и удалении; Signal API сообщает устройству об удалённых ключах и новом имени.
+- CI: проверяются и собираются только затронутые пакеты, gitops обновляет теги только у них; Argo опрашивает git раз в минуту. Изменение одного бэкенда — около 6 минут до production.
+- Мелочи: `Object.hasOwn` в `RolesService.grant` и шаблонах уведомлений; внутренний lookup отдаёт `version`, payments хранит locale и email с версией (миграция `0002_customer_profile_versions`); pay-web, battleship-web и id-web спрашивают Identity перед входом по cookie (`@outegro/bff` `sign-in.ts`); админка подписывает проигрыш по таймеру расстановки.
+- Восстановление из бэкапа проверено (OPS-07, 81 с), алерт WAL заменён на `PostgresWalArchiveBehind`.
+
 ## Найдено по ходу (follow-up)
 
-Исправлено 30.09 (пакет A): превью расстановки поверх корабля, «три пропуска» при нерасставленном флоте, цикл редиректов админки при отозванной сессии, уведомление о возврате дубликата (`billing.refund-recorded.v2`), порядок статусов аккаунта в payments (`customers.status_version`), `permissionsOf` на именах Object, нестабильные axe-проверки, ложный алерт WAL, путь метрик Grafana, NetworkPolicy для порта 9464 и исходящего трафика Hermes.
-
-Осталось:
-- auth-backend `RolesService.grant` и notifications `templates[key]` ищут по прототипу объекта (`constructor` → превью шаблона отвечает 500) — перейти на `Object.hasOwn`.
-- payments: locale и email клиента — «последний пишет» (поздний `user.created` сбрасывает locale); упорядочить по `aggregateVersion`.
-- pay-web и battleship-web: `/auth/sign-in` доверяет сроку cookie, как админка до исправления (петли сейчас нет — их backend принимает токен до истечения).
-- Админка может подписывать проигрыш по таймеру расстановки отдельно (`battleStartedAt = null`).
+- Снятие passkey оператором (потерянное устройство): ветка `wip/admin-passkey-revoke` — право `passkeys.revoke` и тесты; не написаны `GET /v1/admin/users/:id/passkeys`, `POST .../passkeys/:passkeyId/revoke` (причина, аудит, `security.passkey-revoked.v1`, правило последнего способа), вкладка в админке, `credentialId` в `GET /v1/me/passkeys`.
+- Уведомление `security.sign-in.v1` о входе по passkey и Google (способ, время, браузер и ОС).
+- notifications `RecipientsService`: locale, email и статус получателя — «последний пишет», упорядочить по версии, как в payments.
 
 ## Нужно от владельца
 
-- Войти в Grafana: `admin.outegro.dev/grafana` (вход через админку).
-- Hermes: написать в General, выполнить `/sethome`, проверить, что он не видит файлов и терминала.
+- Проверить passkey на своём устройстве: id.outegro.dev → «Безопасность» → добавить ключ доступа, выйти, войти по нему.
+- UptimeRobot (бесплатно): 5 мониторов на `/health` сайтов (OPS-05).
+- Lava: отмена подписки и возврат на реальном аккаунте (PAY-12).
+- Hermes: `/sethome` в General, вопрос про инструменты, попытка заставить прочитать файл, две темы, сообщение со второго аккаунта (H-04, H-05, H-07).
 - Ротация трёх секретов из лога сессии — отложена владельцем.
