@@ -82,6 +82,7 @@ export class IdentitiesService {
     const { user, sessionId } = await this.database.db.transaction(
       async (tx) => {
         let user = await this.linkedUser(tx, profile.subject);
+        let signedUp = false;
         if (!user) {
           if (!profile.email || !profile.emailVerified)
             throw new AppError("UNPROCESSABLE", {
@@ -96,6 +97,7 @@ export class IdentitiesService {
           if (created) {
             await this.attach(tx, created.id, profile, now, "signup");
             user = created;
+            signedUp = true;
           } else {
             // A concurrent first sign-in may have just created and linked it.
             user = await this.linkedUser(tx, profile.subject);
@@ -107,6 +109,9 @@ export class IdentitiesService {
         }
         if (user.status !== "active") throw new AppError("FORBIDDEN");
         const id = await this.sessions.create(tx, user.id, "google", client);
+        // The account was just made by this sign-in: nothing to warn about.
+        if (!signedUp)
+          await this.sessions.announceSignIn(tx, user.id, id, "google", client);
         return { user, sessionId: id };
       },
     );

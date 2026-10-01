@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { DATABASE } from "@outegro/nest-common";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { RolesService } from "./access/roles.service.js";
 import type { AuthDatabase } from "./common/database.js";
 import { relyingParty } from "./config/config.js";
 import {
@@ -674,10 +675,12 @@ describe("Passkeys (ID-05)", () => {
       [passkey.id, "Work laptop"],
       [phone.body.id, "Phone"],
     ]);
-    // Nothing secret is listed.
+    // Nothing secret is listed. The credential id is public by design (the
+    // browser holds it); id-web hands it back to the device (Signal API).
     expect(Object.keys(list.body.items[0]).sort()).toEqual([
       "backedUp",
       "createdAt",
+      "credentialId",
       "id",
       "lastUsedAt",
       "name",
@@ -838,6 +841,204 @@ describe("Passkeys (ID-05)", () => {
       .delete(`/v1/me/passkeys/${passkey.id}`)
       .set(auth(session))
       .expect(204);
+  });
+});
+
+describe("a passkey sign-in is told to the account owner", () => {
+  it("names the method, the time and a browser and a system from the list; nothing else", async () => {
+    const { session, authenticator } = await withPasskey();
+    const { challengeId, options } = await h.passkeyChallenge();
+    await h
+      .passkeyVerify(challengeId, authenticator.assert(options, {}))
+      .set(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 <img src=x>",
+      )
+      .expect(200);
+    const signIns = (await noticesOf(session.user.id)).filter(
+      (n) => n.template === "security.sign-in.v1",
+    );
+    const [sessionRow] = await db
+      .select({ id: sessions.id })
+      .from(sessions)
+      .where(
+        and(
+          eq(sessions.userId, session.user.id),
+          eq(sessions.authMethod, "passkey"),
+        ),
+      );
+    expect(signIns).toEqual([
+      {
+        template: "security.sign-in.v1",
+        source: sessionRow?.id,
+        data: {
+          at: h.clock.now().toISOString(),
+          method: "passkey",
+          browser: "Chrome",
+          os: "Windows",
+        },
+      },
+    ]);
+    // A refused sign-in tells nothing.
+    await signInWithPasskey(
+      authenticator,
+      { origin: "https://evil.test" },
+      422,
+    );
+    expect(
+      (await noticesOf(session.user.id)).filter(
+        (n) => n.template === "security.sign-in.v1",
+      ),
+    ).toHaveLength(1);
+  });
+});
+
+describe("an operator removes a user's lost passkey", () => {
+  /**
+   * A signed-in user given a platform role, as the CLI grants it. Admin
+   * commands read permissions from the database, so the same session acts.
+   */
+  async function operator(role: string) {
+    const session = await signIn(uniqueEmail(role));
+    await h.app
+      .get(RolesService)
+      .grant(
+        { userId: null },
+        {
+          userId: session.user.id,
+          role,
+          reason: "test setup",
+          expiresAt: null,
+        },
+      );
+    return session;
+  }
+  const listFor = (by: Session, userId: string) =>
+    h.http().get(`/v1/admin/users/${userId}/passkeys`).set(auth(by));
+  const revoke = (
+    by: Session,
+    userId: string,
+    passkeyId: string,
+    body: object = { reason: "Lost phone, owner confirmed in ticket 4521" },
+  ) =>
+    h
+      .http()
+      .post(`/v1/admin/users/${userId}/passkeys/${passkeyId}/revoke`)
+      .set(auth(by))
+      .send(body);
+  const revokedNotices = async (userId: string) =>
+    (await noticesOf(userId)).filter(
+      (n) => n.template === "security.passkey-revoked.v1",
+    );
+
+  it("support sees the user's passkeys: name, when added and last used, synced", async () => {
+    const synced = new SoftwareAuthenticator({ synced: true });
+    const { session, passkey } = await withPasskey(synced);
+    await signInWithPasskey(synced, {}, 200);
+    const support = await operator("support");
+    const res = await listFor(support, session.user.id).expect(200);
+    expect(res.body.items).toEqual([
+      {
+        id: passkey.id,
+        name: "Test laptop",
+        createdAt: passkey.createdAt,
+        lastUsedAt: h.clock.now().toISOString(),
+        synced: true,
+        backedUp: true,
+        usable: true,
+      },
+    ]);
+    // Reading needs users.read; a billing operator has none.
+    const billing = await operator("billing_operator");
+    await listFor(billing, session.user.id).expect(403);
+    await listFor(session, session.user.id).expect(403);
+    for (const id of [randomUUIDv4(), "not-a-uuid"])
+      await listFor(support, id).expect(404);
+  });
+
+  it("support removes it with a reason: audited, the user told, the passkey signs nobody in", async () => {
+    const { session, authenticator, passkey } = await withPasskey();
+    const support = await operator("support");
+    await revoke(support, session.user.id, passkey.id).expect(204);
+    expect(await passkeysOf(session.user.id)).toHaveLength(0);
+
+    const entries = await db
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.targetId, session.user.id),
+          eq(auditLog.action, "passkey.revoked"),
+        ),
+      );
+    expect(entries).toMatchObject([
+      {
+        actorId: support.user.id,
+        targetType: "user",
+        reason: "Lost phone, owner confirmed in ticket 4521",
+        data: { passkeyId: passkey.id },
+      },
+    ]);
+    // One notice of its own, with the time only: no name, no reason.
+    expect(await revokedNotices(session.user.id)).toEqual([
+      {
+        template: "security.passkey-revoked.v1",
+        source: passkey.id,
+        data: { at: h.clock.now().toISOString() },
+      },
+    ]);
+    expect(
+      (await noticesOf(session.user.id)).map((n) => n.template).sort(),
+    ).toEqual(["security.passkey-added.v1", "security.passkey-revoked.v1"]);
+    const gone = await signInWithPasskey(authenticator, {}, 422);
+    expect(gone.body.error.fieldErrors).toEqual({ passkey: ["unknown"] });
+    // Removing it again finds nothing.
+    await revoke(support, session.user.id, passkey.id).expect(404);
+  });
+
+  it("needs passkeys.revoke, a reason and the user's own passkey; otherwise nothing changes", async () => {
+    const { session, passkey } = await withPasskey();
+    const other = await withPasskey();
+    const billing = await operator("billing_operator");
+    await revoke(billing, session.user.id, passkey.id).expect(403);
+    await revoke(session, session.user.id, passkey.id).expect(403);
+    const support = await operator("support");
+    for (const body of [{}, { reason: "no" }, { reason: "          " }])
+      await revoke(support, session.user.id, passkey.id, body).expect(400);
+    // Someone else's passkey, an unknown id or a malformed one: not found.
+    for (const id of [other.passkey.id, randomUUIDv4(), "not-a-uuid"])
+      await revoke(support, session.user.id, id).expect(404);
+    await revoke(support, randomUUIDv4(), passkey.id).expect(404);
+
+    expect(await passkeysOf(session.user.id)).toHaveLength(1);
+    expect(await passkeysOf(other.session.user.id)).toHaveLength(1);
+    expect(await actionsOf(session.user.id)).toEqual(["passkey.registered"]);
+    expect(await revokedNotices(session.user.id)).toEqual([]);
+  });
+
+  it("the operator cannot take the last way in either; a verified email is one", async () => {
+    const { session, passkey } = await withPasskey();
+    await db
+      .update(users)
+      .set({ emailVerified: false })
+      .where(eq(users.id, session.user.id));
+    const support = await operator("support");
+    const refused = await revoke(support, session.user.id, passkey.id).expect(
+      409,
+    );
+    expect(refused.body.error.fieldErrors).toEqual({
+      passkey: ["last_method"],
+    });
+    expect(await passkeysOf(session.user.id)).toHaveLength(1);
+    expect(await actionsOf(session.user.id)).toEqual(["passkey.registered"]);
+    expect(await revokedNotices(session.user.id)).toEqual([]);
+
+    await db
+      .update(users)
+      .set({ emailVerified: true })
+      .where(eq(users.id, session.user.id));
+    await revoke(support, session.user.id, passkey.id).expect(204);
+    expect(await passkeysOf(session.user.id)).toHaveLength(0);
   });
 });
 

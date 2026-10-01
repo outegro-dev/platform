@@ -89,8 +89,20 @@ describe("Google sign-in (ID-02)", () => {
       .from(sessions)
       .where(eq(sessions.userId, first.body.user.id));
     expect(methods.every((m) => m.method === "google")).toBe(true);
-    // Signing up with Google is not a new method on an existing account.
-    expect(await noticesOf(first.body.user.id)).toEqual([]);
+    // Signing up with Google is not a new method on an existing account,
+    // and the sign-in that made the account warns nobody; the next one is
+    // told, with a browser and a system only from the fixed list.
+    expect(await noticesOf(first.body.user.id)).toEqual([
+      {
+        template: "security.sign-in.v1",
+        data: {
+          at: h.clock.now().toISOString(),
+          method: "google",
+          browser: null,
+          os: null,
+        },
+      },
+    ]);
   });
 
   it("TC-ID-02-02: a matching email never joins an existing account on its own", async () => {
@@ -119,13 +131,29 @@ describe("Google sign-in (ID-02)", () => {
     expect(linked.body.items).toEqual([
       expect.objectContaining({ provider: "google", email }),
     ]);
-    const viaGoogle = await signIn(h.google.code(google)).expect(200);
+    const viaGoogle = await signIn(h.google.code(google))
+      .set(
+        "User-Agent",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Safari/605.1.15",
+      )
+      .expect(200);
     expect(viaGoogle.body.user.id).toBe(owner.user.id);
-    // The owner is told once, with no Google email in the message.
+    // The owner is told of the link once, with no Google email in the
+    // message, and of the Google sign-in; the email-code sign-in before
+    // was its own message.
     expect(await noticesOf(owner.user.id)).toEqual([
       {
         template: "security.google-linked.v1",
         data: { at: h.clock.now().toISOString() },
+      },
+      {
+        template: "security.sign-in.v1",
+        data: {
+          at: h.clock.now().toISOString(),
+          method: "google",
+          browser: "Safari",
+          os: "macOS",
+        },
       },
     ]);
   });

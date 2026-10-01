@@ -361,6 +361,13 @@ export class PasskeysService {
         "passkey",
         client,
       );
+      await this.sessions.announceSignIn(
+        tx,
+        user.id,
+        sessionId,
+        "passkey",
+        client,
+      );
       return { regressed: false as const, user, sessionId };
     });
 
@@ -398,13 +405,24 @@ export class PasskeysService {
 
   // ─── Management ──────────────────────────────────────────────────────
 
+  /**
+   * The user's own passkeys, with the credential ids: id-web hands them to
+   * the browser (Signal API) so the device forgets passkeys removed here.
+   */
   async list(userId: string) {
-    const rows = await this.database.db
-      .select()
-      .from(passkeys)
-      .where(eq(passkeys.userId, userId))
-      .orderBy(asc(passkeys.createdAt), asc(passkeys.id));
-    return { items: rows.map((row) => this.toItem(row)) };
+    const rows = await this.rows(userId);
+    return {
+      items: rows.map((row) => ({
+        ...this.toItem(row),
+        credentialId: row.credentialId,
+      })),
+    };
+  }
+
+  /** A user's passkeys as an operator sees them (users.read): no credential ids. */
+  async listForOperator(userId: string) {
+    await this.users.get(userId);
+    return { items: (await this.rows(userId)).map((row) => this.toItem(row)) };
   }
 
   async rename(
@@ -441,6 +459,46 @@ export class PasskeysService {
    * user is told to add another method first.
    */
   async remove(userId: string, passkeyId: string, client: ClientContext) {
+    await this.delete(userId, passkeyId, {
+      actorId: userId,
+      action: "passkey.removed",
+      notice: "security.passkey-removed.v1",
+      requestId: client.requestId,
+    });
+  }
+
+  /**
+   * An operator removes a user's passkey (a lost device) with a reason
+   * (passkeys.revoke). The same last-method rule holds: support cannot lock
+   * the user out either. Audited as `passkey.revoked` with the operator and
+   * the reason; the user gets a notice of its own, with the time only.
+   */
+  async revoke(
+    actor: { userId: string; requestId?: string | null },
+    userId: string,
+    passkeyId: string,
+    reason: string,
+  ) {
+    await this.delete(userId, passkeyId, {
+      actorId: actor.userId,
+      action: "passkey.revoked",
+      notice: "security.passkey-revoked.v1",
+      reason,
+      requestId: actor.requestId ?? null,
+    });
+  }
+
+  private async delete(
+    userId: string,
+    passkeyId: string,
+    by: {
+      actorId: string;
+      action: "passkey.removed" | "passkey.revoked";
+      notice: "security.passkey-removed.v1" | "security.passkey-revoked.v1";
+      reason?: string;
+      requestId: string | null;
+    },
+  ) {
     const now = this.clock.now();
     await this.database.db.transaction(async (tx) => {
       const user = await lockUser(tx, userId);
@@ -459,20 +517,29 @@ export class PasskeysService {
         });
       await tx.delete(passkeys).where(eq(passkeys.id, row.id));
       await audit(tx, {
-        actorId: userId,
-        action: "passkey.removed",
+        actorId: by.actorId,
+        action: by.action,
         targetType: "user",
         targetId: userId,
+        reason: by.reason,
         data: { passkeyId: row.id },
-        requestId: client.requestId,
+        requestId: by.requestId,
         at: now,
       });
-      await this.notify(tx, userId, "security.passkey-removed.v1", row.id, now);
+      await this.notify(tx, userId, by.notice, row.id, now);
     });
     this.relay.kick();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────
+
+  private rows(userId: string) {
+    return this.database.db
+      .select()
+      .from(passkeys)
+      .where(eq(passkeys.userId, userId))
+      .orderBy(asc(passkeys.createdAt), asc(passkeys.id));
+  }
 
   private assertFresh(session: { clientId: string | null; createdAt: Date }) {
     const age = this.clock.now().getTime() - session.createdAt.getTime();

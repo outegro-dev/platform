@@ -30,6 +30,7 @@ import {
   users,
 } from "../db/schema.js";
 import { GrantsService } from "../grants/grants.service.js";
+import { PasskeysService } from "../passkeys/passkeys.service.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import { UsersService } from "../users/users.service.js";
 import {
@@ -86,6 +87,7 @@ export class AdminController {
     private readonly roles: RolesService,
     private readonly sessions: SessionsService,
     private readonly grants: GrantsService,
+    private readonly passkeys: PasskeysService,
   ) {}
 
   /** Numbers for the admin dashboard: accounts, sessions, sign-in methods. */
@@ -309,6 +311,34 @@ export class AdminController {
       }),
     );
     return { revoked: revoked.length };
+  }
+
+  /** The user's passkeys: names, dates, synced; never the credential ids. */
+  @Get("users/:id/passkeys")
+  @RequireFreshPermissions("users.read")
+  passkeysOf(@Param("id") id: string) {
+    if (!idParam.safeParse(id).success) throw new AppError("NOT_FOUND");
+    return this.passkeys.listForOperator(id);
+  }
+
+  /** Removes a lost device's passkey; the user keeps another way in. */
+  @Post("users/:id/passkeys/:passkeyId/revoke")
+  @HttpCode(204)
+  @RequireFreshPermissions("passkeys.revoke")
+  async revokePasskey(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param("id") id: string,
+    @Param("passkeyId") passkeyId: string,
+    @Body({ schema: reasonSchema }) body: z.infer<typeof reasonSchema>,
+  ) {
+    if (!idParam.safeParse(id).success || !idParam.safeParse(passkeyId).success)
+      throw new AppError("NOT_FOUND");
+    await this.passkeys.revoke(
+      { userId: actor.userId },
+      id,
+      passkeyId,
+      body.reason,
+    );
   }
 
   @Post("users/:id/status")

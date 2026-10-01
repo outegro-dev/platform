@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import {
   createEvent,
+  deviceOf,
   identitySessionRevoked,
   notificationRequested,
 } from "@outegro/contracts";
@@ -70,6 +71,44 @@ export class SessionsService {
       .returning({ id: sessions.id });
     if (!session) throw new Error("session insert failed");
     return session.id;
+  }
+
+  /**
+   * Tells the account owner about a sign-in no email preceded: a passkey or
+   * Google (`security.sign-in.v1`), in the transaction of the session. An
+   * email code is a message of its own, and an app session through SSO
+   * rides on a sign-in that was already told. Only the method, the time and
+   * a browser and a system from a fixed list travel (deviceOf): the
+   * User-Agent itself is whatever the client sent.
+   */
+  async announceSignIn(
+    tx: AuthTx,
+    userId: string,
+    sessionId: string,
+    method: "passkey" | "google",
+    client: ClientContext,
+  ) {
+    const now = this.clock.now();
+    await enqueueEvent(
+      tx,
+      createEvent(notificationRequested, {
+        producer: "identity",
+        aggregateId: userId,
+        aggregateVersion: 1,
+        occurredAt: now,
+        payload: {
+          sourceEventId: sessionId,
+          templateKey: "security.sign-in.v1",
+          category: "security",
+          recipient: { userId },
+          data: {
+            at: now.toISOString(),
+            method,
+            ...deviceOf(client.userAgent),
+          },
+        },
+      }),
+    );
   }
 
   /** Issues the first token pair of a committed session. */
