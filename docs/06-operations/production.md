@@ -13,7 +13,7 @@
 ## Выпуск
 
 1. PR в `platform` → CI (`.github/workflows/ci.yml`): lint, типы, тесты с настоящими PostgreSQL/Valkey/RabbitMQ, сборка.
-2. Слияние в `master` → `tools/ci/scope.mjs` сравнивает с прошлым master: проверки (typecheck, тесты, сборка) и образы — только для изменённых пакетов и их зависимых (`turbo --affected`); изменение вне `apps/` и `packages/` (lockfile, корневой конфиг, Dockerfile, CI) проверяет и собирает всё. Образы — одним графом (`docker-bake.hcl`, `BUILD_APPS`) в `ghcr.io/outegro-dev/<app>:<12 символов коммита>`.
+2. Слияние в `master` → `tools/ci/scope.mjs` сравнивает с последним выпущенным master (head последнего зелёного запуска CI на push в master, через Actions API; без него — с предыдущим push): упавший запуск ничего не выпускает, поэтому следующий охватывает и его изменения. проверки (typecheck, тесты, сборка) и образы — только для изменённых пакетов и их зависимых (`turbo --affected`); изменение вне `apps/` и `packages/` (lockfile, корневой конфиг, Dockerfile, CI) проверяет и собирает всё. Образы — одним графом (`docker-bake.hcl`, `BUILD_APPS`) в `ghcr.io/outegro-dev/<app>:<12 символов коммита>`.
 3. CI коммитит новые теги только пересобранных приложений в `gitops/apps/production/kustomization.yaml` (deploy-ключ `GITOPS_DEPLOY_KEY`); Argo CD синхронизирует: PreSync-миграции, выкатка, проверки готовности. Argo опрашивает git раз в минуту (`timeout.reconciliation: 60s`, jitter 10 с). От слияния до production: ~7–8 минут для изменения одного сервиса, ~20 минут, когда пересобирается всё.
 4. Откат — `git revert` коммита с тегом в `gitops`.
 

@@ -16,6 +16,8 @@ concurrency:
 
 permissions:
   contents: read
+  # tools/ci/scope.mjs reads the last green run of this workflow.
+  actions: read
 
 jobs:
   check:
@@ -41,11 +43,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Only the changed packages and their dependents are checked and rebuilt;
       # a change outside apps/ and packages/ checks everything (tools/ci/scope.mjs).
+      # On master the diff starts at the last released (green) push, not the
+      # previous one: a failed run releases nothing.
       - id: scope
         env:
           EVENT: ${{ github.event_name }}
           BEFORE: ${{ github.event.before }}
           BASE_REF: ${{ github.base_ref }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: node tools/ci/scope.mjs
       - run: pnpm lint
       - run: pnpm turbo run typecheck ${{ steps.scope.outputs.filter }}

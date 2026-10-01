@@ -22,17 +22,48 @@ const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();
 const write = (file, key, value) =>
   appendFileSync(process.env[file], `${key}=${value}\n`);
 
+const isSha = (value) => /^[0-9a-f]{40}$/.test(value) && !/^0+$/.test(value);
+const isAncestor = (sha) => {
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"]);
+    return true;
+  } catch {
+    return false; // force-push or unknown commit: nothing trustworthy to diff
+  }
+};
+
+/**
+ * The head of the last push to master whose run went green, i.e. was
+ * released. A failed run releases nothing, so the next one must cover its
+ * changes too: diffing against the previous push alone once left two apps
+ * on an old image (01.10.2026). Null without the API (local runs).
+ */
+function lastReleased() {
+  if (!process.env.GH_TOKEN || !process.env.REPO) return null;
+  try {
+    const sha = execFileSync(
+      "gh",
+      [
+        "api",
+        `repos/${process.env.REPO}/actions/workflows/ci.yml/runs?branch=master&event=push&status=success&per_page=1`,
+        "--jq",
+        ".workflow_runs[0].head_sha // empty",
+      ],
+      { encoding: "utf8" },
+    ).trim();
+    return isSha(sha) ? sha : null;
+  } catch {
+    return null;
+  }
+}
+
 function baseCommit() {
   if (process.env.EVENT === "pull_request")
     return git("merge-base", "HEAD", `origin/${process.env.BASE_REF}`);
+  const released = lastReleased();
+  if (released && isAncestor(released)) return released;
   const before = process.env.BEFORE ?? "";
-  if (!/^[0-9a-f]{40}$/.test(before) || /^0+$/.test(before)) return null;
-  try {
-    execFileSync("git", ["merge-base", "--is-ancestor", before, "HEAD"]);
-    return before;
-  } catch {
-    return null; // force-push or unknown commit: nothing trustworthy to diff
-  }
+  return isSha(before) && isAncestor(before) ? before : null;
 }
 
 function everything(why) {
