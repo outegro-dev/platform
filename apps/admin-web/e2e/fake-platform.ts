@@ -266,6 +266,55 @@ mira.status = "active";
 oleg.status = "active";
 oleg.sessions = 3;
 
+// Passkeys (ID-05): Mira has two; Priya's only one is her last way in
+// (unverified email, no Google), so support cannot remove it.
+type FakePasskey = {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  synced: boolean;
+  backedUp: boolean;
+  usable: boolean;
+};
+// Fixed ids: uuid() would draw from the seeded generator and shift the
+// data generated after this.
+const passkeysOf = new Map<string, FakePasskey[]>();
+const priya = userByEmail("priya.nair@example.in");
+priya.emailVerified = false;
+priya.googleLinked = false;
+passkeysOf.set(mira.id, [
+  {
+    id: "7f6b1c2e-1a10-4c3e-9f00-000000000a01",
+    name: "MacBook Air",
+    createdAt: iso(NOW - 9 * DAY),
+    lastUsedAt: iso(NOW - 2 * HOUR),
+    synced: true,
+    backedUp: true,
+    usable: true,
+  },
+  {
+    id: "7f6b1c2e-1a10-4c3e-9f00-000000000a02",
+    name: "YubiKey 5C",
+    createdAt: iso(NOW - 4 * DAY),
+    lastUsedAt: null,
+    synced: false,
+    backedUp: false,
+    usable: true,
+  },
+]);
+passkeysOf.set(priya.id, [
+  {
+    id: "7f6b1c2e-1a10-4c3e-9f00-000000000a03",
+    name: "Pixel 9",
+    createdAt: iso(NOW - 6 * DAY),
+    lastUsedAt: iso(NOW - DAY),
+    synced: true,
+    backedUp: true,
+    usable: true,
+  },
+]);
+
 // A past support role that was revoked.
 bindings.push({
   id: uuid(),
@@ -2295,6 +2344,40 @@ route(
       data: { count: revoked },
     });
     return { revoked };
+  },
+);
+route("GET", "/auth/v1/admin/users/:id/passkeys", (req, _res, [id]) => {
+  need(req, "users.read");
+  users.find((item) => item.id === id) ?? fail(404, "NOT_FOUND");
+  return { items: passkeysOf.get(id as string) ?? [] };
+});
+route(
+  "POST",
+  "/auth/v1/admin/users/:id/passkeys/:passkeyId/revoke",
+  (req, res, [id, passkeyId]) => {
+    const persona = need(req, "passkeys.revoke");
+    const reason = reasonOf(req.body);
+    const user = (users.find((item) => item.id === id) ??
+      fail(404, "NOT_FOUND")) as User;
+    const list = passkeysOf.get(user.id) ?? [];
+    const passkey = list.find((item) => item.id === passkeyId);
+    if (!passkey) fail(404, "NOT_FOUND");
+    const others = list.filter((item) => item.id !== passkeyId && item.usable);
+    if (!user.emailVerified && !user.googleLinked && others.length === 0)
+      fail(409, "CONFLICT", { passkey: ["last_method"] });
+    passkeysOf.set(
+      user.id,
+      list.filter((item) => item.id !== passkeyId),
+    );
+    audit(authAudit, {
+      actorId: actorOf(persona),
+      action: "passkey.revoked",
+      targetType: "user",
+      targetId: user.id,
+      reason,
+      data: { passkeyId },
+    });
+    send(res, 204);
   },
 );
 route("POST", "/auth/v1/admin/users/:id/status", (req, _res, [id]) => {

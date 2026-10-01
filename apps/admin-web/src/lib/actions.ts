@@ -40,6 +40,7 @@ export type ActionCode =
   | "not-connected"
   | "rate-limited"
   | "last-owner"
+  | "last-method"
   | "role-active"
   | "not-retryable"
   | "expired"

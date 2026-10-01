@@ -64,6 +64,29 @@ export async function revokeUserSessions(
   });
 }
 
+/** A lost device's passkey; the user keeps another way to sign in. */
+export async function revokeUserPasskey(
+  _: ActionResult,
+  form: FormData,
+): Promise<ActionResult> {
+  return runAction({
+    permission: "passkeys.revoke",
+    form,
+    schema: z.object({ userId: uuid, passkeyId: uuid, reason }),
+    run: (services, input) =>
+      services.identity.revokePasskey(
+        input.userId,
+        input.passkeyId,
+        input.reason,
+      ),
+    success: (t) => t("done.passkeyRevoked"),
+    explain: (error) =>
+      error.error.fieldErrors?.passkey?.includes("last_method")
+        ? "last-method"
+        : null,
+  });
+}
+
 export async function grantRole(
   _: ActionResult,
   form: FormData,

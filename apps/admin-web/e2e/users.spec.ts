@@ -80,6 +80,61 @@ test("suspends a user after a preview and a typed reason", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("support removes a lost device's passkey with a reason; the last way in stays", async ({
+  page,
+}) => {
+  await signIn(page, "support", "/users?query=mira");
+  await page.getByRole("link", { name: "Mira Levina" }).click();
+  await settle(page);
+  await openUserTab(page, "Sessions");
+  const panel = page.locator("#passkeys");
+  await expect(panel.getByRole("heading", { name: "Passkeys" })).toBeVisible();
+  await expect(panel.getByRole("row")).toHaveCount(3);
+  await expect(panel).toContainText("MacBook Air");
+  await expect(panel).toContainText("Synced");
+  await expect(panel).toContainText("YubiKey 5C");
+  await expect(panel).toContainText("Not used yet");
+
+  await panel
+    .getByRole("row", { name: /YubiKey 5C/ })
+    .getByRole("button", { name: "Remove" })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Remove the passkey “YubiKey 5C”?",
+  });
+  await expect(
+    dialog.getByRole("list", { name: "What happens" }),
+  ).toContainText("Open sessions stay; for a lost device, end them too.");
+  await dialog.getByLabel("Reason").fill("Lost the key, confirmed by email");
+  await dialog.getByRole("button", { name: "Remove passkey" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page
+      .getByRole("status")
+      .getByText("Passkey removed. The user has been notified."),
+  ).toBeVisible();
+  await expect(panel).not.toContainText("YubiKey 5C");
+  await expect(panel).toContainText("MacBook Air");
+
+  // Priya's only passkey is her last way to sign in: refused, it stays.
+  await page.goto("/users?query=priya");
+  await page.getByRole("link", { name: "Priya Nair" }).click();
+  await settle(page);
+  await openUserTab(page, "Sessions");
+  await page
+    .locator("#passkeys")
+    .getByRole("button", { name: "Remove" })
+    .click();
+  const last = page.getByRole("dialog", {
+    name: "Remove the passkey “Pixel 9”?",
+  });
+  await last.getByLabel("Reason").fill("User says the phone was stolen");
+  await last.getByRole("button", { name: "Remove passkey" }).click();
+  await expect(last).toContainText("This is the user's last way to sign in");
+  await last.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.locator("#passkeys")).toContainText("Pixel 9");
+});
+
 test("the user card shows every service in its own tab", async ({ page }) => {
   await signIn(page, "owner", "/users?query=mira");
   await page.getByRole("link", { name: "Mira Levina" }).click();

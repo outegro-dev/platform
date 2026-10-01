@@ -77,6 +77,18 @@ export type UserDetail = {
   grants: AccessGrant[];
 };
 
+/** A user's passkey as an operator sees it: never the credential id. */
+export type AdminPasskey = {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  synced: boolean;
+  backedUp: boolean;
+  /** False for a passkey of another relying party: it signs nobody in. */
+  usable: boolean;
+};
+
 export type AuditEntry = {
   id: string;
   actorId: string | null;
@@ -143,6 +155,22 @@ export class IdentityAdmin extends ServiceAdapter {
     return this.send(
       "POST",
       `/v1/admin/users/${encodeURIComponent(userId)}/sessions/revoke-all`,
+      { reason },
+    );
+  }
+
+  passkeys(userId: string): Promise<{ items: AdminPasskey[] }> {
+    return this.get(`/v1/admin/users/${encodeURIComponent(userId)}/passkeys`);
+  }
+
+  revokePasskey(
+    userId: string,
+    passkeyId: string,
+    reason: string,
+  ): Promise<void> {
+    return this.send(
+      "POST",
+      `/v1/admin/users/${encodeURIComponent(userId)}/passkeys/${encodeURIComponent(passkeyId)}/revoke`,
       { reason },
     );
   }

@@ -46,7 +46,8 @@
       "confirm-required": "Confirm that the message may be delivered twice.",
       "grant-exists": "An active manual grant for this feature already exists.",
       "not-live": "The match is no longer live.",
-      "state": "The record is not in a state that allows this anymore."
+      "state": "The record is not in a state that allows this anymore.",
+      "last-method": "This is the user's last way to sign in: the email is not verified and there is no other passkey or Google. The passkey stays."
     },
     "done": {
       "suspended": "Account suspended. All sessions were ended.",
@@ -67,7 +68,8 @@
       "nicknameReset": "Nickname reset.",
       "nicknameResetTo": "Nickname reset to {nickname}.",
       "playerHidden": "Player hidden from the leaderboard.",
-      "playerShown": "Player shown on the leaderboard again."
+      "playerShown": "Player shown on the leaderboard again.",
+      "passkeyRevoked": "Passkey removed. The user has been notified."
     }
   },
   "idle": {
@@ -715,6 +717,28 @@
       "hint": "Across all apps",
       "body": "{count, plural, one {One session is active. End it if the account may be compromised.} other {# sessions are active. End them all if the account may be compromised.}}",
       "none": "No active sessions. The user is signed out everywhere."
+    },
+    "passkeys": {
+      "title": "Passkeys",
+      "note": "Passkeys on id.outegro.dev. Remove one only when the user lost the device: it will no longer sign in.",
+      "what": "passkeys",
+      "emptyTitle": "No passkeys",
+      "emptyBody": "The user signs in with an email code or Google.",
+      "colName": "Passkey",
+      "colAdded": "Added",
+      "colUsed": "Last sign-in",
+      "colActions": "Actions",
+      "synced": "Synced",
+      "local": "One device",
+      "otherRp": "Other domain: cannot sign in",
+      "never": "Not used yet",
+      "revoke": "Remove",
+      "revokeTitle": "Remove the passkey “{passkey}”?",
+      "revokeDescription": "{name} will no longer be able to sign in with it.",
+      "revokeEffect": "The passkey is deleted at once. Open sessions stay; for a lost device, end them too.",
+      "revokeNotice": "The user gets an email and an inbox message: the time only, not your reason.",
+      "revokeLastMethod": "The last way to sign in cannot be removed: with an unverified email and no other passkey or Google, the server refuses.",
+      "revokeConfirm": "Remove passkey"
     },
     "roles": {
       "title": "Admin roles",

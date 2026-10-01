@@ -1,6 +1,7 @@
 import { platformRoles } from "@outegro/contracts";
 import { Input } from "@outegro/ui/input";
 import {
+  KeyIcon,
   PlusIcon,
   SignOutIcon,
   UserMinusIcon,
@@ -9,6 +10,7 @@ import { getTranslations } from "next-intl/server";
 import {
   grantRole,
   revokeRole,
+  revokeUserPasskey,
   revokeUserSessions,
 } from "@/app/(console)/users/actions";
 import { Actor } from "@/components/audit/actor";
@@ -16,10 +18,12 @@ import { ActionDialog } from "@/components/ui/action-dialog";
 import { CopyText } from "@/components/ui/copy-text";
 import { DataTable, Time } from "@/components/ui/data";
 import { Facts, Panel, Stat, Status } from "@/components/ui/layout";
-import { EmptyState } from "@/components/ui/states";
+import { EmptyState, FailureState } from "@/components/ui/states";
 import type { UserDetail } from "@/lib/adapters/identity";
 import { maskEmail } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
+import { load } from "@/lib/result";
+import { services } from "@/lib/server";
 import { toneOf } from "@/lib/tones";
 
 export async function ProfileTab({
@@ -109,31 +113,127 @@ export async function SessionsTab({
   const actions = await getTranslations("users.actions");
   const count = detail.activeSessions;
   return (
-    <Panel id="sessions" title={t("title")} note={t("note")}>
-      <div className="stats">
-        <Stat label={t("active")} value={count} size="lg" hint={t("hint")} />
-      </div>
-      <p className="state-body">
-        {count > 0 ? t("body", { count }) : t("none")}
-      </p>
-      {granted.has("sessions.revoke") && count > 0 && (
-        <div className="row-gap">
-          <ActionDialog
-            action={revokeUserSessions}
-            triggerLabel={actions("revokeSessions")}
-            triggerIcon={<SignOutIcon aria-hidden="true" />}
-            title={actions("revokeSessionsTitle")}
-            description={actions("revokeSessionsDescription", { name })}
-            consequences={[
-              actions("revokeSessionsEffect", { count }),
-              actions("revokeSessionsStays"),
-              actions("audited"),
-            ]}
-            confirmLabel={actions("revokeSessionsConfirm")}
-            destructive
-            hidden={{ userId: detail.user.id }}
-          />
+    <div className="stack">
+      <Panel id="sessions" title={t("title")} note={t("note")}>
+        <div className="stats">
+          <Stat label={t("active")} value={count} size="lg" hint={t("hint")} />
         </div>
+        <p className="state-body">
+          {count > 0 ? t("body", { count }) : t("none")}
+        </p>
+        {granted.has("sessions.revoke") && count > 0 && (
+          <div className="row-gap">
+            <ActionDialog
+              action={revokeUserSessions}
+              triggerLabel={actions("revokeSessions")}
+              triggerIcon={<SignOutIcon aria-hidden="true" />}
+              title={actions("revokeSessionsTitle")}
+              description={actions("revokeSessionsDescription", { name })}
+              consequences={[
+                actions("revokeSessionsEffect", { count }),
+                actions("revokeSessionsStays"),
+                actions("audited"),
+              ]}
+              confirmLabel={actions("revokeSessionsConfirm")}
+              destructive
+              hidden={{ userId: detail.user.id }}
+            />
+          </div>
+        )}
+      </Panel>
+      <PasskeysPanel userId={detail.user.id} granted={granted} name={name} />
+    </div>
+  );
+}
+
+/**
+ * The user's passkeys, for a lost device: support removes one with a
+ * reason. Identity refuses to remove the last way to sign in.
+ */
+async function PasskeysPanel({
+  userId,
+  granted,
+  name,
+}: {
+  userId: string;
+  granted: ReadonlySet<string>;
+  name: string;
+}) {
+  const t = await getTranslations("users.passkeys");
+  const result = await load(() => services().identity.passkeys(userId));
+  if (!result.ok)
+    return (
+      <Panel id="passkeys" title={t("title")} note={t("note")}>
+        <FailureState failure={result} what={t("what")} />
+      </Panel>
+    );
+  const { items } = result.data;
+  const canRevoke = granted.has("passkeys.revoke");
+  return (
+    <Panel flush id="passkeys" title={t("title")} note={t("note")}>
+      {items.length === 0 ? (
+        <EmptyState title={t("emptyTitle")} body={t("emptyBody")} />
+      ) : (
+        <DataTable label={t("title")}>
+          <thead>
+            <tr>
+              <th scope="col">{t("colName")}</th>
+              <th scope="col">{t("colAdded")}</th>
+              <th scope="col">{t("colUsed")}</th>
+              {canRevoke && (
+                <th scope="col">
+                  <span className="sr-only">{t("colActions")}</span>
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((passkey) => (
+              <tr key={passkey.id}>
+                <td data-primary="">
+                  <span className="cell-main">{passkey.name}</span>
+                  <span className="cell-sub">
+                    {!passkey.usable
+                      ? t("otherRp")
+                      : passkey.synced
+                        ? t("synced")
+                        : t("local")}
+                  </span>
+                </td>
+                <td data-label={t("colAdded")}>
+                  <Time iso={passkey.createdAt} />
+                </td>
+                <td data-label={t("colUsed")}>
+                  {passkey.lastUsedAt ? (
+                    <Time iso={passkey.lastUsedAt} />
+                  ) : (
+                    <span className="muted">{t("never")}</span>
+                  )}
+                </td>
+                {canRevoke && (
+                  <td data-label={t("colActions")} className="num">
+                    <ActionDialog
+                      action={revokeUserPasskey}
+                      triggerLabel={t("revoke")}
+                      triggerVariant="ghost"
+                      triggerIcon={<KeyIcon aria-hidden="true" />}
+                      title={t("revokeTitle", { passkey: passkey.name })}
+                      description={t("revokeDescription", { name })}
+                      consequences={[
+                        t("revokeEffect"),
+                        t("revokeNotice"),
+                        t("revokeLastMethod"),
+                      ]}
+                      confirmLabel={t("revokeConfirm")}
+                      destructive
+                      hidden={{ userId, passkeyId: passkey.id }}
+                    />
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
       )}
     </Panel>
   );
