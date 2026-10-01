@@ -43,6 +43,15 @@ export const recipients = pgTable("recipients", {
   telegramChatId: text("telegram_chat_id").unique(),
   telegramLinkedAt: at("telegram_linked_at"),
   status: text("status").notNull().default("active"),
+  /**
+   * The Identity version each group of fields came with: the user's row
+   * version (aggregateVersion) for contact and locale, accessVersion for
+   * status. A late or repeated event older than the stored one changes
+   * nothing (the same rule as payments' customers).
+   */
+  contactVersion: integer("contact_version").notNull().default(0),
+  localeVersion: integer("locale_version").notNull().default(0),
+  statusVersion: integer("status_version").notNull().default(0),
   preferencesVersion: integer("preferences_version").notNull().default(1),
   updatedAt: at("updated_at").notNull(),
 });

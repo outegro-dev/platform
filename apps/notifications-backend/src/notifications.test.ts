@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
 import {
+  createEvent,
+  identityUserContactChanged,
+  identityUserCreated,
+  identityUserLocaleChanged,
+  identityUserStatusChanged,
+} from "@outegro/contracts";
+import {
   DATABASE,
   HealthRegistry,
   Messaging,
@@ -10,7 +17,13 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PermanentDeliveryError } from "./channels/providers.js";
 import type { NotificationsDatabase } from "./common/database.js";
-import { deliveries, inboxItems, intents, outbox } from "./db/schema.js";
+import {
+  deliveries,
+  inboxItems,
+  intents,
+  outbox,
+  recipients,
+} from "./db/schema.js";
 import { DeliveryWorker } from "./delivery/delivery.worker.js";
 import { IntentsService } from "./intents/intents.service.js";
 import { RecipientsService } from "./recipients/recipients.service.js";
@@ -446,5 +459,77 @@ describe("scrape after every flow above (OPS-04)", () => {
     expect(scrape).toContain("outbox_pending_events{");
     expect(scrape).not.toContain("@example.test");
     expect(idLikeLabelValues(scrape)).toEqual([]);
+  });
+});
+
+describe("recipient projection", () => {
+  it("keeps the newest email, locale and status whatever order Identity's events arrive in", async () => {
+    const userId = randomUUID();
+    const created = (locale: "en" | "ru") =>
+      createEvent(identityUserCreated, {
+        aggregateId: userId,
+        aggregateVersion: 1,
+        payload: { userId, locale, status: "active" },
+      });
+    const contact = (version: number, email: string) =>
+      createEvent(identityUserContactChanged, {
+        aggregateId: userId,
+        aggregateVersion: version,
+        payload: { userId, email, emailVerified: true },
+      });
+    const locale = (version: number, value: "en" | "ru") =>
+      createEvent(identityUserLocaleChanged, {
+        aggregateId: userId,
+        aggregateVersion: version,
+        payload: { userId, locale: value },
+      });
+    const status = (accessVersion: number, value: "active" | "suspended") =>
+      createEvent(identityUserStatusChanged, {
+        aggregateId: userId,
+        aggregateVersion: accessVersion + 10,
+        payload: { userId, status: value, accessVersion },
+      });
+    const stored = async () => {
+      const [row] = await db
+        .select()
+        .from(recipients)
+        .where(eq(recipients.userId, userId));
+      return {
+        email: row?.email,
+        locale: row?.locale,
+        status: row?.status,
+      };
+    };
+
+    // The changes arrive before the account itself.
+    await recipientsService.apply(locale(3, "ru"));
+    await recipientsService.apply(contact(4, "new@example.test"));
+    await recipientsService.apply(status(2, "suspended"));
+    await recipientsService.apply(created("en"));
+    expect(await stored()).toEqual({
+      email: "new@example.test",
+      locale: "ru",
+      status: "suspended",
+    });
+
+    // Older changes delivered again under new event ids change nothing.
+    await recipientsService.apply(contact(1, "old@example.test"));
+    await recipientsService.apply(locale(2, "en"));
+    await recipientsService.apply(status(1, "active"));
+    expect(await stored()).toEqual({
+      email: "new@example.test",
+      locale: "ru",
+      status: "suspended",
+    });
+
+    // Newer ones do.
+    await recipientsService.apply(locale(5, "en"));
+    await recipientsService.apply(status(3, "active"));
+    await recipientsService.apply(contact(6, "latest@example.test"));
+    expect(await stored()).toEqual({
+      email: "latest@example.test",
+      locale: "en",
+      status: "active",
+    });
   });
 });
