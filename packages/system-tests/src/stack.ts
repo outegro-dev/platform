@@ -186,8 +186,11 @@ export async function startStack() {
     if (code !== 0) throw new Error(`${service} migrations failed`);
   }
 
-  const startService = async (service: Service) => {
-    const child = run(service, "main.js", envs[service]);
+  const startService = async (
+    service: Service,
+    extra: Record<string, string> = {},
+  ) => {
+    const child = run(service, "main.js", { ...envs[service], ...extra });
     const keep = (chunk: Buffer) => {
       logs[service].push(chunk.toString());
       if (logs[service].length > 400) logs[service].shift();
@@ -218,6 +221,16 @@ export async function startStack() {
   return {
     url,
     lava,
+    /** Stops a service and starts it again, with extra variables (SAFE_MODE). */
+    async restart(service: Service, extra: Record<string, string> = {}) {
+      const child = processes.get(service);
+      if (child && child.exitCode === null) {
+        const exited = new Promise((resolve) => child.once("exit", resolve));
+        child.kill("SIGTERM");
+        await exited;
+      }
+      await startService(service, extra);
+    },
     broker,
     smtp,
     secrets,

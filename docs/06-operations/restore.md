@@ -11,10 +11,10 @@
 3. Восстановить keys/config. Для SQLite K3s использовать совместимую процедуру SQLite+server token, не etcd snapshot commands.
 4. Восстановить PostgreSQL и проверить integrity/migration version/контрольные fixtures.
 5. Восстановить Hermes consistent state и assistant media. DB ItemMedia ссылки сверить с objects.
-6. Развернуть совместимые app images с отправками наружу выключенными.
+6. Развернуть совместимые app images с отправками наружу выключенными: всем четырём бэкендам `SAFE_MODE=true` (см. «Safe mode» ниже).
 7. Reconcile внешние payment/subscription/refund факты после recovery point через idempotent commands. Outbox/inbox replay не должен повторять бизнес-эффект.
 8. Проверить login/roles/grants/inbox/admin chain. После Redis loss допустим новый login, не автоматический доступ.
-9. Разрешить внешние sends только после анализа backlog/duplicates и target channel. Не запускать весь historic notification archive.
+9. Разрешить внешние sends только после анализа backlog/duplicates и target channel. Не запускать весь historic notification archive. Затем убрать `SAFE_MODE` и перезапустить сервисы: ждавшие события публикуются и применяются один раз (inbox), письма уходят.
 10. Снять RPO/RTO. Цели: до 15 минут PG и до 4 часов после доступности заменяющего сервера; deviation описать явно.
 
 ## Выход
@@ -56,3 +56,18 @@ Report с restore point, duration, проверками данных/грант�
 4. Удалить копию: убрать файл и строку из `kustomization.yaml`; Argo удаляет кластер и его том (prune). Проверить, что PVC `pg-drill-1` исчез.
 
 Не покрыто этим шагом: запуск приложений на восстановленной базе с выключенными отправками, сверка с Lava после recovery point (TC-OPS-07-02, 03), восстановление всего узла.
+
+## Safe mode (`SAFE_MODE=true`)
+
+Переменная окружения бэкендов (`@outegro/nest-common`, `safe-mode.ts`). С ней сервис отвечает по HTTP (оператор смотрит восстановленное состояние через admin API), но:
+
+- outbox relay не публикует события — они ждут в `outbox` со статусом `pending`;
+- подписки на очереди не запускаются — события ждут в RabbitMQ;
+- notifications не отправляет письма и Telegram (в том числе коды входа — вход в этом режиме недоступен) и не регистрирует вебхук Telegram;
+- payments не запускает сверку, истечение подписок и повторы отмены продления (вызовы Lava) и не синхронизирует каталог;
+- battleship не возобновляет партии (часы и форфейты).
+
+Каждый удержанный воркер пишет в лог `SAFE_MODE: worker stays off`; метрика `safe_mode` равна 1, алерт `ServiceInSafeMode` (warning, через 30 минут) напоминает, что режим включён. Вебхуки Lava в этом режиме принимаются и сохраняются, поэтому вход `hooks.outegro.dev` для восстановленной копии держать закрытым, пока сверка не закончена.
+
+Проверено системным тестом (`packages/system-tests`, OPS-07 TC-OPS-07-03): payments и notifications перезапущены с `SAFE_MODE=true`, вебхук оплаты принят и заказ оплачен, но Premium в Battleship и письма нет, события в outbox; после перезапуска без флага — Premium и ровно одно письмо.
+

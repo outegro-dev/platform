@@ -327,3 +327,62 @@ describe("TC-R-02-02: the broker or the mail server is down", () => {
     );
   });
 });
+
+describe("OPS-07 TC-OPS-07-03: SAFE_MODE after a restore", () => {
+  it("restarted with SAFE_MODE, services answer HTTP but act on nothing; without it, what waited runs once", async () => {
+    // Signed in before: in safe mode Notifications sends no sign-in codes.
+    const buyer = await signIn(email());
+    const address = (
+      await api<{ email: string }>("auth", "/v1/me", {
+        token: buyer.accessToken,
+      })
+    ).body.email;
+    const { orderId, invoice } = await buy(
+      buyer.accessToken,
+      "battleship-premium",
+    );
+
+    await stack.restart("payments", { SAFE_MODE: "true" });
+    await stack.restart("notifications", { SAFE_MODE: "true" });
+    try {
+      // HTTP works: Lava's webhook is stored and the order is paid...
+      expect((await webhook(stack.lava.paymentSuccess(invoice))).status).toBe(
+        200,
+      );
+      await eventually(
+        "the order to be paid in safe mode",
+        async () =>
+          (await orderOf(buyer.accessToken, orderId)).status === "paid",
+      );
+      // ...but nothing leaves Payments: no access, no email, events wait.
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      expect(await premiumOf(buyer.accessToken)).toBe(false);
+      expect(await billingMail(address)).toHaveLength(0);
+      expect(
+        Number(
+          await stack.query(
+            "payments",
+            "select count(*) from outbox where status = 'pending'",
+          ),
+        ),
+      ).toBeGreaterThan(0);
+      const health = await fetch(`${stack.url("payments")}/health`).then(
+        (res) => res.status,
+      );
+      expect(health).toBe(200);
+    } finally {
+      await stack.restart("payments");
+      await stack.restart("notifications");
+    }
+    await eventually(
+      "Premium once safe mode is off",
+      () => premiumOf(buyer.accessToken),
+      120_000,
+    );
+    await eventually(
+      "one payment email once safe mode is off",
+      async () => (await billingMail(address)).length === 1,
+      120_000,
+    );
+  });
+});
