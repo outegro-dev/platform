@@ -86,8 +86,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - id: bake
-        uses: docker/bake-action@v6
+      - uses: docker/bake-action@v6
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         with:
@@ -100,12 +99,18 @@ jobs:
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
             *.labels.org.opencontainers.image.revision=${{ github.sha }}
-      # { "<app>": "sha256:…" } of what was just pushed: gitops pins it.
+      # { "<app>": "sha256:…" } of what was just pushed, from the registry
+      # (bake's metadata is too large to pass through the environment).
       - id: digests
         env:
-          METADATA: ${{ steps.bake.outputs.metadata }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          APPS: ${{ needs.check.outputs.apps }}
         run: |
-          digests=$(echo "$METADATA" | jq -c 'with_entries(.value = .value["containerimage.digest"])')
+          digests='{}'
+          for app in $(echo "$APPS" | jq -r '.[]'); do
+            digest=$(docker buildx imagetools inspect "ghcr.io/outegro-dev/$app:$TAG" --format '{{json .Manifest.Digest}}' | jq -r .)
+            digests=$(echo "$digests" | jq -c --arg app "$app" --arg digest "$digest" '. + {($app): $digest}')
+          done
           echo "$digests" | jq .
           echo "digests=$digests" >> "$GITHUB_OUTPUT"
 
