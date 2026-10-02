@@ -50,7 +50,9 @@ const noticesOf = (userId: string) =>
         eq(outbox.type, "notifications.intent.requested.v1"),
         sql`${outbox.envelope}->'payload'->'recipient'->>'userId' = ${userId}`,
       ),
-    );
+    )
+    // Notices of one request share a time: order by template, not by chance.
+    .orderBy(sql`${outbox.envelope}->'payload'->>'templateKey'`);
 
 describe("Google sign-in (ID-02)", () => {
   it("tells id-web how to build the authorization request", async () => {
