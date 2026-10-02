@@ -87,6 +87,7 @@ CronJob `outegro/watchdog` раз в 5 минут (образ `alpine/k8s`, то
 
 ## Проверки после выпуска
 
+- Нагрузка на origin (OPS-08): `ssh outegro-prod 'sudo bash -s "4 8 16 32 64" 60' < tools/ops/load-origin.sh` — ступени по 60 с через Traefik, минуя Cloudflare; 02.10: ~80 rps на SSR-страницах без ошибок, p95 111 мс при 4 клиентах и 1,6 с при 64.
 - `node tools/ops/smoke.mjs` — 26 проверок без входа и без покупок: `/health` пяти сайтов, публичные страницы и 404, закрытые страницы ведут на вход, Grafana не принимает поддельные заголовки, вебхуки молчат на GET, заголовки безопасности, срок TLS-сертификатов (не меньше 14 дней). Код выхода 1 при любом провале.
 - Снаружи: `https://outegro.dev/health`, `https://id.outegro.dev/health/deep`, вход по коду.
 - Вебхуки: `POST https://hooks.outegro.dev/telegram` без секрета → 401, любой другой путь → 404.
