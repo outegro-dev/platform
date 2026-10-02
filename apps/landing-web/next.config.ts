@@ -34,6 +34,14 @@ const config: NextConfig = {
   // WebP only: encoding AVIF from these posters pushed the server past its
   // memory limit in production (OOM kills) for a few percent in size.
   images: { formats: ["image/webp"], qualities: [75, 90] },
+  // A fresh pod optimises every poster variant on first request: one libvips
+  // thread per image, no operation cache, streamed decoding. The pod peaked
+  // at 504 of its 512 MiB in production with the defaults (01.10.2026).
+  experimental: {
+    imgOptConcurrency: 1,
+    imgOptOperationCache: false,
+    imgOptSequentialRead: true,
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
