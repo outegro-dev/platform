@@ -153,4 +153,10 @@ jobs:
           git config user.name "Nick Lukashik"
           git config user.email "coping.barrel@gmail.com"
           git commit -am "deploy(platform): $TAG ($(echo "$APPS" | jq -r 'join(", ")'))"
-          git push
+          # gitops may have moved since the checkout (a manual change, another
+          # release): replay this commit on top instead of failing the release.
+          for attempt in 1 2 3; do
+            git push && exit 0
+            git pull --rebase origin master
+          done
+          exit 1
