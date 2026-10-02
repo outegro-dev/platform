@@ -1,0 +1,23 @@
+{
+  "name": "@outegro/system-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@outegro/auth-backend": "workspace:*",
+    "@outegro/battleship-backend": "workspace:*",
+    "@outegro/notifications-backend": "workspace:*",
+    "@outegro/payments-backend": "workspace:*",
+    "@testcontainers/postgresql": "12.2.0",
+    "@testcontainers/rabbitmq": "12.2.0",
+    "@testcontainers/valkey": "12.2.0",
+    "@types/node": "^24.0.0",
+    "testcontainers": "12.2.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.2"
+  }
+}
