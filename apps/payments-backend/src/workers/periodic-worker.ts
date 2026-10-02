@@ -3,6 +3,7 @@ import type {
   OnApplicationBootstrap,
   OnApplicationShutdown,
 } from "@nestjs/common";
+import { heldBySafeMode } from "@outegro/nest-common";
 
 /**
  * A loop that runs `runOnce` every interval. Outside tests it starts by
@@ -24,6 +25,7 @@ export abstract class PeriodicWorker
   protected abstract runOnce(): Promise<number>;
 
   onApplicationBootstrap() {
+    if (heldBySafeMode(this.constructor.name)) return;
     if (this.autoStart) this.schedule(this.intervalMs);
   }
 

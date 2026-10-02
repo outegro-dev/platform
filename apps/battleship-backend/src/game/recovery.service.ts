@@ -3,6 +3,7 @@ import {
   Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
+import { heldBySafeMode } from "@outegro/nest-common";
 import type {
   HumanSeat,
   MatchAction,
@@ -60,6 +61,8 @@ export class RecoveryService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
+    // Resumed matches run clocks and forfeits: not on restored data.
+    if (heldBySafeMode("match recovery")) return;
     // Queue entries belonged to sockets of the previous process.
     await this.queue.clear();
     const live = await this.store.loadLive();

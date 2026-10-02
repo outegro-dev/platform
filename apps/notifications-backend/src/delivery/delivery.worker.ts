@@ -9,7 +9,13 @@ import {
 import type { ConfigType } from "@nestjs/config";
 import { createEvent, notificationDeliveryChanged } from "@outegro/contracts";
 import { enqueueEvent, runDetached } from "@outegro/db";
-import { CLOCK, type Clock, DATABASE, OutboxRelay } from "@outegro/nest-common";
+import {
+  CLOCK,
+  type Clock,
+  DATABASE,
+  heldBySafeMode,
+  OutboxRelay,
+} from "@outegro/nest-common";
 import { and, eq, sql } from "drizzle-orm";
 import { SettingsService } from "../admin/settings.service.js";
 import {
@@ -59,7 +65,8 @@ export class DeliveryWorker
   private running = false;
   private stopped = false;
   /** Tests drive the worker with tick(); the loop runs only outside tests. */
-  autoStart = process.env.NODE_ENV !== "test";
+  autoStart =
+    process.env.NODE_ENV !== "test" && !heldBySafeMode("message delivery");
 
   constructor(
     @Inject(DATABASE) private readonly database: NotificationsDatabase,

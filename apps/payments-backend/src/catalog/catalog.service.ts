@@ -4,7 +4,13 @@ import {
   Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
-import { AppError, CLOCK, type Clock, DATABASE } from "@outegro/nest-common";
+import {
+  AppError,
+  CLOCK,
+  type Clock,
+  DATABASE,
+  heldBySafeMode,
+} from "@outegro/nest-common";
 import { and, asc, eq, isNull, max, notInArray, sql } from "drizzle-orm";
 import type { PaymentsDatabase } from "../common/database.js";
 import { prices, products } from "../db/schema.js";
@@ -36,6 +42,8 @@ export class CatalogService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
+    // A restored catalog stays as it was until the operator is done.
+    if (heldBySafeMode("catalog sync")) return;
     await this.sync(catalog);
   }
 

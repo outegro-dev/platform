@@ -6,7 +6,13 @@ import {
   type OnApplicationBootstrap,
 } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
-import { AppError, CLOCK, type Clock, DATABASE } from "@outegro/nest-common";
+import {
+  AppError,
+  CLOCK,
+  type Clock,
+  DATABASE,
+  heldBySafeMode,
+} from "@outegro/nest-common";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -86,6 +92,7 @@ export class TelegramLinkService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
+    if (heldBySafeMode("telegram webhook registration")) return;
     const url = this.config.telegramWebhookUrl;
     const secret = this.config.telegramWebhookSecret;
     if (!this.bot.configured || !url || !secret) return;
