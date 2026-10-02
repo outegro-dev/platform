@@ -18,6 +18,7 @@ import { CustomersService } from "./customers/customers.service.js";
 import {
   billingPeriods,
   checkoutAttempts,
+  customers as customerRows,
   financialEntries,
   grants,
   orders,
@@ -503,6 +504,65 @@ describe("checkout (PAY-03)", () => {
       .post("/v1/checkout")
       .send({ productKey: SILVER, currency: "USD" })
       .expect(401);
+  });
+
+  it("a buyer whose contact event is still on its way can buy: Identity is asked", async () => {
+    const userId = randomUUID();
+    const email = `late.${userId.slice(0, 8)}@example.test`;
+    // Only user.created has arrived; the verified email is still in flight.
+    const [created, contact] = customerEvents(userId, email);
+    if (!created || !contact) throw new Error("customer events");
+    await customers.apply(created);
+    h.identityUsers.set(userId, {
+      userId,
+      email,
+      emailVerified: true,
+      locale: "en",
+      status: "active",
+      accessVersion: 0,
+      version: 2,
+    });
+    const auth = { authorization: `Bearer ${await h.tokenFor(userId)}` };
+    await h
+      .http()
+      .post("/v1/checkout")
+      .set(auth)
+      .set("idempotency-key", newKey())
+      .send({ productKey: SILVER, currency: "USD" })
+      .expect(200);
+    expect(h.lava.last().input.email).toBe(email);
+    // The late event is older than what Identity said: it changes nothing.
+    await customers.apply(contact);
+    const [row] = await db
+      .select()
+      .from(customerRows)
+      .where(eq(customerRows.userId, userId));
+    expect(row).toMatchObject({
+      email,
+      emailVerified: true,
+      contactVersion: 2,
+    });
+
+    // Identity does not know a verified email either: still refused.
+    const other = randomUUID();
+    const [otherCreated] = customerEvents(other, "x@example.test");
+    if (otherCreated) await customers.apply(otherCreated);
+    h.identityUsers.set(other, {
+      userId: other,
+      email: "x@example.test",
+      emailVerified: false,
+      locale: "en",
+      status: "active",
+      accessVersion: 0,
+      version: 1,
+    });
+    await h
+      .http()
+      .post("/v1/checkout")
+      .set({ authorization: `Bearer ${await h.tokenFor(other)}` })
+      .set("idempotency-key", newKey())
+      .send({ productKey: SILVER, currency: "USD" })
+      .expect(422);
   });
 
   it("refuses to sell what the buyer already has, with ALREADY_OWNED", async () => {

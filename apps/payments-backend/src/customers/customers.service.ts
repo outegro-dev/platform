@@ -210,7 +210,9 @@ export class CustomersService implements OnApplicationBootstrap {
           .where(eq(customers.userId, userId))
       )[0];
     let customer = await find();
-    if (!customer) {
+    // No row yet, or user.created arrived before the contact change: ask
+    // Identity rather than refuse a buyer who just signed up.
+    if (!customer?.email || !customer.emailVerified) {
       await this.syncFromIdentity(userId);
       customer = await find();
     }
@@ -229,8 +231,10 @@ export class CustomersService implements OnApplicationBootstrap {
   }
 
   /**
-   * A buyer who signed up before this service subscribed to Identity events
-   * has no row; ask Identity once. An event that lands meanwhile wins.
+   * Asks Identity for a buyer it has not told us about yet (signed up before
+   * this service subscribed, or whose contact event is still on its way).
+   * The answer is applied like an event: only fields newer than what is
+   * stored replace it, so an event that lands meanwhile still wins.
    */
   private async syncFromIdentity(userId: string) {
     const { internalUrl, internalToken } = this.auth;
@@ -253,6 +257,7 @@ export class CustomersService implements OnApplicationBootstrap {
     // The status Identity reports is current as of its accessVersion, the
     // contact and locale as of the user's version (0 when not sent).
     const { version = 0, ...current } = user;
+    const now = this.clock.now();
     await this.database.db
       .insert(customers)
       .values({
@@ -260,9 +265,17 @@ export class CustomersService implements OnApplicationBootstrap {
         statusVersion: user.accessVersion,
         contactVersion: version,
         localeVersion: version,
-        updatedAt: this.clock.now(),
+        updatedAt: now,
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: customers.userId,
+        set: {
+          email: sql`case when ${version} > ${customers.contactVersion} then ${user.email}::text else ${customers.email} end`,
+          emailVerified: sql`case when ${version} > ${customers.contactVersion} then ${user.emailVerified}::boolean else ${customers.emailVerified} end`,
+          contactVersion: sql`greatest(${customers.contactVersion}, ${version})`,
+          updatedAt: now,
+        },
+      });
   }
 
   private fieldsOf(event: AnyEvent): Fields {
