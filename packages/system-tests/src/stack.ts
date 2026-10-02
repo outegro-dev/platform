@@ -147,6 +147,8 @@ export async function startStack() {
         LAVA_API_URL: lava.url,
         LAVA_API_KEY: lavaApiKey,
         LAVA_PAYMENT_URL_HOSTS: "app.lava.top",
+        // Open checkouts are first checked at Lava after a minute.
+        RECONCILE_INTERVAL_MS: "5000",
       });
     return env;
   };

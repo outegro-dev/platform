@@ -386,3 +386,47 @@ describe("OPS-07 TC-OPS-07-03: SAFE_MODE after a restore", () => {
     );
   });
 });
+
+describe("OPS-07 TC-OPS-07-02: a payment the restored database never saw", () => {
+  it("reconciliation finds it at Lava and settles it once; the late webhook changes nothing", async () => {
+    const buyer = await signIn(email());
+    const address = (
+      await api<{ email: string }>("auth", "/v1/me", {
+        token: buyer.accessToken,
+      })
+    ).body.email;
+    const { orderId, invoice } = await buy(
+      buyer.accessToken,
+      "battleship-premium",
+    );
+    // Paid at Lava, but the webhook went to a database that no longer
+    // exists (restored to an earlier point): only reconciliation can know.
+    invoice.status = "COMPLETED";
+    await eventually(
+      "reconciliation to settle the order",
+      async () => (await orderOf(buyer.accessToken, orderId)).status === "paid",
+      150_000,
+    );
+    await eventually(
+      "Premium after reconciliation",
+      () => premiumOf(buyer.accessToken),
+      60_000,
+    );
+    await eventually(
+      "one payment email",
+      async () => (await billingMail(address)).length === 1,
+    );
+
+    expect((await webhook(stack.lava.paymentSuccess(invoice))).status).toBe(
+      200,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+    expect(await billingMail(address)).toHaveLength(1);
+    expect(
+      await stack.query(
+        "payments",
+        `select count(*) from payments where order_id = '${orderId}'`,
+      ),
+    ).toBe("1");
+  });
+});
