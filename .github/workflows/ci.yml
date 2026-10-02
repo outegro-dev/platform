@@ -70,6 +70,7 @@ jobs:
       packages: write
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      digests: ${{ steps.digests.outputs.digests }}
     steps:
       - uses: actions/checkout@v4
       - id: tag
@@ -85,7 +86,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/bake-action@v6
+      - id: bake
+        uses: docker/bake-action@v6
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         with:
@@ -98,6 +100,14 @@ jobs:
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
             *.labels.org.opencontainers.image.revision=${{ github.sha }}
+      # { "<app>": "sha256:…" } of what was just pushed: gitops pins it.
+      - id: digests
+        env:
+          METADATA: ${{ steps.bake.outputs.metadata }}
+        run: |
+          digests=$(echo "$METADATA" | jq -c 'with_entries(.value = .value["containerimage.digest"])')
+          echo "$digests" | jq .
+          echo "digests=$digests" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Release to production (gitops)
@@ -120,12 +130,20 @@ jobs:
         env:
           TAG: ${{ needs.images.outputs.tag }}
           APPS: ${{ needs.check.outputs.apps }}
-        # Only the rebuilt apps move to this tag; the rest keep the image
-        # they run. An app joins by adding its images entry in gitops (and its
-        # target to docker-bake.hcl and tools/ci/scope.mjs).
+          DIGESTS: ${{ needs.images.outputs.digests }}
+        # Only the rebuilt apps move; the rest keep the image they run. The
+        # image is pinned as <tag>@<digest>: the tag stays readable, and a tag
+        # pushed again later cannot change what runs (immutable release). An
+        # app joins by adding its images entry in gitops (and its target to
+        # docker-bake.hcl and tools/ci/scope.mjs).
         run: |
           for app in $(echo "$APPS" | jq -r '.[]'); do
-            APP="$app" yq -i '(.images[] | select(.name == "outegro/" + strenv(APP))) |= (.newName = "ghcr.io/outegro-dev/" + strenv(APP) | .newTag = strenv(TAG))' apps/production/kustomization.yaml
+            digest=$(echo "$DIGESTS" | jq -r --arg app "$app" '.[$app] // empty')
+            if ! [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "no digest for $app" >&2
+              exit 1
+            fi
+            APP="$app" REF="$TAG@$digest" yq -i '(.images[] | select(.name == "outegro/" + strenv(APP))) |= (.newName = "ghcr.io/outegro-dev/" + strenv(APP) | .newTag = strenv(REF))' apps/production/kustomization.yaml
           done
           git config user.name "Nick Lukashik"
           git config user.email "coping.barrel@gmail.com"
