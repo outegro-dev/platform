@@ -1,6 +1,6 @@
 # Отчёт R-02: E2E матрица и сценарии отказов
 
-- Статус: in progress. TC-R-02-01, TC-R-02-02 — pass (локально и в CI); TC-R-02-03 — blocked (продуктовой части Hermes нет); TC-R-02-04 — этот отчёт.
+- Статус: done. TC-R-02-01, TC-R-02-02 — pass (локально и в CI); TC-R-02-03 — blocked и перенесён в H-11 (тесты продуктовой части Hermes): проверять нечего, пока H-08…H-10 не сделаны; TC-R-02-04 — этот отчёт.
 - Task card: [R-02](../../../04-delivery/09-release/tasks/R-02.md)
 - Commit: `2cb5cc2` (тесты), `9a1c98b` (исправление, найденное ими).
 - Environment: Windows 11, Docker 29.7.2, Node 26.8.1; в CI — ubuntu-latest, Node 24. Сервисы — собранные `dist/main.js` (те же файлы, что в образах) четырёх бэкендов; PostgreSQL 18.6, Valkey 9.1, RabbitMQ 4.3, Mailpit через Testcontainers; Lava — HTTP-двойник `gate.lava.top` (`packages/system-tests/src/fake-lava.ts`: создание счёта, счёт, поиск счетов, отмена подписки). Брокер и SMTP — через TCP-прокси теста, чтобы их «отключать» без перенастройки сервисов.
