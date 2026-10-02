@@ -19,6 +19,7 @@ import {
 import { DATABASE, type DatabaseHandle } from "./database.js";
 import { Messaging } from "./messaging.js";
 import { Metrics } from "./metrics.js";
+import { heldBySafeMode } from "./safe-mode.js";
 
 export type OutboxRelayOptions = {
   /** Poll interval when idle (default 1 s); `kick()` publishes sooner. */
@@ -87,6 +88,7 @@ export class OutboxRelay
   }
 
   onApplicationBootstrap() {
+    if (heldBySafeMode("outbox-relay")) return;
     this.schedule(0);
   }
 
@@ -97,6 +99,7 @@ export class OutboxRelay
 
   /** Call after committing a transaction that enqueued events. */
   kick() {
+    if (heldBySafeMode("outbox-relay")) return;
     if (!this.running) this.schedule(0);
   }
 

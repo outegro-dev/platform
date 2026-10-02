@@ -27,6 +27,7 @@ import {
   type HistogramConfiguration,
   Registry,
 } from "@prometheus-io/client";
+import { safeMode } from "./safe-mode.js";
 
 export type { Counter, Gauge, Histogram } from "@prometheus-io/client";
 
@@ -82,6 +83,11 @@ export class Metrics {
     this.readTimeoutMs = options.readTimeoutMs ?? READ_TIMEOUT_MS;
     this.registry.setDefaultLabels({ service: options.service });
     collectDefaultMetrics({ register: this.registry });
+    // 1 while the service runs in SAFE_MODE: an alert keeps it from being forgotten.
+    this.gauge({
+      name: "safe_mode",
+      help: "1 when the service runs with SAFE_MODE (workers off), else 0.",
+    }).set(safeMode() ? 1 : 0);
     this.readErrors = this.counter({
       name: "metrics_read_errors_total",
       help: "Gauge reads from a store that failed or timed out during a scrape.",

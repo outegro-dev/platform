@@ -29,6 +29,7 @@ import {
 import type { ConfirmChannel, ConsumeMessage } from "amqplib";
 import { HealthRegistry } from "./health.js";
 import { Metrics } from "./metrics.js";
+import { heldBySafeMode } from "./safe-mode.js";
 
 export type MessagingOptions = {
   url: string;
@@ -139,6 +140,8 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
    * handler finished or the message was safely moved.
    */
   async subscribe(spec: QueueSpec, handler: EventHandler) {
+    // Restored data first, events after: the queue keeps them meanwhile.
+    if (heldBySafeMode(`consumer ${spec.name}`)) return;
     const channel = this.connection.createChannel({
       confirm: true,
       setup: async (ch: ConfirmChannel) => {

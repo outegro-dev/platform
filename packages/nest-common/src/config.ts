@@ -10,6 +10,8 @@ export const baseEnvSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])
     .default("info"),
+  /** After a restore from backup: no side effects outside HTTP (safe-mode.ts). */
+  SAFE_MODE: z.stringbool().default(false),
 });
 
 export const databaseEnvSchema = z.object({

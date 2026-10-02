@@ -18,6 +18,7 @@ import { HealthRegistry } from "./health.js";
 import { Messaging, PermanentError } from "./messaging.js";
 import { Metrics } from "./metrics.js";
 import { OutboxRelay } from "./outbox-relay.js";
+import { safeMode } from "./safe-mode.js";
 import { metricValue, startRabbit, type TestService } from "./testing.js";
 
 const event = (type = "identity.user.created.v1"): AnyEvent => ({
@@ -370,5 +371,59 @@ describe("OutboxRelay", () => {
     expect(age).toBeGreaterThan(0);
     expect(await relay.tick()).toBe(1);
     expect(await backlog()).toEqual([0, 0]);
+  });
+});
+
+describe("SAFE_MODE (OPS-07)", () => {
+  let pg: TestPostgres;
+  let database: ReturnType<typeof createDatabase>;
+
+  beforeAll(async () => {
+    pg = await startPostgres({ outbox, inbox });
+    database = createDatabase({ url: pg.url });
+  });
+  afterAll(async () => {
+    delete process.env.SAFE_MODE;
+    await database?.close();
+    await pg?.stop();
+  });
+
+  it("reads the flag like the env schema: true, 1, yes; empty or absent is off", () => {
+    for (const on of ["true", "1", "yes", " TRUE "])
+      expect(safeMode({ SAFE_MODE: on }), on).toBe(true);
+    for (const off of [undefined, "", "false", "0", "no"])
+      expect(safeMode({ SAFE_MODE: off }), String(off)).toBe(false);
+  });
+
+  it("a restored service publishes nothing and applies nothing until restarted without it", async () => {
+    process.env.SAFE_MODE = "true";
+    const applied: string[] = [];
+    await consumer.subscribe(
+      defineQueue("notifications", "safe-mode", [
+        { producer: "identity", types: ["identity.safe.mode.v1"] },
+      ]),
+      async (e) => {
+        applied.push(e.eventId);
+      },
+    );
+    const relay = new OutboxRelay(database, publisher, { intervalMs: 50 });
+    relay.onApplicationBootstrap();
+    const waiting = event("identity.safe.mode.v1");
+    await database.db.transaction((tx) => enqueueEvent(tx, waiting));
+    relay.kick();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const [row] = await database.db.select().from(outbox);
+    expect(row?.status).toBe("pending");
+    // Published by someone else, it is not consumed either.
+    await publisher.publish("identity.events", event("identity.safe.mode.v1"));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(applied).toEqual([]);
+    relay.onApplicationShutdown();
+
+    // Restarted without the flag: what waited is published.
+    delete process.env.SAFE_MODE;
+    const after = new OutboxRelay(database, publisher, { intervalMs: 50 });
+    expect(await after.tick()).toBe(1);
+    after.onApplicationShutdown();
   });
 });
