@@ -14,6 +14,7 @@ test("an owner sees every section", async ({ page }) => {
     "Notifications",
     "Payments",
     "Battleship",
+    "Education",
     "Audit",
     "Monitoring",
   ]);
@@ -29,6 +30,7 @@ test("support sees only what support may read, and the server agrees", async ({
     "Users",
     "Notifications",
     "Battleship",
+    "Education",
   ]);
   // Panels follow the same permissions.
   await expect(

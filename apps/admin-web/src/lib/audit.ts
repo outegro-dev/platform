@@ -2,7 +2,7 @@ import type { Page } from "./result";
 
 /**
  * One timeline from several audit feeds (Identity, Notifications, Battleship,
- * Payments). Each feed pages with its own opaque cursor, newest first; the
+ * Payments, Education). Each feed pages with its own opaque cursor, newest first; the
  * merged cursor keeps, per feed, the last cursor and how many items of that
  * page were already shown. Items are only emitted while every feed with
  * more data has been read at least that far back, so the order is exact.
@@ -13,6 +13,7 @@ export const auditSources = [
   "notifications",
   "battleship",
   "payments",
+  "education",
 ] as const;
 export type AuditSource = (typeof auditSources)[number];
 

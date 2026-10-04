@@ -6,9 +6,15 @@ test("everything on one page", async ({ page }) => {
     /Good (morning|afternoon|evening|night), Nick/,
   );
   const health = page.getByRole("region", { name: "All services at a glance" });
-  for (const service of ["Identity", "Notifications", "Battleship", "Payments"])
+  for (const service of [
+    "Identity",
+    "Notifications",
+    "Battleship",
+    "Payments",
+    "Education",
+  ])
     await expect(health.getByText(service, { exact: true })).toBeVisible();
-  await expect(health.getByText("Healthy")).toHaveCount(4);
+  await expect(health.getByText("Healthy")).toHaveCount(5);
   await expect(
     page.getByRole("region", { name: "What to look at now" }),
   ).toContainText("deliveries failed");
@@ -20,6 +26,7 @@ test("everything on one page", async ({ page }) => {
     "Deliveries",
     "The game right now",
     "Revenue and subscriptions",
+    "Readers and books",
   ])
     await expect(page.getByRole("region", { name: panel })).toBeVisible();
   // Charts carry their numbers for assistive technology too.

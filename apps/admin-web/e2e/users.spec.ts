@@ -150,6 +150,11 @@ test("the user card shows every service in its own tab", async ({ page }) => {
   await openUserTab(page, "Battleship");
   await expect(page.getByText("Captain Mira")).toBeVisible();
 
+  await openUserTab(page, "Education");
+  await expect(page.locator("#reader")).toContainText("Node.js изнутри");
+  await expect(page.locator("#reader")).toContainText("SQL изнутри");
+  await expect(page.locator("#reader-grants")).toContainText("In force");
+
   await openUserTab(page, "Payments");
   await expect(page.getByRole("heading", { name: "Orders" })).toBeVisible();
   await expect(
@@ -203,6 +208,7 @@ for (const [device, options] of [
         ["Roles", ["#roles"]],
         ["Notifications", ["#recent-deliveries"]],
         ["Battleship", ["#player"]],
+        ["Education", ["#reader"]],
         ["Payments", ["#user-orders", "#user-subscriptions"]],
         ["Activity", ["#activity-about", "#activity-by"]],
       ] as const) {

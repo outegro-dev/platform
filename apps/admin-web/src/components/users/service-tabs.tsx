@@ -4,12 +4,17 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { grantAccess, revokeAccess } from "@/app/(console)/users/actions";
 import { AuditFeed } from "@/components/audit/audit-feed";
+import { ReaderProgressTable } from "@/components/education/reader-progress";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { DataTable, Time } from "@/components/ui/data";
 import { Facts, Panel, PanelLink, Stat, Status } from "@/components/ui/layout";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import type { UserDetail } from "@/lib/adapters/identity";
+import { bookOfFeature, grantTargetOf, libraryFeature } from "@/lib/education";
+import { grantTargets } from "@/lib/grant-targets";
+import { grantPhase } from "@/lib/grants";
 import { getLabels } from "@/lib/labels";
+import { educationBooks } from "@/lib/queries";
 import { getFormatter } from "@/lib/request";
 import { load } from "@/lib/result";
 import { services } from "@/lib/server";
@@ -34,19 +39,23 @@ export async function AccessTab({
           services().payments.grants({ userId: detail.user.id, limit: 50 }),
         ),
         load(() => services().payments.catalog()),
+        // Fetched alongside: the books "Give access" offers (cached per request).
+        granted.has("grants.assign") && granted.has("edu.read")
+          ? educationBooks()
+          : null,
       ])
     : [null, null];
   const canGrant = granted.has("grants.assign") && payments?.ok;
-  const targets = catalog?.ok
-    ? [
-        ...new Map(
+  const targets =
+    canGrant && catalog?.ok
+      ? await grantTargets(
+          granted,
           catalog.data.products.map((product) => [
             `${product.service}:${product.feature}`,
             product.title[f.locale === "ru" ? "ru" : "en"],
           ]),
-        ),
-      ]
-    : [];
+        )
+      : [];
 
   return (
     <div className="stack">
@@ -420,6 +429,133 @@ export async function BattleshipTab({ userId }: { userId: string }) {
         />
       </div>
     </Panel>
+  );
+}
+
+export async function EducationTab({ userId }: { userId: string }) {
+  const t = await getTranslations("users.education");
+  const label = await getLabels();
+  const f = await getFormatter();
+  const [result, books] = await Promise.all([
+    load(() => services().education.reader(userId)),
+    educationBooks(),
+  ]);
+  if (!result.ok) {
+    return (
+      <Panel
+        id="reader"
+        title={t("title")}
+        kind={result.kind === "not-connected" ? "not-connected" : undefined}
+      >
+        {result.kind === "not-found" ? (
+          <EmptyState title={t("noReader")} body={t("noReaderBody")} />
+        ) : (
+          <FailureState
+            failure={result}
+            what={t("what")}
+            service={t("service")}
+          />
+        )}
+      </Panel>
+    );
+  }
+  const titles = new Map(
+    books.ok ? books.data.map((book) => [book.slug, book.title]) : [],
+  );
+  const bookTitle = (slug: string) => titles.get(slug) ?? slug;
+  const featureName = (feature: string) => {
+    const slug = bookOfFeature(feature);
+    if (slug) return bookTitle(slug);
+    return feature === libraryFeature ? t("library") : feature;
+  };
+  const { grants, books: progress } = result.data;
+  return (
+    <div className="stack">
+      <Panel
+        flush
+        id="reader"
+        title={t("title")}
+        action={
+          <PanelLink href={`/education/readers?userId=${userId}`}>
+            {t("open")}
+          </PanelLink>
+        }
+      >
+        {progress.length === 0 ? (
+          <EmptyState size="sm" title={t("noBooks")} />
+        ) : (
+          <ReaderProgressTable
+            title={t("title")}
+            rows={progress}
+            lead="book"
+            bookTitle={bookTitle}
+          />
+        )}
+      </Panel>
+      <Panel
+        flush
+        id="reader-grants"
+        title={t("grants")}
+        note={t("grantsNote")}
+      >
+        {grants.length === 0 ? (
+          <EmptyState size="sm" title={t("noGrants")} />
+        ) : (
+          <DataTable label={t("grants")}>
+            <thead>
+              <tr>
+                <th scope="col">{t("colFeature")}</th>
+                <th scope="col">{t("colSource")}</th>
+                <th scope="col">{t("colState")}</th>
+                <th scope="col">{t("colValid")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {grants.map((grant) => {
+                // Scheduled, in force, expired or revoked: from its window,
+                // not only from what Payments recorded ("active").
+                const phase = grantPhase(grant, f.now);
+                return (
+                  <tr key={grant.grantId}>
+                    <td data-primary="">
+                      <span className="cell-main">
+                        {featureName(grant.feature)}
+                      </span>
+                      <span className="cell-sub mono">
+                        {grantTargetOf(grant.feature)}
+                      </span>
+                    </td>
+                    <td data-label={t("colSource")}>
+                      {label("grantSource", grant.sourceType)}
+                    </td>
+                    <td data-label={t("colState")}>
+                      <Status tone={toneOf("grantPhase", phase)}>
+                        {label("grantPhase", phase)}
+                      </Status>
+                    </td>
+                    <td data-label={t("colValid")}>
+                      <span>
+                        <Time iso={grant.validFrom} format="date" />
+                        <span className="cell-sub">
+                          {grant.validUntil ? (
+                            <>
+                              {t("until")}{" "}
+                              <Time iso={grant.validUntil} format="date" />
+                            </>
+                          ) : (
+                            t("forever")
+                          )}
+                        </span>
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
+        )}
+      </Panel>
+    </div>
   );
 }
 

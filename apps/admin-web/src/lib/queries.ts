@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { isBookSlug } from "./adapters/edu";
 import type { AuditSource, Fetcher, TimelineEntry } from "./audit";
 import { env } from "./env";
 import { probe } from "./health";
@@ -52,6 +53,15 @@ export const battleshipOverview = cache(() =>
   load(() => services().battleship.overview()),
 );
 
+export const educationOverview = cache(() =>
+  load(() => services().education.overview()),
+);
+
+/** Every book (there are few): titles for tables, filters and grant targets. */
+export const educationBooks = cache(() =>
+  load(() => services().education.books()),
+);
+
 export const paymentsCatalog = cache(() =>
   load(() => services().payments.catalog()),
 );
@@ -82,6 +92,7 @@ export const serviceHealth = cache(async () => {
     probe("notifications", env.NOTIFICATIONS_API_URL, { headers }),
     probe("battleship", env.BATTLESHIP_API_URL, { headers }),
     probe("payments", env.PAYMENTS_ADMIN_API_URL, { headers }),
+    probe("education", env.EDU_API_URL, { headers }),
   ]);
 });
 
@@ -145,6 +156,26 @@ export function auditFetchers(
       });
       return {
         items: page.items.map(tag("battleship")),
+        nextCursor: page.nextCursor,
+      };
+    };
+  }
+  // Education filters by book slug only: another target is never a book.
+  const bookFilter =
+    filter.targetId && isBookSlug(filter.targetId) ? filter.targetId : null;
+  if (
+    granted.has("edu.read") &&
+    svc.education.configured &&
+    (!filter.targetId || bookFilter)
+  ) {
+    sources.education = async (cursor, limit) => {
+      const page = await svc.education.audit({
+        cursor: cursor ?? undefined,
+        limit,
+        targetId: bookFilter ?? undefined,
+      });
+      return {
+        items: page.items.map(tag("education")),
         nextCursor: page.nextCursor,
       };
     };

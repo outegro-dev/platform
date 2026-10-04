@@ -48,7 +48,11 @@ export type ActionCode =
   | "confirm-required"
   | "grant-exists"
   | "not-live"
-  | "state";
+  | "state"
+  | "same-status"
+  | "same-rule"
+  | "free-chapters"
+  | "rule-refused";
 
 export type ActionResult =
   | { status: "idle" }

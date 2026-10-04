@@ -1,9 +1,9 @@
 "use server";
 
+import { adminReasonSchema } from "@outegro/contracts";
 import { z } from "zod";
 import { type ActionResult, runAction } from "@/lib/actions";
 
-const reason = z.string().trim().min(3).max(500);
 const channel = z.enum(["email", "telegram"]);
 
 export async function retryDelivery(
@@ -15,7 +15,7 @@ export async function retryDelivery(
     form,
     schema: z.object({
       deliveryId: z.uuid(),
-      reason,
+      reason: adminReasonSchema,
       confirmUnknown: z.literal("true").optional(),
     }),
     run: (services, input) =>
@@ -49,7 +49,7 @@ export async function setChannel(
       channel,
       enabled: z.enum(["true", "false"]),
       expectedVersion: z.coerce.number().int().nonnegative(),
-      reason,
+      reason: adminReasonSchema,
     }),
     run: (services, input) =>
       services.notifications

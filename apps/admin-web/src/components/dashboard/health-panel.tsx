@@ -63,7 +63,13 @@ export async function HealthSkeleton() {
         <Skeleton width={200} height={18} />
       </div>
       <div className="health-grid">
-        {["identity", "notifications", "battleship", "payments"].map((key) => (
+        {[
+          "identity",
+          "notifications",
+          "battleship",
+          "payments",
+          "education",
+        ].map((key) => (
           <div key={key} className="health">
             <Skeleton width="70%" height={16} />
             <Skeleton width="40%" height={12} />

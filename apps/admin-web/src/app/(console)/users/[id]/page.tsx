@@ -16,6 +16,7 @@ import {
   AccessTab,
   ActivityTab,
   BattleshipTab,
+  EducationTab,
   NotificationsTab,
   PaymentsTab,
 } from "@/components/users/service-tabs";
@@ -154,6 +155,7 @@ export default async function UserPage({
         )}
         {tab === "notifications" && <NotificationsTab userId={user.id} />}
         {tab === "battleship" && <BattleshipTab userId={user.id} />}
+        {tab === "education" && <EducationTab userId={user.id} />}
         {tab === "payments" && <PaymentsTab userId={user.id} />}
         {tab === "activity" && <ActivityTab userId={user.id} />}
       </Suspense>

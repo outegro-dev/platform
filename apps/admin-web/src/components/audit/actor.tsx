@@ -4,7 +4,9 @@ import { actorName } from "@/lib/queries";
 
 /**
  * An operator who did something: by name for readers who may see users,
- * by short ID otherwise. Either way it links to the user card.
+ * by short ID otherwise. Either way it links to the user card. For audit
+ * feeds only: each distinct actor is one Identity read per request, which
+ * a list of many users (readers, buyers) must not cost; those show short IDs.
  */
 export async function Actor({
   id,

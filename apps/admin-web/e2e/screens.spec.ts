@@ -72,6 +72,25 @@ const screens: Screen[] = [
     },
   },
   {
+    name: "user-education",
+    englishOnly: true,
+    path: "/users?query=mira",
+    steps: async (page) => {
+      await openFirstRow(page);
+      await openTab("Education")(page);
+    },
+  },
+  {
+    // Grants in force, scheduled and expired (Payments calls all three active).
+    name: "user-education-grants",
+    path: "/users?query=artem.k",
+    steps: async (page) => {
+      await openFirstRow(page);
+      await page.waitForURL(/\/users\/[0-9a-f-]{36}$/);
+      await visit(page, `${new URL(page.url()).pathname}?tab=education`);
+    },
+  },
+  {
     name: "user-notifications",
     englishOnly: true,
     path: "/users?query=mira",
@@ -140,6 +159,47 @@ const screens: Screen[] = [
     steps: openFirstRow,
   },
   { name: "battleship-audit", path: "/battleship/audit" },
+  { name: "education", path: "/education" },
+  { name: "books", path: "/education/books" },
+  { name: "book", path: "/education/books/sql-internals" },
+  {
+    name: "book-access-dialog",
+    englishOnly: true,
+    path: "/education/books/nodejs-internals",
+    skipStability: true,
+    steps: async (page) => {
+      await page.getByRole("button", { name: "Change access" }).click();
+      await page
+        .getByRole("dialog")
+        .getByLabel("Reason")
+        .fill("Two free chapters for the launch week");
+    },
+  },
+  { name: "readers", path: "/education/readers" },
+  { name: "education-audit", path: "/education/audit" },
+  {
+    // A newer edu-backend records an action this console cannot name yet.
+    name: "education-audit-future",
+    path: "/education/audit",
+    userAgent: withFailure("fake-audit=future"),
+  },
+  {
+    // The AI assistant switched off: no requests, so no shares; no spending cap.
+    name: "education-assist-off",
+    path: "/education",
+    userAgent: withFailure("fake-assist=off"),
+  },
+  {
+    // Today's spending cap reached: paused for readers until 00:00 UTC.
+    name: "education-assist-paused",
+    path: "/education",
+    userAgent: withFailure("fake-assist=paused"),
+  },
+  {
+    name: "education-not-connected",
+    path: "/education",
+    userAgent: withFailure("fake-down=edu"),
+  },
   { name: "audit", path: "/audit" },
   {
     name: "dashboard-degraded",
@@ -241,9 +301,15 @@ test.describe("desktop, Russian", () => {
 test.describe("phone, Russian", () => {
   test.use(phone);
   for (const screen of screens.filter((item) =>
-    ["dashboard", "user-profile", "match", "order", "channels"].includes(
-      item.name,
-    ),
+    [
+      "dashboard",
+      "user-profile",
+      "match",
+      "order",
+      "channels",
+      "education",
+      "book",
+    ].includes(item.name),
   )) {
     test(`${screen.name}`, async ({ page, context }) => {
       await useRussian(context);

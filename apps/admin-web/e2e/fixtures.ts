@@ -9,7 +9,13 @@ import {
   type Page,
 } from "@playwright/test";
 
-export type Persona = "owner" | "support" | "billing" | "auditor" | "nobody";
+export type Persona =
+  | "owner"
+  | "support"
+  | "billing"
+  | "auditor"
+  | "editor"
+  | "nobody";
 
 /** A phone: 390 px wide, touch, retina screenshots. */
 export const phone = {
@@ -22,16 +28,34 @@ export const phone = {
 /**
  * The console forwards the browser's User-Agent to every service; the fake
  * platform reads failure switches from it ("fake-fail=notifications" answers
- * 503, "fake-down=payments" drops the connection).
+ * 503, "fake-error=edu" 503 with an error body, "fake-down=payments" drops
+ * the connection) and a few variants ("fake-assist=off": Education's AI
+ * assistant is switched off; "fake-assist=paused": its spending cap for the
+ * day is reached; "fake-audit=future": Education's audit has an action newer
+ * than the contract; "fake-trace=<tag>": the requests are kept for
+ * `tracedRequests`).
  */
 export const withFailure = (switches: string) =>
   `${devices["Desktop Chrome"].userAgent} ${switches}`;
+
+/** Calls made to the fake platform under a "fake-trace=<tag>" User-Agent. */
+export async function tracedRequests(
+  page: Page,
+  tag: string,
+): Promise<string[]> {
+  const answer = await page.request.get(
+    `http://localhost:4196/__trace/${encodeURIComponent(tag)}`,
+  );
+  expect(answer.ok()).toBe(true);
+  return ((await answer.json()) as { requests: string[] }).requests;
+}
 
 const names: Record<Persona, string> = {
   owner: "Nick Lukashik",
   support: "Sam Carter",
   billing: "Bea Novak",
   auditor: "Ada Rossi",
+  editor: "Elena Sorokina",
   nobody: "Noah Fields",
 };
 

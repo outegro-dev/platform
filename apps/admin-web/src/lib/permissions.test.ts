@@ -24,6 +24,7 @@ describe("navigation by permission", () => {
       "notifications",
       "payments",
       "battleship",
+      "education",
       "audit",
       "monitoring",
     ]);
@@ -35,7 +36,23 @@ describe("navigation by permission", () => {
       "users",
       "notifications",
       "battleship",
+      "education",
     ]);
+  });
+
+  it("gives an education editor the textbooks and nothing else", () => {
+    expect(itemsOf(permissionsOf(["edu_editor"]))).toEqual([
+      "dashboard",
+      "education",
+    ]);
+    const editor = permissionsOf(["edu_editor"]);
+    expect(
+      tabsFor(editor, sectionTabs.education).map((tab) => tab.key),
+    ).toEqual(["overview", "books", "readers", "audit"]);
+    expect(can(editor, "edu.manage")).toBe(true);
+    expect(can(editor, "users.read")).toBe(false);
+    // Support reads the books and readers but does not change them.
+    expect(can(permissionsOf(["support"]), "edu.manage")).toBe(false);
   });
 
   it("gives billing and auditors their sections", () => {
@@ -89,6 +106,7 @@ describe("navigation by permission", () => {
       "access",
       "notifications",
       "battleship",
+      "education",
     ]);
     expect(can(support, "users.suspend")).toBe(false);
     expect(can(support, "sessions.revoke")).toBe(true);
@@ -98,6 +116,7 @@ describe("navigation by permission", () => {
     expect(activeNav("/")).toBe("dashboard");
     expect(activeNav("/users/5b449591")).toBe("users");
     expect(activeNav("/payments/orders/1")).toBe("payments");
+    expect(activeNav("/education/books/sql-internals")).toBe("education");
     expect(activeNav("/unknown")).toBe("dashboard");
     // Grafana is another app: the console never marks it as current.
     expect(activeNav("/grafana/d/abc")).toBe("dashboard");
