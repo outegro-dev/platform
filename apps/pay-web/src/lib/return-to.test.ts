@@ -12,6 +12,10 @@ describe("returnTarget", () => {
       href: "https://battleship.outegro.dev/shop",
       app: "battleship",
     });
+    expect(returnTarget("https://edu.outegro.dev/")).toEqual({
+      href: "https://edu.outegro.dev/",
+      app: "edu",
+    });
     expect(returnTarget("http://localhost:3002/account")).toEqual({
       href: "http://localhost:3002/account",
       app: "id",
@@ -26,6 +30,7 @@ describe("returnTarget", () => {
     "https://evil.test/",
     "https://battleship.outegro.dev.evil.test/shop",
     "https://battleship.outegro.dev@evil.test/",
+    "https://edu.outegro.dev.evil.test/",
     "http://battleship.outegro.dev/shop",
     "//battleship.outegro.dev/shop",
     "/orders",
@@ -56,7 +61,22 @@ describe("serviceLink", () => {
       home: "http://localhost:3005/",
       shop: "http://localhost:3005/shop",
     });
+    // Education has no shop page: a purchase leads to its home.
+    expect(serviceLink("edu", productionPlatformUrls)).toEqual({
+      home: "https://edu.outegro.dev/",
+      shop: "https://edu.outegro.dev/",
+    });
+    expect(
+      serviceLink("edu", {
+        ...productionPlatformUrls,
+        edu: "http://localhost:3006",
+      }),
+    ).toEqual({
+      home: "http://localhost:3006/",
+      shop: "http://localhost:3006/",
+    });
     expect(serviceLink("assistant", productionPlatformUrls)).toBeNull();
+    expect(serviceLink("constructor", productionPlatformUrls)).toBeNull();
     expect(serviceLink(null, productionPlatformUrls)).toBeNull();
   });
 });

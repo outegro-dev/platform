@@ -45,6 +45,8 @@ export const env = z
     SITE_URL: z.url().default("https://outegro.dev"),
     /** Public Battleship frontend: products link to it, buyers go back to it. */
     BATTLESHIP_URL: z.url().default("https://battleship.outegro.dev"),
+    /** Public Education frontend: products link to it, buyers go back to it. */
+    EDU_URL: z.url().default("https://edu.outegro.dev"),
     /** Public admin console, linked for users with a platform role. */
     ADMIN_URL: z.url().default("https://admin.outegro.dev"),
   })
@@ -56,5 +58,6 @@ export const platformUrls: PlatformUrls = {
   id: env.ID_URL,
   pay: env.APP_URL,
   battleship: env.BATTLESHIP_URL,
+  edu: env.EDU_URL,
   admin: env.ADMIN_URL,
 };

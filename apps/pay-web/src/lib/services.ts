@@ -12,6 +12,8 @@ import {
  */
 const registry: Record<string, { app: PlatformApp; shopPath: string }> = {
   battleship: { app: "battleship", shopPath: "/shop" },
+  // No shop page of its own: a purchase leads to the textbooks.
+  edu: { app: "edu", shopPath: "/" },
 };
 
 export type ServiceLink = { home: string; shop: string };
@@ -20,7 +22,9 @@ export function serviceLink(
   service: string | null | undefined,
   urls: PlatformUrls,
 ): ServiceLink | null {
-  const entry = service ? registry[service] : undefined;
+  // Own keys only: a service called "constructor" is just an unknown one.
+  const entry =
+    service && Object.hasOwn(registry, service) ? registry[service] : undefined;
   if (!entry) return null;
   return {
     home: platformHref(urls, entry.app, "/"),

@@ -68,6 +68,7 @@ export default defineConfig({
         PAYMENTS_API_URL: PLATFORM,
         // Only linked to, never opened by the tests.
         PAY_URL: "https://pay.fake.test",
+        EDU_URL: "https://edu.fake.test",
         ADMIN_URL: "https://admin.fake.test",
         CHECKOUT_ORIGINS: "https://checkout.fake.test",
         CLIENT_IP_SOURCE: "x-forwarded-for",

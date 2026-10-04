@@ -279,6 +279,49 @@ describe("reads", () => {
     const headers = (calls()[0] as Call)[1].headers as Record<string, string>;
     expect(headers.authorization).toBeUndefined();
   });
+
+  it("keeps every app's products, reading a period or kind it does not know as unknown", async () => {
+    const sold = (key: string, service: string, overrides = {}) => ({
+      key,
+      service,
+      feature: "books.all",
+      kind: "subscription",
+      periodicity: "MONTHLY",
+      graceDays: 3,
+      title: { en: key, ru: key },
+      description: { en: "", ru: "" },
+      prices: [
+        {
+          priceId: `${key}-rub`,
+          money: { minor: "5000", currency: "RUB", scale: 2 },
+        },
+      ],
+      ...overrides,
+    });
+    respond(200, {
+      checkoutEnabled: true,
+      products: [
+        sold("edu-weekly", "edu", { periodicity: "WEEKLY" }),
+        sold("edu-yearly", "edu", { periodicity: "PERIOD_YEAR" }),
+        sold("assistant-bundle", "assistant", { kind: "bundle" }),
+      ],
+    });
+    const result = await client().catalog();
+    expect(
+      result.ok &&
+        result.data.products.map((p) => [
+          p.key,
+          p.service,
+          p.kind,
+          p.periodicity,
+        ]),
+    ).toEqual([
+      ["edu-weekly", "edu", "subscription", "unknown"],
+      ["edu-yearly", "edu", "subscription", "PERIOD_YEAR"],
+      ["assistant-bundle", "assistant", "unknown", "MONTHLY"],
+    ]);
+    expect(logger.error).not.toHaveBeenCalled();
+  });
 });
 
 describe("cancelSubscription", () => {

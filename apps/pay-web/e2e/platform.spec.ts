@@ -16,6 +16,7 @@ import {
  */
 
 const BATTLESHIP = "https://battleship.fake.test";
+const EDU = "https://edu.fake.test";
 const ADMIN = "https://admin.fake.test";
 
 const menuButton = (page: Page) =>
@@ -61,6 +62,10 @@ test.describe("account menu", () => {
     await expect(item("Battleship, battleship.fake.test")).toHaveAttribute(
       "href",
       `${BATTLESHIP}/`,
+    );
+    await expect(item("Education, edu.fake.test")).toHaveAttribute(
+      "href",
+      `${EDU}/`,
     );
     await expect(item(`Account, ${new URL(FAKE).host}`)).toHaveAttribute(
       "href",
@@ -150,6 +155,32 @@ test.describe("apps behind the purchases", () => {
     }
     await expectAccessible(page, "subscriptions with app links");
   });
+
+  test("the catalog shows every app's products, even what it cannot name", async ({
+    page,
+  }) => {
+    await persona(page, { scenario: "empty", catalog: "future" });
+    await page.goto("/catalog");
+    const edu = page.getByRole("region", { name: "Education" });
+    await expect(
+      edu.getByRole("link", { name: "Open Education" }),
+    ).toHaveAttribute("href", `${EDU}/`);
+    // A period this build has no words for still reads as a subscription.
+    const books = edu.getByRole("article", { name: "All textbooks" });
+    await expect(books).toContainText("Subscription · Recurring");
+    await expect(books).toContainText("/ period");
+    // An app pay-web knows nothing about: named after its key, no link.
+    const unknown = page.getByRole("region", { name: "Assistant" });
+    await expect(
+      unknown.getByRole("article", { name: "Assistant Pro" }),
+    ).toBeVisible();
+    await expect(unknown.getByRole("link")).toHaveCount(0);
+    // The game's products are untouched.
+    await expect(
+      page.getByRole("region", { name: "Battleship" }).getByRole("article"),
+    ).toHaveCount(2);
+    await expectAccessible(page, "catalog with other apps");
+  });
 });
 
 test.describe("the way back to the app", () => {
@@ -176,12 +207,15 @@ test.describe("the way back to the app", () => {
     await expect(returnLink(page)).toHaveText("Вернуться в Морской бой");
   });
 
-  test("the account and the admin console are ways back too", async ({
+  test("the account, Education and the admin console are ways back too", async ({
     page,
   }) => {
     await persona(page);
     await page.goto(`/orders?return=${encodeURIComponent(`${FAKE}/account`)}`);
     await expect(returnLink(page)).toHaveText("Back to your account");
+    await page.goto(`/orders?return=${encodeURIComponent(`${EDU}/`)}`);
+    await expect(returnLink(page)).toHaveText("Back to Education");
+    await expect(returnLink(page)).toHaveAttribute("href", `${EDU}/`);
     await page.goto(`/orders?return=${encodeURIComponent(`${ADMIN}/`)}`);
     await expect(returnLink(page)).toHaveText("Back to the admin console");
   });

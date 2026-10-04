@@ -11,7 +11,13 @@ export { hasPlatformRole };
  * them. Each app passes its own configuration in; nothing here reads env.
  */
 
-export const platformApps = ["battleship", "id", "pay", "admin"] as const;
+export const platformApps = [
+  "battleship",
+  "edu",
+  "id",
+  "pay",
+  "admin",
+] as const;
 export type PlatformApp = (typeof platformApps)[number];
 
 /** Public origins of the apps and of the portfolio site (`site`). */
@@ -23,6 +29,7 @@ export const productionPlatformUrls: PlatformUrls = {
   id: "https://id.outegro.dev",
   pay: "https://pay.outegro.dev",
   battleship: "https://battleship.outegro.dev",
+  edu: "https://edu.outegro.dev",
   admin: "https://admin.outegro.dev",
 };
 
@@ -39,6 +46,7 @@ export type PlatformPage = keyof typeof platformPages;
 /** Where each app starts. */
 const homePaths: Record<PlatformApp | "site", string> = {
   battleship: "/",
+  edu: "/",
   id: "/account",
   pay: "/orders",
   admin: "/",
@@ -153,6 +161,7 @@ export const accountMenuMessages = {
     apps: "Apps",
     appNames: {
       battleship: "Battleship",
+      edu: "Education",
       id: "Account",
       pay: "Payments",
       admin: "Admin console",
@@ -176,6 +185,7 @@ export const accountMenuMessages = {
     apps: "Приложения",
     appNames: {
       battleship: "Морской бой",
+      edu: "Обучение",
       id: "Аккаунт",
       pay: "Платежи",
       admin: "Админка",
@@ -280,7 +290,7 @@ export function accountMenuModel({
     host: hostOf(urls[key]),
     current: key === current,
   });
-  const apps: PlatformApp[] = ["battleship", "id", "pay"];
+  const apps: PlatformApp[] = ["battleship", "edu", "id", "pay"];
   if (hasPlatformRole(user.roles)) apps.push("admin");
   const who = name ?? email;
   return {

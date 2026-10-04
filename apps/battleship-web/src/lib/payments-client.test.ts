@@ -131,6 +131,52 @@ describe("PaymentsClient", () => {
     ]);
   });
 
+  it("skips other apps' products unread: a period the game does not sell never breaks the shop", async () => {
+    respond(200, {
+      checkoutEnabled: true,
+      products: [
+        // Education, yearly: neither the period, the kind nor the currency
+        // is one the game sells.
+        {
+          ...product("edu-all-books", "books.all", "edu"),
+          kind: "bundle",
+          periodicity: "PERIOD_YEAR",
+          prices: [
+            {
+              priceId: "edu-all-books-gbp",
+              version: 1,
+              money: { minor: "499", currency: "GBP", scale: 2 },
+            },
+          ],
+        },
+        product("battleship-premium", "premium"),
+        {
+          ...product("assistant-pro", "pro", "assistant"),
+          periodicity: "PERIOD_90_DAYS",
+        },
+        product("battleship-silver-fleet", "cosmetics.silver-fleet"),
+      ],
+    });
+    const catalog = await client().catalog("en");
+    expect(catalog.status).toBe("ok");
+    expect(catalog.checkoutEnabled).toBe(true);
+    expect(catalog.products.map((p) => [p.key, p.periodicity])).toEqual([
+      ["battleship-premium", "MONTHLY"],
+      ["battleship-silver-fleet", "ONE_TIME"],
+    ]);
+  });
+
+  it("still holds the game's own products to its contract", async () => {
+    respond(200, {
+      checkoutEnabled: true,
+      products: [
+        product("battleship-silver-fleet", "cosmetics.silver-fleet"),
+        { ...product("battleship-premium", "premium"), periodicity: "WEEKLY" },
+      ],
+    });
+    expect((await client().catalog("en")).status).toBe("unavailable");
+  });
+
   it("passes on that purchases are not open yet", async () => {
     respond(200, {
       checkoutEnabled: false,

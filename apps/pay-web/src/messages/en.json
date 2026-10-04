@@ -20,6 +20,7 @@
     "label": "Back to the app you came from",
     "to": {
       "battleship": "Back to Battleship",
+      "edu": "Back to Education",
       "id": "Back to your account",
       "admin": "Back to the admin console"
     }
@@ -307,7 +308,8 @@
     "unknown": "Recurring"
   },
   "services": {
-    "battleship": "Battleship"
+    "battleship": "Battleship",
+    "edu": "Education"
   },
   "auth": {
     "errorMetaTitle": "Sign-in",

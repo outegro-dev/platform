@@ -15,7 +15,7 @@ export const RETURN_COOKIE = "og_return";
 export const RETURN_MAX_AGE_SECONDS = 2 * 60 * 60;
 
 /** Apps a buyer may come from, the only places "Back to …" leads. */
-const returnApps: readonly PlatformApp[] = ["battleship", "id", "admin"];
+const returnApps: readonly PlatformApp[] = ["battleship", "edu", "id", "admin"];
 
 const appByOrigin = new Map(
   returnApps.map((app) => [new URL(platformUrls[app]).origin, app] as const),

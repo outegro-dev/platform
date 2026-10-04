@@ -14,6 +14,7 @@ import { signIn, uniqueEmail } from "./support";
 const ID = "http://localhost:3002";
 const PAY = "https://pay.fake.test";
 const BATTLESHIP = "https://battleship.fake.test";
+const EDU = "https://edu.fake.test";
 const ADMIN = "https://admin.fake.test";
 const back = encodeURIComponent(`${ID}/account`);
 
@@ -69,6 +70,10 @@ test("the account menu names the account and links its pages, payments and apps"
     "href",
     `${BATTLESHIP}/`,
   );
+  await expect(item("Education, edu.fake.test")).toHaveAttribute(
+    "href",
+    `${EDU}/`,
+  );
   await expect(item("Account, localhost:3002, you are here")).toHaveAttribute(
     "href",
     "/account",
@@ -106,6 +111,11 @@ test("the overview leads to the apps and to purchases on payments", async ({
     "href",
     `${BATTLESHIP}/`,
   );
+  await expect(apps.getByRole("link", { name: /Education/ })).toHaveAttribute(
+    "href",
+    `${EDU}/`,
+  );
+  await expect(apps).toContainText("edu.fake.test");
   await expect(apps.getByRole("link", { name: /Admin console/ })).toHaveCount(
     0,
   );
@@ -154,6 +164,9 @@ test("in Russian, and signing out from the menu", async ({ page, context }) => {
       name: "Ваши приложения",
     }),
   ).toBeVisible();
+  await expect(
+    page.getByTestId("your-apps").getByRole("link", { name: /Обучение/ }),
+  ).toHaveAttribute("href", `${EDU}/`);
   await menuButton(page).click();
   const menu = page.getByRole("menu");
   for (const name of ["Профиль", "Безопасность", "Уведомления"])

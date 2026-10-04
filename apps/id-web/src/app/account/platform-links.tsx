@@ -10,6 +10,7 @@ import type { Icon } from "@phosphor-icons/react";
 import {
   AnchorIcon,
   ArrowUpRightIcon,
+  BookOpenTextIcon,
   ReceiptIcon,
   WrenchIcon,
 } from "@phosphor-icons/react/dist/ssr";
@@ -31,6 +32,11 @@ export async function PlatformLinks({ roles }: { roles: readonly string[] }) {
       key: "battleship",
       href: platformHref(platformUrls, "battleship"),
       Icon: AnchorIcon,
+    },
+    {
+      key: "edu",
+      href: platformHref(platformUrls, "edu"),
+      Icon: BookOpenTextIcon,
     },
   ];
   if (hasPlatformRole(roles))
@@ -111,7 +117,8 @@ export async function PlatformLinks({ roles }: { roles: readonly string[] }) {
 /**
  * The same two panels while the profile loads: the headings are known, the
  * app rows (the admin console depends on the roles) and the links are not.
- * Without it the loaded page grows by both panels at once.
+ * A placeholder row stands for each app every account has (Battleship and
+ * Education). Without it the loaded page grows by both panels at once.
  */
 export function PlatformLinksSkeleton() {
   const t = useTranslations("platform");
@@ -124,22 +131,24 @@ export function PlatformLinksSkeleton() {
             <p className="muted small">{t("appsLead")}</p>
           </div>
           <ul className="app-links">
-            <li className="app-link">
-              <Skeleton className="size-11 rounded-md" />
-              <span className="app-link-text">
-                <span className="app-link-name">
-                  <SkeletonText className="w-28" />
+            {[0, 1].map((row) => (
+              <li key={row} className="app-link">
+                <Skeleton className="size-11 rounded-md" />
+                <span className="app-link-text">
+                  <span className="app-link-name">
+                    <SkeletonText className="w-28" />
+                  </span>
+                  <span className="muted small">
+                    <SkeletonText className="w-full max-w-56" />
+                    <br />
+                    <SkeletonText className="w-24" />
+                  </span>
+                  <span className="mono small">
+                    <SkeletonText className="w-36" />
+                  </span>
                 </span>
-                <span className="muted small">
-                  <SkeletonText className="w-full max-w-56" />
-                  <br />
-                  <SkeletonText className="w-24" />
-                </span>
-                <span className="mono small">
-                  <SkeletonText className="w-36" />
-                </span>
-              </span>
-            </li>
+              </li>
+            ))}
           </ul>
         </section>
       </Surface>
