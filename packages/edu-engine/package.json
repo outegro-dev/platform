@@ -1,5 +1,5 @@
 {
-  "name": "@outegro/contracts",
+  "name": "@outegro/edu-engine",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,18 +7,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./battleship": {
-      "types": "./dist/battleship.d.ts",
-      "default": "./dist/battleship.js"
-    },
-    "./access": {
-      "types": "./dist/access.d.ts",
-      "default": "./dist/access.js"
-    },
-    "./edu": {
-      "types": "./dist/edu.d.ts",
-      "default": "./dist/edu.js"
     }
   },
   "files": [
@@ -31,7 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "@outegro/contracts": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
