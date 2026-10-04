@@ -21,7 +21,10 @@ export default defineConfig({
     // One pre-bundled file instead of thousands of icon modules per run.
     deps: {
       optimizer: {
-        ssr: { enabled: true, include: ["@phosphor-icons/react"] },
+        ssr: {
+          enabled: true,
+          include: ["@phosphor-icons/react", "@phosphor-icons/react/dist/ssr"],
+        },
       },
     },
   },

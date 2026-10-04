@@ -32,9 +32,9 @@ Display-заголовки 44–158 px, line-height 0.94–1.0, плотный t
 
 Единый пакет для всех фронтендов outegro.dev (лендинг, id., pay., admin., будущие приложения). Подробности подключения — [packages/ui/README.md](packages/ui/README.md).
 
-- Токены в `src/styles/index.css`: светлый тон по умолчанию и инверсный `[data-tone="dark"]` (им переключаются тёмные секции и шапка над ними). В приложениях — только токены, никаких сырых hex.
+- Токены в `src/styles/index.css`: светлый тон по умолчанию и инверсный `[data-tone="dark"]` (им переключаются тёмные секции и шапка над ними). Общие для приложений: статусы `--ok` / `--warn` / `--danger` / `--info` и их мягкие заливки `--*-soft`, тень карточек `--shadow-soft`. В приложениях — только токены, никаких сырых hex.
 - Утилиты: `.og-container` (ширина и поля 56/32/20 px), `.og-glass` (стекло с fallback для reduced transparency и без backdrop-filter), `.og-eyebrow`, `.og-accent`.
-- Компоненты: Button (primary / secondary / outline / glass / ghost / destructive / link; sm / md / lg / icon), Dialog, Accordion, Input, Label, Badge, Surface, Container, LanguageSwitch.
+- Компоненты: Button (primary / secondary / outline / glass / ghost / destructive / link; sm / md / lg / icon; у sm и icon-sm невидимая зона нажатия до 44 px), Dialog, Accordion, Tabs (line / pill), ToggleGroup (chip / segmented), Progress, Notice и StatePanel, CopyButton, Input, Label, FormMessage, Badge, Surface, Skeleton, Spinner, Container, LanguageSwitch, AccountMenu.
 - Radix отвечает за клавиатуру и фокус, иконки Phosphor. Focus — 2 px outline с offset 5 px. Минимальная цель — 44 px.
 - Галерея: `/design-system` (noindex).
 

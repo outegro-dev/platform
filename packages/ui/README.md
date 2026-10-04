@@ -35,7 +35,7 @@
 
 | Компонент | Назначение |
 |---|---|
-| Button | primary / secondary / outline / glass / ghost / destructive / link; размеры sm / md / lg / icon / icon-sm; `asChild` для ссылок; `pending` + `pendingLabel` — спиннер поверх сохранённой подписи: ширина не меняется, `aria-busy`, фокус остаётся (aria-disabled) |
+| Button | primary / secondary / outline / glass / ghost / destructive / link; размеры sm / md / lg / icon / icon-sm; `asChild` для ссылок; `pending` + `pendingLabel` — спиннер поверх сохранённой подписи: ширина не меняется, `aria-busy`, фокус остаётся (aria-disabled); `pending` вешает обработчик клика, поэтому — только в клиентском компоненте. Размеры меньше 44 px (sm — 40, icon-sm — 36) выглядят как прежде, а невидимый `::after` доводит цель касания до 44 px |
 | Dialog | модальное окно; `closeLabel` — переведённое имя кнопки закрытия |
 | Accordion | раскрывающиеся списки |
 | Input, Label | поля форм; фокус и ошибка меняют цвет рамки и тень, не её толщину |
@@ -47,6 +47,20 @@
 | Container | общая ширина страницы |
 | LanguageSwitch | презентационный переключатель; к cookie его подключает `@outegro/i18n/client` (`useLocaleSwitch`) |
 | AccountMenu | меню аккаунта и платформы в шапке приложения: кто вошёл, аккаунт на id., покупки и подписки на pay., другие приложения (админка — только с платформенной ролью), портфолио и выход из этого приложения; без входа — кнопка «Войти» |
+| Tabs | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` (Radix): `variant` line / pill, `activationMode` automatic / manual; вкладки 44 px, ряд прокручивается сам (на 360 px — без прокрутки страницы и не расширяя родителей) и держит выбранную вкладку на виду; `forceMount` у панели сохраняет её состояние; `tabsTriggerVariants` — тот же вид для навигации ссылками (`aria-current="page"`) |
+| ToggleGroup | `ToggleGroup`, `ToggleGroupItem` (Radix): `variant` chip (переносящиеся «пилюли», фильтры) / segmented (единый переключатель), `size` sm / md; `type="single"` — radiogroup, выбор не снимается повторным нажатием (`deselectable`, чтобы разрешить), `type="multiple"` — toolbar с aria-pressed; цель касания 44 px при любом размере |
+| Progress | полоса прогресса (Radix): `value`, `max`, обязательное имя (`label` или `aria-labelledby`), `valueText` → aria-valuetext, `tone` accent / ok (accent можно перекрасить токеном: `className="[--progress-fill:var(--book-accent)]"`), `size` sm / md / lg; значения за пределами [0, max] обрезаются; заливка двигается transform, при reduced motion — без анимации |
+| Notice | встроенное сообщение: `tone` neutral / info / success / warning / danger с иконкой тона (aria-hidden), `title`, текст, `actions`; `live="polite"` → role=status, `"assertive"` → role=alert |
+| StatePanel | состояние раздела (пусто, ошибка, недоступно, офлайн): иконка, заголовок с уровнем `headingLevel`, `description`, `actions`, `tone`, `size` sm / md, `as` section / div / main, `live`; по центру в зарезервированной высоте |
+| CopyButton | копирование с результатом на месте: `value` (строка или функция), `label` / `copiedLabel` / `failedLabel` от приложения, `variant` / `size` кнопки; ширина не меняется, итог объявляется вежливо, через ~2 с возвращается; отказ буфера обмена показывает `failedLabel`. Без React: `copyText(value)` → `Promise<boolean>` |
+
+## Статусы и тени
+
+| Токен | Утилиты | Назначение |
+|---|---|---|
+| `--ok`, `--warn`, `--danger`, `--info` | `text-ok`, `text-warn`, `text-danger`, `text-info` | цвет текста и иконок состояния: AA на surface, background, secondary и своей заливке в обоих тонах (в тёмном тоне — свои, светлее) |
+| `--ok-soft`, `--warn-soft`, `--danger-soft`, `--info-soft` | `bg-ok-soft` и т.д. | мягкая заливка состояния |
+| `--shadow-soft` | `shadow-soft` | тень карточек и панелей: светлая кромка сверху и мягкая тень |
 
 ## Меню аккаунта и ссылки между приложениями
 
@@ -56,7 +70,7 @@
 <AccountMenu
   user={me && { name: me.displayName, email: me.email, roles: me.roles }} // null — «Войти»
   current="battleship"              // свои страницы — относительные ссылки
-  urls={platformUrls}               // { site, id, pay, battleship, admin }
+  urls={platformUrls}               // { site, id, pay, battleship, edu, admin }
   locale={locale}                   // "en" | "ru", из локали приложения
   signInHref="/auth/sign-in?returnTo=%2F"
   signOut="/auth/sign-out"          // POST-маршрут или server action

@@ -25,6 +25,14 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --color-border: var(--border);
   --color-input: var(--border);
   --color-ring: var(--ring);
@@ -37,6 +45,7 @@
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
+  --shadow-soft: var(--shadow-soft);
   --ease-out: var(--ease-out);
 }
 
@@ -76,6 +85,30 @@
   --warning: #8a5a00;
   --live: #2f8f46;
   --selection: #c9d1c1;
+
+  /*
+   * Status inks: text and icons of a state (Notice, StatePanel, results),
+   * AA on surface, background, secondary and their own soft fill in both
+   * tones. success and destructive have no dark values (fills and buttons
+   * rely on them), so the dark tone sets its own inks below.
+   * Soft fills: quiet tinted surfaces for the same states, stored as the
+   * exact mix of the ink over surface (10 %, danger 8 %) — plain hex, so no
+   * color-mix fallback is needed.
+   */
+  --ok: var(--success);
+  --warn: var(--warning);
+  --danger: var(--destructive);
+  --info: #2f5a78;
+  --ok-soft: #e6ebe3;
+  --warn-soft: #efeade;
+  --danger-soft: #f4e9e5;
+  --info-soft: #e6eaea;
+
+  /*
+   * Elevation of cards and panels: a lit top edge (surface at 80 %) and a
+   * soft drop (foreground at 30 %).
+   */
+  --shadow-soft: 0 1px 0 #fafaf7cc inset, 0 18px 40px -26px #1718174d;
 
   --glass-bg: linear-gradient(135deg, #ffffffa6, #ffffff38);
   --glass-border: #ffffffd9;
@@ -123,6 +156,17 @@
   --live: #8fd694;
   --warning: #e0b25c;
   --selection: #4b5748;
+  /* Inks lighter than the light tone's, fills at 14 % over the dark surface. */
+  --ok: #8fd694;
+  --warn: var(--warning);
+  --danger: #f2877a;
+  --info: #9cc3dd;
+  --ok-soft: #2d392c;
+  --warn-soft: #383424;
+  --danger-soft: #3b2e28;
+  --info-soft: #2f3636;
+  /* A faint lit edge (foreground at 8 %) and a deeper drop (black at 45 %). */
+  --shadow-soft: 0 1px 0 #f2f2ef14 inset, 0 18px 40px -26px #00000073;
   --glass-bg: linear-gradient(135deg, #ffffff1f, #ffffff08);
   --glass-border: #ffffff2e;
   --glass-shadow:
