@@ -1,0 +1,23 @@
+{
+  "$comment": "Books edu-backend imports with its migrations. initialStatus and initialRule apply only when a book is imported for the first time; afterwards the admin console owns them and imports change content only.",
+  "books": [
+    {
+      "file": "books/nodejs-internals.json",
+      "initialStatus": "published",
+      "initialRule": {
+        "mode": "grant",
+        "features": ["library", "book.nodejs-internals"],
+        "previewChapters": 1
+      }
+    },
+    {
+      "file": "books/sql-internals.json",
+      "initialStatus": "published",
+      "initialRule": {
+        "mode": "grant",
+        "features": ["library", "book.sql-internals"],
+        "previewChapters": 1
+      }
+    }
+  ]
+}
