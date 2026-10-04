@@ -12,7 +12,8 @@
       "!**/node_modules",
       "!**/next-env.d.ts",
       "!**/test-results",
-      "!**/playwright-report"
+      "!**/playwright-report",
+      "!apps/edu-backend/content/books"
     ]
   },
   "formatter": {

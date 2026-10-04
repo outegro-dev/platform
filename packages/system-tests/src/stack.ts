@@ -23,25 +23,27 @@ import { FakeLava } from "./fake-lava.js";
 import { TcpProxy } from "./proxy.js";
 
 /**
- * The platform's four backends as built (`dist/main.js`, the files the
+ * The platform's five backends as built (`dist/main.js`, the files the
  * images run), on real PostgreSQL, Valkey, RabbitMQ and an SMTP catcher,
  * with Lava replaced by FakeLava. Each service gets the variables of its
  * `.env.example`, local addresses swapped for the containers' ports and
  * secrets generated for this run.
  */
 const root = fileURLToPath(new URL("../../../", import.meta.url));
-type Service = "auth" | "notifications" | "payments" | "battleship";
+type Service = "auth" | "notifications" | "payments" | "battleship" | "edu";
 const dirs: Record<Service, string> = {
   auth: "apps/auth-backend",
   notifications: "apps/notifications-backend",
   payments: "apps/payments-backend",
   battleship: "apps/battleship-backend",
+  edu: "apps/edu-backend",
 };
 const examplePorts: Record<Service, number> = {
   auth: 4001,
   notifications: 4002,
   payments: 4003,
   battleship: 4004,
+  edu: 4005,
 };
 
 const freePort = () =>
@@ -114,6 +116,7 @@ export async function startStack() {
     notifications: await freePort(),
     payments: await freePort(),
     battleship: await freePort(),
+    edu: await freePort(),
   };
   const url = (service: Service) => `http://127.0.0.1:${ports[service]}`;
   const pgHost = `${postgres.getHost()}:${postgres.getPort()}`;
@@ -175,6 +178,7 @@ export async function startStack() {
     notifications: [],
     payments: [],
     battleship: [],
+    edu: [],
   };
   const processes = new Map<Service, ChildProcess>();
   const envs = {} as Record<Service, Record<string, string>>;
@@ -219,6 +223,7 @@ export async function startStack() {
   await startService("auth");
   await startService("payments");
   await startService("battleship");
+  await startService("edu");
 
   return {
     url,

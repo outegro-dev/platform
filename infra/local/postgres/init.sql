@@ -10,3 +10,5 @@ CREATE ROLE admin LOGIN PASSWORD 'admin';
 CREATE DATABASE admin OWNER admin;
 CREATE ROLE battleship LOGIN PASSWORD 'battleship';
 CREATE DATABASE battleship OWNER battleship;
+CREATE ROLE edu LOGIN PASSWORD 'edu';
+CREATE DATABASE edu OWNER edu;
