@@ -38,11 +38,11 @@ Grant может прийти впервые сразу в state `revoked` (aggr
 | identity.user.contact.changed.v1 | Identity | userId, email nullable, emailVerified | Notifications и Payments (email покупателя для invoice и отмены подписки в Lava); остальные события без PII |
 | identity.session.revoked.v1 | Identity | userId, sessionId, reason | Admin/audit |
 | notifications.intent.requested.v1 | Любой сервис (в свой exchange) | sourceEventId, templateKey, category, recipient.userId, locale?, channels?, data | Notifications |
-| identity.user.status.changed.v1 | Identity | userId, status, accessVersion | Access projections/Admin/Payments |
-| identity.role.binding.changed.v1 | Identity | bindingId, userId, roleKey, scope, state, accessVersion | Admin/cache invalidation/Payments (accessVersion для admin-команд) |
+| identity.user.status.changed.v1 | Identity | userId, status, accessVersion | Access projections/Admin/Payments/Education (блокировка и удаление читателя) |
+| identity.role.binding.changed.v1 | Identity | bindingId, userId, roleKey, scope, state, accessVersion | Admin/cache invalidation/Payments (accessVersion для admin-команд)/Education (право `edu.read` сотрудников, accessVersion) |
 | billing.payment.confirmed.v1 | Payments | paymentId, orderId, userId, money, confirmedAt | Notifications/Admin |
 | billing.subscription.changed.v1 | Payments | subscriptionId, userId, state, paidUntil, autoRenew | Notifications/Admin |
-| billing.grant.changed.v1 | Payments | См. пример | Identity/Admin/future apps |
+| billing.grant.changed.v1 | Payments | См. пример | Identity/Admin/Battleship (`service = battleship`)/Education (`service = edu`, очередь `edu.billing-grants`) |
 | billing.refund.recorded.v1 | Payments | refundId, paymentId nullable until match, money, state | Admin/Notifications после verified match |
 | billing.reconciliation.issue.v1 | Payments | issueId, kind, severity, relatedIds | Admin/ops |
 | notifications.delivery.changed.v1 | Notifications | deliveryId, intentId, userId, channel, state | Admin |

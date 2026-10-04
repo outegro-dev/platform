@@ -36,6 +36,8 @@
 | `ghcr-pull` | outegro | владелец: classic PAT `read:packages` |
 | `hermes-telegram` | agents | владелец: бот Hermes, allowlist владельца |
 | `platform-internal`, `auth-signing`, `pg-auth`, `pg-notifications`, `pg-payments`, `pg-battleship`, `valkey`, `rabbitmq`, `telegram-webhook` | outegro | сгенерированы на сервере один раз |
+| `pg-edu` | outegro | генерируется на сервере один раз перед первой выкаткой Обучения ([edu-rollout.md](edu-rollout.md)) |
+| `edu-assist` | outegro | `MINIMAX_API_KEY` ИИ-помощника Обучения: ключ владельца (тот же, что в work-finder) через stdin `secrets.sh`; необязательный — без него помощник выключен ([edu-rollout.md](edu-rollout.md)) |
 
 У владельца в менеджере паролей: ключ шифрования K3s и приватный ключ Sealed Secrets. Без них секреты не восстановить на новом сервере.
 

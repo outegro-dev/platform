@@ -61,6 +61,10 @@ Service: stable key, displayName, environment, publicUrl, enabled, maintenance, 
 | Replay доменного события | Да | Только delivery retry | Только billing scope | Нет | По типам и лимитам |
 | Сервисные flags | Да | Нет | Только checkout pause | Нет | Разрешённый набор |
 | Audit | Да | Собственные действия | Финансовый scope | Да | Операционный scope |
+| Обучение: книги, читатели, аудит (`edu.read`) | Да | Да | Нет | Нет | Нет |
+| Обучение: статус и доступ книги (`edu.manage`) | Да | Нет | Нет | Нет | Нет |
+
+Роль `edu_editor` (Редактор учебников) — `edu.read` и `edu.manage`, без доступа к пользователям и деньгам ([глава 17](17-education.md)).
 
 Роль — набор permissions, а не набор if в UI. Проверка выполняется повторно на доменном backend. Admin BFF не пересылает произвольный user-provided actorId. Делегированная команда несёт проверенный actor context, reason, scope и correlation; сервис проверяет machine identity и право человека.
 

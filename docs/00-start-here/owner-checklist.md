@@ -34,7 +34,7 @@
 
    | Тип | Имя | Значение |
    |---|---|---|
-   | A | `@`, `www`, `id`, `pay`, `admin`, `hooks` | IPv4 сервера |
+   | A | `@`, `www`, `id`, `pay`, `admin`, `hooks`, `battleship`, `edu` | IPv4 сервера |
 
    AAAA и CAA не нужны: IPv6 для посетителей и сертификаты на своей стороне Cloudflare обеспечивает сам. Для SSH записи нет — подключение по IP.
 5. **Rules → Redirect Rules → Create rule**: шаблон «Redirect from WWW to root» или вручную `https://www.outegro.dev/*` → `https://outegro.dev/${1}`, 301, Preserve query string.
@@ -118,6 +118,8 @@
 | Платежи (6) | аккаунт продавца lava.top, верификация, продукты и подписки в кабинете, тестовый сценарий | lava.top → кабинет → API | `LAVA_API_KEY`; вебхук `https://hooks.outegro.dev/lava` с `X-Api-Key` (значение генерирую я) |
 | Мониторинг | UptimeRobot или Better Stack, бесплатно | их сайт | мониторы `https://outegro.dev/health` и `https://id.outegro.dev/health` после деплоя |
 | Hermes (8) | отдельный бот, группа с темами, вход в ChatGPT Plus | @BotFather, Telegram | по карточкам H-01…H-04 |
+| Обучение (глава 17) | запись `edu` в Cloudflare (Proxied); секреты `pg-edu` и `edu-assist` (ключ MiniMax из work-finder) на сервере и их запечатка; выкатка в два шага | [edu-rollout.md](../06-operations/edu-rollout.md) | `MINIMAX_API_KEY` — только через stdin `secrets.sh`, в репозиторий не попадает |
+| Продажа учебников | решить: подписка «Библиотека» (`edu-library`, feature `library`) и/или покупка книги (`edu-book-<slug>`, feature `book.<slug>`); цены RUB/USD/EUR, период, `graceDays`; оффер в кабинете lava.top | lava.top → продукты; затем запись в `apps/payments-backend/src/domain/catalog.ts` | id оффера Lava; до решения доступ выдаётся вручную в админке |
 
 ## 8. Сводка переменных
 

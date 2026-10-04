@@ -19,6 +19,8 @@
 | `apps/battleship-web` (3005) | MobX-сторы, GameSocket, расстановка, бой, лидерборд, профиль, магазин, EN/RU; на главной доска играет бой; легенда доски, отметка последнего выстрела, понятные состояния хода | 115 unit + 84 e2e |
 | `apps/pay-web` (3003) | покупки, страница возврата с Lava, подписки, каталог; «уже ваше» по коду `ALREADY_OWNED` | 119 unit + 32 e2e |
 | `apps/admin-web` (3004) | операторская консоль; пустые состояния внутри карточек; вход в Grafana (`/api/grafana/auth`, право `monitoring.read`: owner — Admin, остальные — Viewer) | 125 unit + 154 e2e |
+| `apps/edu-backend` (4005) | Обучение ([глава 17](../01-specification/chapters/17-education.md), [ADR-010](../03-decisions/adr/010-education.md)): книги как документы, импорт в Job миграций, доступ по правилу книги и грантам `edu`, прогресс читателя (результат упражнения решает сервер), ИИ-помощник на MiniMax, admin API; ветка `feat/edu`, не выкачено | 127 тестов |
+| `apps/edu-web` (3006) | читалка: библиотека, главы, интерактив (квизы, порядок, раскладка, карточки, колода, симулятор event loop, SQL-песочница в Web Worker), ИИ-помощник, MobX-сторы, EN/RU-оболочка; правила — `packages/edu-engine`; ветка `feat/edu` | 135 unit + 91 e2e |
 | Production | outegro.dev, id., battleship., pay., admin., hooks. — K3s за Cloudflare; Argo CD; бэкапы в R2 (восстановление проверено: 81 с); Prometheus, Loki, Grafana (`admin.outegro.dev/grafana`); watchdog с алертами в Telegram; Hermes под управляемой политикой | CI → GHCR → gitops → Argo |
 
 ## Развернуть на новой машине
@@ -37,8 +39,8 @@
    pnpm build
    ```
 
-   Миграции: `node --env-file=.env dist/db/migrate.js` в `apps/auth-backend`, `notifications-backend`, `payments-backend`, `battleship-backend` (базы и роли создаёт `infra/local/postgres/init.sql` на чистом томе).
-4. Порты: auth 4001, notifications 4002, payments 4003, battleship 4004; id-web 3002, pay-web 3003, admin-web 3004, battleship-web 3005, лендинг 3000. Почта — http://localhost:8025.
+   Миграции: `node --env-file=.env dist/db/migrate.js` в `apps/auth-backend`, `notifications-backend`, `payments-backend`, `battleship-backend`, `edu-backend` (у edu-backend тот же скрипт импортирует книги из `content/`; базы и роли создаёт `infra/local/postgres/init.sql` на чистом томе — на старом томе базу `edu` создать вручную или `pnpm infra:reset`).
+4. Порты: auth 4001, notifications 4002, payments 4003, battleship 4004, edu 4005; id-web 3002, pay-web 3003, admin-web 3004, battleship-web 3005, edu-web 3006, лендинг 3000. Почта — http://localhost:8025. Клиент `edu-web` в `OAUTH_CLIENTS` локального `apps/auth-backend/.env` нужно дописать вручную (из `.env.example`): `pnpm env:local` не меняет существующие значения, а `--force` перегенерирует все локальные секреты. ИИ-помощник Обучения локально выключен; чтобы включить — `ASSIST_ENABLED=true` и `MINIMAX_API_KEY` (ключ владельца, тот же, что в work-finder) в `apps/edu-backend/.env`, каждый ответ — платный вызов MiniMax.
 5. Проверки: `pnpm lint`, `pnpm typecheck`, `pnpm test` (нужен Docker), e2e каждого приложения — `pnpm --filter @outegro/<app> test:e2e`.
 
 ## Правила работы
@@ -79,12 +81,31 @@
 - id-web: вёрстка профиля больше не прыгает при загрузке.
 - Hermes: восстановлен рабочий `config.yaml`, модель `gpt-6.1-sol`.
 
+## Сделано 03.10: Обучение (ветки `feat/edu`, не слито)
+
+- Учебники владельца «Node.js изнутри» и «SQL изнутри» (артефакты claude.ai) перенесены в типизированный документ (`@outegro/contracts/edu`, конвертер `apps/edu-backend/tools/import-artifact.mjs`) и встроены в платформу: `edu-backend` + `edu-web` на `edu.outegro.dev`, раздел «Обучение» в админке, Education в меню аккаунта, «Ваших приложениях» на id и сервисах pay.
+- Доступ: правило книги (`free` / `signed_in` / `grant` с бесплатными главами), гранты Payments `edu/library` и `edu/book.<slug>`, ручная выдача из карточки пользователя; право `edu.read`/`edu.manage`, роль `edu_editor`. Продукта в каталоге нет до решения владельца о цене.
+- Магазин Морского боя больше не падает от чужих продуктов каталога с незнакомым периодом.
+- Выкатка — [edu-rollout.md](../06-operations/edu-rollout.md); отчёт — [edu-build](../09-evidence/edu-build/report.md).
+
+## Сделано 04.10: Обучение основательнее (те же ветки `feat/edu`)
+
+- `packages/edu-engine`: правила Обучения для браузера и сервера; результат упражнения решает edu-backend (`POST …/exercises/:id/attempts`, SQL — по отпечатку эталона, `Idempotency-Key`).
+- ИИ-помощник вместо помощников Claude из оригинала: «Объясни иначе», «Объясни своими словами» с оценкой, подсказка к SQL-задаче; MiniMax только из edu-backend, лимит 30 запросов на читателя в сутки, кэш, метрики и алерт `EduAssistantFailing`; ключ — секрет `edu-assist` ([§17.11](../01-specification/chapters/17-education.md#1711-ии-помощник)).
+- edu-web приведён к правилам платформы (MobX-сторы, компоненты кита, тексты в сообщениях, шапка и ошибки как в id и pay) и к паритету с оригинальными страницами; в кит добавлены Tabs, ToggleGroup, Progress, Notice/StatePanel, CopyButton и общие токены статусов и тени.
+
 ## Найдено по ходу (follow-up)
 
-Открытых нет.
+- nest-common: слишком большое тело запроса отвечает 500 во всех сервисах (нужен 413 или 400); ожидаемые 503 пишутся как ошибки.
+- UI-кит: первая загрузка русской главы сдвигает вёрстку на 0,034 при замене кириллического шрифта (цель 0,02).
+- admin-web: инлайн-стиль у ссылки «назад» на пяти страницах других разделов; тень и мягкие цвета статусов pay-web и admin-web ещё свои.
+- admin-web: списки грантов Payments (вкладка «Доступы к продуктам», `/payments/grants`, страница заказа) показывают записанное состояние, поэтому запланированный или истёкший грант читается как «Активен» — можно переиспользовать `grantPhase` из `lib/grants.ts`; у действия аудита `passkey.revoked` нет подписи; `ActionDialog` без офлайн-состояния (введённая причина теряется).
+- edu-backend: старые ответы в `assist_cache` (прошлые версии книг и моделей) не удаляются.
+- Обучение: дашборд админки («Требует внимания») не показывает, что помощник приостановлен общим лимитом (видно на сводке «Обучения» и по алерту); удалённые аккаунты выпадают из сегодняшнего счёта общего лимита (нужен суточный агрегат); читатель, обрывающий ответы до первого текста, не тратит свой лимит (общий лимит это ограничивает).
 
 ## Нужно от владельца
 
+- Обучение: DNS-запись `edu` (Proxied), секреты `pg-edu` и `edu-assist` (ключ MiniMax для ИИ-помощника) на сервере и их запечатка, выкатка в два шага ([edu-rollout.md](../06-operations/edu-rollout.md)); решение о продаже учебников (цена, период, оффер Lava).
 - UptimeRobot (бесплатно): 5 мониторов на `/health` сайтов (OPS-05).
 - Lava: возврат на реальном аккаунте (PAY-12); отмена подписки проверена 01.10 — Lava подтвердила, доступ до 29.10.
 - Hermes работает только для владельца в его группе (решение 01.10, проверки с чужих аккаунтов не нужны — [отчёт H-04](../09-evidence/H-04/20261001-0530-prod/report.md)). Сделано: вопрос про инструменты, две темы (раздельная память). Осталось: попытка заставить прочитать ключи (H-04-03). `/sethome` не использовать: в v2026.9.24 он переписывает весь `config.yaml`.

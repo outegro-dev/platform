@@ -13,5 +13,6 @@
 | [007](adr/007-wallet.md) | Внутренний wallet | deferred: user decision | W-01 только после выбора |
 | [008](adr/008-notification-auth-path.md) | Приватная доставка login code | accepted: внутренний HTTP-вызов | N-02 |
 | [009](adr/009-backend-stack.md) | Стек backend: TS 6, Nest 12, Zod, Drizzle, Valkey, pino | accepted: owner 28.09.2026 | BE-01…BE-07 |
+| [010](adr/010-education.md) | Обучение: учебники как типизированные документы, доступ по грантам | accepted: owner 03.10.2026; продажа — open input | [глава 17](../01-specification/chapters/17-education.md) |
 
 Новые решения именовать последовательно, использовать [шаблон ADR](../07-templates/adr.md). [Открытые inputs](open-inputs.md) — единственный список того, что понадобится от владельца/внешнего провайдера.
