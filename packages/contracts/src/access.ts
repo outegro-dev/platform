@@ -27,6 +27,10 @@ export const permissions = [
   "events.replay",
   "battleship.read",
   "battleship.moderate",
+  /** Education: books, access rules, readers' progress; staff preview of every book. */
+  "edu.read",
+  /** Education: publish, archive and change who reads a book, with a reason. */
+  "edu.manage",
   /**
    * Grafana behind the console's sign-in (admin.outegro.dev/grafana/):
    * an owner opens it as Admin, anyone else with this permission as Viewer.
@@ -45,8 +49,11 @@ export const platformRoles = {
     "notifications.retry",
     "battleship.read",
     "battleship.moderate",
+    "edu.read",
   ],
   billing_operator: ["billing.read", "subscriptions.cancel"],
+  /** Runs the textbooks at edu.outegro.dev; reading access itself is a Payments grant. */
+  edu_editor: ["edu.read", "edu.manage"],
   auditor: ["audit.read", "billing.read", "monitoring.read"],
   service_operator: [
     "services.read",

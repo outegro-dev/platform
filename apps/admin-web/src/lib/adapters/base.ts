@@ -82,7 +82,7 @@ export abstract class ServiceAdapter {
  */
 export abstract class OptionalServiceAdapter {
   constructor(
-    readonly service: "battleship" | "payments",
+    readonly service: "battleship" | "payments" | "education",
     protected readonly transport: Transport | null,
   ) {}
 

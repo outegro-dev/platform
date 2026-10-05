@@ -653,6 +653,15 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
           en: "Assistant Pro",
           ru: "Assistant Pro",
         }),
+        // Another app's product with a period the game does not sell: the
+        // shop must read only its own and stay open.
+        {
+          ...product("edu-all-books", "edu", "books.all", true, {
+            en: "All textbooks",
+            ru: "Все учебники",
+          }),
+          periodicity: "PERIOD_YEAR",
+        },
       ],
     };
     catalogResponseSchema.parse(body);

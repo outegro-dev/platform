@@ -94,6 +94,10 @@
       "name": "Battleship",
       "body": "Naval battle online: against bots or players, with a rating."
     },
+    "edu": {
+      "name": "Education",
+      "body": "Interactive textbooks on Node.js and SQL with exercises, flash cards and an SQL sandbox."
+    },
     "admin": {
       "name": "Admin console",
       "body": "Operator tools your platform role opens."

@@ -1,0 +1,418 @@
+{
+  "meta": {
+    "title": "Education — outegro",
+    "titleTemplate": "%s · Education",
+    "description": "Interactive textbooks for interview preparation: diagrams, runnable code, exercises and flash cards in every chapter."
+  },
+  "brand": {
+    "product": "Education",
+    "home": "outegro Education, library"
+  },
+  "nav": {
+    "language": "Language",
+    "languageFailed": "The language did not change. Try again.",
+    "skip": "Skip to content"
+  },
+  "status": {
+    "offline": "You're offline. Check the connection and try again.",
+    "dismiss": "Dismiss"
+  },
+  "footer": {
+    "site": "outegro.dev",
+    "privacy": "Privacy",
+    "account": "Account"
+  },
+  "auth": {
+    "errorTitle": "Sign-in didn't finish",
+    "reasons": {
+      "state_mismatch": "The sign-in link expired or was opened in another browser.",
+      "missing_code": "The sign-in page did not send a code back.",
+      "invalid_grant": "The sign-in could not be confirmed. It may have been used already.",
+      "unavailable": "The account service is temporarily unavailable.",
+      "unknown": "Something went wrong while signing in."
+    },
+    "retry": "Try again",
+    "home": "Back to the library"
+  },
+  "errors": {
+    "title": "Something is temporarily unavailable",
+    "body": "The library did not answer in time. Your progress is safe.",
+    "offlineTitle": "You're offline",
+    "offlineBody": "The page needs a connection. It will load once you're back online.",
+    "retry": "Try again",
+    "retrying": "Trying again…"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The address may be mistyped, or the page has moved.",
+    "home": "Back to the library"
+  },
+  "library": {
+    "eyebrow": "01 ── Library",
+    "title": "Interactive textbooks",
+    "titleAccent": "for the interview.",
+    "lead": "How things work inside: diagrams, runnable code, exercises and flash cards in every chapter. One outegro account keeps your progress.",
+    "booksTitle": "Books",
+    "empty": "No books are published yet.",
+    "loading": "Loading the library…",
+    "unavailableTitle": "The library is temporarily unavailable",
+    "unavailableBody": "The books did not load. Try again in a minute.",
+    "retry": "Try again",
+    "inLanguage": "In {language}",
+    "languages": {
+      "en": "English",
+      "ru": "Russian"
+    }
+  },
+  "bookCard": {
+    "stats": {
+      "label": "What is inside",
+      "chapters": "{count, plural, one {# chapter} other {# chapters}}",
+      "exercises": "{count, plural, one {# exercise} other {# exercises}}",
+      "cards": "{count, plural, one {# flash card} other {# flash cards}}",
+      "figures": "{count, plural, one {# diagram} other {# diagrams}}",
+      "explain": "{count, plural, one {# topic from different angles} other {# topics from different angles}}",
+      "sandboxes": "{count, plural, one {# SQL sandbox} other {# SQL sandboxes}}"
+    },
+    "access": {
+      "open": "Open",
+      "preview": "Preview",
+      "granted": "Your access",
+      "staff": "Staff preview",
+      "sign_in": "Sign in to read",
+      "locked": "Locked"
+    },
+    "accessPrefix": "Access:",
+    "progress": {
+      "label": "Your progress",
+      "exercises": "Exercises solved: {solved} of {total}",
+      "cards": "Cards known: {known} of {total}"
+    },
+    "cta": {
+      "start": "Start reading",
+      "continue": "Continue · chapter {n}",
+      "signIn": "Sign in",
+      "details": "About the book",
+      "contents": "Contents"
+    }
+  },
+  "bookPage": {
+    "breadcrumb": "Library",
+    "loading": "Loading the book…",
+    "contentsTitle": "Contents",
+    "contentsLead": "Chapters build on each other, but each one stands on its own.",
+    "chapter": "Chapter {n}",
+    "sections": "{count, plural, one {# section} other {# sections}}",
+    "exercises": "{count, plural, one {# exercise} other {# exercises}}",
+    "solved": "{solved} of {total} solved",
+    "deckCards": "{count, plural, one {# card} other {# cards}} from every chapter",
+    "prefaceNote": "The training database used across the book",
+    "continueTitle": "Continue reading",
+    "continueChapter": "Chapter {n}. {short}",
+    "locked": "locked",
+    "signIn": "sign-in needed",
+    "preview": "Preview",
+    "unavailableTitle": "The book is temporarily unavailable",
+    "unavailableBody": "It did not load. Try again in a minute.",
+    "continue": "Continue: chapter {n}",
+    "startFirst": "Start with chapter 1",
+    "deckCta": "Flash cards for review"
+  },
+  "access": {
+    "signInTitle": "Sign in to read",
+    "signInPreview": "{count, plural, one {The first chapter opens} other {The first # chapters open}} to every signed-in reader. One outegro account works across the platform.",
+    "signInBody": "The book opens to signed-in readers. One outegro account works across the platform.",
+    "signInCta": "Sign in",
+    "lockedTitle": "Full access to the book",
+    "lockedPreview": "{count, plural, one {Chapter 1 is open to you.} other {The first # chapters are open to you.}} The rest of the book comes with access.",
+    "lockedBody": "The book comes with access.",
+    "invitation": "For now, access is granted by invitation: write to the author and he will open the book for you.",
+    "invitationCta": "Write to the author",
+    "catalog": "Access to the book is available on {host}.",
+    "catalogCta": "Get access",
+    "granted": "You have access to the whole book.",
+    "staff": "Staff preview: every chapter is open to you.",
+    "open": "The whole book is open."
+  },
+  "reader": {
+    "tocTitle": "Contents",
+    "tocToggle": "Contents",
+    "tocCurrent": "Chapter {n}: {short}",
+    "inThisChapter": "In this chapter",
+    "deckLink": "Flash cards",
+    "loading": "Loading the chapter…",
+    "pager": "Chapters",
+    "previous": "Previous",
+    "next": "Next",
+    "locked": "locked",
+    "signIn": "sign-in needed",
+    "gateSignInTitle": "Sign in to read this chapter",
+    "gateLockedTitle": "This chapter comes with full access",
+    "unavailableTitle": "The chapter did not load",
+    "unavailableBody": "The library did not answer in time. Try again in a minute.",
+    "retry": "Try again",
+    "firstChapter": "Read chapter 1",
+    "understood": "understanding confirmed",
+    "solvedCount": "{solved} of {total} solved",
+    "cardsKnown": "{known} of {total} known"
+  },
+  "progress": {
+    "signInToSave": "Sign in to save your progress",
+    "signInToSaveBody": "Exercises and cards work without an account; sign in and they are saved.",
+    "signIn": "Sign in"
+  },
+  "deckPage": {
+    "lockedCards": "{count, plural, one {# more card is} other {# more cards are}} in chapters you cannot open yet.",
+    "unavailableTitle": "The cards did not load",
+    "unavailableBody": "The library did not answer in time. Try again in a minute."
+  },
+  "book": {
+    "exercise": {
+      "quiz": "Check yourself",
+      "quizMulti": "Check yourself · several answers",
+      "order": "Exercise · order",
+      "sort": "Exercise · sort it out",
+      "sqlTask": "Task · SQL",
+      "solved": "solved",
+      "check": "Check",
+      "checking": "Checking…",
+      "explanation": "Explanation"
+    },
+    "quiz": {
+      "pickAll": "Pick every right option",
+      "letters": "ABCDEFGHIJ",
+      "again": "Answer again",
+      "marks": {
+        "right": "right",
+        "alsoRight": "also right",
+        "theRight": "the right one",
+        "wrong": "wrong"
+      },
+      "result": {
+        "right": "Right.",
+        "partly": "Not all of it: see the explanation below.",
+        "wrong": "Wrong: see the explanation below."
+      }
+    },
+    "order": {
+      "pool": "Options",
+      "picked": "Your order",
+      "poolEmpty": "Every item is placed",
+      "pickedEmpty": "Pick the options in order",
+      "hint": "Pick an item in your order to put it back",
+      "shouldBe": "belongs at #{position}",
+      "allRight": "Everything is in place",
+      "score": "In place: {right} of {total}",
+      "placed": "Placed: {placed} of {total}",
+      "again": "Try again"
+    },
+    "sort": {
+      "progress": "Sorted: {done} of {total}",
+      "score": "Right first time: {right} of {total}",
+      "choices": "Where it belongs",
+      "again": "Start over"
+    },
+    "cards": {
+      "title": "Flash cards · tap to flip",
+      "question": "Question",
+      "answer": "Answer"
+    },
+    "code": {
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Not copied — select the code by hand",
+      "output": "Output",
+      "code": "Code",
+      "languages": {
+        "js": "JavaScript",
+        "javascript": "JavaScript",
+        "ts": "TypeScript",
+        "sql": "SQL",
+        "bash": "Terminal",
+        "sh": "Terminal",
+        "json": "JSON",
+        "text": "Text"
+      }
+    },
+    "explain": {
+      "kicker": "See it from different angles",
+      "tabs": "Ways to explain",
+      "hint": "Pick the way that works best for you: the next blocks open with it too.",
+      "kinds": {
+        "analogy": "In plain words",
+        "steps": "Step by step",
+        "code": "In code",
+        "picture": "In a picture",
+        "interview": "At the interview",
+        "confuse": "Don't confuse",
+        "deep": "Under the hood"
+      }
+    },
+    "sql": {
+      "sandbox": "Sandbox",
+      "sandboxNote": "SQLite in the browser · every run starts from a fresh copy",
+      "editorLabel": "SQL query",
+      "output": "Query output",
+      "run": "Run",
+      "reset": "Restore the original",
+      "running": "Running…",
+      "runShortcut": "Ctrl + Enter to run",
+      "checkShortcut": "Ctrl + Enter to check",
+      "leaveEditor": "Esc, then Tab to leave the editor",
+      "rows": "{count, plural, one {# row} other {# rows}}",
+      "rowsShown": "first {shown} shown",
+      "noResult": "The query ran and returned nothing. End it with a SELECT to see the data.",
+      "error": "SQLite error: {message}",
+      "tooSlow": "The query ran for more than 3 seconds and was stopped. Check how the recursion ends, or add a LIMIT.",
+      "tooHeavy": "The query ran out of memory and was stopped. Add a LIMIT or a way out of the recursion.",
+      "engineFailed": "The sandbox did not load. Reload the page.",
+      "offline": "No connection: the sandbox will load once the connection is back.",
+      "retry": "Try again",
+      "hint": "Hint",
+      "showSolution": "Show the solution",
+      "solutionTitle": "Reference solution",
+      "insertSolution": "Put it in the editor",
+      "right": "Right. The result matches the reference.",
+      "wrong": "Not yet.",
+      "noResultTask": "The query returned nothing. It has to end with a SELECT.",
+      "columns": "You have {mine} columns, {expected} are needed.",
+      "rowsDiffer": "You have {mine} rows, there should be {expected}.",
+      "values": "The row count matches, but the values differ.",
+      "order": "Same rows, different order. Check the ORDER BY.",
+      "referenceFailed": "The reference solution did not run: {message}",
+      "yourResult": "Your result",
+      "expectedResult": "Expected result"
+    },
+    "schema": {
+      "title": "Tables of the training database",
+      "primaryKey": "PK"
+    },
+    "simulator": {
+      "title": "Event loop simulator",
+      "scenario": "Scenario",
+      "code": "Scenario code",
+      "where": "Where execution is now",
+      "phases": {
+        "main": "script",
+        "ticks": "nextTick",
+        "micro": "promises",
+        "timers": "timers",
+        "pending": "pending",
+        "poll": "poll",
+        "check": "check",
+        "close": "close",
+        "exit": "exit"
+      },
+      "queues": {
+        "stack": "Call stack",
+        "tick": "process.nextTick",
+        "micro": "Microtasks (promises)",
+        "timers": "Timers",
+        "check": "setImmediate (check)",
+        "io": "libuv: I/O in progress"
+      },
+      "console": "Console output",
+      "consoleEmpty": "the console is empty",
+      "step": "Step {index} of {total}",
+      "back": "Back",
+      "next": "Next",
+      "start": "From the start"
+    },
+    "deck": {
+      "chapter": "Chapter",
+      "allChapters": "All chapters · {count, plural, one {# card} other {# cards}}",
+      "chapterOption": "Chapter {n}. {short}",
+      "modes": "Which cards to show",
+      "modeAll": "All",
+      "modeNew": "New",
+      "modeAgain": "Again",
+      "know": "I know it",
+      "again": "Again",
+      "fresh": "New",
+      "meter": "Known {know}, again {again}, new {fresh}",
+      "show": "Show the answer",
+      "skip": "Skip",
+      "reshuffle": "Shuffle again",
+      "done": "You went through the deck.",
+      "noneAgain": "No cards are marked “Again”.",
+      "noneNew": "No new cards left.",
+      "noneHere": "This chapter has no cards.",
+      "noneOpen": "No cards are open to you yet.",
+      "restartHint": "Shuffle the deck again or pick another set.",
+      "position": "{chapter} · card {index} of {total}"
+    },
+    "save": {
+      "saved": "Saved to your account",
+      "failed": "Not saved: no answer from the server.",
+      "offline": "Offline: not saved.",
+      "signedOut": "Your session has ended: not saved.",
+      "signIn": "Sign in again",
+      "forbidden": "Not saved: this chapter is no longer open to you.",
+      "notFound": "Not saved: the exercise has changed. Reload the page.",
+      "invalid": "Not saved: the server did not accept this answer.",
+      "tooLarge": "Not saved: the result is too large to send. Narrow the query.",
+      "retry": "Retry",
+      "saving": "Saving…",
+      "cardsUnsaved": "{count, plural, one {# mark not saved.} other {# marks not saved.}}",
+      "cardsOffline": "Offline: {count, plural, one {# mark not saved.} other {# marks not saved.}}",
+      "cardsSignedOut": "Your session has ended: marks are not saved.",
+      "cardsRefused": "{count, plural, one {# mark was} other {# marks were}} refused and undone."
+    },
+    "assist": {
+      "explainButton": "Explain it differently",
+      "explainIntro": "The assistant will explain this section another way. Pick a way or ask your own question.",
+      "styles": "Way to explain",
+      "style": {
+        "simpler": "Simpler",
+        "analogy": "Another analogy",
+        "code": "With a code example",
+        "deep": "Deeper",
+        "interview": "As an interview answer",
+        "mistakes": "Common mistakes"
+      },
+      "questionLabel": "Your question about the section",
+      "questionPlaceholder": "Your question: what is still unclear?",
+      "ask": "Ask",
+      "askShortcut": "Ctrl + Enter to ask",
+      "questionShort": "The question is too short: write at least a few words.",
+      "questionWhat": "an answer to your question",
+      "waitingExplain": "The assistant is writing an explanation: {what}. Usually 5–30 seconds.",
+      "waitingUnderstanding": "The assistant is reading your explanation and checking it against the chapter. Usually 10–40 seconds.",
+      "waitingSql": "The assistant is looking into your query. Usually 5–30 seconds.",
+      "answerLabel": "The assistant’s answer",
+      "stop": "Stop",
+      "stopped": "Stopped.",
+      "again": "Another version",
+      "retry": "Try again",
+      "truncated": "The answer was cut at its length limit. Ask to continue in the question field.",
+      "remaining": "{left} of {limit} left today",
+      "dailyLimit": "Today’s assistant limit is used up: {limit} of {limit}. New answers {when}.",
+      "dailyLimitUnknown": "Today’s assistant limit is used up. New answers {when}.",
+      "paused": "The assistant is paused for today: the shared daily limit is used up. Try again tomorrow — everything else in the book works as usual.",
+      "resetsAt": "{day, select, today {from {time} today} other {from {time} tomorrow}}",
+      "unavailable": "The assistant is not answering right now. Try again — everything else in the book works as usual.",
+      "offline": "No connection: the assistant did not answer. Check the connection and try again.",
+      "signedOut": "Your session ended: sign in again to ask the assistant.",
+      "signIn": "Sign in",
+      "forbidden": "The assistant did not answer: this chapter is no longer open to you.",
+      "notFound": "The section changed while the page was open. Reload the page.",
+      "invalid": "The assistant did not accept this request. Change the text and try again.",
+      "tooLarge": "This request is too large for the assistant. Shorten it and ask again.",
+      "sqlHint": "Ask what is wrong",
+      "heroNote": "Under every section heading there is an <b>“Explain it differently”</b> button: the assistant retells the section more simply, through another analogy, with a new code example or as an interview answer. At the end of a chapter you can test yourself by explaining the main points in your own words.",
+      "ownWords": {
+        "label": "Explain it in your own words · with the assistant",
+        "instruction": "Without looking at the text, explain the main points of this chapter as if to a colleague or an interviewer. The assistant compares your explanation with the chapter and tells you what you got right, what you missed and what to reread.",
+        "fieldLabel": "Your explanation",
+        "placeholder": "For example: “{short} is…”",
+        "hint": "5–10 sentences are enough",
+        "tooShort": "Too short: write at least 2–3 sentences ({min} characters or more) so there is something to check.",
+        "check": "Check my understanding",
+        "checking": "Checking…",
+        "score": "Understanding score: {score}/10",
+        "best": "Best score: {score}/10",
+        "bestConfirmed": "Understanding confirmed · best score {score}/10"
+      }
+    }
+  }
+}

@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import {
   ADMIN,
   APP,
+  EDU,
   expect,
   expectAccessible,
   PAY,
@@ -68,6 +69,10 @@ test.describe("account menu", () => {
     await expect(
       item(`Battleship, ${new URL(APP).host}, you are here`),
     ).toHaveAttribute("href", "/");
+    await expect(item(/^Education, edu\.fake\.test$/)).toHaveAttribute(
+      "href",
+      `${EDU}/`,
+    );
     await expect(item(`Account, ${new URL(PLATFORM).host}`)).toHaveAttribute(
       "href",
       `${PLATFORM}/account`,
@@ -141,6 +146,9 @@ test.describe("account menu", () => {
     await expect(
       menu.getByRole("menuitem", { name: /^Морской бой, .*, вы здесь$/ }),
     ).toBeVisible();
+    await expect(
+      menu.getByRole("menuitem", { name: "Обучение, edu.fake.test" }),
+    ).toHaveAttribute("href", `${EDU}/`);
     await expect(menu.getByRole("menuitem", { name: "Выйти" })).toBeVisible();
     await expectAccessible(page, "account menu (ru)");
   });

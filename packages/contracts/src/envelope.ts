@@ -8,6 +8,7 @@ export const producers = [
   "admin",
   "assistant",
   "battleship",
+  "edu",
 ] as const;
 export type Producer = (typeof producers)[number];
 

@@ -3,6 +3,7 @@
 Эти процедуры — проектные инструкции. Конкретные команды/context/namespace/image refs заполняются соответствующей OPS/H задачей после проверки выбранных версий. Не запускать предполагаемые команды на старом VPS.
 
 - [Production: сервер, выпуск, секреты](production.md)
+- [Обучение: первая выкатка edu.outegro.dev](edu-rollout.md)
 - [Ротация ключа подписи access-токенов](signing-keys.md)
 - [Passkeys: RP, выкатка, потеря устройства](passkeys.md)
 - [Метрики, логи и correlation сервисов](observability.md)

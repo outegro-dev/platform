@@ -11,7 +11,7 @@
 3. Восстановить keys/config. Для SQLite K3s использовать совместимую процедуру SQLite+server token, не etcd snapshot commands.
 4. Восстановить PostgreSQL и проверить integrity/migration version/контрольные fixtures.
 5. Восстановить Hermes consistent state и assistant media. DB ItemMedia ссылки сверить с objects.
-6. Развернуть совместимые app images с отправками наружу выключенными: всем четырём бэкендам `SAFE_MODE=true` (см. «Safe mode» ниже).
+6. Развернуть совместимые app images с отправками наружу выключенными: всем пяти бэкендам (auth, notifications, payments, battleship, edu) `SAFE_MODE=true` (см. «Safe mode» ниже).
 7. Reconcile внешние payment/subscription/refund факты после recovery point через idempotent commands. Outbox/inbox replay не должен повторять бизнес-эффект.
 8. Проверить login/roles/grants/inbox/admin chain. После Redis loss допустим новый login, не автоматический доступ.
 9. Разрешить внешние sends только после анализа backlog/duplicates и target channel. Не запускать весь historic notification archive. Затем убрать `SAFE_MODE` и перезапустить сервисы: ждавшие события публикуются и применяются один раз (inbox), письма уходят.
@@ -52,7 +52,7 @@ Report с restore point, duration, проверками данных/грант�
 
    Раздела `plugins` с `isWALArchiver` быть не должно: иначе копия начнёт писать WAL в путь `pg`.
 2. Ждать `Cluster in healthy state`: `sudo k3s kubectl -n outegro get cluster pg-drill -w`. Время от появления кластера до этого состояния — RTO базы.
-3. Сверка: для каждой базы (`auth`, `notifications`, `payments`, `battleship`) число строк по каждой таблице и число ограничений по типам в `pg-1` и `pg-drill-1` (запрос `query_to_xml(format('select count(*) ...'))` по `information_schema.tables` и `pg_constraint`); таблицы миграций `drizzle.*` входят в сверку. Расхождения допустимы только для строк, записанных после последнего заархивированного WAL (`pg_stat_archiver.last_archived_time` на `pg-1`).
+3. Сверка: для каждой базы (`auth`, `notifications`, `payments`, `battleship`, `edu`) число строк по каждой таблице и число ограничений по типам в `pg-1` и `pg-drill-1` (запрос `query_to_xml(format('select count(*) ...'))` по `information_schema.tables` и `pg_constraint`); таблицы миграций `drizzle.*` входят в сверку. Расхождения допустимы только для строк, записанных после последнего заархивированного WAL (`pg_stat_archiver.last_archived_time` на `pg-1`).
 4. Удалить копию: убрать файл и строку из `kustomization.yaml`; Argo удаляет кластер и его том (prune). Проверить, что PVC `pg-drill-1` исчез.
 
 Не покрыто этим шагом: запуск приложений на восстановленной базе с выключенными отправками, сверка с Lava после recovery point (TC-OPS-07-02, 03), восстановление всего узла.

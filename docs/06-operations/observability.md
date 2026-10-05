@@ -4,9 +4,9 @@
 
 ## Порт метрик
 
-- auth-backend, notifications-backend, payments-backend и battleship-backend поднимают отдельный HTTP listener на `METRICS_PORT` (по умолчанию `9464`, `0` — выключен). Он отвечает только на `GET /metrics` в текстовом формате Prometheus 0.0.4; другой путь — 404, другой метод — 405.
+- auth-backend, notifications-backend, payments-backend, battleship-backend и edu-backend поднимают отдельный HTTP listener на `METRICS_PORT` (по умолчанию `9464`, `0` — выключен). Он отвечает только на `GET /metrics` в текстовом формате Prometheus 0.0.4; другой путь — 404, другой метод — 405.
 - На порту приложения `/metrics` нет (404), поэтому Ingress, который маршрутизирует приложение, не может опубликовать метрики. Порт 9464 открывать только Prometheus внутри кластера (NetworkPolicy).
-- Локально порты разведены в `.env.example`: 9461 auth, 9462 notifications, 9463 payments, 9464 battleship; `pnpm env:local` добавит их в существующие `.env`. В интеграционных тестах `METRICS_PORT=0`.
+- Локально порты разведены в `.env.example`: 9461 auth, 9462 notifications, 9463 payments, 9464 battleship, 9465 edu; `pnpm env:local` добавит их в существующие `.env`. В интеграционных тестах `METRICS_PORT=0`.
 - У каждой серии есть метка `service` с именем сервиса. Если scrape-конфиг сам добавляет target-метку `service` (ServiceMonitor), нужен `honorLabels: true`, иначе метка сервиса станет `exported_service`.
 - Проверка в кластере: `kubectl -n outegro port-forward deploy/auth-backend 9464`, затем `curl -s localhost:9464/metrics`.
 
@@ -74,6 +74,15 @@ HTTP 200 на вебхук — durable acceptance, а не обработанн�
 | `battleship_live_matches` | gauge | mode (bot, quick, private) | Матчи в расстановке или бою |
 | `battleship_matches_finished_total` | counter | mode, outcome | fleet_destroyed, resigned, timeout, disconnected; placement_timeout и moderation — без результата |
 
+## edu-backend
+
+| Метрика | Тип | Метки | Смысл |
+|---|---|---|---|
+| `edu_assist_requests_total` | counter | kind (explain, understanding, sql_hint), outcome | Запросы к ИИ-помощнику: ok, cached (из кэша, без модели), failed (оборвался после первого текста), refused (сбой провайдера до первого текста), aborted (читатель остановил), disabled, daily_limit, paused (общий дневной лимит), busy (нет слота) |
+| `edu_assist_tokens_total` | counter | direction (in, out) | Токены MiniMax: входные (с прочитанными из кэша провайдера) и выходные — расход |
+
+Промпты, ответы модели и текст читателя в логи не попадают: строка `Assistant answered` несёт только вид, исход, причину сбоя и токены.
+
 ## Логи и correlation
 
 - JSON-строки Pino в stdout (Alloy → Loki): `service`, `level`, `time`, `message`, `context` и поля строки.
@@ -105,6 +114,8 @@ HTTP 200 на вебхук — durable acceptance, а не обработанн�
 | Ссылки producer-а не на наш сайт (например, разный `PAY_WEB_URL`) | `increase(notifications_action_links_dropped_total[15m]) > 0` |
 | DLQ растёт | `increase(messaging_events_consumed_total{outcome="dead_lettered"}[15m]) > 0` |
 | 5xx | `sum by (service, route) (rate(http_server_requests_total{status_class="5xx"}[5m])) > 0` 10 минут |
+| Помощник Обучения не отвечает (`EduAssistantFailing`) | `sum(increase(edu_assist_requests_total{outcome=~"failed\|refused"}[30m])) / sum(increase(edu_assist_requests_total{outcome=~"ok\|failed\|refused"}[30m])) > 0.5` при ≥ 4 запросах, 10 минут |
+| Помощник Обучения упёрся в общий дневной лимит (`EduAssistantPaused`) | `sum(increase(edu_assist_requests_total{outcome="paused"}[1h])) > 0` |
 | Медленная приёмка вебхука | `histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service="payments-backend", route="/webhooks/lava"}[10m]))) > 0.5` |
 
 ## Не сделано

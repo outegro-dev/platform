@@ -15,6 +15,7 @@ import { Spinner } from "@outegro/ui/spinner";
 import {
   AnchorIcon,
   BellIcon,
+  BookOpenTextIcon,
   CaretDownIcon,
   CheckIcon,
   CreditCardIcon,
@@ -63,6 +64,7 @@ const icons: Record<AccountMenuIcon, Icon> = {
   notifications: BellIcon,
   purchases: ReceiptIcon,
   battleship: AnchorIcon,
+  edu: BookOpenTextIcon,
   id: IdentificationCardIcon,
   pay: CreditCardIcon,
   admin: WrenchIcon,

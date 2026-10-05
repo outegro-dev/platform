@@ -10,6 +10,7 @@
   "devDependencies": {
     "@outegro/auth-backend": "workspace:*",
     "@outegro/battleship-backend": "workspace:*",
+    "@outegro/edu-backend": "workspace:*",
     "@outegro/notifications-backend": "workspace:*",
     "@outegro/payments-backend": "workspace:*",
     "@testcontainers/postgresql": "12.2.0",

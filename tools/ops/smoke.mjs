@@ -4,19 +4,23 @@
 //
 //   node tools/ops/smoke.mjs                 # outegro.dev
 //   SMOKE_DOMAIN=example.test node tools/ops/smoke.mjs
+//   SMOKE_SKIP=edu node tools/ops/smoke.mjs  # a site that is not out yet
 //
 // Exit code 1 when any check fails; the table says which and why.
 import tls from "node:tls";
 
 const domain = process.env.SMOKE_DOMAIN ?? "outegro.dev";
 const site = (sub) => `https://${sub ? `${sub}.` : ""}${domain}`;
+/** Sites to leave out, e.g. `edu` before its first rollout. */
+const skip = new Set((process.env.SMOKE_SKIP ?? "").split(",").filter(Boolean));
 const apps = [
   ["landing-web", site("")],
   ["id-web", site("id")],
   ["pay-web", site("pay")],
   ["admin-web", site("admin")],
   ["battleship-web", site("battleship")],
-];
+  ["edu-web", site("edu")],
+].filter(([app]) => !skip.has(app.replace(/-web$/, "")));
 const MIN_CERT_DAYS = 14;
 
 const results = [];
@@ -82,6 +86,13 @@ await check("battleship: landing is public", async () => {
   return "200";
 });
 
+if (!skip.has("edu"))
+  await check("edu: library is public", async () => {
+    const res = await get(site("edu"));
+    expect(res.status === 200, `status ${res.status}`);
+    return "200";
+  });
+
 // Private pages: signed out means a trip to sign-in, never content.
 await check("id: account needs sign-in", () => gated(`${site("id")}/account`, `${site("id")}/login`));
 for (const path of ["/", "/catalog", "/subscriptions"])
@@ -139,7 +150,12 @@ const certificate = (host) =>
     socket.setTimeout(10_000, () => socket.destroy(new Error("TLS timeout")));
     socket.on("error", reject);
   });
-for (const host of [domain, ...["id", "pay", "admin", "battleship", "hooks"].map((s) => `${s}.${domain}`)])
+for (const host of [
+  domain,
+  ...["id", "pay", "admin", "battleship", "edu", "hooks"]
+    .filter((sub) => !skip.has(sub))
+    .map((sub) => `${sub}.${domain}`),
+])
   await check(`TLS ${host}`, async () => {
     const cert = await certificate(host);
     const days = Math.floor((Date.parse(cert.valid_to) - Date.now()) / 86_400_000);

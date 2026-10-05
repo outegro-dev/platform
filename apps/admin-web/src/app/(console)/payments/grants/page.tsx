@@ -20,9 +20,10 @@ import { EmptyState, FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { grantSources, grantStates } from "@/lib/adapters/payments";
 import { shortId } from "@/lib/format";
+import { grantTargets } from "@/lib/grant-targets";
 import { getLabels } from "@/lib/labels";
 import { one, oneOf, type SearchParams, uuidParam } from "@/lib/params";
-import { paymentsCatalog } from "@/lib/queries";
+import { educationBooks, paymentsCatalog } from "@/lib/queries";
 import { getFormatter } from "@/lib/request";
 import { load } from "@/lib/result";
 import { services } from "@/lib/server";
@@ -185,25 +186,29 @@ export default async function GrantsPage({
   const t = await getTranslations("payments.grants");
   const label = await getLabels();
   const f = await getFormatter();
-  const catalog = await paymentsCatalog();
+  const canAssign = access.granted.has("grants.assign");
+  const [catalog] = await Promise.all([
+    paymentsCatalog(),
+    // Fetched alongside: the books "Give access" offers (cached per request).
+    canAssign && access.granted.has("edu.read") ? educationBooks() : null,
+  ]);
   const filter: Filter = {
     userId: uuidParam(params, "userId"),
     state: oneOf(params, "state", grantStates),
     sourceType: oneOf(params, "sourceType", grantSources),
     cursor: one(params, "cursor"),
   };
-  const canAssign = access.granted.has("grants.assign");
   const lang = f.locale === "ru" ? "ru" : "en";
-  const targets = catalog.ok
-    ? [
-        ...new Map(
+  const targets =
+    canAssign && catalog.ok
+      ? await grantTargets(
+          access.granted,
           catalog.data.products.map((p) => [
             `${p.service}:${p.feature}`,
             p.title[lang],
           ]),
-        ),
-      ]
-    : [];
+        )
+      : [];
   return (
     <>
       <Panel

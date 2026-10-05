@@ -21,18 +21,24 @@ const buttonVariants = cva(
           "bg-destructive text-white hover:bg-destructive/90 motion-safe:hover:-translate-y-0.5",
         link: "rounded-none text-foreground underline-offset-6 hover:underline",
       },
+      // Sizes under 44 px keep their look but get an invisible ::after that
+      // takes the touch target to at least 44 px (it is measured from the
+      // padding box, so it also covers bordered variants). It does not
+      // change layout, the focus ring (an outline) or the pending overlay.
       size: {
-        sm: "h-10 px-5 text-[13px]",
+        sm: "relative h-10 px-5 text-[13px] after:absolute after:inset-x-0 after:-inset-y-[3px]",
         md: "h-12 px-6 text-sm",
         lg: "h-[58px] px-7 text-[15px]",
         icon: "size-11",
-        "icon-sm": "size-9 [&_svg:not([class*='size-'])]:size-4",
+        "icon-sm":
+          "relative size-9 after:absolute after:-inset-[5px] [&_svg:not([class*='size-'])]:size-4",
       },
     },
     compoundVariants: [
       // A link sits in running text: no padding or height from the size
-      // scale, but still a 44 px touch target.
-      { variant: "link", className: "h-auto min-h-11 px-0" },
+      // scale, but still a 44 px touch target (its own height, so no
+      // extension that could cover the lines around it).
+      { variant: "link", className: "h-auto min-h-11 px-0 after:hidden" },
     ],
     defaultVariants: {
       variant: "primary",

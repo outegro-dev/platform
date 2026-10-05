@@ -44,6 +44,7 @@ export default defineConfig({
         ID_URL: "http://localhost:3002",
         PAY_URL: "https://pay.fake.test",
         BATTLESHIP_URL: "https://battleship.fake.test",
+        EDU_URL: "https://edu.fake.test",
         ADMIN_URL: "https://admin.fake.test",
       } as Record<string, string>,
     },

@@ -13,6 +13,7 @@
 | Admin web + admin backend/BFF | Поддержка пользователей и управление операциями | Read projections, jobs, action log | Не редактирует чужие БД и не заменяет Argo/Grafana |
 | Hermes + assistant-store | Личный помощник в Telegram topics, каталог вещей/объявлений | Свои sessions/memory; отдельная assistant DB и private media | Не обслуживает всех посетителей и не управляет кластером |
 | Battleship, позже | Онлайн-матчи, боты, оплата, рейтинг | Будет определено отдельным ТЗ | Сейчас не реализуется |
+| Education: edu backend + edu web | Интерактивные учебники, упражнения, карточки, прогресс ([глава 17](17-education.md)) | Books, chapters, reading progress, grant projection, audit | Не продаёт сам: доступ — гранты Payments; роль сотрудника не равна оплате |
 
 Notifications UI в первом релизе — общий компонент inbox и раздел настроек внутри id web; отдельное notifications-web не требуется. Admin backend — небольшой агрегатор/координатор, который вызывает доменные API; это не «суперсервис» с доступом ко всем таблицам.
 
@@ -26,6 +27,7 @@ Notifications UI в первом релизе — общий компонент 
 | admin.outegro.dev | Административная панель | Сильная аутентификация + RBAC |
 | hooks.outegro.dev/lava | Webhook провайдера | Машинная аутентификация, не пользовательская cookie |
 | battleship.outegro.dev | Будущая игра | Зарезервировано в плане, не пустой сайт |
+| edu.outegro.dev | Учебники ([глава 17](17-education.md)) | Библиотека публичная; главы по правилу книги и грантам |
 
 API для браузера проходят через BFF соответствующего origin. Внутренние Nest API доступны по ClusterIP, кроме явно опубликованного webhook ingress. `api.outegro.dev` не обязателен без внешних клиентов. Для Argo/Grafana/RabbitMQ UI определить закрытый маршрут доступа, а не выставлять все панели публично «как удобнее».
 

@@ -35,31 +35,41 @@ import {
 
 const localized = z.object({ en: z.string(), ru: z.string() });
 
-const catalogSchema = z.object({
-  checkoutEnabled: z.boolean(),
-  products: z.array(
+/** A product of the game, exactly as the shop sells it. */
+const gameProductSchema = z.object({
+  key: z.string().min(1),
+  service: z.string(),
+  feature: z.string().min(1),
+  kind: z.enum(["subscription", "one_time"]),
+  periodicity: z.enum(["MONTHLY", "ONE_TIME"]),
+  graceDays: z.number().int().nonnegative().optional(),
+  title: localized,
+  description: localized,
+  prices: z.array(
     z.object({
-      key: z.string().min(1),
-      service: z.string(),
-      feature: z.string().min(1),
-      kind: z.enum(["subscription", "one_time"]),
-      periodicity: z.enum(["MONTHLY", "ONE_TIME"]),
-      graceDays: z.number().int().nonnegative().optional(),
-      title: localized,
-      description: localized,
-      prices: z.array(
-        z.object({
-          priceId: z.string().min(1),
-          version: z.number().int().optional(),
-          money: z.object({
-            minor: z.string().regex(/^-?\d+$/),
-            currency: z.enum(currencies),
-            scale: z.number().int().min(0).max(4),
-          }),
-        }),
-      ),
+      priceId: z.string().min(1),
+      version: z.number().int().optional(),
+      money: z.object({
+        minor: z.string().regex(/^-?\d+$/),
+        currency: z.enum(currencies),
+        scale: z.number().int().min(0).max(4),
+      }),
     }),
   ),
+});
+
+// The catalog lists every platform app's products. Only the game's own are
+// held to the contract above; another app's product (a period, kind or
+// currency the game does not sell) is skipped unread, so a new app in
+// payments never makes the shop unavailable.
+const catalogSchema = z.object({
+  checkoutEnabled: z.boolean(),
+  products: z
+    .array(z.looseObject({ service: z.string() }))
+    .transform((products) =>
+      products.filter((product) => product.service === battleshipService),
+    )
+    .pipe(z.array(gameProductSchema)),
 });
 
 const orderSchema = z
@@ -167,20 +177,18 @@ export class PaymentsClient {
       );
       return { status: "unavailable", checkoutEnabled: false, products: [] };
     }
-    const products: CatalogProduct[] = parsed.data.products
-      .filter((product) => product.service === battleshipService)
-      .map((product) => ({
-        key: product.key,
-        feature: product.feature,
-        kind: product.kind,
-        periodicity: product.periodicity,
-        title: product.title[locale],
-        description: product.description[locale],
-        prices: product.prices.map(({ priceId, money }) => ({
-          priceId,
-          money,
-        })),
-      }));
+    const products: CatalogProduct[] = parsed.data.products.map((product) => ({
+      key: product.key,
+      feature: product.feature,
+      kind: product.kind,
+      periodicity: product.periodicity,
+      title: product.title[locale],
+      description: product.description[locale],
+      prices: product.prices.map(({ priceId, money }) => ({
+        priceId,
+        money,
+      })),
+    }));
     return {
       status: "ok",
       checkoutEnabled: parsed.data.checkoutEnabled,

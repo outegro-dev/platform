@@ -37,6 +37,13 @@ const table: Record<string, Record<string, Tone>> = {
     failed: "bad",
   },
   grant: { active: "ok", revoked: "neutral", expired: "neutral" },
+  // Where a grant stands now (`grantPhase`), not only what Payments recorded.
+  grantPhase: {
+    scheduled: "info",
+    active: "ok",
+    expired: "neutral",
+    revoked: "neutral",
+  },
   refund: {
     requested: "info",
     unmatched: "warn",
@@ -53,6 +60,16 @@ const table: Record<string, Record<string, Tone>> = {
     aborted: "bad",
   },
   player: { active: "ok", suspended: "bad", deleted: "neutral" },
+  book: { published: "ok", draft: "warn", archived: "neutral" },
+  readerAccess: {
+    open: "ok",
+    granted: "ok",
+    preview: "info",
+    locked: "neutral",
+  },
+  // Education's AI assistant: off is a setting (no key, safe mode), not an
+  // outage; paused (today's spending cap reached) needs a look.
+  assist: { on: "ok", paused: "warn", off: "neutral" },
   attempt: { requesting: "info", ready: "ok", failed: "bad", unknown: "warn" },
   health: { up: "ok", degraded: "warn", down: "bad", unconfigured: "neutral" },
 };

@@ -7,6 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { AttentionPanel } from "@/components/dashboard/attention-panel";
 import { BattleshipPanel } from "@/components/dashboard/battleship-panel";
+import { EducationPanel } from "@/components/dashboard/education-panel";
 import {
   HealthPanel,
   HealthSkeleton,
@@ -114,7 +115,9 @@ export default async function DashboardPage() {
         >
           <AttentionPanel granted={granted} />
         </Suspense>
-        {(granted.has("audit.read") || granted.has("battleship.read")) && (
+        {(granted.has("audit.read") ||
+          granted.has("battleship.read") ||
+          granted.has("edu.read")) && (
           <Suspense
             fallback={
               <PanelSkeleton
@@ -183,6 +186,20 @@ export default async function DashboardPage() {
             }
           >
             <PaymentsPanel />
+          </Suspense>
+        )}
+        {granted.has("edu.read") && (
+          <Suspense
+            fallback={
+              <PanelSkeleton
+                className="h-panel"
+                label={t("education.title")}
+                chart
+                rows={0}
+              />
+            }
+          >
+            <EducationPanel />
           </Suspense>
         )}
       </div>

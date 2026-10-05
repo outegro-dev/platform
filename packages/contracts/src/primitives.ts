@@ -29,3 +29,9 @@ export const pageSchema = <T extends z.ZodType>(item: T) =>
     items: z.array(item),
     nextCursor: z.string().nullable(),
   });
+
+/**
+ * Why an operator acts: required on every admin command of every service
+ * (stored in that service's audit). Trimmed, 3–500 characters.
+ */
+export const adminReasonSchema = z.string().trim().min(3).max(500);

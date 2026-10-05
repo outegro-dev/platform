@@ -8,7 +8,8 @@ export const FAKE = "http://localhost:4197";
 export type PersonaOptions = {
   scenario?: "empty" | "rich" | "returning" | "states" | "many";
   payments?: "up" | "down";
-  catalog?: "normal" | "empty" | "closed" | "down";
+  /** future: also products of apps pay-web knows less about (fake-platform.ts). */
+  catalog?: "normal" | "empty" | "closed" | "down" | "future";
   cancelMode?: "confirm" | "pending";
   checkoutMode?: "ready" | "preparing" | "failed" | "offsite";
   accessTtlSec?: number;

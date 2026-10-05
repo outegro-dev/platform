@@ -1,11 +1,10 @@
 "use server";
 
-import { platformRoles } from "@outegro/contracts";
+import { adminReasonSchema, platformRoles } from "@outegro/contracts";
 import { z } from "zod";
 import { type ActionResult, runAction } from "@/lib/actions";
 
 const uuid = z.uuid();
-const reason = z.string().trim().min(3).max(500);
 const roles = Object.keys(platformRoles) as [string, ...string[]];
 
 /** "2026-12-31" → end of that day in UTC; must be in the future. */
@@ -33,7 +32,7 @@ export async function setUserStatus(
     schema: z.object({
       userId: uuid,
       status: z.enum(["active", "suspended"]),
-      reason,
+      reason: adminReasonSchema,
     }),
     run: (services, input) =>
       services.identity
@@ -54,7 +53,7 @@ export async function revokeUserSessions(
   return runAction({
     permission: "sessions.revoke",
     form,
-    schema: z.object({ userId: uuid, reason }),
+    schema: z.object({ userId: uuid, reason: adminReasonSchema }),
     run: async (services, input) => {
       revoked = (
         await services.identity.revokeSessions(input.userId, input.reason)
@@ -72,7 +71,11 @@ export async function revokeUserPasskey(
   return runAction({
     permission: "passkeys.revoke",
     form,
-    schema: z.object({ userId: uuid, passkeyId: uuid, reason }),
+    schema: z.object({
+      userId: uuid,
+      passkeyId: uuid,
+      reason: adminReasonSchema,
+    }),
     run: (services, input) =>
       services.identity.revokePasskey(
         input.userId,
@@ -98,7 +101,7 @@ export async function grantRole(
       userId: uuid,
       role: z.enum(roles),
       expiresAt: optionalDate,
-      reason,
+      reason: adminReasonSchema,
     }),
     run: (services, input) =>
       services.identity
@@ -121,7 +124,11 @@ export async function revokeRole(
   return runAction({
     permission: "roles.assign",
     form,
-    schema: z.object({ bindingId: uuid, role: z.string().max(64), reason }),
+    schema: z.object({
+      bindingId: uuid,
+      role: z.string().max(64),
+      reason: adminReasonSchema,
+    }),
     run: (services, input) =>
       services.identity.revokeRole(input.bindingId, input.reason),
     success: (t, input) => t("done.roleRevoked", { role: input.role }),
@@ -142,7 +149,7 @@ export async function grantAccess(
       userId: uuid,
       target: z.string().regex(/^[a-z][a-z0-9-]{1,40}:[a-z][a-z0-9.-]{1,80}$/),
       validUntil: optionalDate,
-      reason,
+      reason: adminReasonSchema,
     }),
     run: (services, input) => {
       const [service = "", feature = ""] = input.target.split(":");
@@ -171,7 +178,7 @@ export async function revokeAccess(
   return runAction({
     permission: "grants.assign",
     form,
-    schema: z.object({ grantId: uuid, reason }),
+    schema: z.object({ grantId: uuid, reason: adminReasonSchema }),
     run: (services, input) =>
       services.payments.revokeGrant(input.grantId, input.reason),
     success: (t) => t("done.accessRevoked"),

@@ -1443,6 +1443,9 @@
     overflow: hidden;
   }
   .product[data-featured] {
+    /* Dark-toned, but keeps the shadow of the light page around it (the
+       kit's dark --shadow-soft is meant for whole dark sections). */
+    --shadow-soft: inherit;
     background: var(--surface);
     color: var(--foreground);
     border-color: var(--border);

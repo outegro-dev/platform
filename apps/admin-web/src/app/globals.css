@@ -164,6 +164,11 @@
     display: grid;
     gap: 12px;
   }
+  /* Lines of one value: a title and its details. */
+  .stack-xs {
+    display: grid;
+    gap: 4px;
+  }
   .row-gap {
     display: flex;
     flex-wrap: wrap;
@@ -666,6 +671,7 @@
     font-size: 13px;
   }
   .panel-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -678,6 +684,14 @@
     font-weight: 500;
     white-space: nowrap;
   }
+  /* The pill stays 32 px; an invisible frame takes the tap target to at
+     least 44 × 44 px (inset percentages are of the link's own box, so an
+     icon-only link grows sideways too, a wide one only up and down). */
+  .panel-link::after {
+    content: "";
+    position: absolute;
+    inset: min(0px, calc(50% - 22px));
+  }
   .panel-link:hover {
     color: var(--foreground);
     background: var(--hover);
@@ -685,6 +699,11 @@
   .panel-link svg {
     width: 14px;
     height: 14px;
+  }
+  /* The way back (`BackLink`) keeps its place in the head; a "see all"
+     link is pulled out to the card's corner instead. */
+  .panel-link[data-back] {
+    margin: 0;
   }
   .panel-body {
     display: grid;
@@ -1369,6 +1388,21 @@
     font-size: 14.5px;
     overflow-wrap: anywhere;
   }
+  /* A value that needs a look (a spending cap reached): the warning colour
+     and its icon, so it never rests on colour alone. */
+  .fact-value[data-tone="warn"] {
+    color: var(--warning);
+    font-weight: 600;
+  }
+  /* In the line of text (the base layer makes icons blocks): it starts the
+     first line, however the value wraps. */
+  .fact-value svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-inline-end: 6px;
+    vertical-align: -3px;
+  }
 
   /* ── Lists (feeds, timelines) ────────────────────────────── */
   .feed {
@@ -1450,6 +1484,21 @@
     color: var(--muted-foreground);
     font-size: 12.5px;
     white-space: nowrap;
+  }
+  /* Before → after of a change; long values wrap as whole pieces. */
+  .feed-change {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 6px;
+  }
+  .feed-change svg {
+    flex: none;
+    width: 12px;
+    height: 12px;
+  }
+  .feed-change-after {
+    color: var(--foreground);
   }
 
   .timeline {
@@ -1880,14 +1929,15 @@
   }
 
   /* ── Health strip ────────────────────────────────────────── */
+  /* Five services: one row on desktops, three and two below. */
   .health-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 14px;
   }
   @media (max-width: 1180px) {
     .health-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   @media (max-width: 519px) {
@@ -1896,6 +1946,7 @@
     }
   }
   .health {
+    container-type: inline-size;
     display: grid;
     gap: 10px;
     min-height: 118px;
@@ -1909,6 +1960,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+  }
+  /* A narrow card keeps its status under the name, never squeezed beside it. */
+  @container (max-width: 220px) {
+    .health-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
   .health-name {
     font-size: 14.5px;
@@ -2025,6 +2083,14 @@
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+  /* Its arrow links end each row and, like a card's corner link, reach
+     10 px past it, their tap area 5 px more: the scroll box reaches 16 px
+     into the card's padding (18 px or more), so neither is clipped and the
+     list never scrolls sideways; the rows stay where they were. */
+  .h-panel-feed > .attention {
+    margin-inline-end: -16px;
+    padding-inline-end: 16px;
   }
   .h-panel-lg {
     min-height: 520px;

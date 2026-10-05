@@ -1,6 +1,6 @@
 # Deployment contract
 
-Один K3s server node, SQLite datastore при отсутствии доказанной причины менять. Один PostgreSQL через CNPG, отдельные logical DB identity/notifications/payments/admin/assistant. Redis/RabbitMQ по одному persistent экземпляру. Argo CD non-HA, Traefik/cert-manager, Sealed Secrets, bounded metrics/logs/alerts. Новый environment и новые secrets; старый VPS не меняется.
+Один K3s server node, SQLite datastore при отсутствии доказанной причины менять. Один PostgreSQL через CNPG, отдельные logical DB и роли auth/notifications/payments/battleship/edu (в плане — admin/assistant). Redis/RabbitMQ по одному persistent экземпляру. Argo CD non-HA, Traefik/cert-manager, Sealed Secrets, bounded metrics/logs/alerts. Новый environment и новые secrets; старый VPS не меняется.
 
 | Группа | Working set hypothesis, MiB |
 |---|---:|
@@ -22,13 +22,13 @@ Images immutable by digest/commit. Migration Job получает отдельн
 
 ## Метрики
 
-Каждый NestJS-сервис (auth-backend, notifications-backend, payments-backend, battleship-backend) отдаёт метрики Prometheus на отдельном порту `METRICS_PORT`, по умолчанию `9464`: только `GET /metrics`, `0` выключает listener. Этот порт не входит в Ingress и Service для трафика пользователей: Prometheus собирает его внутри кластера, NetworkPolicy пускает к нему только Prometheus. Список метрик, правила меток и логи — [observability](../06-operations/observability.md).
+Каждый NestJS-сервис (auth-backend, notifications-backend, payments-backend, battleship-backend, edu-backend) отдаёт метрики Prometheus на отдельном порту `METRICS_PORT`, по умолчанию `9464`: только `GET /metrics`, `0` выключает listener. Этот порт не входит в Ingress и Service для трафика пользователей: Prometheus собирает его внутри кластера, NetworkPolicy пускает к нему только Prometheus. Список метрик, правила меток и логи — [observability](../06-operations/observability.md).
 
 ## Адрес клиента
 
 От него зависят лимиты входа (`login:ip`) и список сеансов. Production работает за прокси Cloudflare (решение владельца 29.09.2026), поэтому цепочка такая:
 
-1. DNS-записи `@`, `www`, `id`, `pay`, `admin`, `hooks` — Proxied. SSL/TLS — Full (strict), на сервере — сертификат Let's Encrypt от cert-manager (DNS-01).
+1. DNS-записи `@`, `www`, `id`, `pay`, `admin`, `hooks`, `battleship`, `edu` — Proxied. SSL/TLS — Full (strict), на сервере — сертификат Let's Encrypt от cert-manager (DNS-01).
 2. На 80/443 сервер пускает только [диапазоны Cloudflare](https://www.cloudflare.com/ips/). Правило должно срабатывать до DNAT K3s: firewall провайдера или nftables в prerouting. Обычные INPUT-правила ufw трафик, который K3s перенаправляет в поды, не видят. Второй слой — Traefik `ipAllowList` с теми же диапазонами; чтобы Traefik видел адрес узла Cloudflare, его Service — `externalTrafficPolicy: Local`. При OPS-01 проверить: запрос на IP сервера в обход Cloudflare не проходит, диапазоны обновляются скриптом.
 3. Cloudflare кладёт адрес посетителя в `CF-Connecting-IP`. BFF (`clientHeaders` из `@outegro/bff`, `CLIENT_IP_SOURCE=cf-connecting-ip`) передаёт сервисам его и `User-Agent`; сервисы доверяют одному hop (`trust proxy` = 1). Без правила из п. 2 этот заголовок подделывается любым клиентом.
 4. Функции Cloudflare, которые меняют HTML, выключены: Rocket Loader, Email Address Obfuscation, Web Analytics (RUM) ломают CSP с nonce. Bot Fight Mode выключен: он блокирует вебхуки.

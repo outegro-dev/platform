@@ -1,5 +1,9 @@
 import { cn } from "@outegro/ui/lib/utils";
-import { ArrowRightIcon, CaretRightIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CaretRightIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
@@ -102,6 +106,22 @@ export function PanelLink({
     <Link href={href} className="panel-link">
       {children}
       <ArrowRightIcon aria-hidden="true" />
+    </Link>
+  );
+}
+
+/** From a detail page back to its list, in the panel's head. */
+export function BackLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link href={href} className="panel-link" data-back="">
+      <ArrowLeftIcon aria-hidden="true" />
+      {children}
     </Link>
   );
 }

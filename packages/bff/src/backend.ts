@@ -25,7 +25,7 @@ export class BackendError extends Error {
 export class BackendUnavailable extends Error {}
 
 export type RequestOptions = {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   accessToken?: string | null;
   headers?: Record<string, string>;

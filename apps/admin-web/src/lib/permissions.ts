@@ -65,6 +65,7 @@ export const navigation: readonly NavSection[] = [
       item("notifications", ["notifications.read"]),
       item("payments", ["billing.read"]),
       item("battleship", ["battleship.read"]),
+      item("education", ["edu.read"]),
     ],
   },
   { key: "governance", items: [item("audit", ["audit.read"])] },
@@ -137,6 +138,12 @@ export const sectionTabs = {
     },
     { key: "audit", href: "/battleship/audit", permission: "battleship.read" },
   ],
+  education: [
+    { key: "overview", href: "/education", permission: "edu.read" },
+    { key: "books", href: "/education/books", permission: "edu.read" },
+    { key: "readers", href: "/education/readers", permission: "edu.read" },
+    { key: "audit", href: "/education/audit", permission: "edu.read" },
+  ],
 } as const satisfies Record<string, readonly SubNavItem[]>;
 
 export function tabsFor(
@@ -155,6 +162,7 @@ export const userTabs = [
   { key: "access", permission: "users.read" },
   { key: "notifications", permission: "notifications.read" },
   { key: "battleship", permission: "battleship.read" },
+  { key: "education", permission: "edu.read" },
   { key: "payments", permission: "billing.read" },
   { key: "activity", permission: "audit.read" },
 ] as const satisfies readonly { key: string; permission: Permission }[];

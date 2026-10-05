@@ -65,6 +65,7 @@ export default defineConfig({
         SITE_URL: "https://outegro.dev",
         // Sibling apps: linked to and allowed as ways back, never opened.
         BATTLESHIP_URL: "https://battleship.fake.test",
+        EDU_URL: "https://edu.fake.test",
         ADMIN_URL: "https://admin.fake.test",
       },
     },

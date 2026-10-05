@@ -6,7 +6,9 @@ import { type Stack, startStack } from "./stack.js";
 /*
  * R-02: one purchase through the whole platform, as processes talk in
  * production (HTTP, RabbitMQ, SMTP), and the same purchase while the broker
- * or the mail server is down. Lava is the only fake.
+ * or the mail server is down. Lava is the only fake. Education (ADR-010)
+ * rides the same grant event: a manual grant opens a book, its revocation
+ * closes it again.
  */
 
 let stack: Stack;
@@ -50,7 +52,7 @@ async function eventually<T>(
 }
 
 async function api<T>(
-  service: "auth" | "payments" | "battleship" | "notifications",
+  service: "auth" | "payments" | "battleship" | "notifications" | "edu",
   path: string,
   init: {
     method?: string;
@@ -428,5 +430,84 @@ describe("OPS-07 TC-OPS-07-02: a payment the restored database never saw", () =>
         `select count(*) from payments where order_id = '${orderId}'`,
       ),
     ).toBe("1");
+  });
+});
+
+describe("Education: a manual grant opens a book, its revocation closes it", () => {
+  it("TC-EDU-01/03 through Payments, RabbitMQ and edu-backend", async () => {
+    const reader = await signIn(email());
+    const chapter = (slug: string, n: number) =>
+      api<{ chapter: { n: number }; access: string }>(
+        "edu",
+        `/v1/books/${slug}/chapters/${n}`,
+        { token: reader.accessToken },
+      );
+    // The migrations job imported both books; chapter 1 is the free preview.
+    expect((await chapter("sql-internals", 1)).body.access).toBe("preview");
+    expect((await chapter("sql-internals", 3)).status).toBe(403);
+
+    const operator = email();
+    const session = await signIn(operator);
+    await stack.grantOwner(operator);
+    const owner = (
+      await api<{ accessToken: string }>("auth", "/v1/sessions/refresh", {
+        method: "POST",
+        body: { refreshToken: session.refreshToken },
+      })
+    ).body;
+
+    const granted = await api<{ id: string; state: string }>(
+      "payments",
+      "/v1/admin/grants",
+      {
+        method: "POST",
+        token: owner.accessToken,
+        body: {
+          userId: reader.user.id,
+          service: "edu",
+          feature: "book.sql-internals",
+          reason: "system test: reviewer access",
+        },
+      },
+    );
+    expect(granted.status, JSON.stringify(granted.body)).toBe(201);
+    expect(granted.body.state).toBe("active");
+
+    // billing.grant.changed.v1 reaches edu-backend's own projection.
+    await eventually("chapter 3 to open", async () => {
+      const res = await chapter("sql-internals", 3);
+      return res.status === 200 && res.body.access === "granted";
+    });
+    // The grant names one book: the other one stays closed.
+    expect((await chapter("nodejs-internals", 3)).status).toBe(403);
+    const seen = await api<{ grants: { grantId: string; inForce: boolean }[] }>(
+      "edu",
+      `/v1/admin/readers/${reader.user.id}`,
+      { token: owner.accessToken },
+    );
+    expect(seen.body.grants).toEqual([
+      expect.objectContaining({ grantId: granted.body.id, inForce: true }),
+    ]);
+
+    const revoked = await api(
+      "payments",
+      `/v1/admin/grants/${granted.body.id}/revoke`,
+      {
+        method: "POST",
+        token: owner.accessToken,
+        body: { reason: "system test: access ends" },
+      },
+    );
+    expect(revoked.status).toBe(200);
+    await eventually("chapter 3 to close again", async () => {
+      const res = await chapter("sql-internals", 3);
+      return res.status === 403;
+    });
+    expect(
+      await stack.query(
+        "edu",
+        `select state from grants where grant_id = '${granted.body.id}'`,
+      ),
+    ).toBe("revoked");
   });
 });

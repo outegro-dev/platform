@@ -36,7 +36,8 @@ type Product = {
   service: string;
   feature: string;
   kind: "subscription" | "one_time";
-  periodicity: "MONTHLY" | "ONE_TIME";
+  /** WEEKLY: a period pay-web has no words for (catalog "future"). */
+  periodicity: "MONTHLY" | "ONE_TIME" | "WEEKLY";
   graceDays: number;
   title: Localized;
   description: Localized;
@@ -74,8 +75,44 @@ const products: Product[] = [
     prices: { EUR: "52", RUB: "5000", USD: "59" },
   },
 ];
+/**
+ * Catalog "future": products of apps pay-web knows less about, listed after
+ * the real ones. Education is named and linked but sells with a period this
+ * build has no words for; the assistant has neither a name nor a link here.
+ * Shown only: checkout does not know them.
+ */
+const futureProducts: Product[] = [
+  {
+    key: "edu-all-books",
+    service: "edu",
+    feature: "books.all",
+    kind: "subscription",
+    periodicity: "WEEKLY",
+    graceDays: 0,
+    title: { en: "All textbooks", ru: "Все учебники" },
+    description: {
+      en: "Every textbook with its exercises and flash cards.",
+      ru: "Все учебники с упражнениями и карточками.",
+    },
+    prices: { EUR: "52", RUB: "5000", USD: "59" },
+  },
+  {
+    key: "assistant-pro",
+    service: "assistant",
+    feature: "pro",
+    kind: "one_time",
+    periodicity: "ONE_TIME",
+    graceDays: 0,
+    title: { en: "Assistant Pro", ru: "Assistant Pro" },
+    description: {
+      en: "A product of an app pay-web has no name for.",
+      ru: "Продукт приложения, которого pay-web не знает.",
+    },
+    prices: { EUR: "52", RUB: "5000", USD: "59" },
+  },
+];
 const priceIds = new Map(
-  products.flatMap((p) =>
+  [...products, ...futureProducts].flatMap((p) =>
     (Object.keys(p.prices) as Currency[]).map((c) => [
       `${p.key}:${c}`,
       randomUUID(),
@@ -150,7 +187,7 @@ type Persona = {
   createdAt: number;
   ip: string | null;
   payments: "up" | "down";
-  catalog: "normal" | "empty" | "closed" | "down";
+  catalog: "normal" | "empty" | "closed" | "down" | "future";
   cancelMode: "confirm" | "pending";
   checkoutMode: "ready" | "preparing" | "failed" | "offsite";
   accessTtlSec: number;
@@ -460,26 +497,29 @@ function subscriptionView(sub: SubscriptionRecord) {
 
 function catalogView(persona: Persona | null) {
   const mode = persona?.catalog ?? "normal";
+  const listed =
+    mode === "empty"
+      ? []
+      : mode === "future"
+        ? [...products, ...futureProducts]
+        : products;
   return {
     checkoutEnabled: mode !== "closed",
-    products:
-      mode === "empty"
-        ? []
-        : products.map((p) => ({
-            key: p.key,
-            service: p.service,
-            feature: p.feature,
-            kind: p.kind,
-            periodicity: p.periodicity,
-            graceDays: p.graceDays,
-            title: p.title,
-            description: p.description,
-            prices: (["EUR", "RUB", "USD"] as Currency[]).map((currency) => ({
-              priceId: priceIds.get(`${p.key}:${currency}`),
-              version: 1,
-              money: money(p, currency),
-            })),
-          })),
+    products: listed.map((p) => ({
+      key: p.key,
+      service: p.service,
+      feature: p.feature,
+      kind: p.kind,
+      periodicity: p.periodicity,
+      graceDays: p.graceDays,
+      title: p.title,
+      description: p.description,
+      prices: (["EUR", "RUB", "USD"] as Currency[]).map((currency) => ({
+        priceId: priceIds.get(`${p.key}:${currency}`),
+        version: 1,
+        money: money(p, currency),
+      })),
+    })),
   };
 }
 
@@ -685,8 +725,9 @@ function createPersona(input: Record<string, unknown>) {
     ip: typeof input.ip === "string" ? input.ip : null,
     payments: input.payments === "down" ? "down" : "up",
     catalog:
-      (["empty", "closed", "down"] as const).find((m) => m === input.catalog) ??
-      "normal",
+      (["empty", "closed", "down", "future"] as const).find(
+        (m) => m === input.catalog,
+      ) ?? "normal",
     cancelMode: input.cancelMode === "pending" ? "pending" : "confirm",
     checkoutMode:
       (["preparing", "failed", "offsite"] as const).find(
@@ -767,9 +808,9 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
       if (isRecord(body)) {
         if (body.payments === "up" || body.payments === "down")
           persona.payments = body.payments;
-        const catalog = (["normal", "empty", "closed", "down"] as const).find(
-          (m) => m === body.catalog,
-        );
+        const catalog = (
+          ["normal", "empty", "closed", "down", "future"] as const
+        ).find((m) => m === body.catalog);
         if (catalog) persona.catalog = catalog;
         if (body.cancelMode === "confirm" || body.cancelMode === "pending")
           persona.cancelMode = body.cancelMode;

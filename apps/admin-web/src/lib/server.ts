@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import type { Call, Transport } from "./adapters/base";
 import { BattleshipAdmin } from "./adapters/battleship";
+import { EduAdmin } from "./adapters/edu";
 import { IdentityAdmin, type Operator } from "./adapters/identity";
 import { NotificationsAdmin } from "./adapters/notifications";
 import { PaymentsAdmin } from "./adapters/payments";
@@ -30,6 +31,7 @@ const clients = {
   payments: env.PAYMENTS_ADMIN_API_URL
     ? client(env.PAYMENTS_ADMIN_API_URL)
     : null,
+  edu: env.EDU_API_URL ? client(env.EDU_API_URL) : null,
 };
 
 export async function accessToken(): Promise<string | null> {
@@ -50,6 +52,10 @@ export function createServices(
     payments: new PaymentsAdmin(
       "payments",
       clients.payments ? transport(clients.payments) : null,
+    ),
+    education: new EduAdmin(
+      "education",
+      clients.edu ? transport(clients.edu) : null,
     ),
   };
 }

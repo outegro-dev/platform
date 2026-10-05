@@ -60,11 +60,13 @@ describe("account menu model", () => {
     const apps = group(model(), "apps");
     expect(apps.map((app) => [app.label, app.host, app.current])).toEqual([
       ["Battleship", "battleship.outegro.dev", true],
+      ["Education", "edu.outegro.dev", false],
       ["Account", "id.outegro.dev", false],
       ["Payments", "pay.outegro.dev", false],
     ]);
     expect(apps.map((app) => app.href)).toEqual([
       "/",
+      "https://edu.outegro.dev/",
       "https://id.outegro.dev/account",
       "https://pay.outegro.dev/orders",
     ]);
@@ -139,6 +141,7 @@ describe("account menu model", () => {
     ]);
     expect(group(ru, "apps").map((item) => item.label)).toEqual([
       "Морской бой",
+      "Обучение",
       "Аккаунт",
       "Платежи",
       "Админка",
@@ -157,6 +160,7 @@ describe("account menu model", () => {
         id: "http://localhost:3002/",
         pay: "http://localhost:3003",
         battleship: "http://localhost:3005",
+        edu: "http://localhost:3006",
         admin: "http://localhost:3004",
       },
       user: { ...nick, roles: ["support"] },
@@ -167,12 +171,13 @@ describe("account menu model", () => {
     );
     expect(hrefs(local, "apps")).toEqual({
       "app-battleship": "/",
+      "app-edu": "http://localhost:3006/",
       "app-id": "http://localhost:3002/account",
       "app-pay":
         "http://localhost:3003/orders?return=http%3A%2F%2Flocalhost%3A3005%2F",
       "app-admin": "http://localhost:3004/",
     });
-    expect(group(local, "apps")[1]?.host).toBe("localhost:3002");
+    expect(group(local, "apps")[2]?.host).toBe("localhost:3002");
   });
 });
 

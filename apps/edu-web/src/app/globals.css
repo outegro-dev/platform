@@ -1,0 +1,826 @@
+/*
+ * Books app layout: shell, library, book page. Colours, type, glass and
+ * components come from @outegro/ui — no raw palette values here, only
+ * tokens. A book's own accent arrives as --book-accent (from its data) and
+ * tints diagrams and interactive parts only. Reading styles: book.css.
+ */
+
+:root {
+  --header-h: 76px;
+}
+/* Unlayered like the tokens above, so the phone values actually win. */
+@media (max-width: 767px) {
+  :root {
+    --header-h: 64px;
+  }
+}
+
+@layer base {
+  html {
+    overflow-x: clip;
+    scroll-padding-top: 24px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    overflow-x: clip;
+    background:
+      radial-gradient(
+        1100px 620px at 88% -12%,
+        var(--secondary),
+        transparent 70%
+      ),
+      radial-gradient(900px 520px at -10% 8%, var(--muted), transparent 65%),
+      var(--background);
+    background-attachment: fixed;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    touch-action: manipulation;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  dl,
+  dd,
+  ol,
+  ul,
+  figure {
+    margin: 0;
+  }
+  ol,
+  ul {
+    padding: 0;
+    list-style: none;
+  }
+  table {
+    border-collapse: collapse;
+  }
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+}
+
+@layer components {
+  .skip-link {
+    position: fixed;
+    z-index: 100;
+    top: 10px;
+    left: 10px;
+    transform: translateY(-160%);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    padding: 12px 20px;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .skip-link:focus {
+    transform: none;
+  }
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  /* ─── Shell ───────────────────────────────────────────── */
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  .app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-block: 8px 72px;
+  }
+
+  /* ─── Header ──────────────────────────────────────────── */
+  .app-header {
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 12px;
+    min-height: 44px;
+    align-content: center;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+  }
+  .brand-word {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-inline-end: -4px;
+    translate: 0 6px;
+    color: var(--foreground);
+  }
+  .brand-mark svg {
+    width: 26px;
+    height: 26px;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ─── Page heads ─────────────────────────────────────── */
+  .page-head {
+    display: grid;
+    gap: 16px;
+    padding-block: 28px 40px;
+    max-width: 900px;
+  }
+  .page-head h1 {
+    font-size: clamp(44px, 6.4vw, 92px);
+    font-weight: 600;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+  }
+  .page-head h1 .og-accent,
+  .book-title .og-accent {
+    display: block;
+    font-size: 1.07em;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+  }
+  .page-head > p:not(.og-eyebrow) {
+    max-width: 620px;
+    color: var(--muted-foreground);
+    font-size: clamp(16px, 1.3vw, 18px);
+    line-height: 1.6;
+  }
+  .section-head {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: clamp(24px, 2.2vw, 30px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    min-height: 44px;
+    padding-inline-end: 8px;
+    border-radius: var(--radius-sm);
+    color: var(--muted-foreground);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .back-link:hover {
+    color: var(--foreground);
+  }
+  .back-link svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .empty-note {
+    color: var(--muted-foreground);
+    font-size: 18px;
+  }
+
+  /* ─── Book accent (from the book's data) ─────────────── */
+  .book-card,
+  .book-page,
+  .reader {
+    --bk: var(--book-accent, var(--foreground));
+    --bk-text: color-mix(in srgb, var(--bk) 78%, var(--foreground));
+    --bk-soft: color-mix(in srgb, var(--bk) 9%, var(--surface));
+    --bk-line: color-mix(in srgb, var(--bk) 42%, var(--border));
+    /* Status inks and soft fills (--ok, --ok-soft, --danger…) and
+       --shadow-soft come from the kit (@outegro/ui). */
+    --code-bg: color-mix(in srgb, var(--secondary) 45%, var(--surface));
+  }
+
+  /* ─── Library ────────────────────────────────────────── */
+  .book-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .book-grid > li {
+    display: flex;
+  }
+  /* A Surface (kit): its border, fill and radius are not re-declared here. */
+  .book-card {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+  }
+  .book-card-cover {
+    display: grid;
+    place-items: center;
+    height: clamp(220px, 22vw, 300px);
+    padding: clamp(14px, 1.6vw, 22px) clamp(16px, 3vw, 40px);
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(120% 90% at 50% 0%, var(--bk-soft), transparent 70%),
+      color-mix(in srgb, var(--secondary) 30%, var(--surface));
+  }
+  .book-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: clamp(20px, 2.4vw, 30px);
+  }
+  .book-card-title {
+    font-size: clamp(28px, 2.6vw, 36px);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+  }
+  .book-card-title a {
+    border-radius: var(--radius-sm);
+  }
+  .book-card-title a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+  }
+  .book-card-lead {
+    color: var(--muted-foreground);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .book-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* The actions sit at the bottom: two cards side by side line them up. */
+  .book-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 6px;
+  }
+  .book-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    color: var(--foreground);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .access-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Covers (library, book page) and figures (reader) share the diagram classes. */
+  .book-cover svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .book-card-cover svg {
+    width: auto;
+    max-width: 100%;
+    height: 100%;
+  }
+
+  /* The diagram vocabulary of the books (classes from the importer). */
+  :is(.figure-art, .book-cover) svg text {
+    fill: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  :is(.figure-art, .book-cover) svg .b {
+    fill: var(--surface);
+    stroke: var(--border-strong);
+    stroke-width: 1.5;
+  }
+  :is(.figure-art, .book-cover) svg .b-acc {
+    fill: var(--bk-soft);
+    stroke: var(--bk);
+    stroke-width: 1.6;
+  }
+  :is(.figure-art, .book-cover) svg .b-ok {
+    fill: var(--ok-soft);
+    stroke: var(--ok);
+    stroke-width: 1.5;
+  }
+  :is(.figure-art, .book-cover) svg .b-warn {
+    fill: var(--warn-soft);
+    stroke: var(--warn);
+    stroke-width: 1.5;
+  }
+  :is(.figure-art, .book-cover) svg .b-bad {
+    fill: var(--danger-soft);
+    stroke: var(--danger);
+    stroke-width: 1.5;
+  }
+  :is(.figure-art, .book-cover) svg .b-solid {
+    fill: var(--bk);
+    stroke: var(--bk);
+    stroke-width: 1.5;
+  }
+  :is(.figure-art, .book-cover) svg .b-ghost {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.3;
+    stroke-dasharray: 5 4;
+  }
+  :is(.figure-art, .book-cover) svg .b-mute {
+    fill: var(--secondary);
+    stroke: none;
+  }
+  :is(.figure-art, .book-cover) svg .ln {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.6;
+  }
+  :is(.figure-art, .book-cover) svg .ln-acc {
+    fill: none;
+    stroke: var(--bk);
+    stroke-width: 2;
+  }
+  :is(.figure-art, .book-cover) svg .ln-dash {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.6;
+    stroke-dasharray: 5 4;
+  }
+  :is(.figure-art, .book-cover) svg .ln-bad {
+    fill: none;
+    stroke: var(--danger);
+    stroke-width: 1.8;
+  }
+  :is(.figure-art, .book-cover) svg .ah {
+    fill: var(--muted-foreground);
+    stroke: none;
+  }
+  :is(.figure-art, .book-cover) svg .ah-acc {
+    fill: var(--bk);
+    stroke: none;
+  }
+  :is(.figure-art, .book-cover) svg .t {
+    fill: var(--foreground);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  :is(.figure-art, .book-cover) svg .t-s {
+    fill: var(--muted-foreground);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  :is(.figure-art, .book-cover) svg .t-b {
+    font-weight: 700;
+  }
+  :is(.figure-art, .book-cover) svg .t-m {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  :is(.figure-art, .book-cover) svg .t-acc {
+    fill: var(--bk-text);
+  }
+  :is(.figure-art, .book-cover) svg .t-on {
+    fill: var(--primary-foreground);
+  }
+  :is(.figure-art, .book-cover) svg .t-bad {
+    fill: var(--danger);
+  }
+  :is(.figure-art, .book-cover) svg .t-ok {
+    fill: var(--ok);
+  }
+
+  /* Progress of a signed-in reader. */
+  .progress-meters {
+    display: grid;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    background: var(--secondary);
+  }
+  .progress-title {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .progress-row {
+    display: grid;
+    gap: 6px;
+  }
+  .progress-label {
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* ─── Book page ──────────────────────────────────────── */
+  .book-page {
+    gap: 8px;
+  }
+  .book-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    align-items: center;
+    gap: clamp(24px, 5vw, 72px);
+    padding-block: 16px 40px;
+  }
+  .book-hero-text {
+    display: grid;
+    align-content: start;
+    gap: 18px;
+  }
+  .book-title {
+    font-size: clamp(44px, 6vw, 88px);
+    font-weight: 600;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+  }
+  .book-lead {
+    max-width: 640px;
+    color: var(--muted-foreground);
+    font-size: clamp(16px, 1.3vw, 18px);
+    line-height: 1.6;
+  }
+  .book-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+  }
+  .continue-note {
+    color: var(--muted-foreground);
+    font-size: 14px;
+  }
+  /* The reading assistant, said once on the book page (in the book's language). */
+  .book-assist-note {
+    max-width: 640px;
+    padding: 12px 16px;
+    border-inline-start: 3px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    color: var(--muted-foreground);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .book-assist-note strong {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+  .continue-label {
+    font-weight: 600;
+  }
+  .book-hero-cover {
+    padding: clamp(12px, 2vw, 24px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background:
+      radial-gradient(120% 90% at 50% 0%, var(--bk-soft), transparent 70%),
+      var(--surface);
+    box-shadow: var(--shadow-soft);
+  }
+  .book-access {
+    max-width: 880px;
+    margin-bottom: 40px;
+  }
+  .book-note {
+    max-width: 760px;
+    margin-top: 28px;
+    color: var(--muted-foreground);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Contents. */
+  .contents {
+    max-width: 980px;
+  }
+  .contents-list {
+    display: grid;
+    border-top: 1px solid var(--border);
+  }
+  .contents-row {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    min-height: 72px;
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+  .contents-row:hover {
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+  }
+  .contents-n {
+    display: inline-grid;
+    place-items: center start;
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+  .contents-n svg {
+    width: 22px;
+    height: 22px;
+  }
+  .contents-body {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .contents-kicker {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+  .contents-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+  }
+  .contents-meta {
+    color: var(--muted-foreground);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .contents-state {
+    display: inline-flex;
+    align-items: center;
+    color: var(--muted-foreground);
+  }
+  .contents-state svg {
+    width: 20px;
+    height: 20px;
+  }
+  .contents-row[data-locked] .contents-title {
+    color: var(--muted-foreground);
+  }
+
+  /* ─── Access ─────────────────────────────────────────── */
+  .access-panel {
+    display: grid;
+    gap: 12px;
+    padding: clamp(20px, 2.6vw, 30px);
+    box-shadow: var(--shadow-soft);
+  }
+  .access-title {
+    font-size: clamp(22px, 2.2vw, 28px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  .access-panel p {
+    max-width: 640px;
+    color: var(--muted-foreground);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .access-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .access-hint {
+    max-width: 560px;
+    color: var(--muted-foreground);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .access-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    color: var(--success);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .access-note svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  /* ─── Loading ────────────────────────────────────────── */
+  .loading-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+    margin-bottom: 16px;
+    color: var(--muted-foreground);
+    font-size: 14px;
+  }
+  .loading-note svg {
+    width: 18px;
+    height: 18px;
+  }
+  .book-card-skeleton .book-card-cover {
+    place-items: center;
+  }
+  .book-card-skeleton .book-card-body {
+    gap: 16px;
+  }
+  .book-cover-skeleton {
+    display: grid;
+  }
+  /*
+   * Pages that stream behind a skeleton keep their footer below the fold,
+   * so the swap from the skeleton to the page moves nothing on screen.
+   */
+  .app-main-tall {
+    min-height: calc(100dvh - var(--header-h));
+  }
+
+  /* ─── Action status (language, sign-out, offline) ──── */
+  .action-status {
+    position: fixed;
+    inset-inline: 0;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    padding-inline: 16px;
+    pointer-events: none;
+  }
+  .action-status-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(100%, 480px);
+    min-height: 56px;
+    padding: 6px 6px 6px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+  .action-status[data-open] .action-status-card {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .action-status-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .action-status[data-tone="success"] .action-status-icon {
+    color: var(--success);
+  }
+  .action-status:is([data-tone="error"], [data-tone="offline"])
+    .action-status-icon {
+    color: var(--destructive);
+  }
+  .action-status-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  /* ─── Footer ─────────────────────────────────────────── */
+  .app-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding-block: 24px 32px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+  }
+  .app-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-underline-offset: 4px;
+  }
+  .app-footer a:hover {
+    color: var(--foreground);
+    text-decoration-color: currentColor;
+  }
+
+  /* The kit's eyebrow, on a line of its own height inside these heads. */
+  :is(.page-head, .book-hero-text, .book-card-body) .og-eyebrow {
+    line-height: 1.4;
+  }
+
+  /* ─── Responsive ─────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .book-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .book-card {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      grid-template-rows: none;
+    }
+    .book-card-cover {
+      height: auto;
+      padding: clamp(16px, 2.4vw, 28px);
+      border-bottom: 0;
+      border-inline-end: 1px solid var(--border);
+    }
+    .book-card-cover svg {
+      width: 100%;
+      height: auto;
+    }
+  }
+  @media (max-width: 900px) {
+    .book-hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .book-hero-cover {
+      order: -1;
+      max-width: 520px;
+    }
+  }
+  @media (max-width: 767px) {
+    .brand-word {
+      font-size: 26px;
+    }
+    .brand-product {
+      display: none;
+    }
+    .header-actions {
+      gap: 6px;
+    }
+    .page-head {
+      padding-block: 16px 28px;
+    }
+    .book-card {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .book-card-cover {
+      height: 220px;
+      border-inline-end: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+    }
+    .book-card-cover svg {
+      width: auto;
+      height: 100%;
+    }
+    .contents-row {
+      grid-template-columns: 36px minmax(0, 1fr) auto;
+      gap: 12px;
+      padding-inline: 4px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contents-row {
+      transition-duration: 1ms;
+    }
+    /* The status card still appears and fades; it no longer slides. */
+    .action-status-card {
+      transform: none;
+    }
+  }
+}

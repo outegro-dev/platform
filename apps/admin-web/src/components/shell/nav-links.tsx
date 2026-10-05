@@ -4,6 +4,7 @@ import {
   ArrowUpRightIcon,
   BellIcon,
   BoatIcon,
+  BookOpenTextIcon,
   ChartLineIcon,
   CreditCardIcon,
   type Icon,
@@ -22,6 +23,7 @@ const icons: Record<NavKey, Icon> = {
   notifications: BellIcon,
   payments: CreditCardIcon,
   battleship: BoatIcon,
+  education: BookOpenTextIcon,
   audit: ScrollIcon,
   monitoring: ChartLineIcon,
 };

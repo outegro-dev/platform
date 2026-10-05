@@ -8,12 +8,19 @@
  *   /notifications/...    notifications-backend admin API
  *   /battleship/...       battleship-backend admin API (shape assumed by the adapter)
  *   /payments/...         payments-backend admin API and public catalog
+ *   /edu/...              edu-backend admin API (@outegro/contracts/edu)
  *
  * Tokens are unsigned JWT-shaped strings carrying the persona; every admin
  * endpoint checks the persona's permissions like the real services do.
  * Failure injection rides on the browser's User-Agent, which the console
  * forwards to every service: "fake-fail=notifications" answers 503 without
- * a body, "fake-down=payments" drops the connection.
+ * a body, "fake-error=edu" answers 503 with the error envelope (the service
+ * is up, a dependency of it is not), "fake-down=payments" drops the
+ * connection. "fake-assist=off" answers Education's overview with the AI
+ * assistant switched off, "fake-assist=paused" with its spending cap for the
+ * day reached; "fake-audit=future" adds an Education audit action newer than
+ * the contract. "fake-trace=<tag>" keeps every request made with it for
+ * GET /__trace/<tag>.
  */
 import { createHash, randomBytes } from "node:crypto";
 import {
@@ -25,6 +32,11 @@ import {
   permissions as allPermissions,
   platformRoles,
 } from "@outegro/contracts";
+import {
+  type AdminOverview,
+  setBookAccessSchema,
+  setBookStatusSchema,
+} from "@outegro/contracts/edu";
 
 const PORT = Number(process.env.FAKE_PLATFORM_PORT ?? 4196);
 const NOW = Math.floor(Date.now() / 60_000) * 60_000;
@@ -144,6 +156,13 @@ const personaDefs = {
     roles: [] as string[],
     locale: "en" as const,
   },
+  /** Created with the Education seed, after everything else (see there). */
+  editor: {
+    name: "Elena Sorokina",
+    email: "elena.sorokina@outegro.dev",
+    roles: ["edu_editor"],
+    locale: "en" as const,
+  },
 };
 type Persona = keyof typeof personaDefs;
 const personaIds = {} as Record<Persona, string>;
@@ -217,6 +236,8 @@ for (const [key, def] of Object.entries(personaDefs) as [
   Persona,
   (typeof personaDefs)[Persona],
 ][]) {
+  // Drawing from the shared generator here would shift every later seed.
+  if (key === "editor") continue;
   const user = addUser(
     def.name,
     def.email,
@@ -1925,6 +1946,475 @@ issues.push({
   resolution: "Duplicate delivery from Lava; ignored by the semantic key",
 });
 
+// ── Education ───────────────────────────────────────────────────────────
+// Seeded with generators of its own (prngFor), never the shared `random`:
+// everything seeded above stays exactly as it was.
+
+// The education editor joined last: created here, with its own generator.
+{
+  const local = prngFor("edu-editor");
+  const def = personaDefs.editor;
+  const createdAt = NOW - 12 * DAY;
+  const user: User = {
+    id: uuidFrom(local),
+    email: def.email,
+    emailVerified: true,
+    displayName: def.name,
+    locale: def.locale,
+    status: "active",
+    version: 1,
+    createdAt: iso(createdAt),
+    sessions: 1,
+    googleLinked: false,
+  };
+  users.push(user);
+  personaIds.editor = user.id;
+  const reason = "Runs the textbooks at edu.outegro.dev";
+  bindings.push({
+    id: uuidFrom(local),
+    userId: user.id,
+    role: "edu_editor",
+    scope: "platform",
+    state: "active",
+    expiresAt: null,
+    grantedBy: personaIds.owner,
+    reason,
+    createdAt: iso(createdAt + HOUR),
+    revokedAt: null,
+    revokedBy: null,
+  });
+  authAudit.push({
+    id: uuidFrom(local),
+    actorId: personaIds.owner,
+    action: "role.granted",
+    targetType: "user",
+    targetId: user.id,
+    reason,
+    data: { role: "edu_editor" },
+    requestId: "req-edu-editor",
+    createdAt: iso(createdAt + HOUR),
+  });
+  authAudit.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+type EduRule =
+  | { mode: "free" }
+  | { mode: "signed_in" }
+  | { mode: "grant"; features: string[]; previewChapters: number };
+type Book = {
+  slug: string;
+  title: string;
+  status: "draft" | "published" | "archived";
+  rule: EduRule;
+  contentVersion: number;
+  contentHash: string;
+  stats: {
+    chapters: number;
+    figures: number;
+    exercises: number;
+    explain: number;
+    sandboxes: number;
+    cards: number;
+  };
+  importedAt: string;
+  publishedAt: string | null;
+  updatedAt: string;
+  version: number;
+  chapters: {
+    short: string;
+    title: string;
+    exercises: number;
+    cards: number;
+  }[];
+};
+type Reading = {
+  userId: string;
+  book: string;
+  exercisesSolved: number;
+  cardsKnown: number;
+  lastChapter: number | null;
+  startedAt: string;
+  lastActiveAt: string;
+};
+
+const contentHash = (key: string) => {
+  const next = prngFor(key);
+  return Array.from({ length: 64 }, () =>
+    Math.floor(next() * 16).toString(16),
+  ).join("");
+};
+const chaptersOf = (rows: [string, string, number, number][]) =>
+  rows.map(([short, title, exercises, cards]) => ({
+    short,
+    title,
+    exercises,
+    cards,
+  }));
+const paidBy = (slug: string): EduRule => ({
+  mode: "grant",
+  features: ["library", `book.${slug}`],
+  previewChapters: 1,
+});
+// The two real books: titles, chapters and numbers of their content.
+const books: Book[] = [
+  {
+    slug: "nodejs-internals",
+    title: "Node.js изнутри",
+    status: "published",
+    rule: paidBy("nodejs-internals"),
+    contentVersion: 3,
+    contentHash: contentHash("nodejs-internals@3"),
+    stats: {
+      chapters: 13,
+      figures: 55,
+      exercises: 76,
+      explain: 65,
+      sandboxes: 0,
+      cards: 122,
+    },
+    importedAt: iso(NOW - 9 * DAY),
+    publishedAt: iso(NOW - 21 * DAY),
+    updatedAt: iso(NOW - 9 * DAY),
+    version: 1,
+    chapters: chaptersOf([
+      ["Устройство", "Что такое Node.js и из чего он состоит", 6, 10],
+      ["Модули", "Модули: CommonJS и ES Modules", 6, 9],
+      ["Асинхронность", "Асинхронность: колбэки, промисы, async/await", 6, 10],
+      ["Event loop", "Event loop: как один поток успевает всё", 6, 10],
+      ["libuv и потоки", "libuv и пул потоков", 6, 9],
+      ["Buffer", "Buffer и кодировки", 5, 9],
+      ["Streams", "Streams: данные по кусочкам", 5, 9],
+      ["EventEmitter", "EventEmitter и событийная модель", 6, 9],
+      ["HTTP-сервер", "HTTP-сервер изнутри", 6, 9],
+      ["Ошибки и процесс", "Ошибки, процесс и graceful shutdown", 5, 10],
+      [
+        "Потоки и процессы",
+        "Параллельность: worker_threads, child_process, cluster",
+        5,
+        9,
+      ],
+      ["Память и GC", "Память, сборщик мусора и производительность", 6, 10],
+      ["Ловушки", "Хитрые моменты: сборник ловушек", 8, 9],
+    ]),
+  },
+  {
+    slug: "sql-internals",
+    title: "SQL изнутри",
+    status: "published",
+    rule: paidBy("sql-internals"),
+    contentVersion: 2,
+    contentHash: contentHash("sql-internals@2"),
+    stats: {
+      chapters: 13,
+      figures: 71,
+      exercises: 120,
+      explain: 66,
+      sandboxes: 102,
+      cards: 121,
+    },
+    importedAt: iso(NOW - 4 * DAY),
+    publishedAt: iso(NOW - 15 * DAY),
+    updatedAt: iso(NOW - 4 * DAY),
+    version: 0,
+    chapters: chaptersOf([
+      ["Таблицы и ключи", "Реляционная модель: таблицы, ключи, связи", 11, 9],
+      [
+        "SELECT",
+        "SELECT: в каком порядке на самом деле выполняется запрос",
+        10,
+        9,
+      ],
+      ["NULL", "NULL и трёхзначная логика", 11, 10],
+      ["JOIN", "JOIN без кругов Эйлера", 10, 9],
+      ["GROUP BY", "Агрегация и GROUP BY", 11, 10],
+      ["Подзапросы и CTE", "Подзапросы и CTE", 11, 10],
+      [
+        "Оконные функции",
+        "Оконные функции: считаем по группе и не теряем строки",
+        10,
+        9,
+      ],
+      [
+        "INSERT, UPDATE, DDL",
+        "Изменение данных и схемы: INSERT, UPDATE, UPSERT, ALTER",
+        9,
+        9,
+      ],
+      [
+        "Индексы",
+        "Индексы: как база находит строку, не читая всю таблицу",
+        7,
+        10,
+      ],
+      ["EXPLAIN", "EXPLAIN и производительность запросов", 7, 10],
+      ["Транзакции", "Транзакции, ACID и уровни изоляции", 7, 9],
+      ["MVCC и блокировки", "MVCC, блокировки и конкуренция", 7, 9],
+      ["Проектирование", "Проектирование схемы и масштабирование", 9, 8],
+    ]),
+  },
+];
+const bookOf = (slug: string) => books.find((book) => book.slug === slug);
+
+// Reading access is a Payments grant (service edu): no product sells books
+// yet, so every one of these was given by hand.
+function eduGrant(
+  key: string,
+  user: User,
+  feature: string,
+  options: {
+    from: number;
+    until: number | null;
+    reason: string;
+    /** When it was given, if not when it starts (a grant booked ahead). */
+    grantedAt?: number;
+    revoked?: { at: number; reason: string };
+  },
+) {
+  const local = prngFor(`edu-grant-${key}`);
+  const grant: PayGrant = {
+    id: uuidFrom(local),
+    userId: user.id,
+    service: "edu",
+    feature,
+    sourceType: "manual",
+    sourceId: uuidFrom(local),
+    state: options.revoked ? "revoked" : "active",
+    validFrom: iso(options.from),
+    validUntil: options.until === null ? null : iso(options.until),
+    version: options.revoked ? 2 : 1,
+    reason: options.reason,
+    grantedBy: personaIds.owner,
+    revokedAt: options.revoked ? iso(options.revoked.at) : null,
+    revokedBy: options.revoked ? personaIds.owner : null,
+    revokeReason: options.revoked?.reason ?? null,
+  };
+  payGrants.push(grant);
+  paymentsAudit.push({
+    id: uuidFrom(local),
+    actorId: personaIds.owner,
+    action: "grant.created",
+    targetType: "grant",
+    targetId: grant.id,
+    reason: options.reason,
+    data: {},
+    requestId: null,
+    createdAt: iso(options.grantedAt ?? options.from),
+  });
+}
+const dmitry = userByEmail("d.volkov@example.ru");
+const artem = userByEmail("artem.k@example.ru");
+const ivan = userByEmail("ivan.sokolov@example.ru");
+eduGrant("oleg", oleg, "library", {
+  from: NOW - 14 * DAY,
+  until: null,
+  reason: "Beta reader of both books",
+});
+eduGrant("mira", mira, "book.nodejs-internals", {
+  from: NOW - 11 * DAY,
+  until: null,
+  reason: "Wrote the errata for the event loop chapter",
+});
+eduGrant("dmitry", dmitry, "book.nodejs-internals", {
+  from: NOW - 8 * DAY,
+  until: NOW + 52 * DAY,
+  reason: "Interview prep sponsored by the Node.js meetup",
+});
+eduGrant("artem", artem, "library", {
+  from: NOW - 5 * DAY,
+  until: NOW + 25 * DAY,
+  reason: "Technical review of the SQL book",
+});
+eduGrant("ivan", ivan, "library", {
+  from: NOW - 13 * DAY,
+  until: null,
+  reason: "Prize of the September quiz",
+  revoked: { at: NOW - 12 * DAY, reason: "Given to the wrong account" },
+});
+// Payments still calls both of these active: Artem's next review round is
+// booked to start when his library grant ends, and his grant for the first
+// Node.js draft ran out three days ago without being marked expired yet.
+eduGrant("artem-sql", artem, "book.sql-internals", {
+  from: NOW + 25 * DAY,
+  until: NOW + 90 * DAY,
+  grantedAt: NOW - 2 * DAY,
+  reason: "Second review round of the SQL book",
+});
+eduGrant("artem-nodejs", artem, "book.nodejs-internals", {
+  from: NOW - 40 * DAY,
+  until: NOW - 3 * DAY,
+  reason: "Review of the first Node.js draft",
+});
+
+// Readers: a paid book opens its first chapter to anyone signed in, so
+// readers without a grant stop at chapter 1.
+const readings: Reading[] = [];
+function read(
+  user: User,
+  slug: string,
+  lastChapter: number | null,
+  hoursAgo: number,
+) {
+  const book = bookOf(slug) as Book;
+  const local = prngFor(`edu-reading-${user.id}-${slug}`);
+  const upTo = book.chapters.slice(0, lastChapter ?? 0);
+  const exercises = upTo.reduce((sum, chapter) => sum + chapter.exercises, 0);
+  const cards = upTo.reduce((sum, chapter) => sum + chapter.cards, 0);
+  readings.push({
+    userId: user.id,
+    book: slug,
+    exercisesSolved: Math.round(exercises * (0.55 + local() * 0.45)),
+    cardsKnown: Math.round(cards * (0.3 + local() * 0.6)),
+    lastChapter,
+    startedAt: iso(NOW - hoursAgo * HOUR - (2 + Math.floor(local() * 9)) * DAY),
+    lastActiveAt: iso(NOW - hoursAgo * HOUR),
+  });
+}
+read(mira, "nodejs-internals", 7, 2);
+read(mira, "sql-internals", 1, 26);
+read(oleg, "nodejs-internals", 4, 50);
+read(oleg, "sql-internals", 9, 5);
+read(dmitry, "nodejs-internals", 12, 1);
+read(artem, "sql-internals", 6, 30);
+read(ivan, "sql-internals", 1, 8 * 24);
+{
+  const local = prngFor("edu-readers");
+  const named = new Set([mira.id, oleg.id, dmitry.id, artem.id, ivan.id]);
+  // Never readers: Hana Kim has done nothing anywhere (the empty states rely
+  // on her), and Tom Becker gets his first book by hand in education.spec.
+  const never = new Set([
+    userByEmail("hana.kim@example.kr").id,
+    userByEmail("tom.becker@example.de").id,
+  ]);
+  const pool = users.filter(
+    (user) =>
+      user.status === "active" &&
+      !never.has(user.id) &&
+      !named.has(user.id) &&
+      !Object.values(personaIds).includes(user.id),
+  );
+  for (let index = 0; index < 10 && pool.length > 0; index++) {
+    const [user] = pool.splice(Math.floor(local() * pool.length), 1) as [User];
+    const slug = local() < 0.6 ? "nodejs-internals" : "sql-internals";
+    read(user, slug, local() < 0.2 ? null : 1, 3 + Math.floor(local() * 300));
+  }
+}
+
+const eduSolved7d = 40 + Math.floor(prngFor("edu-solved")() * 50);
+// The AI assistant's week (edu-backend through MiniMax): fixed numbers, so
+// shares and number formatting can be checked exactly. On, it made 37 of
+// its 500 model calls for today (the default spending cap). Switched off
+// ("fake-assist=off"), it keeps its reader limit, has no spending cap and
+// was not used this week. Paused ("fake-assist=paused"), a busy day used up
+// a cap raised to 1,000 calls: no new answers for readers until 00:00 UTC.
+const eduAssist = {
+  on: {
+    enabled: true,
+    dailyLimit: 30,
+    globalDailyLimit: 500,
+    globalUsedToday: 37,
+    requests7d: 1284,
+    cached7d: 321,
+    failed7d: 13,
+    tokensIn7d: 2_486_910,
+    tokensOut7d: 612_304,
+  },
+  paused: {
+    enabled: true,
+    dailyLimit: 30,
+    globalDailyLimit: 1000,
+    globalUsedToday: 1000,
+    requests7d: 2487,
+    cached7d: 561,
+    failed7d: 24,
+    tokensIn7d: 5_086_910,
+    tokensOut7d: 1_262_304,
+  },
+  off: {
+    enabled: false,
+    dailyLimit: 30,
+    globalDailyLimit: 0,
+    globalUsedToday: 0,
+    requests7d: 0,
+    cached7d: 0,
+    failed7d: 0,
+    tokensIn7d: 0,
+    tokensOut7d: 0,
+  },
+} satisfies Record<string, AdminOverview["assist"]>;
+const assistOf = (req: IncomingMessage) => {
+  const agent = String(req.headers["user-agent"] ?? "");
+  if (agent.includes("fake-assist=off")) return eduAssist.off;
+  if (agent.includes("fake-assist=paused")) return eduAssist.paused;
+  return eduAssist.on;
+};
+// Readers active per day, today last; built per request for today's date.
+const eduActivity = (() => {
+  const local = prngFor("edu-activity");
+  return Array.from({ length: 14 }, (_, index) => ({
+    daysAgo: 13 - index,
+    readers: 2 + Math.floor(local() * 6) + Math.floor(index / 4),
+  }));
+})();
+
+const eduAudit: Audit[] = [];
+const eduEntry = (
+  key: string,
+  entry: Omit<Audit, "id" | "requestId" | "createdAt"> & { at: number },
+) => {
+  const { at, ...rest } = entry;
+  eduAudit.push({
+    id: uuidFrom(prngFor(`edu-audit-${key}`)),
+    requestId: null,
+    createdAt: iso(at),
+    ...rest,
+  });
+};
+// Content imports run with the migrations: no actor, no reason.
+const imported = (slug: string, version: number, at: number) =>
+  eduEntry(`${slug}@${version}`, {
+    actorId: null,
+    action: "book.imported",
+    targetType: "book",
+    targetId: slug,
+    reason: null,
+    data: {
+      contentVersion: version,
+      contentHash: contentHash(`${slug}@${version}`),
+    },
+    at,
+  });
+imported("nodejs-internals", 1, NOW - 21 * DAY);
+imported("sql-internals", 1, NOW - 15 * DAY);
+imported("nodejs-internals", 2, NOW - 12 * DAY);
+eduEntry("nodejs-preview", {
+  actorId: personaIds.owner,
+  action: "book.access.changed",
+  targetType: "book",
+  targetId: "nodejs-internals",
+  reason: "One free chapter is enough to judge the book",
+  data: {
+    before: { rule: { ...paidBy("nodejs-internals"), previewChapters: 2 } },
+    after: { rule: paidBy("nodejs-internals") },
+  },
+  at: NOW - 10 * DAY,
+});
+imported("nodejs-internals", 3, NOW - 9 * DAY);
+imported("sql-internals", 2, NOW - 4 * DAY);
+eduAudit.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+// A newer edu-backend ("fake-audit=future") also records an action that the
+// console's contract does not name yet.
+const futureEduAudit: Audit = {
+  id: uuidFrom(prngFor("edu-audit-future")),
+  actorId: personaIds.owner,
+  action: "book.cover.changed",
+  targetType: "book",
+  targetId: "sql-internals",
+  reason: "New cover for the launch",
+  data: { before: { cover: "sql-v1.webp" }, after: { cover: "sql-v2.webp" } },
+  requestId: null,
+  createdAt: iso(NOW - 2 * HOUR),
+};
+
 // Identity's projection of the active grants.
 for (const grant of payGrants.filter((g) => g.state === "active")) {
   const list = identityGrants.get(grant.userId) ?? [];
@@ -2064,6 +2554,14 @@ const route = (method: string, path: string, handler: Handler) =>
   });
 
 route("GET", "/health", () => ({ status: "ok", service: "fake-platform" }));
+
+// Every request made with "fake-trace=<tag>" in the User-Agent (the console
+// forwards it), kept under that tag: a test reads back which calls a page
+// made, e.g. that a list asks Identity nothing per row.
+const traces = new Map<string, string[]>();
+route("GET", "/__trace/:tag", (_req, _res, [tag]) => ({
+  requests: traces.get(tag as string) ?? [],
+}));
 
 // Identity frontend: pick a persona instead of signing in.
 route("GET", "/authorize", (req, res) => {
@@ -2967,6 +3465,232 @@ route("GET", "/battleship/v1/admin/audit", (req) => {
   };
 });
 
+// Education.
+const eduGrantsOf = (userId: string) =>
+  payGrants.filter(
+    (grant) => grant.userId === userId && grant.service === "edu",
+  );
+const inForce = (grant: PayGrant) =>
+  grant.state === "active" &&
+  Date.parse(grant.validFrom) <= Date.now() &&
+  (grant.validUntil === null || Date.parse(grant.validUntil) > Date.now());
+const readerAccess = (reading: Reading) => {
+  const book = bookOf(reading.book) as Book;
+  if (book.rule.mode !== "grant") return "open";
+  const features = book.rule.features;
+  if (
+    eduGrantsOf(reading.userId).some(
+      (grant) => inForce(grant) && features.includes(grant.feature),
+    )
+  )
+    return "granted";
+  return book.rule.previewChapters > 0 ? "preview" : "locked";
+};
+const readerView = (reading: Reading) => {
+  const book = bookOf(reading.book) as Book;
+  return {
+    userId: reading.userId,
+    book: reading.book,
+    exercisesSolved: reading.exercisesSolved,
+    exercisesTotal: book.stats.exercises,
+    cardsKnown: reading.cardsKnown,
+    cardsTotal: book.stats.cards,
+    lastChapter: reading.lastChapter,
+    access: readerAccess(reading),
+    startedAt: reading.startedAt,
+    lastActiveAt: reading.lastActiveAt,
+  };
+};
+const bookView = (book: Book) => {
+  const { chapters: _chapters, ...rest } = book;
+  return {
+    ...rest,
+    readers: readings.filter((reading) => reading.book === book.slug).length,
+  };
+};
+const ruleKey = (rule: EduRule) =>
+  JSON.stringify(
+    rule.mode === "grant"
+      ? { ...rule, features: [...rule.features].sort() }
+      : { mode: rule.mode },
+  );
+route("GET", "/edu/health/deep", () =>
+  terminus(true, ["postgres", "valkey", "rabbitmq"]),
+);
+route("GET", "/edu/v1/admin/overview", (req) => {
+  need(req, "edu.read");
+  const count = (status: Book["status"]) =>
+    books.filter((book) => book.status === status).length;
+  const weekAgo = Date.now() - 7 * DAY;
+  return {
+    books: {
+      published: count("published"),
+      draft: count("draft"),
+      archived: count("archived"),
+    },
+    readers: {
+      total: new Set(readings.map((reading) => reading.userId)).size,
+      active7d: new Set(
+        readings
+          .filter((reading) => Date.parse(reading.lastActiveAt) > weekAgo)
+          .map((reading) => reading.userId),
+      ).size,
+    },
+    grants: {
+      inForce: payGrants.filter(
+        (grant) => grant.service === "edu" && inForce(grant),
+      ).length,
+    },
+    exercisesSolved7d: eduSolved7d,
+    activity: eduActivity.map(({ daysAgo, readers }) => ({
+      day: new Date(Date.now() - daysAgo * DAY).toISOString().slice(0, 10),
+      readers,
+    })),
+    assist: assistOf(req),
+  };
+});
+route("GET", "/edu/v1/admin/books", (req) => {
+  need(req, "edu.read");
+  return { items: books.map(bookView) };
+});
+route("GET", "/edu/v1/admin/books/:slug", (req, _res, [slug]) => {
+  need(req, "edu.read");
+  const book = (bookOf(slug as string) ?? fail(404, "NOT_FOUND")) as Book;
+  return {
+    book: bookView(book),
+    chapters: book.chapters.map((chapter, index) => ({
+      n: index + 1,
+      ...chapter,
+      reached: readings.filter(
+        (reading) =>
+          reading.book === book.slug && (reading.lastChapter ?? 0) >= index + 1,
+      ).length,
+    })),
+  };
+});
+route("POST", "/edu/v1/admin/books/:slug/status", (req, _res, [slug]) => {
+  const persona = need(req, "edu.manage");
+  const reason = reasonOf(req.body);
+  const input = setBookStatusSchema.safeParse(req.body);
+  if (!input.success) fail(400, "VALIDATION_FAILED", { status: ["invalid"] });
+  const book = (bookOf(slug as string) ?? fail(404, "NOT_FOUND")) as Book;
+  if (input.data.expectedVersion !== book.version)
+    fail(409, "VERSION_CONFLICT");
+  if (input.data.status === book.status)
+    fail(422, "UNPROCESSABLE", { status: ["unchanged"] });
+  const before = book.status;
+  book.status = input.data.status;
+  book.version += 1;
+  book.updatedAt = iso(Date.now());
+  if (book.status === "published") book.publishedAt = book.updatedAt;
+  audit(eduAudit, {
+    actorId: actorOf(persona),
+    action: "book.status.changed",
+    targetType: "book",
+    targetId: book.slug,
+    reason,
+    data: { before: { status: before }, after: { status: book.status } },
+  });
+  return {
+    slug: book.slug,
+    status: book.status,
+    rule: book.rule,
+    version: book.version,
+  };
+});
+route("POST", "/edu/v1/admin/books/:slug/access", (req, _res, [slug]) => {
+  const persona = need(req, "edu.manage");
+  const reason = reasonOf(req.body);
+  const input = setBookAccessSchema.safeParse(req.body);
+  if (!input.success) fail(400, "VALIDATION_FAILED", { rule: ["invalid"] });
+  const book = (bookOf(slug as string) ?? fail(404, "NOT_FOUND")) as Book;
+  if (input.data.expectedVersion !== book.version)
+    fail(409, "VERSION_CONFLICT");
+  const rule = input.data.rule;
+  if (rule.mode === "grant" && rule.previewChapters > book.chapters.length)
+    fail(422, "UNPROCESSABLE", {
+      "rule.previewChapters": ["more than the chapters"],
+    });
+  if (ruleKey(rule) === ruleKey(book.rule))
+    fail(422, "UNPROCESSABLE", { rule: ["unchanged"] });
+  const before = book.rule;
+  book.rule = rule;
+  book.version += 1;
+  book.updatedAt = iso(Date.now());
+  audit(eduAudit, {
+    actorId: actorOf(persona),
+    action: "book.access.changed",
+    targetType: "book",
+    targetId: book.slug,
+    reason,
+    // As edu-backend's BookCommands records it.
+    data: { before: { rule: before }, after: { rule } },
+  });
+  return {
+    slug: book.slug,
+    status: book.status,
+    rule: book.rule,
+    version: book.version,
+  };
+});
+route("GET", "/edu/v1/admin/readers", (req) => {
+  need(req, "edu.read");
+  const q = req.query;
+  const list = readings
+    .filter(
+      (reading) =>
+        (!q.get("book") || reading.book === q.get("book")) &&
+        (!q.get("userId") || reading.userId === q.get("userId")),
+    )
+    .sort((a, b) => (a.lastActiveAt < b.lastActiveAt ? 1 : -1));
+  const page = paginate(list, q);
+  return { items: page.items.map(readerView), nextCursor: page.nextCursor };
+});
+route("GET", "/edu/v1/admin/readers/:userId", (req, _res, [userId]) => {
+  need(req, "edu.read");
+  const own = readings
+    .filter((reading) => reading.userId === userId)
+    .sort((a, b) => (a.lastActiveAt < b.lastActiveAt ? 1 : -1));
+  const grants = eduGrantsOf(userId as string);
+  // Never read and no grant: Education does not know this user.
+  if (own.length === 0 && grants.length === 0) fail(404, "NOT_FOUND");
+  return {
+    userId,
+    grants: grants.map((grant) => ({
+      grantId: grant.id,
+      feature: grant.feature,
+      sourceType: grant.sourceType,
+      state: grant.state,
+      validFrom: grant.validFrom,
+      validUntil: grant.validUntil,
+      inForce: inForce(grant),
+    })),
+    books: own.map(readerView),
+  };
+});
+route("GET", "/edu/v1/admin/audit", (req) => {
+  need(req, "edu.read");
+  const q = req.query;
+  const all = String(req.headers["user-agent"] ?? "").includes(
+    "fake-audit=future",
+  )
+    ? [futureEduAudit, ...eduAudit].sort((a, b) =>
+        a.createdAt < b.createdAt ? 1 : -1,
+      )
+    : eduAudit;
+  const list = all.filter(
+    (entry) => !q.get("targetId") || entry.targetId === q.get("targetId"),
+  );
+  const page = paginate(list, q);
+  return {
+    items: page.items.map(({ createdAt, requestId: _requestId, ...entry }) => ({
+      ...entry,
+      at: createdAt,
+    })),
+    nextCursor: page.nextCursor,
+  };
+});
+
 // Payments.
 const title = (key: string) =>
   products.find((p) => p.key === key)?.title ?? { en: key, ru: key };
@@ -3555,6 +4279,12 @@ const server = createServer(async (incoming, res) => {
   req.path = url.pathname;
   const agent = String(req.headers["user-agent"] ?? "");
   const service = serviceOf(req.path);
+  const trace = /fake-trace=([\w-]+)/.exec(agent)?.[1];
+  if (trace && service !== "__trace") {
+    const calls = traces.get(trace) ?? [];
+    calls.push(`${req.method} ${req.path}`);
+    traces.set(trace, calls);
+  }
   if (agent.includes(`fake-down=${service}`)) {
     req.socket.destroy();
     return;
@@ -3563,6 +4293,12 @@ const server = createServer(async (incoming, res) => {
     if (req.path.endsWith("/health/deep"))
       send(res, 503, terminus(false, ["postgres", "valkey", "rabbitmq"]));
     else send(res, 503);
+    return;
+  }
+  if (agent.includes(`fake-error=${service}`)) {
+    if (req.path.endsWith("/health/deep"))
+      send(res, 503, terminus(false, ["postgres", "valkey", "rabbitmq"]));
+    else send(res, 503, errorBody("DEPENDENCY_UNAVAILABLE"));
     return;
   }
   const chunks: Buffer[] = [];
@@ -3601,6 +4337,6 @@ const server = createServer(async (incoming, res) => {
 
 server.listen(PORT, () => {
   console.log(
-    `fake platform on http://localhost:${PORT} (${users.length} users, ${deliveries.length} deliveries, ${matches.length} matches, ${orders.length} orders)`,
+    `fake platform on http://localhost:${PORT} (${users.length} users, ${deliveries.length} deliveries, ${matches.length} matches, ${orders.length} orders, ${readings.length} readings)`,
   );
 });

@@ -12,10 +12,12 @@ const APPS = [
   "pay-web",
   "admin-web",
   "battleship-web",
+  "edu-web",
   "auth-backend",
   "notifications-backend",
   "payments-backend",
   "battleship-backend",
+  "edu-backend",
 ];
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();

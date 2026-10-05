@@ -47,7 +47,11 @@
       "grant-exists": "An active manual grant for this feature already exists.",
       "not-live": "The match is no longer live.",
       "state": "The record is not in a state that allows this anymore.",
-      "last-method": "This is the user's last way to sign in: the email is not verified and there is no other passkey or Google. The passkey stays."
+      "last-method": "This is the user's last way to sign in: the email is not verified and there is no other passkey or Google. The passkey stays.",
+      "same-status": "Nothing changed: the book already has this status.",
+      "same-rule": "Nothing changed: this is already the book's access rule.",
+      "free-chapters": "The book has fewer chapters than that: lower the number of free chapters.",
+      "rule-refused": "Education did not accept this access rule; nothing changed."
     },
     "done": {
       "suspended": "Account suspended. All sessions were ended.",
@@ -69,7 +73,11 @@
       "nicknameResetTo": "Nickname reset to {nickname}.",
       "playerHidden": "Player hidden from the leaderboard.",
       "playerShown": "Player shown on the leaderboard again.",
-      "passkeyRevoked": "Passkey removed. The user has been notified."
+      "passkeyRevoked": "Passkey removed. The user has been notified.",
+      "bookPublished": "Book published.",
+      "bookDrafted": "Book moved back to draft.",
+      "bookArchived": "Book archived.",
+      "bookAccessChanged": "Access rule changed."
     }
   },
   "idle": {
@@ -103,6 +111,7 @@
       "notifications": "Notifications",
       "payments": "Payments",
       "battleship": "Battleship",
+      "education": "Education",
       "audit": "Audit",
       "monitoring": "Monitoring"
     },
@@ -110,6 +119,7 @@
       "owner": "Owner",
       "support": "Support",
       "billing_operator": "Billing",
+      "edu_editor": "Education editor",
       "auditor": "Auditor",
       "service_operator": "Operations"
     },
@@ -221,6 +231,7 @@
       "owner": "Owner",
       "support": "Support",
       "billing_operator": "Billing operator",
+      "edu_editor": "Education editor",
       "auditor": "Auditor",
       "service_operator": "Service operator"
     },
@@ -237,6 +248,12 @@
       "active": "Active",
       "revoked": "Revoked",
       "expired": "Expired"
+    },
+    "grantPhase": {
+      "scheduled": "Scheduled",
+      "active": "In force",
+      "expired": "Expired",
+      "revoked": "Revoked"
     },
     "category": {
       "auth": "Sign-in",
@@ -389,6 +406,17 @@
       "hitEffect": "Hit effect",
       "theme": "Board theme"
     },
+    "bookStatus": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "readerAccess": {
+      "open": "Open book",
+      "granted": "Has access",
+      "preview": "Free chapters only",
+      "locked": "No access"
+    },
     "target": {
       "user": "User",
       "delivery": "Delivery",
@@ -399,7 +427,8 @@
       "grant": "Grant",
       "subscription": "Subscription",
       "payment": "Payment",
-      "refund": "Refund"
+      "refund": "Refund",
+      "book": "Book"
     },
     "settingsTarget": {
       "channels": "Channel switches"
@@ -422,7 +451,10 @@
       "match_aborted": "Match aborted",
       "player_nickname_reset": "Nickname reset",
       "player_leaderboard_hidden": "Hidden from leaderboard",
-      "player_leaderboard_shown": "Shown on leaderboard"
+      "player_leaderboard_shown": "Shown on leaderboard",
+      "book_imported": "Content imported",
+      "book_status_changed": "Status changed",
+      "book_access_changed": "Access rule changed"
     }
   },
   "dashboard": {
@@ -445,7 +477,8 @@
         "identity": "Identity",
         "notifications": "Notifications",
         "battleship": "Battleship",
-        "payments": "Payments"
+        "payments": "Payments",
+        "education": "Education"
       },
       "unconfigured": "No address configured yet",
       "noAnswer": "No answer",
@@ -459,7 +492,8 @@
         "identity": "Identity",
         "notifications": "Notifications",
         "battleship": "Battleship",
-        "payments": "Payments"
+        "payments": "Payments",
+        "education": "Education"
       },
       "serviceDown": "{service} is down",
       "serviceDegraded": "{service} is degraded",
@@ -492,7 +526,8 @@
         "identity": "Identity",
         "notifications": "Notifications",
         "battleship": "Battleship",
-        "payments": "Payments"
+        "payments": "Payments",
+        "education": "Education"
       },
       "partial": "Could not read {sources}. Showing the rest.",
       "empty": "No actions yet",
@@ -525,6 +560,7 @@
         "owner": "Owner",
         "support": "Support",
         "billing_operator": "Billing operator",
+        "edu_editor": "Education editor",
         "auditor": "Auditor",
         "service_operator": "Service operator"
       },
@@ -599,6 +635,23 @@
       "conversion": "Checkout conversion",
       "checkouts": "{paid} paid of {count}",
       "currencyNote": "Each currency is counted on its own; amounts are never converted or added up."
+    },
+    "education": {
+      "kicker": "Education",
+      "title": "Readers and books",
+      "open": "Education",
+      "what": "reading numbers",
+      "service": "Education",
+      "readers": "Readers",
+      "active7d": "{count} active in 7 days",
+      "published": "Books published",
+      "otherBooks": "{draft} in draft · {archived} archived",
+      "grants": "Grants in force",
+      "grantsHint": "The library or single books",
+      "solved": "Exercises solved",
+      "solvedHint": "In the last 7 days",
+      "chart": "Active readers per day, last 14 days",
+      "readersSeries": "Active readers"
     }
   },
   "audit": {
@@ -607,6 +660,12 @@
     "lead": "Every recorded action across the platform, newest first: who did what, to which record, why and when.",
     "by": "by",
     "bySystem": "by the system",
+    "byImport": "by the content import",
+    "contentVersion": "content version {version}",
+    "otherAction": "Other action",
+    "actionCode": "Action code:",
+    "was": "was",
+    "now": "now",
     "filters": "Audit filters",
     "source": "Source",
     "allSources": "All sources",
@@ -627,7 +686,8 @@
       "identity": "Identity",
       "notifications": "Notifications",
       "battleship": "Battleship",
-      "payments": "Payments"
+      "payments": "Payments",
+      "education": "Education"
     }
   },
   "users": {
@@ -649,6 +709,7 @@
       "access": "Product access",
       "notifications": "Notifications",
       "battleship": "Battleship",
+      "education": "Education",
       "payments": "Payments",
       "activity": "Activity"
     },
@@ -849,6 +910,25 @@
       "rated": "{count} rated",
       "record": "Wins / losses",
       "winRate": "Win rate"
+    },
+    "education": {
+      "title": "Reading",
+      "what": "reading progress",
+      "service": "Education",
+      "noReader": "Has not read anything yet",
+      "noReaderBody": "Progress appears once the user opens a book at edu.outegro.dev; Education grants show here too.",
+      "open": "Open in Education",
+      "noBooks": "Has not opened a book yet",
+      "library": "Every book (library)",
+      "grants": "Education grants",
+      "grantsNote": "As Education sees them (from Payments). Give or revoke them in Product access.",
+      "noGrants": "No Education grants.",
+      "colFeature": "Opens",
+      "colSource": "Source",
+      "colState": "State",
+      "colValid": "Valid",
+      "until": "until",
+      "forever": "no end date"
     },
     "payments": {
       "title": "Payments",
@@ -1584,6 +1664,211 @@
       "listTitle": "Newest first",
       "empty": "No moderation yet",
       "emptyBody": "Actions taken on matches and players appear here."
+    }
+  },
+  "education": {
+    "eyebrow": "Services",
+    "title": "Education",
+    "lead": "Interactive textbooks at edu.outegro.dev: which books are out, who may read them and how far readers get.",
+    "tabsLabel": "Education sections",
+    "tabs": {
+      "overview": "Overview",
+      "books": "Books",
+      "readers": "Readers",
+      "audit": "Audit"
+    },
+    "overview": {
+      "now": "Readers and books",
+      "books": "Books",
+      "recent": "Recently active readers",
+      "allReaders": "All readers",
+      "connection": "Connection",
+      "what": "reading numbers",
+      "service": "Education"
+    },
+    "assist": {
+      "title": "AI assistant",
+      "note": "Answers for signed-in readers in open chapters, over the last 7 days.",
+      "what": "assistant numbers",
+      "service": "Education",
+      "requests": "Requests",
+      "requestsHint": "Cached answers included",
+      "cached": "From the cache",
+      "failed": "Failed",
+      "ofRequests": "{share} of requests",
+      "tokensIn": "Tokens in",
+      "tokensInHint": "Sent to the model",
+      "tokensOut": "Tokens out",
+      "tokensOutHint": "Written by the model",
+      "status": "Status",
+      "on": "On",
+      "paused": "Paused",
+      "off": "Off",
+      "onHint": "Readers see it in open chapters.",
+      "pausedHint": "Paused for readers until 00:00 UTC: the spending cap is reached. Cached answers are still served.",
+      "offHint": "Hidden from readers: no model key, safe mode, or switched off in the settings.",
+      "dailyLimit": "Daily limit",
+      "perReader": "{count, plural, one {# request per reader} other {# requests per reader}}",
+      "resets": "Resets at 00:00 UTC.",
+      "globalLimit": "Spending cap",
+      "globalUsed": "{used} of {limit, plural, one {# call} other {# calls}} today",
+      "globalResets": "All readers together. Resets at 00:00 UTC.",
+      "noGlobalLimit": "No spending cap",
+      "noGlobalLimitHint": "Only each reader's daily limit applies.",
+      "counts": "Cached answers (the same section and style again) skip the model: no tokens, and nothing taken from the reader's daily limit or the spending cap. Failed: ended without a full answer, after an error or because the reader stopped it."
+    },
+    "books": {
+      "title": "Books",
+      "lead": "Every imported book: its status, who may read it and how many do.",
+      "what": "books",
+      "service": "Education",
+      "empty": "No books yet",
+      "emptyBody": "Books appear after Education imports its content.",
+      "colBook": "Book",
+      "colStatus": "Status",
+      "colAccess": "Who reads",
+      "colReaders": "Readers",
+      "colContent": "Content",
+      "colPublished": "Published",
+      "version": "v{version}",
+      "imported": "imported",
+      "never": "Not yet"
+    },
+    "book": {
+      "title": "Book",
+      "back": "Books",
+      "what": "this book",
+      "service": "Education",
+      "kicker": "Book",
+      "readers": "Readers",
+      "chapters": "Chapters",
+      "exercises": "Exercises",
+      "cards": "Flash cards",
+      "figures": "Figures",
+      "explain": "Explanations",
+      "sandboxes": "SQL sandboxes",
+      "status": "Status",
+      "access": "Who reads",
+      "content": "Content",
+      "version": "version {version}",
+      "imported": "Imported",
+      "published": "Published",
+      "updated": "Last change",
+      "never": "Never",
+      "publish": "Publish",
+      "publishTitle": "Publish this book?",
+      "publishDescription": "“{title}” appears in the library at edu.outegro.dev.",
+      "publishEffect": "Readers can find it and open its chapters right away.",
+      "publishRule": "Who reads past the free chapters follows its rule: {rule}.",
+      "publishConfirm": "Publish book",
+      "draft": "Back to draft",
+      "draftTitle": "Move this book back to draft?",
+      "draftDescription": "“{title}” leaves the library until it is published again.",
+      "draftEffect": "Readers can no longer open it, even with a grant.",
+      "draftStaff": "Staff with edu.read still read it, to check the next content import.",
+      "draftConfirm": "Move to draft",
+      "archive": "Archive",
+      "archiveTitle": "Archive this book?",
+      "archiveDescription": "“{title}” is retired from the library.",
+      "archiveEffect": "Readers can no longer open it; it stays here with its numbers.",
+      "archiveConfirm": "Archive book",
+      "keepsProgress": "Reading progress and grants are kept; publishing again restores access.",
+      "audited": "Recorded in the Education audit with your reason.",
+      "changeAccess": "Change access",
+      "accessTitle": "Change who reads this book",
+      "accessDescription": "The access rule of “{title}”.",
+      "accessEffect": "The new rule applies to the next chapter a reader opens.",
+      "accessReaders": "Readers whose grant the new rule no longer lists keep only the free chapters.",
+      "accessGrants": "Grants are not touched: give or revoke them in Payments.",
+      "accessConfirm": "Change access",
+      "mode": "Who reads",
+      "modes": {
+        "free": "Everyone (free)",
+        "signed_in": "Signed-in readers",
+        "grant": "Holders of a grant (paid)"
+      },
+      "modeHints": {
+        "free": "Every chapter opens to anyone, even without signing in.",
+        "signed_in": "Every chapter opens to any signed-in reader; nothing to buy.",
+        "grant": "A Payments grant opens the book; the first chapters can stay free."
+      },
+      "features": "Grant that opens it",
+      "featuresHint": "The library is every book (edu:library); this book alone is edu:book.{slug}.",
+      "preview": "Free chapters",
+      "previewHint": "{count, plural, one {Signed-in readers read them without a grant; at most # chapter.} other {Signed-in readers read them without a grant; at most # chapters.}}",
+      "chaptersTitle": "Chapters",
+      "chaptersNote": "Reached: readers whose furthest chapter is this one or a later one.",
+      "colChapter": "Chapter",
+      "colExercises": "Exercises",
+      "colCards": "Cards",
+      "colReached": "Reached",
+      "freeChapter": "Free",
+      "readersTitle": "Readers of this book",
+      "allReaders": "All readers",
+      "auditTitle": "Audit",
+      "allAudit": "Full audit",
+      "auditWhat": "the book's audit",
+      "noAudit": "Nothing recorded yet."
+    },
+    "rule": {
+      "free": "Free",
+      "freeSummary": "Anyone, even signed out",
+      "freeDetail": "Anyone reads every chapter, even without signing in.",
+      "signedIn": "Signed-in readers",
+      "signedInSummary": "Any signed-in reader",
+      "signedInDetail": "Every signed-in reader reads every chapter; nothing to buy.",
+      "grant": "Paid",
+      "grantDetail": "Opens with a grant for {who}.",
+      "previewDetail": "{count, plural, =0 {No chapter is free.} one {The first chapter is free to signed-in readers.} other {The first # chapters are free to signed-in readers.}}",
+      "freeChapters": "{count, plural, =0 {no free chapters} one {# free chapter} other {# free chapters}}",
+      "presets": {
+        "either": "Library or this book",
+        "library": "Library only",
+        "book": "This book only"
+      },
+      "who": {
+        "either": "the library or this book",
+        "library": "the library",
+        "book": "this book"
+      }
+    },
+    "readers": {
+      "title": "Readers",
+      "lead": "Progress per reader and book, most recently active first. Paste a user ID to see one reader.",
+      "what": "readers",
+      "service": "Education",
+      "filters": "Reader filters",
+      "book": "Book",
+      "anyBook": "Every book",
+      "userId": "User ID",
+      "userIdPlaceholder": "A uuid",
+      "listTitle": "Most recently active",
+      "empty": "No readers",
+      "emptyBody": "Nobody here with these filters; readers appear after they open a book.",
+      "colReader": "Reader",
+      "colBook": "Book",
+      "colExercises": "Exercises",
+      "colCards": "Cards known",
+      "colChapter": "Last chapter",
+      "colAccess": "Access",
+      "colActive": "Last active",
+      "started": "Started"
+    },
+    "audit": {
+      "title": "Education audit",
+      "lead": "Status and access changes with their reasons, and every content import.",
+      "what": "the Education audit",
+      "service": "Education",
+      "filters": "Audit filters",
+      "book": "Book",
+      "anyBook": "Every book",
+      "listTitle": "Newest first",
+      "empty": "Nothing recorded yet",
+      "emptyBody": "Content imports and changes made in the console appear here."
+    },
+    "targets": {
+      "library": "Education — every book",
+      "book": "Education — {title}"
     }
   }
 }

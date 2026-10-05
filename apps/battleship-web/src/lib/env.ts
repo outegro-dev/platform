@@ -42,6 +42,8 @@ export const env = z
     SITE_URL: z.url().default("https://outegro.dev"),
     /** Public payments frontend: purchases, subscriptions, renewal and cancel. */
     PAY_URL: z.url().default("https://pay.outegro.dev"),
+    /** Public Education frontend, one of the apps in the account menu. */
+    EDU_URL: z.url().default("https://edu.outegro.dev"),
     /** Public admin console, linked for users with a platform role. */
     ADMIN_URL: z.url().default("https://admin.outegro.dev"),
     /** Unset: the shop shows the products as "coming soon". */
@@ -64,5 +66,6 @@ export const platformUrls: PlatformUrls = {
   id: env.ID_URL,
   pay: env.PAY_URL,
   battleship: env.APP_URL,
+  edu: env.EDU_URL,
   admin: env.ADMIN_URL,
 };
