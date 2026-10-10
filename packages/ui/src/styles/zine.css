@@ -1,0 +1,245 @@
+/*
+ * "Zine" theme for @outegro/ui: an old cheap magazine instead of a gallery.
+ * Yellowed newsprint with grain, ink-black outlines and hard offset shadows,
+ * spot red / blue / yellow, crooked controls and a mix of odd typefaces.
+ *
+ * Opt in per app: import this file after styles.css, put `zineFontVariables`
+ * from @outegro/ui/fonts-zine on <html> and set data-theme="zine" there.
+ * Components keep their API; only tokens and looks change, keyed off their
+ * data-slot attributes. Unlayered, so it wins over the kit's utilities.
+ */
+
+[data-theme="zine"] {
+  color-scheme: light;
+
+  --font-body:
+    var(--og-body-cyrillic), var(--og-body-latin), "Times New Roman", serif;
+  --font-mast: var(--og-mast-cyrillic), var(--og-mast-latin), Impact, serif;
+  --font-sign:
+    var(--og-sign-cyrillic), var(--og-sign-latin), "Arial Black", sans-serif;
+  --font-tabloid:
+    var(--og-tabloid-cyrillic), var(--og-tabloid-latin), Georgia, serif;
+  --font-kitsch:
+    var(--og-kitsch-cyrillic), var(--og-kitsch-latin), cursive, serif;
+  --font-loud:
+    var(--og-loud-cyrillic), var(--og-loud-latin), "Arial Black", sans-serif;
+  --font-stamp:
+    var(--og-stamp-cyrillic), var(--og-stamp-latin), "Arial Black", sans-serif;
+  --font-drip:
+    var(--og-drip-cyrillic), var(--og-drip-latin), "Arial Black", sans-serif;
+  --font-glitch:
+    var(--og-glitch-cyrillic), var(--og-glitch-latin), "Arial Black", sans-serif;
+  --font-pixel:
+    var(--og-pixel-cyrillic), var(--og-pixel-latin), ui-monospace, monospace;
+  --font-type:
+    var(--og-type-cyrillic), var(--og-type-latin), "Courier New", monospace;
+  --font-marker:
+    var(--og-marker-cyrillic), var(--og-marker-latin), "Comic Sans MS", cursive;
+  --font-hand: var(--og-hand-cyrillic), var(--og-hand-latin), cursive;
+
+  /* the kit's three roles, re-cast */
+  --font-sans: var(--font-body);
+  --font-display: var(--font-tabloid);
+  --font-mono: var(--font-type);
+
+  --paper: #efe4c6;
+  --paper-deep: #e3d3a8;
+  --paper-white: #fbf6e8;
+  --ink: #1b1915;
+  --ink-soft: #4b4334;
+  --spot-red: #d8382a;
+  --spot-red-deep: #a92619;
+  --spot-blue: #2360b5;
+  --spot-yellow: #f5c518;
+  --spot-green: #2d8a4a;
+  --spot-pink: #f28fb1;
+  --tape: #f3e7a9b3;
+  --halftone: #1b191524;
+
+  --background: var(--paper);
+  --surface: var(--paper-white);
+  --foreground: var(--ink);
+  --primary: var(--spot-red);
+  --primary-hover: var(--spot-red-deep);
+  --primary-foreground: var(--paper-white);
+  --secondary: var(--paper-deep);
+  --muted: var(--paper-deep);
+  --muted-foreground: var(--ink-soft);
+  --border: var(--ink);
+  --border-strong: var(--ink);
+  --ring: var(--spot-blue);
+  --selection: var(--spot-yellow);
+  --live: var(--spot-green);
+  --ok: var(--spot-green);
+  --warn: #b7791f;
+  --danger: var(--spot-red);
+  --destructive: var(--spot-red);
+
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-pill: 2px;
+  --shadow-soft: 5px 5px 0 var(--ink);
+  --shadow-hard: 4px 4px 0 var(--ink);
+  --ease-out: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* grain + a faint halftone screen, drawn once and tiled */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .26 0 0 0 0 .14 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --dots: radial-gradient(var(--halftone) 0.9px, transparent 1.2px);
+}
+
+[data-theme="zine"] [data-tone="dark"],
+[data-theme="zine"][data-tone="dark"] {
+  color-scheme: dark;
+  --background: var(--ink);
+  --surface: #26231d;
+  --foreground: var(--paper);
+  --primary: var(--spot-yellow);
+  --primary-hover: #ffd84a;
+  --primary-foreground: var(--ink);
+  --secondary: #2e2a22;
+  --muted: #2e2a22;
+  --muted-foreground: #c9bb98;
+  --border: var(--paper);
+  --border-strong: var(--paper);
+  --shadow-soft: 5px 5px 0 var(--spot-red);
+  --shadow-hard: 4px 4px 0 var(--spot-red);
+  --halftone: #efe4c61f;
+}
+
+[data-theme="zine"] body {
+  background-color: var(--background);
+  background-image: var(--grain), var(--dots);
+  background-size:
+    220px 220px,
+    5px 5px;
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: 17px;
+}
+[data-theme="zine"] ::selection {
+  background: var(--spot-yellow);
+  color: var(--ink);
+}
+
+/* the kit's editorial accent: tabloid italic in spot red, no silver */
+[data-theme="zine"] .og-accent {
+  font-family: var(--font-tabloid);
+  font-style: italic;
+  font-weight: 900;
+  background: none;
+  color: var(--spot-red);
+  -webkit-text-fill-color: currentColor;
+  text-shadow: 3px 2px 0 color-mix(in srgb, var(--spot-blue) 55%, transparent);
+}
+[data-theme="zine"] .og-eyebrow {
+  font-family: var(--font-type);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+[data-theme="zine"] [data-tone="dark"] .og-eyebrow {
+  color: var(--muted-foreground);
+}
+[data-theme="zine"] .og-glass {
+  background: var(--paper-white);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-hard);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ─── Buttons: cut out of cardboard, glued on crooked ─── */
+[data-theme="zine"] :is([data-slot="button"], [data-slot="dialog-trigger"]) {
+  --tilt: -1.4deg;
+  border-radius: 0;
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow-hard);
+  font-family: var(--font-loud);
+  font-weight: 400;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  rotate: var(--tilt);
+  transition:
+    rotate 220ms var(--ease-out),
+    translate 140ms var(--ease-out),
+    box-shadow 140ms var(--ease-out),
+    background-color 140ms;
+}
+[data-theme="zine"]
+  :is([data-slot="button"], [data-slot="dialog-trigger"]):nth-of-type(2n) {
+  --tilt: 1.2deg;
+}
+[data-theme="zine"]
+  :is([data-slot="button"], [data-slot="dialog-trigger"]):hover {
+  rotate: calc(var(--tilt) * -1.6);
+  translate: -2px -2px;
+  box-shadow: 7px 7px 0 var(--ink);
+}
+[data-theme="zine"]
+  :is([data-slot="button"], [data-slot="dialog-trigger"]):active {
+  translate: 3px 3px;
+  box-shadow: 1px 1px 0 var(--ink);
+}
+[data-theme="zine"]
+  :is([data-slot="button"], [data-slot="dialog-trigger"]):where(
+    .bg-secondary,
+    .border
+  ) {
+  background: var(--paper-white);
+  color: var(--ink);
+}
+[data-theme="zine"]
+  [data-tone="dark"]
+  :is([data-slot="button"], [data-slot="dialog-trigger"]) {
+  border-color: var(--paper);
+  box-shadow: 4px 4px 0 var(--spot-red);
+}
+
+/* ─── Badges: stamped labels ─── */
+[data-theme="zine"] [data-slot="badge"] {
+  border-radius: 0;
+  border: 1.5px solid currentColor;
+  background: var(--paper-white);
+  color: var(--ink);
+  font-family: var(--font-type);
+  font-size: 12px;
+  rotate: -1.5deg;
+}
+[data-theme="zine"] li:nth-child(3n + 1) > [data-slot="badge"] {
+  rotate: 2deg;
+  background: var(--spot-yellow);
+}
+[data-theme="zine"] li:nth-child(3n + 2) > [data-slot="badge"] {
+  rotate: -3deg;
+}
+[data-theme="zine"] [data-tone="dark"] [data-slot="badge"] {
+  background: transparent;
+  color: var(--paper);
+}
+
+/* ─── Dialogs: a torn-out page ─── */
+[data-theme="zine"] [role="dialog"] {
+  border-radius: 0;
+  border: 2.5px solid var(--ink);
+  background: var(--paper-white);
+  box-shadow: 10px 10px 0 var(--ink);
+  rotate: -0.8deg;
+  font-family: var(--font-body);
+}
+
+/* ─── Inputs: typewriter on a ruled line ─── */
+[data-theme="zine"] input:where(:not([type="checkbox"], [type="radio"])) {
+  border-radius: 0;
+  border: 0;
+  border-bottom: 2px dashed var(--ink);
+  background: transparent;
+  font-family: var(--font-type);
+}
+
+[data-theme="zine"] :focus-visible {
+  outline: 3px dashed var(--spot-blue);
+  outline-offset: 4px;
+}

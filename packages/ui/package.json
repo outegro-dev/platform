@@ -11,6 +11,8 @@
     "./fonts": "./src/fonts.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/platform": "./src/lib/platform.ts",
+    "./fonts-zine": "./src/fonts-zine.ts",
+    "./zine.css": "./src/styles/zine.css",
     "./*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -18,9 +20,22 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/caveat": "5.3.0",
     "@fontsource/cormorant-garamond": "5.3.0",
     "@fontsource/jetbrains-mono": "5.3.0",
+    "@fontsource/lobster": "5.3.0",
     "@fontsource/manrope": "5.3.0",
+    "@fontsource/old-standard-tt": "5.3.0",
+    "@fontsource/pangolin": "5.3.0",
+    "@fontsource/playfair-display": "5.3.0",
+    "@fontsource/press-start-2p": "5.3.0",
+    "@fontsource/pt-mono": "5.3.0",
+    "@fontsource/rubik-dirt": "5.3.0",
+    "@fontsource/rubik-glitch": "5.3.0",
+    "@fontsource/rubik-mono-one": "5.3.0",
+    "@fontsource/rubik-wet-paint": "5.3.0",
+    "@fontsource/ruslan-display": "5.3.0",
+    "@fontsource/unbounded": "5.3.0",
     "@outegro/contracts": "workspace:*",
     "@phosphor-icons/react": "2.1.10",
     "class-variance-authority": "^0.7.1",
