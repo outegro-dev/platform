@@ -1,0 +1,8 @@
+# Example only, not applied anywhere: `kubectl kustomize deploy/` renders it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: outegro
+resources:
+  - serviceaccount.yaml
+  - rbac.yaml
+  - cronjob.yaml

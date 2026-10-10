@@ -1,0 +1,6 @@
+# Build outputs and test artefacts stay out of the repository.
+/bin/
+/watchdog
+*.test
+*.out
+coverage.*

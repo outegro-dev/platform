@@ -1,0 +1,60 @@
+# Watchdog in Go and Rust (experiments/watchdog/SPEC.md): lint, tests and the container
+# image for each implementation, run when its folder changes.
+name: Watchdog lab
+
+on:
+  pull_request:
+    paths: ["experiments/watchdog/**", ".github/workflows/watchdog.yml"]
+  push:
+    branches: [master]
+    paths: ["experiments/watchdog/**", ".github/workflows/watchdog.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: watchdog-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go — vet, lint, race tests, image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: experiments/watchdog/go
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: experiments/watchdog/go/go.mod
+          cache-dependency-path: experiments/watchdog/go/go.sum
+      - run: go vet ./...
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.14.0
+          working-directory: experiments/watchdog/go
+      - run: go test -race -coverprofile=coverage.out ./...
+      - run: go tool cover -func=coverage.out | tail -1
+      - run: docker build -t outegro/watchdog-go:ci .
+
+  rust:
+    name: Rust — fmt, clippy, tests, image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: experiments/watchdog/rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: experiments/watchdog/rust
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+      - run: docker build -t outegro/watchdog-rs:ci .

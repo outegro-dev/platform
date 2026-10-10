@@ -1,0 +1,7 @@
+/target/
+# Coverage output (cargo llvm-cov / tarpaulin)
+/coverage/
+*.profraw
+*.profdata
+lcov.info
+tarpaulin-report.*
