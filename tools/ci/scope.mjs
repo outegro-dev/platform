@@ -85,6 +85,9 @@ if (!base) {
     (file) =>
       !/^(apps|packages)\//.test(file) &&
       !/^docs\//.test(file) &&
+      // the watchdog lab has its own workflow and never ships with the platform
+      !/^experiments\//.test(file) &&
+      file !== ".github/workflows/watchdog.yml" &&
       !file.endsWith(".md"),
   );
   if (outside.length > 0) {

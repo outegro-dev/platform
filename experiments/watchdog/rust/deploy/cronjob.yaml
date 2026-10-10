@@ -1,0 +1,104 @@
+# Example only, not applied anywhere. Shadow CronJob: the same schedule,
+# limits, securityContext and volumes as the shell watchdog, but DRY_RUN=true:
+# messages go to the pod log as JSON lines ({"dryRun":true,"message":...}),
+# the state ConfigMap is never written, Telegram is never called.
+#
+# Compare with the shell version:
+#   kubectl -n outegro logs job/<watchdog-rs-shadow-...> | jq -r 'select(.dryRun) | .message'
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: watchdog-rs-shadow
+  namespace: outegro
+  labels:
+    app.kubernetes.io/name: watchdog-rs
+    app.kubernetes.io/component: shadow
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: watchdog-rs
+            app.kubernetes.io/component: shadow
+        spec:
+          serviceAccountName: watchdog-rs
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: watchdog
+              # Placeholder: pin the published image by digest.
+              image: ghcr.io/outegro-dev/watchdog-rs:0.1.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: DRY_RUN
+                  value: "true"
+                - name: NAMESPACE
+                  value: outegro
+                - name: STATE_CONFIGMAP
+                  value: watchdog-state-v2
+                - name: PROMETHEUS_URL
+                  value: http://monitoring-prometheus.monitoring.svc:9090
+                - name: DISK_PATH
+                  value: /probe
+                - name: RUN_TIMEOUT
+                  value: 120s
+                - name: HTTP_TIMEOUT
+                  value: 10s
+                - name: LOG_LEVEL
+                  value: info
+                # Going live: drop DRY_RUN and add the same secret as the
+                # shell version.
+                # - name: TELEGRAM_BOT_TOKEN
+                #   valueFrom:
+                #     secretKeyRef:
+                #       name: alerts-telegram
+                #       key: TELEGRAM_BOT_TOKEN
+                # - name: TELEGRAM_CHAT_ID
+                #   valueFrom:
+                #     secretKeyRef:
+                #       name: alerts-telegram
+                #       key: TELEGRAM_CHAT_ID
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                # The binary writes nothing; /tmp is kept for parity with the
+                # shell version and costs nothing.
+                - name: tmp
+                  mountPath: /tmp
+                - name: probe
+                  mountPath: /probe
+                  readOnly: true
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 16Mi
+            # The existing local-path claim of the shell watchdog. It is
+            # ReadWriteOnce, which on the single-node cluster still allows
+            # both CronJobs to mount it; a second claim would also work.
+            - name: probe
+              persistentVolumeClaim:
+                claimName: watchdog-disk-probe

@@ -1,0 +1,73 @@
+# Example only, not applied anywhere. The same read-only rules as the shell
+# watchdog, plus its own state ConfigMap (watchdog-state-v2).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: outegro-watchdog-rs
+  labels:
+    app.kubernetes.io/name: watchdog-rs
+rules:
+  - apiGroups: [""]
+    resources: [pods, nodes]
+    verbs: [get, list]
+  - apiGroups: [cert-manager.io]
+    resources: [certificates]
+    verbs: [get, list]
+  - apiGroups: [postgresql.cnpg.io]
+    resources: [clusters, backups]
+    verbs: [get, list]
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: outegro-watchdog-rs
+  labels:
+    app.kubernetes.io/name: watchdog-rs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: outegro-watchdog-rs
+subjects:
+  - kind: ServiceAccount
+    name: watchdog-rs
+    namespace: outegro
+---
+# In DRY_RUN only `get` is used (the state is read, never written). create /
+# update are here for the day the shadow run becomes the real one. `create`
+# cannot be limited by resourceNames (Kubernetes restriction), as in the
+# shell version; `patch` is not needed: the store uses `update` with
+# resourceVersion (optimistic locking).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: watchdog-rs-state
+  namespace: outegro
+  labels:
+    app.kubernetes.io/name: watchdog-rs
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [create]
+  - apiGroups: [""]
+    resources: [configmaps]
+    resourceNames: [watchdog-state-v2]
+    verbs: [get, update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: watchdog-rs-state
+  namespace: outegro
+  labels:
+    app.kubernetes.io/name: watchdog-rs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: watchdog-rs-state
+subjects:
+  - kind: ServiceAccount
+    name: watchdog-rs
+    namespace: outegro

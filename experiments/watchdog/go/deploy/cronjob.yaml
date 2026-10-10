@@ -1,0 +1,98 @@
+# EXAMPLE ONLY - not applied anywhere. Shadow CronJob: runs the Go watchdog
+# in DRY_RUN next to the shell one. Messages go to the pod log
+# (kubectl -n outegro logs job/<name>), Telegram is never called and the
+# state is never written, so it cannot disturb the production watchdog.
+#
+# Schedule, history, deadlines, securityContext, resources and the disk
+# probe volume are copied from the shell CronJob so the two runs see the
+# same cluster at the same minute. The script ConfigMap volume and HOME are
+# gone: the binary is the image.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: watchdog-go-shadow
+  namespace: outegro
+  labels:
+    app.kubernetes.io/name: watchdog-go
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: watchdog-go
+        spec:
+          serviceAccountName: watchdog-go
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: watchdog
+              # Placeholder: CI would publish the image and pin it by digest.
+              image: ghcr.io/outegro-dev/watchdog-go:0.1.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: DRY_RUN
+                  value: "true"
+                - name: NAMESPACE
+                  value: outegro
+                - name: STATE_CONFIGMAP
+                  value: watchdog-state-v2
+                - name: PROMETHEUS_URL
+                  value: http://monitoring-prometheus.monitoring.svc:9090
+                - name: DISK_PATH
+                  value: /probe
+                - name: RUN_TIMEOUT
+                  value: 120s
+                - name: LOG_LEVEL
+                  value: info
+                # Lets the Go runtime collect garbage harder before the
+                # container reaches its memory limit.
+                - name: GOMEMLIMIT
+                  valueFrom:
+                    resourceFieldRef:
+                      resource: limits.memory
+                # No TELEGRAM_* variables: in DRY_RUN the token is not
+                # needed, so the shadow pod never sees the secret. For a real
+                # cut-over add them from the alerts-telegram Secret as in the
+                # shell CronJob and drop DRY_RUN.
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: probe
+                  mountPath: /probe
+                  readOnly: true
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 16Mi
+            # The shell watchdog's PVC, mounted read-only. ReadWriteOnce means
+            # one node, not one pod, so both CronJobs can mount it on the
+            # single-node cluster.
+            - name: probe
+              persistentVolumeClaim:
+                claimName: watchdog-disk-probe

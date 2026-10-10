@@ -1,0 +1,66 @@
+[package]
+name = "watchdog"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+description = "outegro.dev watchdog: one pass of cluster checks, Telegram alerts, state in a ConfigMap"
+license = "UNLICENSED"
+publish = false
+
+[[bin]]
+name = "watchdog"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+async-trait = "0.1.92"
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std", "serde"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
+humantime = "2.4.0"
+k8s-openapi = { version = "0.28.0", features = ["latest"] }
+kube = { version = "4.2.0", default-features = false, features = ["client", "rustls-tls", "ring"] }
+nix = { version = "0.31.3", default-features = false, features = ["fs"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["form", "http2", "json", "rustls-no-provider"] }
+rustls = { version = "0.23.45", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.21"
+tokio = { version = "1.53.2", features = ["macros", "rt", "time", "signal", "sync"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", default-features = false, features = ["fmt", "json", "env-filter", "std"] }
+url = "2.5.8"
+
+[dev-dependencies]
+# `signal`: the binary test sends SIGTERM to the watchdog process.
+nix = { version = "0.31.3", default-features = false, features = ["fs", "signal"] }
+rstest = { version = "0.27.0", default-features = false }
+tokio = { version = "1.53.2", features = ["macros", "rt", "rt-multi-thread", "time"] }
+wiremock = "0.6.5"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+strip = "symbols"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+# Justified exceptions to `pedantic`:
+# - `config::ConfigError`, `ports::StateStore` read better at call sites than a
+#   bare `Error` / `Store`; the repetition is intentional.
+module_name_repetitions = "allow"
+# - Application crate, not a published library: every error is a typed
+#   `thiserror` enum whose variants are documented where they are defined.
+missing_errors_doc = "allow"
+# - Pure helpers are called for their value everywhere; `#[must_use]` on each
+#   one adds noise without catching real bugs. `Plan` itself is `#[must_use]`.
+must_use_candidate = "allow"
+# Restriction lints that services usually enable (tests are exempt, see
+# clippy.toml).
+dbg_macro = "warn"
+todo = "warn"
+unwrap_used = "warn"

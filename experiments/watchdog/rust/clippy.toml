@@ -1,0 +1,5 @@
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+# Kubernetes kinds and type names that read better without backticks in docs;
+# ".." keeps clippy's default list.
+doc-valid-idents = ["ConfigMap", "ConfigMaps", "CronJob", "EnvFilter", "PostgreSQL", ".."]
