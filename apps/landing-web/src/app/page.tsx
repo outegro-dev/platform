@@ -1,26 +1,31 @@
 import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
-import {
-  ArrowDownIcon,
-  ArrowsClockwiseIcon,
-  BookOpenTextIcon,
-  GitBranchIcon,
-  HandshakeIcon,
-  ListChecksIcon,
-  PulseIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowDownIcon } from "@phosphor-icons/react/dist/ssr";
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import knotPoster from "@/assets/knot.webp";
-import signaturePoster from "@/assets/signature.webp";
+import cover from "@/assets/zine/cover.webp";
+import { BoatBar } from "@/components/boat/boat-bar";
+import { BonkRetry } from "@/components/bonk/bonk-retry";
 import { ContactDialog } from "@/components/contact-dialog";
 import { ContactLinks } from "@/components/contact-links";
 import { Header } from "@/components/header";
+import { PaperJourney } from "@/components/paper/paper-journey";
 import { ProjectShowcase } from "@/components/project-showcase";
 import { RevealObserver } from "@/components/reveal-observer";
 import { SectionHeading } from "@/components/section-heading";
-import { SilverStage } from "@/components/silver/silver-stage";
 import { SiteFooter } from "@/components/site-footer";
-import { TurnkeyStrip } from "@/components/turnkey-strip";
+import { Barcode, PriceTag, Ticker } from "@/components/zine/bits";
+import { CatPaw } from "@/components/zine/cat-paw";
+import { Coupon } from "@/components/zine/coupon";
+import { DontPress } from "@/components/zine/dont-press";
+import { Fly } from "@/components/zine/fly";
+import { Mischief } from "@/components/zine/mischief";
+import { generator, seed, tilt } from "@/components/zine/random";
+import { Ransom } from "@/components/zine/ransom";
+import { Receipt } from "@/components/zine/receipt";
+import { Stamp } from "@/components/zine/stamp";
+import { TearOffs } from "@/components/zine/tear-offs";
+import { contacts } from "@/lib/contact";
 
 type Layer = {
   name: string;
@@ -35,6 +40,8 @@ type Service = {
 };
 type Step = { title: string; body: string; see: string };
 type Point = { title: string; body: string };
+type Coverline = { kicker: string; text: string; page: string };
+type TocItem = { title: string; href: string; page: string };
 
 // Hosts of the running platform, shown as proof in the Platform section.
 const hosts = [
@@ -43,18 +50,14 @@ const hosts = [
   "battleship.outegro.dev",
   "pay.outegro.dev",
   "admin.outegro.dev",
+  "edu.outegro.dev",
 ];
-// One icon per deliverable, in the order of engagement.deliverables.
-const deliverableIcons = [
-  GitBranchIcon,
-  ListChecksIcon,
-  BookOpenTextIcon,
-  ArrowsClockwiseIcon,
-  PulseIcon,
-  HandshakeIcon,
-];
-const delay = (ms: number) =>
-  ({ "--reveal-delay": `${ms}ms` }) as React.CSSProperties;
+const telegram = contacts.find((c) => c.key === "telegram") ?? contacts[0];
+/** A seeded crooked angle per block, the same on every render. */
+const crooked = (key: string, max = 2.4) =>
+  ({
+    "--tilt": `${tilt(generator(seed(key)), max)}deg`,
+  }) as React.CSSProperties;
 
 export default async function Home() {
   const t = await getTranslations();
@@ -63,53 +66,105 @@ export default async function Home() {
   const steps = t.raw("process.steps") as Step[];
   const deliverables = t.raw("engagement.deliverables") as Point[];
   const formats = t.raw("engagement.formats") as Point[];
+  const coverlines = t.raw("zine.coverlines") as Coverline[];
+  const toc = t.raw("zine.toc") as TocItem[];
+  const ticker = t.raw("zine.ticker") as string[];
+  const tags = t.raw("zine.tags") as string[];
+  const pageHref = (page: string) =>
+    toc.find((item) => item.page === page)?.href ?? "#projects";
 
   return (
     <>
       <Header />
       <main id="main">
         <section
-          className="hero og-container"
+          className="cover og-container"
           id="top"
           aria-labelledby="hero-title"
         >
-          <div className="hero-copy">
-            <p className="og-eyebrow hero-eyebrow">{t("hero.eyebrow")}</p>
-            <h1 id="hero-title">
-              <span className="hero-line">{t("hero.line1")}</span>{" "}
-              <span className="hero-line og-accent">{t("hero.line2")}</span>
-            </h1>
-            <p className="hero-description">{t("hero.description")}</p>
-            <div className="hero-actions">
-              <Button asChild size="lg" className="hero-cta">
-                <a href="#projects">
-                  {t("hero.cta")}
-                  <ArrowDownIcon />
-                </a>
-              </Button>
-              <ContactDialog variant="outline" label={t("hero.contact")}>
-                <ContactLinks compact />
-              </ContactDialog>
+          <p className="cover-strip">
+            <span>{t("zine.issue")}</span>
+            <span>{t("zine.price")}</span>
+          </p>
+          <p className="cover-mast" aria-hidden="true">
+            {t("zine.mast")}
+          </p>
+          <p className="cover-tagline">{t("zine.tagline")}</p>
+
+          <div className="cover-grid">
+            <div className="cover-copy">
+              <h1 id="hero-title" className="cover-headline">
+                <Ransom text={t("zine.headline")} />
+              </h1>
+              <p className="cover-lead">{t("zine.lead")}</p>
+              <ul className="coverlines">
+                {coverlines.map((line) => (
+                  <li key={line.text} style={crooked(line.text, 1.6)}>
+                    <a href={pageHref(line.page)}>
+                      <span className="coverline-kicker">{line.kicker}</span>
+                      <span className="coverline-text">{line.text}</span>
+                      <span className="coverline-page">{line.page}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <div className="cover-actions">
+                <Button asChild size="lg">
+                  <a href="#projects">
+                    {t("zine.read")}
+                    <ArrowDownIcon />
+                  </a>
+                </Button>
+                <ContactDialog variant="outline" label={t("zine.write")}>
+                  <ContactLinks compact />
+                </ContactDialog>
+              </div>
             </div>
-          </div>
-          <SilverStage
-            kind="signature"
-            className="hero-art"
-            poster={signaturePoster}
-            alt={t("hero.art")}
-            sizes="(max-width: 767px) 110vw, 60vw"
-            priority
-          />
-          <div className="hero-foot" aria-hidden="true">
-            <span className="og-eyebrow">outegro.dev</span>
-            <span className="og-eyebrow hero-scroll">
-              {t("hero.scroll")}
-              <span className="hero-scroll-line" />
-            </span>
+
+            <figure className="cover-art">
+              <Image
+                src={cover}
+                alt={t("zine.coverAlt")}
+                sizes="(max-width: 767px) 92vw, 44vw"
+                preload
+                fetchPriority="high"
+                quality={75}
+                placeholder="empty"
+              />
+              <span className="tape is-top" aria-hidden="true" />
+              <span className="tape is-bottom" aria-hidden="true" />
+              <p className="burst">
+                <b>{t("zine.burst")}</b>
+                <span>{t("zine.burstText")}</span>
+              </p>
+              <PriceTag
+                className="cover-tag"
+                price={t("zine.tagPrice")}
+                note={t("zine.tagNote")}
+              />
+              <Barcode code="4 607001 770011" />
+            </figure>
           </div>
         </section>
 
-        <TurnkeyStrip />
+        <Ticker label={t("zine.tickerLabel")} items={ticker} />
+
+        <nav className="toc og-container" aria-labelledby="toc-title">
+          <h2 id="toc-title" className="toc-title">
+            {t("zine.tocTitle")}
+          </h2>
+          <ol>
+            {toc.map((item) => (
+              <li key={item.href}>
+                <a href={item.href}>
+                  <span className="toc-name">{item.title}</span>
+                  <span className="toc-dots" aria-hidden="true" />
+                  <span className="toc-page">{item.page}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
 
         <section
           id="projects"
@@ -123,7 +178,10 @@ export default async function Home() {
             title={t("projects.title")}
             accent={t("projects.titleAccent")}
           />
-          <ProjectShowcase />
+          <div className="stamped">
+            <ProjectShowcase />
+            <Stamp text={t("zine.stampLive")} className="project-stamp" />
+          </div>
         </section>
 
         <section
@@ -154,29 +212,37 @@ export default async function Home() {
                 </ul>
               </div>
             </div>
-            <div className="platform-grid">
-              {layers.map((layer, i) => (
-                <div
-                  key={layer.name}
-                  className="platform-layer"
-                  data-reveal
-                  style={delay(i * 110)}
-                >
-                  <h3 className="og-eyebrow">
-                    <span>0{i + 1}</span> {layer.name}
-                  </h3>
-                  <ul>
-                    {layer.items.map((item) => (
-                      <li key={item.name} className="platform-node">
-                        <h4>{item.name}</h4>
-                        <p>{item.result}</p>
-                        <p className="platform-node-tech">{item.tech}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            <BonkRetry>
+              <div className="platform-grid">
+                {layers.map((layer, i) => (
+                  <div
+                    key={layer.name}
+                    className="platform-layer"
+                    style={crooked(layer.name, 1.2)}
+                  >
+                    <h3 className="og-eyebrow">
+                      <span>0{i + 1}</span> {layer.name}
+                    </h3>
+                    <ul>
+                      {layer.items.map((item) => (
+                        <li key={item.name} className="platform-node">
+                          <h4>{item.name}</h4>
+                          <p>{item.result}</p>
+                          <p className="platform-node-tech">{item.tech}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </BonkRetry>
+            <DontPress
+              labels={
+                t.raw("zine.dontPress") as React.ComponentProps<
+                  typeof DontPress
+                >["labels"]
+              }
+            />
           </div>
         </section>
 
@@ -188,87 +254,70 @@ export default async function Home() {
           <SectionHeading
             id="services-title"
             index={t("services.index")}
-            label={t("services.label")}
+            label={t("zine.adsTitle")}
             title={t("services.title")}
             accent={t("services.titleAccent")}
           />
-          <div className="services-layout">
-            <div className="services-aside" data-reveal>
-              <p className="services-intro">{t("services.intro")}</p>
-              <SilverStage
-                kind="knot"
-                className="services-art"
-                poster={knotPoster}
-                alt={t("services.art")}
-                sizes="(max-width: 767px) 90vw, 36vw"
-              />
-            </div>
-            <ol className="services-list">
-              {services.map((item, i) => (
-                <li key={item.title} className="service" data-reveal>
-                  <span className="og-eyebrow service-number">0{i + 1}</span>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.body}</p>
-                    <ul className="badge-list">
-                      {item.stack.map((tech) => (
-                        <li key={tech}>
-                          <Badge>{tech}</Badge>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="og-eyebrow service-proof">
-                      {item.href ? (
-                        <a href={item.href}>{item.proof}</a>
-                      ) : (
-                        item.proof
-                      )}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
+          <p className="section-lead" data-reveal>
+            {t("services.intro")}
+          </p>
+          <p className="ads-note">{t("zine.adsNote")}</p>
+          <ol className="ads">
+            {services.map((item, i) => (
+              <li
+                key={item.title}
+                className={`ad is-${i % 3}`}
+                style={crooked(item.title, 2.2)}
+              >
+                <h3 className="ad-title">{item.title}</h3>
+                <p className="ad-body">{item.body}</p>
+                <ul className="badge-list">
+                  {item.stack.map((tech) => (
+                    <li key={tech}>
+                      <Badge>{tech}</Badge>
+                    </li>
+                  ))}
+                </ul>
+                <p className="ad-proof">
+                  {item.href ? (
+                    <a href={item.href}>{item.proof}</a>
+                  ) : (
+                    item.proof
+                  )}
+                </p>
+                <TearOffs
+                  href={telegram.href}
+                  handle={telegram.handle}
+                  label={t("zine.adTear")}
+                />
+              </li>
+            ))}
+          </ol>
         </section>
 
         <section
           id="process"
-          className="process og-container section-space"
+          className="process section-space"
           aria-labelledby="process-title"
         >
-          <SectionHeading
-            id="process-title"
-            index={t("process.index")}
-            label={t("process.label")}
-            title={t("process.title")}
-            accent={t("process.titleAccent")}
+          <div className="og-container">
+            <SectionHeading
+              id="process-title"
+              index={t("process.index")}
+              label={t("process.label")}
+              title={t("process.title")}
+              accent={t("process.titleAccent")}
+            />
+            <p className="section-lead" data-reveal>
+              {t("process.intro")}
+            </p>
+          </div>
+          {/* the steps as a scroll-driven paper cartoon (React Three Fiber) */}
+          <PaperJourney
+            steps={steps}
+            labels={{ youSee: t("process.youSee") }}
           />
-          <p className="section-lead" data-reveal>
-            {t("process.intro")}
-          </p>
-          <ol className="process-steps">
-            {steps.map((step, i) => (
-              <li
-                key={step.title}
-                className="process-step"
-                data-reveal
-                style={delay(i * 70)}
-              >
-                <span className="process-number" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <div className="process-what">
-                  <h3>{step.title}</h3>
-                  <p>{step.body}</p>
-                </div>
-                <div className="process-see">
-                  <p className="og-eyebrow">{t("process.youSee")}</p>
-                  <p>{step.see}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <p className="process-ai" data-reveal>
+          <p className="process-ai og-container" data-reveal>
             {t("process.ai")}
           </p>
         </section>
@@ -281,49 +330,41 @@ export default async function Home() {
           <SectionHeading
             id="engagement-title"
             index={t("engagement.index")}
-            label={t("engagement.label")}
+            label={t("zine.tagsTitle")}
             title={t("engagement.title")}
             accent={t("engagement.titleAccent")}
           />
-          <div className="engagement-block">
-            <h3 className="engagement-subtitle" data-reveal>
-              {t("engagement.deliverablesTitle")}
-            </h3>
-            <ul className="deliverables">
-              {deliverables.map((item, i) => {
-                const Icon = deliverableIcons[i] ?? ListChecksIcon;
-                return (
-                  <li key={item.title} data-reveal style={delay(i * 60)}>
-                    <Icon className="deliverable-icon" aria-hidden="true" />
-                    <h4>{item.title}</h4>
-                    <p>{item.body}</p>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <div className="engagement-block">
-            <h3 className="engagement-subtitle" data-reveal>
-              {t("engagement.formatsTitle")}
-            </h3>
-            <ol className="formats">
+          <h3 className="engagement-subtitle">
+            {t("engagement.formatsTitle")}
+          </h3>
+          <CatPaw>
+            <ol className="price-tags">
               {formats.map((item, i) => (
-                <li
-                  key={item.title}
-                  className="format"
-                  data-reveal
-                  style={delay(i * 90)}
-                >
-                  <span className="format-number" aria-hidden="true">
-                    {i + 1}
-                  </span>
-                  <h4>{item.title}</h4>
-                  <p>{item.body}</p>
+                <li key={item.title} style={crooked(item.title, 3.5)}>
+                  <PriceTag price={tags[i] ?? ""} was={t("zine.tagWas")}>
+                    <h4 className="price-title">{item.title}</h4>
+                    <p className="price-body">{item.body}</p>
+                  </PriceTag>
                 </li>
               ))}
             </ol>
-          </div>
-          <div className="engagement-cta" data-reveal>
+          </CatPaw>
+          <p className="tags-note">{t("zine.tagsNote")}</p>
+
+          <h3 className="engagement-subtitle">
+            {t("engagement.deliverablesTitle")}
+          </h3>
+          <Receipt
+            title={t("zine.receiptTitle")}
+            number={t("zine.receiptNumber")}
+            items={deliverables}
+            included={t("zine.receiptIncluded")}
+            total={t("zine.receiptTotal")}
+            totalValue={t("zine.receiptTotalValue")}
+            thanks={t("zine.receiptThanks")}
+            stamp={t("zine.stampPaid")}
+          />
+          <div className="engagement-cta">
             <ContactDialog variant="primary" label={t("engagement.cta")}>
               <ContactLinks compact />
             </ContactDialog>
@@ -342,19 +383,24 @@ export default async function Home() {
             title={t("contact.title")}
             accent={t("contact.titleAccent")}
           />
-          <div className="contact-layout" data-reveal>
-            <div>
-              <p className="contact-description">{t("contact.description")}</p>
-              <p className="og-eyebrow contact-where">
-                {t("contact.location")}
-              </p>
-            </div>
+          <p className="section-lead">{t("contact.description")}</p>
+          <Coupon
+            title={t("zine.couponTitle")}
+            offer={t("zine.couponOffer")}
+            fine={t("zine.couponFine")}
+            cut={t("zine.couponCut")}
+            done={t("zine.couponCut2")}
+          >
             <ContactLinks />
-          </div>
+            <p className="og-eyebrow contact-where">{t("contact.location")}</p>
+          </Coupon>
         </section>
       </main>
       <SiteFooter />
       <RevealObserver />
+      <BoatBar label={t("zine.boatLabel")} stops={toc} />
+      <Fly gone={t("zine.flyGone")} />
+      <Mischief note={t("zine.consoleNote")} />
     </>
   );
 }

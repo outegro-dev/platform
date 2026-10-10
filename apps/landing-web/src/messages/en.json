@@ -97,6 +97,11 @@
         "caption": "Profile: stats and a shot heatmap",
         "alt": "A player profile: matches, wins, win rate, accuracy, best streak and moves to win, a shot heatmap and wins against each bot level."
       }
+    },
+    "marks": {
+      "bot": "plays by a probability map",
+      "sunk": "sunk!",
+      "elo": "Elo rating"
     }
   },
   "platform": {
@@ -168,6 +173,23 @@
         ]
       }
     ]
+  },
+  "bonk": {
+    "loading": [
+      "Loading the block…",
+      "Waiting for the server…",
+      "Almost there…"
+    ],
+    "pending": "pending",
+    "progressLabel": "Loading the block",
+    "errorTitle": "This block failed to load",
+    "errorBody": "504 Gateway Timeout — the server dozed off.",
+    "retry": "Try again",
+    "knock": "TUNG!",
+    "shout": "SAHUR!",
+    "hit": "BONK!",
+    "reloading": "Reloading at bonk speed",
+    "replay": "Break the block again"
   },
   "services": {
     "index": "03",
@@ -602,5 +624,123 @@
       }
     ],
     "contact": "Questions and requests"
+  },
+  "zine": {
+    "issue": "Issue #1 · October 2026 · Tbilisi",
+    "price": "Price: let’s talk",
+    "mast": "Nick Lukashik",
+    "tagline": "the magazine about products built start to finish",
+    "headline": "I’ll build the whole thing",
+    "lead": "Design, frontend, backend, payments, infrastructure and monitoring — one engineer from the first sketch to production. Everything in this issue is live, and every claim is one click away.",
+    "read": "Read the issue",
+    "write": "Write to the editor",
+    "coverAlt": "A cover in the style of an old popular-science magazine: an engineer's desk at night, a monitor with a battleship game, a wooden toy ship and a glass of tea in a metal holder.",
+    "coverlines": [
+      {
+        "kicker": "Exclusive",
+        "text": "One person built online Battleship: 4 bots, Elo ratings and real payments",
+        "page": "02"
+      },
+      {
+        "kicker": "Record",
+        "text": "Four databases back from backup in 81 seconds",
+        "page": "03"
+      },
+      {
+        "kicker": "Exposed",
+        "text": "Why one block in this issue crashes with a 504",
+        "page": "03"
+      },
+      {
+        "kicker": "Prices",
+        "text": "What a turnkey product really costs",
+        "page": "06"
+      }
+    ],
+    "burst": "New!",
+    "burstText": "edu.outegro.dev went live on October 6",
+    "tagPrice": "$999.99",
+    "tagNote": "marked down",
+    "tickerLabel": "Breaking",
+    "ticker": [
+      "Battleship has been in production since September 29",
+      "One account on id.outegro.dev works in every app",
+      "Payments through Lava: receipts, refunds and provider reconciliation",
+      "Every database comes back from backup in 81 seconds",
+      "A watchdog checks the cluster every 5 minutes and reports to Telegram",
+      "The books “Node.js inside out” and “SQL inside out” live on edu.outegro.dev",
+      "English and Russian in every app",
+      "Tests against real PostgreSQL, Valkey and RabbitMQ on every change"
+    ],
+    "tocTitle": "In this issue",
+    "toc": [
+      {
+        "title": "Report: Battleship",
+        "href": "#projects",
+        "page": "02"
+      },
+      {
+        "title": "Diagram: how the platform works",
+        "href": "#platform",
+        "page": "03"
+      },
+      {
+        "title": "Classifieds: what I can build",
+        "href": "#services",
+        "page": "04"
+      },
+      {
+        "title": "Cartoon in the margins: how the work goes",
+        "href": "#process",
+        "page": "05"
+      },
+      {
+        "title": "Price tags and the receipt",
+        "href": "#engagement",
+        "page": "06"
+      },
+      {
+        "title": "Coupon: a free call",
+        "href": "#contact",
+        "page": "07"
+      }
+    ],
+    "stampLive": "Live",
+    "stampChecked": "Quality checked",
+    "stampPaid": "Accepted",
+    "adsTitle": "Classifieds",
+    "adsNote": "Tear off a tab — it opens Telegram",
+    "adTear": "tear off",
+    "tagsTitle": "Price tags",
+    "tagsNote": "The price depends on the scope: you get a number after a short call about the task.",
+    "tagWas": "$999.99",
+    "tags": ["estimate", "monthly", "fixed price"],
+    "receiptTitle": "Receipt",
+    "receiptNumber": "Receipt No. 0001",
+    "receiptIncluded": "included",
+    "receiptTotal": "Total",
+    "receiptTotalValue": "a product in production",
+    "receiptThanks": "Thank you for your purchase! The code and the access are yours.",
+    "couponTitle": "Coupon",
+    "couponOffer": "A free 30-minute call",
+    "couponFine": "Valid for the bearer: we'll go through the task, the timeline and the cost. No strings attached.",
+    "couponCut": "Cut out the coupon",
+    "couponCut2": "Coupon cut out. The contacts are right below.",
+    "flyGone": "Fly shooed away",
+    "imprint": "Editor-in-chief, author, layout and courier — Nick Lukashik. Print run: 1 copy. The editors are not responsible for the actions of Tung Tung Tung Sahur.",
+    "consoleNote": "If you are reading this, we will get along. I wrote this site and the platform behind it: https://github.com/coping-barrel. Say hi: https://t.me/coping_barrel",
+    "boatLabel": "Issue navigation",
+    "dontPress": {
+      "button": "Do not press",
+      "note": "Seriously. It all breaks.",
+      "hint": "a rollback is a revert",
+      "sahur": "Seriously?",
+      "command": "git revert HEAD",
+      "output": "[master 4f2c1e9] Revert “Someone pressed the button”",
+      "revert": "Roll back",
+      "rew": "◂◂ REWIND",
+      "done": "Rolled back in {seconds} s. Same in production: a release is a merge, a rollback is a revert.",
+      "reduced": "Button pressed, but reduced motion is on, so nothing fell. The rollback would still be a revert."
+    }
   }
 }

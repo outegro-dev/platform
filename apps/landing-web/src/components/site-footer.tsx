@@ -6,6 +6,7 @@ import { LocaleSwitcher } from "./locale-switcher";
 /** Footer of every landing page; `#top` must exist on the page. */
 export async function SiteFooter() {
   const t = await getTranslations("footer");
+  const zine = await getTranslations("zine");
   return (
     <footer className="site-footer og-container">
       <div className="footer-brand">
@@ -46,6 +47,7 @@ export async function SiteFooter() {
           </li>
         </ul>
       </nav>
+      <p className="footer-imprint">{zine("imprint")}</p>
       <div className="footer-bottom">
         <LocaleSwitcher />
         <span className="og-eyebrow">© {new Date().getFullYear()}</span>

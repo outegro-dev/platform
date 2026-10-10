@@ -1,10 +1,14 @@
 import { fontVariables } from "@outegro/ui/fonts";
+import { zineFontVariables } from "@outegro/ui/fonts-zine";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { openGraph } from "@/lib/metadata";
 import "@outegro/ui/styles.css";
+import "@outegro/ui/zine.css";
 import "./globals.css";
+import "./playful.css";
+import "./zine-page.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -24,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#f2f2ef",
+  themeColor: "#efe4c6",
   colorScheme: "light",
 };
 
@@ -35,7 +39,11 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   return (
-    <html lang={locale} className={fontVariables}>
+    <html
+      lang={locale}
+      className={`${fontVariables} ${zineFontVariables}`}
+      data-theme="zine"
+    >
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

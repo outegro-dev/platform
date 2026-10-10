@@ -1,13 +1,12 @@
 import { Button } from "@outegro/ui/button";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import wavePoster from "@/assets/wave.webp";
 import { ContactDialog } from "@/components/contact-dialog";
 import { ContactLinks } from "@/components/contact-links";
 import { Header } from "@/components/header";
 import { RevealObserver } from "@/components/reveal-observer";
-import { SilverStage } from "@/components/silver/silver-stage";
 import { SiteFooter } from "@/components/site-footer";
+import { Ransom } from "@/components/zine/ransom";
 import { openGraph } from "@/lib/metadata";
 import { stackGroups } from "@/lib/stack";
 
@@ -63,13 +62,9 @@ export default async function Stack() {
         </section>
 
         <div className="og-container">
-          <SilverStage
-            kind="wave"
-            className="stack-art"
-            poster={wavePoster}
-            alt={t("art")}
-            sizes="(max-width: 1488px) 100vw, 1488px"
-          />
+          <p className="stack-ransom" aria-hidden="true">
+            <Ransom text={t("titleAccent")} />
+          </p>
         </div>
 
         <div className="stack-groups og-container">
