@@ -34,12 +34,12 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// set by the gate loader once it has played in this browser session
+// set by the gate loader when a visitor skips it (click or Esc)
 const GATE_COOKIE = "og_gate";
 // automation the isBot list misses: generic crawlers, headless browsers, audits
 const AUTOMATION = /bot\b|crawler|spider|HeadlessChrome|Chrome-Lighthouse/i;
 
-/** The port gates open once per browser session, and only for people. */
+/** The port gates open on every page load, for people, until one skips them. */
 async function gateDue() {
   const [jar, head] = await Promise.all([cookies(), headers()]);
   if (jar.has(GATE_COOKIE)) return false;

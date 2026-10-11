@@ -37,8 +37,8 @@ const SECTIONS = [
   "contact",
 ];
 
-// The gates play on the first page of a browser session; every test but the
-// gates' own starts with the session cookie the loader sets.
+// The gates play on every page load until skipped; every test but the
+// gates' own starts with the session cookie a skip sets.
 test.use({
   storageState: {
     cookies: [
@@ -954,7 +954,7 @@ test("the footer links the platform's sites and this site's pages on every page"
 
 /**
  * Holds the gates shut: their CSS show stays paused until they are skipped,
- * so a check never races the 1.6-second show or a slow hydration.
+ * so a check never races the 3.2-second show or a slow hydration.
  */
 async function holdTheGates(page: Page) {
   await page.addInitScript(() => {
@@ -975,7 +975,7 @@ async function holdTheGates(page: Page) {
   });
 }
 
-/** The loader has hydrated once it notes the session in its cookie. */
+/** A skip is remembered for the session in the loader's cookie. */
 async function gateNoted(context: BrowserContext) {
   await expect
     .poll(async () =>
@@ -1008,7 +1008,7 @@ test.describe("the gate loader", () => {
     ).not.toContain('class="gate"');
   });
 
-  test("the first page of a session opens through the gates, and only the first", async ({
+  test("every page load opens through the gates, a reload too", async ({
     page,
     context,
   }) => {
@@ -1020,23 +1020,36 @@ test.describe("the gate loader", () => {
     // decoration only: nothing in it reaches assistive tech
     await expect(gate).toHaveAttribute("aria-hidden", "true");
     await expect(gate.locator(".gate-sign-name")).toHaveText(en.loader.pier);
+    // playing is not skipping: nothing is remembered
+    expect(
+      (await context.cookies()).find((c) => c.name === "og_gate"),
+    ).toBeUndefined();
+
+    const again = await page.reload();
+    expect(await again?.text()).toContain('class="gate"');
+    const next = await page.goto("/stack");
+    expect(await next?.text()).toContain('class="gate"');
+  });
+
+  test("Esc opens the gates at once and keeps them open for the session", async ({
+    page,
+    context,
+  }) => {
+    await holdTheGates(page);
+    await page.goto("/");
+    const gate = page.locator(".gate");
+    await expect(gate).toBeVisible();
+    // Held shut, the gates can only go because Esc skipped the show.
+    await expect(async () => {
+      await page.keyboard.press("Escape");
+      await expect(gate).toHaveCount(0, { timeout: 500 });
+    }).toPass();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await gateNoted(context);
 
     const next = await page.goto("/stack");
     expect(await next?.text()).not.toContain('class="gate"');
     await expect(page.locator(".gate")).toHaveCount(0);
-  });
-
-  test("Esc opens the gates at once", async ({ page, context }) => {
-    await holdTheGates(page);
-    await page.goto("/");
-    const gate = page.locator(".gate");
-    await expect(gate).toBeVisible();
-    await gateNoted(context);
-    // Held shut, the gates can only go because Esc skipped the show.
-    await page.keyboard.press("Escape");
-    await expect(gate).toHaveCount(0);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
   test("Googlebot gets the page without gates", async ({ browser }) => {

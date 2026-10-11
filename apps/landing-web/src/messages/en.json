@@ -635,7 +635,7 @@
           "og_hint — a note that this browser is signed in at id.outegro.dev. It is set for the whole .outegro.dev domain, so the other platform sites can let you in without signing in again. It holds no personal data, just “1”; it lives as long as your session at id.outegro.dev and is removed when you sign out.",
           "og_silent — each site’s own note about automatic sign-in: “tried” for five minutes after an attempt (a day if the attempt failed for a reason that would repeat); “silent” while a session opened automatically lives, and that session ends together with your session at id.outegro.dev; “out” for a year after you sign out yourself or a session is revoked, so the site never lets you back in without you.",
           "og_sso — a sign-in in progress: a one-time check and the page to return to. It lives for ten minutes and is deleted as soon as sign-in is complete.",
-          "og_gate — a note that the opening animation has already played; it is gone when you close the browser.",
+          "og_gate — a note that you skipped the opening animation (a click or Esc): it stays away until you close the browser.",
           "og_consent — your answer about statistics: granted or denied. Kept for one year, on outegro.dev only.",
           "_ga and _ga_<number> — Google Analytics cookies: a random browser number that ties visits to one reader. They are set only after you say yes, last up to two years from your last visit and are deleted if you change your mind.",
           "Cloudflare, which delivers the sites, may set its own security cookies such as __cf_bm to tell people from bots.",
