@@ -224,6 +224,7 @@ export const TargetBoard = observer(function TargetBoard({
       label={t("targetLabel")}
       theme={theme}
       size={size}
+      waters="enemy"
       interactive={interactive}
       active={interactive && match.isYourTurn && session.online}
       grid={interactive}

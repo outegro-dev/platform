@@ -40,7 +40,7 @@ function isCurrent(pathname: string, match: readonly string[]) {
   );
 }
 
-/** Section navigation: a glass pill in the header on wide screens. */
+/** Section navigation: a paper tab strip in the header on wide screens. */
 export function MainNav() {
   const t = useTranslations("nav");
   const pathname = usePathname();
@@ -64,7 +64,7 @@ export function TabBar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
   return (
-    <nav className="tab-bar og-glass" aria-label={t("sections")}>
+    <nav className="tab-bar" aria-label={t("sections")}>
       {items.map(({ href, key, Icon, match }) => {
         const current = isCurrent(pathname, match);
         return (

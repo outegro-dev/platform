@@ -1,3 +1,5 @@
+import { fontVariables } from "@outegro/ui/fonts";
+import { zineFontVariables } from "@outegro/ui/fonts-zine";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -9,8 +11,8 @@ import { StatusPill } from "@/components/chrome/status-pill";
 import { MatchFollower, RootStoreProvider } from "@/components/providers";
 import { accessToken, loadProfile } from "@/lib/api";
 import { gameSocketUrl } from "@/lib/env";
-import { fontVariables } from "./fonts";
 import "@outegro/ui/styles.css";
+import "@outegro/ui/zine.css";
 import "./globals.css";
 import "./game.css";
 
@@ -24,7 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#f2f2ef",
+  // --paper of the zine theme (metadata takes a literal colour)
+  themeColor: "#efe4c6",
   colorScheme: "light",
 };
 
@@ -39,7 +42,13 @@ export default async function RootLayout({
   const profile = token ? await loadProfile() : null;
   const signedIn = Boolean(token) && profile?.status !== "signed-out";
   return (
-    <html lang={locale} className={fontVariables}>
+    // The calm zine level: newsprint, ink and hard shadows for the whole app.
+    // Dialogs and menus open at <body> and take it from here.
+    <html
+      lang={locale}
+      data-theme="zine-calm"
+      className={`${fontVariables} ${zineFontVariables}`}
+    >
       <body>
         <NextIntlClientProvider>
           <RootStoreProvider

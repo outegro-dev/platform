@@ -210,7 +210,7 @@ const Banner = observer(function Banner({ shop }: { shop: ShopStore }) {
   if (!content) return null;
   return (
     <div
-      className="shop-banner og-glass"
+      className="shop-banner"
       data-tone={tone}
       role="status"
       aria-live="polite"

@@ -9,6 +9,8 @@ export const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 const INDEX = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export type BoardTheme = "day" | "night-sea";
+/** Whose sea a board shows: your notebook, or the chart of enemy waters. */
+export type Waters = "own" | "enemy";
 
 /**
  * A 10×10 board: a real table (column letters, row numbers, 100 cells) over
@@ -19,6 +21,7 @@ export function BoardFrame({
   label,
   theme,
   size = "lg",
+  waters = "own",
   interactive = false,
   active = false,
   grid = false,
@@ -33,6 +36,7 @@ export function BoardFrame({
   label: string;
   theme: BoardTheme;
   size?: "lg" | "sm" | "xs";
+  waters?: Waters;
   interactive?: boolean;
   active?: boolean;
   /** ARIA grid semantics (arrow-key navigation inside). */
@@ -58,6 +62,7 @@ export function BoardFrame({
       data-size={size}
       data-sea={night ? "night" : undefined}
       data-tone={night ? "dark" : undefined}
+      data-waters={waters}
       data-interactive={interactive || undefined}
       data-active={active || undefined}
       data-testid={testId}

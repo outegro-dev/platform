@@ -5,49 +5,48 @@ export type HitEffect = "flame" | "shards";
 
 const at = (x: number, y: number) => ({ "--x": x, "--y": y }) as CSSProperties;
 
-function Flame() {
+const CROSS = ["M9.5 10.5Q19 18.5 30.5 29.5", "M30 9.5Q21.5 20.5 10 30.5"];
+
+/** A hit in red felt-tip: two strokes over a paper-white edge, drawn in. */
+function MarkerCross() {
   return (
     <svg
-      className="flame"
+      className="mark-cross"
       viewBox="0 0 40 40"
       aria-hidden="true"
       focusable="false"
     >
+      <path className="mark-cross-halo" d={CROSS.join("")} />
+      {CROSS.map((d) => (
+        <path key={d} className="mark-cross-ink" d={d} pathLength={1} />
+      ))}
+    </svg>
+  );
+}
+
+/** A hit as a rubber stamp: a framed, shattered star in red ink. */
+function RubberStamp() {
+  return (
+    <svg
+      className="mark-stamp"
+      viewBox="0 0 40 40"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect className="mark-stamp-pad" x="5" y="5" width="30" height="30" />
       <path
-        className="flame-outer"
-        fill="url(#bs-flame)"
-        d="M20 3c5.5 7.6 11.8 13.2 10.2 23.1C29 33.4 24.3 37 20 37c-4.6 0-9.2-3.4-10.3-10-.9-6.3 3.1-10.6 5.4-15.2.8 4.4 2.6 6.6 4.2 7.6 1.3-4.3 1.8-9.4.7-16.4Z"
-      />
-      <path
-        className="flame-inner"
-        fill="var(--flame-core)"
-        d="M20.4 16.5c3.4 4.2 5.7 7.6 5 12.1-.6 3.9-3 6-5.4 6-2.9 0-5.3-2.3-5.4-5.8-.1-2.9 1.6-5.2 3.1-7 .6 1.9 1.3 3 2.2 3.4.9-2.4 1.1-5.2.5-8.7Z"
+        className="mark-stamp-ink"
+        d="M20 9 21.8 15.8 27.8 12.2 24.3 18.2 31 20 24.3 21.8 27.8 27.8 21.8 24.3 20 31 18.2 24.3 12.2 27.8 15.8 21.8 9 20 15.8 18.2 12.2 12.2 18.2 15.8Z"
       />
     </svg>
   );
 }
 
-function Shards() {
-  return (
-    <svg
-      className="shards"
-      viewBox="0 0 40 40"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path fill="url(#bs-shard)" d="M20 4.5 26 18.5l-6 4.5-5.6-5.4Z" />
-      <path fill="url(#bs-shard)" d="m6.5 23.5 10.6-3.1 1.4 7.9-9.6 3.8Z" />
-      <path fill="url(#bs-shard)" d="m32.8 21.8 1.7 10.4-10.3-2.2-.9-7.8Z" />
-      <path
-        fill="var(--shard-light)"
-        opacity="0.9"
-        d="m20 8.5 2.4 7.6-2.4 1.8Z"
-      />
-    </svg>
-  );
-}
-
-/** What stays on a cell after a shot: a splash dot, fire, or silver shards. */
+/**
+ * What stays on a cell after a shot: a pencil dot for a miss; for a hit a
+ * red marker cross (the "flame" effect) or a rubber stamp ("shards"), over
+ * a highlighter swipe while the ship still floats.
+ */
 export function CellMark({
   x,
   y,
@@ -60,13 +59,18 @@ export function CellMark({
   effect: HitEffect;
 }) {
   return (
-    <span className="mark" data-kind={kind} style={at(x, y)}>
+    <span
+      className="mark"
+      data-kind={kind}
+      data-effect={kind === "miss" ? undefined : effect}
+      style={at(x, y)}
+    >
       {kind === "miss" ? (
         <span className="mark-dot" />
       ) : effect === "shards" ? (
-        <Shards />
+        <RubberStamp />
       ) : (
-        <Flame />
+        <MarkerCross />
       )}
     </span>
   );
@@ -87,8 +91,9 @@ export function ShotMarker({ x, y }: { x: number; y: number }) {
 }
 
 /**
- * One animated event over a cell: the tracer of a shot, the splash of a
- * miss, the flash of a hit, or a sinking. Only transform and opacity move.
+ * One animated event over a cell: the pencil stroke of a shot, rings of a
+ * miss, a cut-paper "bang" with confetti (or paper shards) for a hit, and
+ * bubbles for a sinking. Only transform and opacity move.
  */
 export function EffectView({
   effect,
@@ -148,7 +153,7 @@ export function EffectView({
         aria-hidden="true"
         focusable="false"
       >
-        <circle cx="20" cy="20" r="20" fill="url(#bs-flash)" />
+        <path d="M20 1 22.9 9.4 29.5 3.6 27.8 12.2 36.5 10.5 30.6 17.2 39 20 30.6 22.9 36.5 29.5 27.8 27.8 29.5 36.5 22.9 30.6 20 39 17.2 30.6 10.5 36.5 12.2 27.8 3.6 29.5 9.4 22.9 1 20 9.4 17.2 3.6 10.5 12.2 12.2 10.5 3.6 17.2 9.4Z" />
       </svg>
       <span className="fx-ring" />
       {Array.from({ length: particles }, (_, i) => (
@@ -160,7 +165,7 @@ export function EffectView({
         >
           {hitEffect === "shards" ? (
             <svg viewBox="0 0 10 10" aria-hidden="true" focusable="false">
-              <path fill="url(#bs-shard)" d="M5 0 9 6 4 10 1 4Z" />
+              <path d="M5 0 9 6 4 10 1 4Z" />
             </svg>
           ) : null}
         </span>

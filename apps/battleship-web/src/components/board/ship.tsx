@@ -30,7 +30,13 @@ const hull = (w: number) =>
 const deck = (w: number) =>
   `M20 31 H${w - 41} C${w - 27} 31 ${w - 17} 41 ${w - 13} 50 C${w - 17} 59 ${w - 27} 69 ${w - 41} 69 H20 C16.5 69 14 66.5 14 63 V37 C14 33.5 16.5 31 20 31 Z`;
 
-/** A ship drawn along its length (bow to the right); the board turns it for vertical. */
+/**
+ * A ship drawn along its length (bow to the right); the board turns it for
+ * vertical. A paper cut-out: a flat card hull with an ink outline, a dashed
+ * fold line, superstructure glued on in paper-white. The silver skin is cut
+ * from foil card, engraved with fine hatching. A sunk ship is scribbled over
+ * (shown by the board for wrecks). Strokes keep their width at any size.
+ */
 export function ShipArt({ length, skin }: { length: number; skin: ShipSkin }) {
   const w = length * 100;
   const parts = layouts[length] ?? layouts[1] ?? [];
@@ -45,40 +51,41 @@ export function ShipArt({ length, skin }: { length: number; skin: ShipSkin }) {
       <path
         className="ship-hull"
         d={hull(w)}
-        fill={silver ? "url(#bs-hull-silver)" : "url(#bs-hull-classic)"}
+        fill={silver ? "var(--ship-silver-mid)" : "var(--ship-hull)"}
       />
       <path
         className="ship-deck"
         d={deck(w)}
-        fill={silver ? "url(#bs-deck-silver)" : "var(--ship-deck)"}
+        fill={silver ? "var(--ship-silver-light)" : "var(--ship-deck)"}
       />
+      {silver ? (
+        <path className="ship-engrave" d={hull(w)} fill="url(#bs-engrave)" />
+      ) : null}
       <path
-        className="ship-keel"
+        className="ship-fold"
         d={`M26 50 H${w - 44}`}
-        stroke={silver ? "var(--ship-silver-dark)" : "var(--ship-detail)"}
-        strokeWidth="1.5"
-        strokeDasharray="5 6"
-        opacity="0.45"
+        stroke="var(--ship-fold)"
+        strokeWidth="1.25"
+        strokeDasharray="3 4"
       />
       {parts.map((part) => {
         const cx = Math.round(part.at * w);
-        const fill = silver ? "var(--ship-silver-dark)" : "var(--ship-detail)";
         if (part.kind === "turret") {
           return (
             <g key={`${part.kind}-${cx}`}>
               <path
-                d={`M${cx} 50 H${cx + 17}`}
-                stroke={fill}
-                strokeWidth="3.4"
+                d={`M${cx} 50 H${cx + 19}`}
+                stroke="var(--ship-outline)"
+                strokeWidth="2.25"
                 strokeLinecap="round"
               />
-              <circle cx={cx} cy="50" r="8" fill={fill} />
               <circle
-                cx={cx - 1.5}
-                cy="48"
-                r="3"
-                fill={silver ? "var(--ship-silver-light)" : "var(--ship-shine)"}
-                opacity="0.55"
+                cx={cx}
+                cy="50"
+                r="8.5"
+                fill="var(--ship-detail)"
+                stroke="var(--ship-outline)"
+                strokeWidth="1.25"
               />
             </g>
           );
@@ -88,27 +95,24 @@ export function ShipArt({ length, skin }: { length: number; skin: ShipSkin }) {
             <g key={`${part.kind}-${cx}`}>
               <rect
                 x={cx - 15}
-                y="40"
+                y="39"
                 width="30"
-                height="20"
-                rx="5"
-                fill={silver ? "var(--ship-silver-mid)" : "var(--ship-hull)"}
-                stroke={fill}
-                strokeWidth="1.5"
-              />
-              <rect
-                x={cx - 9}
-                y="44"
-                width="18"
-                height="4"
+                height="22"
                 rx="2"
-                fill={silver ? "var(--ship-silver-light)" : "var(--ship-shine)"}
-                opacity="0.7"
+                fill="var(--ship-detail)"
+                stroke="var(--ship-outline)"
+                strokeWidth="1.25"
               />
               <path
-                d={`M${cx + 15} 50 H${cx + 22}`}
-                stroke={fill}
+                d={`M${cx - 9} 46 H${cx + 9}`}
+                stroke="var(--ship-outline)"
                 strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <path
+                d={`M${cx + 15} 50 H${cx + 23}`}
+                stroke="var(--ship-outline)"
+                strokeWidth="1.75"
                 strokeLinecap="round"
               />
             </g>
@@ -118,37 +122,31 @@ export function ShipArt({ length, skin }: { length: number; skin: ShipSkin }) {
           <g key={`${part.kind}-${cx}`}>
             <rect
               x={cx - 12}
-              y="42"
+              y="41"
               width="24"
-              height="16"
-              rx="8"
-              fill={silver ? "var(--ship-silver-mid)" : "var(--ship-hull)"}
-              stroke={fill}
-              strokeWidth="1.5"
+              height="18"
+              rx="9"
+              fill="var(--ship-detail)"
+              stroke="var(--ship-outline)"
+              strokeWidth="1.25"
             />
             <path
-              d={`M${cx + 4} 50 H${cx + 20}`}
-              stroke={fill}
-              strokeWidth="2"
+              d={`M${cx + 4} 50 H${cx + 21}`}
+              stroke="var(--ship-outline)"
+              strokeWidth="1.75"
               strokeLinecap="round"
             />
           </g>
         );
       })}
-      <path
-        className="ship-shine"
-        d={`M19 25.5 H${w - 42}`}
-        stroke={silver ? "var(--ship-silver-light)" : "var(--ship-shine)"}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        opacity={silver ? 0.95 : 0.5}
-      />
+      <path className="ship-scribble" d={hull(w)} fill="url(#bs-scribble)" />
       <path
         className="ship-outline"
         d={hull(w)}
         fill="none"
         stroke="var(--ship-outline)"
-        strokeWidth="1.4"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
       />
     </svg>
   );

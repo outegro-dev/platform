@@ -104,7 +104,19 @@ async function signIn(browser, { locale, viewport }) {
   return { page, game, close };
 }
 
+/*
+ * The game is set on the zine theme's newsprint: paper colour, grain and a
+ * halftone dot screen. The landing prints these shots through its own
+ * filter and dot screen, so the page's grain and dots would moiré under it
+ * and make every file about three times heavier (noise does not compress).
+ * The captures keep the paper colour and leave the texture out.
+ */
+const PLAIN_PAPER = `[data-theme^="zine"] body {
+  background-image: none !important;
+}`;
+
 async function capture(page, name, { keepPointer = false } = {}) {
+  await page.addStyleTag({ content: PLAIN_PAPER });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.evaluate(() => document.fonts.ready);
   if (!keepPointer) await page.mouse.move(0, 0);
