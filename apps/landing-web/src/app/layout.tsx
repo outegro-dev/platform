@@ -1,4 +1,3 @@
-import { fontVariables } from "@outegro/ui/fonts";
 import { zineFontVariables } from "@outegro/ui/fonts-zine";
 import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
@@ -78,12 +77,12 @@ export default async function RootLayout({
     getTranslations("loader"),
     analytics(),
   ]);
+  // Only the zine faces: the issue recasts the kit's sans, display and mono
+  // tokens to them, so the kit's own faces (fonts.ts, which preloads Manrope,
+  // Cormorant and JetBrains Mono) would be fetched for nothing. Pages with a
+  // calm island in Manrope put `fontVariables` on it (the kit specimen).
   return (
-    <html
-      lang={locale}
-      className={`${fontVariables} ${zineFontVariables}`}
-      data-theme="zine"
-    >
+    <html lang={locale} className={zineFontVariables} data-theme="zine">
       {stats && (
         <head>
           <GtmBootstrap {...stats} />

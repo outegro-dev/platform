@@ -458,6 +458,50 @@ for (const locale of locales) {
     for (const shot of await shots.all()) await expectLoaded(shot);
   });
 
+  test(`${locale}: the felt-tip "sunk" loop rings the sunk ship of this language's capture`, async ({
+    page,
+    context,
+  }) => {
+    await useLocale(context, locale);
+    await page.goto("/");
+    const marks = page.locator("#projects .shot-screen.is-desktop .marks");
+    // The enemy fleet is seeded per match, so each capture has the sunk
+    // two-deck ship elsewhere: H1–H2 in English, H9–H10 in Russian, in
+    // percentages of the 16:10 capture.
+    const ship = {
+      en: { left: 82, right: 84.5, top: 37.5, bottom: 48 },
+      ru: { left: 82, right: 84.5, top: 82.5, bottom: 93 },
+    }[locale];
+    const { loop, note } = await marks.evaluate((el) => {
+      // viewBox units (100 × 62.5) and layout offsets, in percentages: the
+      // tilt of the printed screenshot changes neither
+      const box = el
+        .querySelector<SVGPathElement>("path.is-sunk")
+        ?.getBBox() ?? { x: 0, y: 0, width: 0, height: 0 };
+      const label = el.querySelector<HTMLElement>(".mark-note.is-sunk");
+      const height = (el as HTMLElement).offsetHeight;
+      return {
+        loop: {
+          left: box.x,
+          right: box.x + box.width,
+          top: box.y / 0.625,
+          bottom: (box.y + box.height) / 0.625,
+        },
+        // the note's middle, from the top
+        note: label
+          ? ((label.offsetTop + label.offsetHeight / 2) / height) * 100
+          : -100,
+      };
+    });
+    expect(loop.left).toBeLessThan(ship.left);
+    expect(loop.right).toBeGreaterThan(ship.right);
+    expect(loop.top).toBeLessThan(ship.top);
+    expect(loop.bottom).toBeGreaterThan(ship.bottom);
+    // the note stays by its loop, not by the other capture's ship
+    expect(note).toBeGreaterThan(loop.top - 10);
+    expect(note).toBeLessThan(loop.bottom + 10);
+  });
+
   test(`${locale}: the platform shows what runs today, not a roadmap`, async ({
     page,
     context,
@@ -1260,8 +1304,13 @@ test("server-rendered content remains readable without JavaScript", async ({
   await page.locator("#faq").scrollIntoViewIfNeeded();
   await expect(page.locator("#faq .letter-a").first()).toBeVisible();
   await page.locator("#contact").scrollIntoViewIfNeeded();
+  // The address is readable; its mailto link comes with hydration, so
+  // Cloudflare never finds a whole address in the server HTML (EmailLink).
+  await expect(page.locator("#contact .contact-links").first()).toContainText(
+    "coping.barrel@gmail.com",
+  );
   await expect(
-    page.locator('#contact a[href^="mailto:"]').first(),
+    page.locator('#contact a[href^="https://t.me/"]').first(),
   ).toBeVisible();
   await page.goto(`${BASE}/stack`);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -1377,6 +1426,124 @@ test("SEO metadata, social image, sitemap, robots and the noindex kit specimen",
   );
 });
 
+// The kit's own faces: Manrope, Cormorant Garamond, JetBrains Mono.
+const KIT_FACES = /manrope|cormorant|jetbrains/i;
+
+test("the issue preloads no font; the kit's faces come only with the kit specimen's calm islands", async ({
+  page,
+  request,
+}) => {
+  // The issue recasts the kit's sans, display and mono tokens to the zine
+  // faces, which are never preloaded. The kit's faces (preloaded, ~110 KB)
+  // held back the cover's LCP for text no issue page sets.
+  for (const path of ["/", "/stack", "/privacy"]) {
+    const response = await request.get(path);
+    const preloads = `${response.headers().link ?? ""}\n${(
+      await response.text()
+    )
+      .match(/<link[^>]*>/g)
+      ?.join("\n")}`;
+    expect(preloads, path).not.toMatch(/as="?font/);
+    expect(preloads, path).not.toMatch(KIT_FACES);
+  }
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  const declared = await page.evaluate(() =>
+    [...document.fonts].map((face) => face.family),
+  );
+  expect(declared.filter((family) => KIT_FACES.test(family))).toEqual([]);
+
+  // The specimen's calm islands read in Manrope: preloaded there, and set.
+  const specimen = await request.get("/design-system");
+  expect(specimen.headers().link ?? "").toMatch(
+    /<[^>]*manrope[^>]*>;[^,]*as="?font/i,
+  );
+  await page.goto("/design-system");
+  // hydrated: the contrast ratios are measured in the browser
+  await expect(page.locator("#inks").getByText("…")).toHaveCount(0);
+  const manrope = () =>
+    page.evaluate(async () => {
+      await document.fonts.ready;
+      return [...document.fonts]
+        .filter(
+          (face) =>
+            face.status === "loaded" &&
+            /manrope/i.test(face.family) &&
+            !/fallback/i.test(face.family),
+        )
+        .map((face) => face.family.replaceAll('"', ""));
+    });
+  const setIn = (locator: Locator) =>
+    locator.evaluate((el) => getComputedStyle(el).fontFamily);
+  // the paragraph read at the calm level
+  const calm = page.locator('#faces div[data-theme="zine-calm"] p').first();
+  await expect.poll(manrope).not.toEqual([]);
+  const families = await manrope();
+  const reading = await setIn(calm);
+  expect(families.some((family) => reading.includes(family))).toBe(true);
+  // A calm dialog opens at <body>, outside the page, and still reads in it.
+  const level = page.getByRole("radiogroup", { name: "Level" });
+  await level.getByRole("radio", { name: "Calm" }).click();
+  await expect(level.getByRole("radio", { name: "Calm" })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
+  await page.getByRole("button", { name: "What is new" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toHaveAttribute("data-theme", "zine-calm");
+  const inDialog = await setIn(dialog.getByText(/Payments moved/));
+  expect(families.some((family) => inDialog.includes(family))).toBe(true);
+});
+
+test("the /privacy heading breaks into the same lines in its fallback and its face, at any width", async ({
+  page,
+  context,
+  browserName,
+}) => {
+  test.skip(
+    browserName !== "chromium",
+    "Checked where the first-load CLS is measured.",
+  );
+  test.skip(
+    process.platform === "linux",
+    "The tabloid fallback is local Georgia, which Linux lacks.",
+  );
+  // The accent's size follows the viewport and its column stops at 820 px;
+  // without a measure of its own it came within 1% of the column at 1280 px,
+  // where the fallback kept one line and the face (~1.5% wider) wrapped it
+  // on arrival: CLS 0.0187.
+  for (const locale of locales) {
+    await useLocale(context, locale);
+    await page.goto("/privacy");
+    await page.evaluate(() => document.fonts.ready);
+    const accent = page.locator(".legal-head h1 .og-accent");
+    for (const width of [
+      360, 390, 430, 480, 520, 768, 1024, 1180, 1280, 1366, 1440, 1920,
+    ]) {
+      await page.setViewportSize({ width, height: 900 });
+      const lines = await accent.evaluate(async (el: HTMLElement) => {
+        const count = () =>
+          Math.round(
+            el.getBoundingClientRect().height /
+              Number.parseFloat(getComputedStyle(el).fontSize),
+          );
+        const face = count();
+        // the token without the faces: the metric-matched fallback onwards
+        const family = getComputedStyle(el).fontFamily.split(",");
+        el.style.fontFamily = family
+          .slice(family.findIndex((name) => /fallback/i.test(name)))
+          .join(",");
+        count(); // lays it out, so a fallback not used yet starts loading
+        await document.fonts.ready;
+        const fallback = count();
+        el.style.fontFamily = "";
+        return { face, fallback };
+      });
+      expect(lines.face, `${locale} at ${width}px`).toBe(lines.fallback);
+    }
+  }
+});
+
 for (const [device, viewport] of [
   ["desktop", { width: 1280, height: 720 }],
   ["phone", { width: 390, height: 844 }],
@@ -1386,6 +1553,10 @@ for (const [device, viewport] of [
     ["/", "ru"],
     ["/stack", "en"],
     ["/stack", "ru"],
+    // the heading's accent has a measure in em, so it breaks the same in
+    // the fallback and the face: 0.0187 at 1280 px in English before
+    ["/privacy", "en"],
+    ["/privacy", "ru"],
   ] as const) {
     test(`${device} ${path} (${locale}): first load does not shift the layout (CLS < 0.02, cache disabled)`, async ({
       page,

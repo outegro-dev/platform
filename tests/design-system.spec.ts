@@ -208,6 +208,129 @@ test("the level switch reprints the kit loud or calm", async ({ page }) => {
   await expect(kit).toHaveAttribute("data-theme", "zine");
 });
 
+/** The kit at the calm level, as the product apps print it. */
+async function calmKit(page: Page) {
+  await page.goto("/design-system");
+  await hydrated(page);
+  await page
+    .getByRole("radiogroup", { name: "Level" })
+    .getByRole("radio", { name: "Calm" })
+    .click();
+  await expect(
+    page.locator("#kit").locator("[data-theme]").first(),
+  ).toHaveAttribute("data-theme", "zine-calm");
+}
+
+// The theme's inks as computed colours.
+const ink = "rgb(27, 25, 21)";
+const paper = "rgb(239, 228, 198)";
+
+test("calm buttons: lifted and pressed only with motion allowed; disabled is plain paper", async ({
+  page,
+}) => {
+  await calmKit(page);
+  const buttons = page.locator("#buttons");
+  const button = buttons.getByRole("button", { name: "Book a call" }).nth(1);
+  await button.scrollIntoViewIfNeeded();
+
+  // Reduced motion: the shadow answers the pointer, the button keeps its place.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await button.hover();
+  await expect(button).toHaveCSS("box-shadow", `${ink} 4px 4px 0px 0px`);
+  await expect(button).toHaveCSS("translate", "none");
+  await page.mouse.down();
+  await expect(button).toHaveCSS("box-shadow", `${ink} 1px 1px 0px 0px`);
+  await expect(button).toHaveCSS("translate", "none");
+  await page.mouse.up();
+
+  // Motion allowed: lifted under the pointer, pressed in on a click.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.mouse.move(0, 0);
+  await button.hover();
+  await expect(button).toHaveCSS("translate", "-1px -1px");
+  await page.mouse.down();
+  await expect(button).toHaveCSS("translate", "2px 2px");
+  await page.mouse.up();
+
+  // Disabled: a dashed edge on paper, legible words, no shadow, no fading.
+  const disabled = buttons.getByRole("button", { name: "Disabled" });
+  await expect(disabled).toBeDisabled();
+  await expect(disabled).toHaveCSS("border-top-style", "dashed");
+  await expect(disabled).toHaveCSS("box-shadow", "none");
+  await expect(disabled).toHaveCSS("opacity", "1");
+  await expect(disabled).toHaveCSS("background-color", "rgb(227, 211, 168)");
+  await expect(disabled).toHaveCSS("color", "rgb(75, 67, 52)");
+});
+
+test("calm focus ring and card shadow: on the kit's parts, redrawn from an app's layers", async ({
+  page,
+}) => {
+  await calmKit(page);
+  const ring = async (element: Locator, offset: string) => {
+    await expect(element).toHaveCSS("outline-style", "solid");
+    await expect(element).toHaveCSS("outline-width", "3px");
+    await expect(element).toHaveCSS("outline-color", "rgb(35, 96, 181)");
+    await expect(element).toHaveCSS("outline-offset", offset);
+  };
+  // The kit's field turns the browser ring off with a utility; calm draws it.
+  const field = page.locator("#spec-email");
+  await field.focus();
+  await ring(field, "2px");
+
+  // Anything else focusable takes the ring from the base layer, so a rule in
+  // the app's components layer (no unlayered override) draws it inside.
+  await page.locator("#fields").evaluate((section) => {
+    const probe = document.createElement("input");
+    probe.className = "probe-field";
+    probe.setAttribute("aria-label", "Probe");
+    section.append(probe);
+  });
+  const probe = page.locator(".probe-field");
+  await probe.focus();
+  await ring(probe, "2px");
+  await page.addStyleTag({
+    content:
+      "@layer components { .probe-field:focus-visible { outline-offset: -3px } }",
+  });
+  await ring(probe, "-3px");
+
+  // A pasted-in card: a 2 px frame and a hard shadow, in its tone's ink.
+  const cards = page.locator('#surfaces [data-slot="surface"]');
+  const card = cards.first();
+  await expect(card).toHaveCSS("border-top-width", "2px");
+  await expect(card).toHaveCSS("box-shadow", `${ink} 4px 4px 0px 0px`);
+  await expect(cards.and(page.locator('[data-tone="dark"]'))).toHaveCSS(
+    "box-shadow",
+    "rgb(207, 53, 40) 4px 4px 0px 0px",
+  );
+  // The shadow is layered, the frame is not: an app's rule changes one.
+  await page.addStyleTag({
+    content: "@layer components { .probe-card { box-shadow: none } }",
+  });
+  await card.evaluate((el) => el.classList.add("probe-card"));
+  await expect(card).toHaveCSS("box-shadow", "none");
+  await expect(card).toHaveCSS("border-top-width", "2px");
+});
+
+test("native checkboxes and radios are inked: ink on paper, paper on ink", async ({
+  page,
+}) => {
+  for (const level of ["Loud", "Calm"]) {
+    await page.goto("/design-system");
+    await hydrated(page);
+    await page
+      .getByRole("radiogroup", { name: "Level" })
+      .getByRole("radio", { name: level })
+      .click();
+    const kit = page.locator("#kit").locator("[data-theme]").first();
+    await expect(kit, level).toHaveCSS("accent-color", ink);
+    await expect(
+      page.locator('#surfaces [data-slot="surface"][data-tone="dark"]'),
+      level,
+    ).toHaveCSS("accent-color", paper);
+  }
+});
+
 test("tabs: arrows select, the strip scrolls on a phone, manual mode waits for Enter", async ({
   page,
 }) => {

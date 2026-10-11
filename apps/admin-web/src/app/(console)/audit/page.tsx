@@ -13,8 +13,10 @@ import {
   auditSources,
   decodeMergeCursor,
   encodeMergeCursor,
+  knownAuditActions,
   mergePage,
 } from "@/lib/audit";
+import { getLabels } from "@/lib/labels";
 import { one, oneOf, type SearchParams, uuidParam } from "@/lib/params";
 import { auditFetchers } from "@/lib/queries";
 import { NotConnected } from "@/lib/result";
@@ -137,6 +139,7 @@ export default async function AuditPage({
     cursor: one(params, "cursor"),
   };
   const names = t.raw("sources") as Record<string, string>;
+  const label = await getLabels();
   return (
     <div className="page">
       <PageHeader eyebrow={t("eyebrow")} title={t("title")} lead={t("lead")} />
@@ -165,6 +168,10 @@ export default async function AuditPage({
             value={filter.action}
             placeholder="role.granted"
             type="text"
+            suggestions={knownAuditActions.map(({ action, source }) => ({
+              value: action,
+              label: `${label("action", action)} · ${names[source] ?? source}`,
+            }))}
           />
           <TextField
             name="targetId"

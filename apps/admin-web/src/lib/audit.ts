@@ -57,6 +57,18 @@ export const auditActions = {
   education: eduAuditActionSchema.options,
 } as const satisfies Record<AuditSource, readonly string[]>;
 
+/**
+ * Every known action with the feed that writes it, feed by feed in the order
+ * of `auditSources`: what the timeline's action filter suggests. No two
+ * feeds write the same code (tested), so each is suggested once.
+ */
+export const knownAuditActions: readonly {
+  action: string;
+  source: AuditSource;
+}[] = auditSources.flatMap((source) =>
+  auditActions[source].map((action) => ({ action, source })),
+);
+
 export type TimelineEntry = {
   source: AuditSource;
   id: string;

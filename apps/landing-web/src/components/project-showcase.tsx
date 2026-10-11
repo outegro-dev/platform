@@ -37,25 +37,47 @@ const shots: Record<"en" | "ru", Record<Shot, StaticImageData>> = {
 const GAME = "https://battleship.outegro.dev";
 
 /**
+ * The sunk ship in each language's battle capture: the enemy fleet is seeded
+ * per match, so the two captures show different fleets. The loop is one
+ * stroke started at `at`, in viewBox units (x a percentage of the width, y of
+ * the height times 0.625); the note is placed in percentages of the capture,
+ * clear of the misses around the ship.
+ */
+const sunkMarks = {
+  // the two-deck ship at H1–H2 (y 23.4–30); the note under the loop
+  en: { at: "M79.6 20.4", note: { right: "15.5%", top: "56%" } },
+  // the two-deck ship at H9–H10 (y 51.5–58.3); the note left of the loop
+  ru: { at: "M79.6 48.6", note: { right: "19%", bottom: "9%" } },
+} as const;
+
+const sunkLoop =
+  "c3.2-1.6 7.6 1.1 7.8 5.9.3 5.4-2.6 8.5-5.6 7.8-3.4-.8-4.6-5.6-3.6-9.6.4-1.7 1.3-3.2 2.6-4";
+
+/**
  * Red felt-tip marks over the battle screenshot, the way a magazine circles
  * what matters: the expert bot, a sunk ship and the Elo rating. Positions are
  * percentages of the 16:10 capture.
  */
 function Marks({
+  locale,
   labels,
 }: {
+  locale: "en" | "ru";
   labels: { bot: string; sunk: string; elo: string };
 }) {
+  const sunk = sunkMarks[locale];
   return (
     <div className="marks" aria-hidden="true">
       <svg viewBox="0 0 100 62.5" preserveAspectRatio="none">
         <title>marks</title>
         <path d="M80.5 7.6c4.6-2.4 14-2.1 16.2 1.4 1.9 3.3-4.3 6.6-10.2 6.9-6.4.4-10.9-2.2-9.4-5.4.8-1.6 2.4-2.6 4.6-3.2" />
-        <path d="M79.6 48.6c3.2-1.6 7.6 1.1 7.8 5.9.3 5.4-2.6 8.5-5.6 7.8-3.4-.8-4.6-5.6-3.6-9.6.4-1.7 1.3-3.2 2.6-4" />
+        <path className="is-sunk" d={`${sunk.at}${sunkLoop}`} />
         <path d="M26 12.6c-3.9-1.3-7.6-1.5-11.4-.9m0 0 2.4-1.6m-2.4 1.6 2.2 1.8" />
       </svg>
       <span className="mark-note is-bot">{labels.bot}</span>
-      <span className="mark-note is-sunk">{labels.sunk}</span>
+      <span className="mark-note is-sunk" style={sunk.note}>
+        {labels.sunk}
+      </span>
       <span className="mark-note is-elo">{labels.elo}</span>
     </div>
   );
@@ -68,7 +90,8 @@ function Marks({
  */
 export async function ProjectShowcase() {
   const t = await getTranslations("projects");
-  const set = shots[(await getLocale()) === "ru" ? "ru" : "en"];
+  const locale = (await getLocale()) === "ru" ? "ru" : "en";
+  const set = shots[locale];
   const features = t.raw("features") as string[];
   const stack = t.raw("stack") as string[];
   const shot = (key: Shot, sizes: string) => (
@@ -140,6 +163,7 @@ export async function ProjectShowcase() {
                 "(max-width: 767px) 100vw, (max-width: 1600px) 74vw, 1140px",
               )}
               <Marks
+                locale={locale}
                 labels={{
                   bot: t("marks.bot"),
                   sunk: t("marks.sunk"),

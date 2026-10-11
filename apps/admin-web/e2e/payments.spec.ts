@@ -6,6 +6,7 @@ import {
   settle,
   signIn,
   test,
+  useRussian,
   visit,
   withFailure,
 } from "./fixtures";
@@ -157,6 +158,64 @@ test.describe("grants say where they stand now", () => {
     await expect(account).not.toHaveAttribute("style");
     await expect(account).toHaveCSS("margin-top", "0px");
     await expect(account).toHaveCSS("margin-right", "0px");
+  });
+
+  // Anna's Silver Fleet is paid; Payments records it active, but its window
+  // opens in four days.
+  test("a scheduled one says when it starts, on its order and its player", async ({
+    page,
+    context,
+  }) => {
+    /** The scheduled status in `scope`, and in how many days it opens. */
+    const scheduled = async (
+      scope: Locator,
+      status: string,
+      starts: string,
+    ) => {
+      const group = scope.locator(".grant-status");
+      await expect(group).toHaveCount(1);
+      await expect(group.locator(".status")).toHaveText(status);
+      await expect(group.locator(".status")).toHaveAttribute(
+        "data-tone",
+        "info",
+      );
+      await expect(group).toContainText(starts);
+      const at = await group.locator("time").getAttribute("datetime");
+      expect(Math.round((Date.parse(at ?? "") - Date.now()) / 86_400_000)).toBe(
+        4,
+      );
+    };
+
+    await signIn(page, "owner", "/users?query=anna.schmidt");
+    await page.getByRole("link", { name: "Anna Schmidt" }).click();
+    await page.waitForURL(/\/users\/[0-9a-f-]{36}$/);
+    const userId = new URL(page.url()).pathname.split("/").at(-1);
+
+    await visit(page, `/payments/orders?userId=${userId}`);
+    await openFirstRow(page);
+    const access = page.locator("#grants");
+    await scheduled(access, "Scheduled", "Starts");
+    // The order's own access line says the same, not Payments' "Active".
+    const fact = page.locator("#order .fact").filter({ hasText: /^Access/ });
+    await scheduled(fact, "Scheduled", "Starts");
+    await expect(
+      page.locator("#order").getByText("Active", { exact: true }),
+    ).toHaveCount(0);
+    // Booked ahead still matters: it can be revoked before it opens.
+    await expect(access.getByRole("button", { name: "Revoke" })).toBeVisible();
+    const order = page.url();
+
+    await visit(page, `/battleship/players/${userId}`);
+    const grants = page.locator("#grants");
+    await expect(grants).toContainText("cosmetics.silver-fleet");
+    await scheduled(grants, "Scheduled", "Starts");
+
+    await useRussian(context);
+    await page.reload();
+    await settle(page);
+    await scheduled(grants, "Запланирован", "Начнётся");
+    await visit(page, order);
+    await scheduled(page.locator("#grants"), "Запланирован", "Начнётся");
   });
 });
 
