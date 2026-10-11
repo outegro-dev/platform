@@ -1,6 +1,5 @@
 import {
   ArrowClockwiseIcon,
-  ArrowLeftIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
@@ -10,7 +9,7 @@ import { retryDelivery } from "@/app/(console)/notifications/actions";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { CopyText } from "@/components/ui/copy-text";
 import { JsonView, Time } from "@/components/ui/data";
-import { Facts, Panel, Status } from "@/components/ui/layout";
+import { BackLink, Facts, Panel, Status } from "@/components/ui/layout";
 import { FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { shortId } from "@/lib/format";
@@ -38,14 +37,7 @@ export default async function DeliveryPage({
   const label = await getLabels();
   const f = await getFormatter();
   const back = (
-    <Link
-      href="/notifications/deliveries"
-      className="panel-link"
-      style={{ margin: 0 }}
-    >
-      <ArrowLeftIcon aria-hidden="true" />
-      {t("back")}
-    </Link>
+    <BackLink href="/notifications/deliveries">{t("back")}</BackLink>
   );
   const result = await load(() => services().notifications.delivery(id));
   if (!result.ok) {

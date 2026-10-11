@@ -1,5 +1,4 @@
 import {
-  ArrowLeftIcon,
   EyeIcon,
   EyeSlashIcon,
   PencilSimpleSlashIcon,
@@ -17,11 +16,20 @@ import { MatchesTable } from "@/components/battleship/matches-table";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { LineChart } from "@/components/ui/charts";
 import { DataTable, Time } from "@/components/ui/data";
-import { Bars, Facts, Panel, Stat, Status } from "@/components/ui/layout";
+import { GrantStatus } from "@/components/ui/grant-status";
+import {
+  BackLink,
+  Bars,
+  Facts,
+  Panel,
+  Stat,
+  Status,
+} from "@/components/ui/layout";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { botLevels } from "@/lib/adapters/battleship";
+import { grantStatus } from "@/lib/grants";
 import { getLabels } from "@/lib/labels";
 import type { Params } from "@/lib/params";
 import { getFormatter } from "@/lib/request";
@@ -41,16 +49,7 @@ export default async function PlayerPage({ params }: { params: Params<"id"> }) {
   const t = await getTranslations("battleship.player");
   const label = await getLabels();
   const f = await getFormatter();
-  const back = (
-    <Link
-      href="/battleship/players"
-      className="panel-link"
-      style={{ margin: 0 }}
-    >
-      <ArrowLeftIcon aria-hidden="true" />
-      {t("back")}
-    </Link>
-  );
+  const back = <BackLink href="/battleship/players">{t("back")}</BackLink>;
   const result = await load(() => services().battleship.player(id));
   if (!result.ok) {
     return (
@@ -91,11 +90,7 @@ export default async function PlayerPage({ params }: { params: Params<"id"> }) {
             <Status tone="warn">{t("hidden")}</Status>
           )}
           {access.granted.has("users.read") && (
-            <Link
-              href={`/users/${player.userId}`}
-              className="panel-link"
-              style={{ margin: 0 }}
-            >
+            <Link href={`/users/${player.userId}`} className="panel-link">
               <UserCircleIcon aria-hidden="true" />
               {t("account")}
             </Link>
@@ -263,30 +258,31 @@ export default async function PlayerPage({ params }: { params: Params<"id"> }) {
               <p className="small muted">{t("noGrants")}</p>
             ) : (
               <ul className="stack-sm">
-                {grants.map((grant) => (
-                  <li
-                    key={grant.grantId}
-                    className="row-gap"
-                    style={{ justifyContent: "space-between" }}
-                  >
-                    <span className="stack-sm" style={{ gap: 2 }}>
-                      <span className="mono small">{grant.feature}</span>
-                      <span className="small muted">
-                        {label("grantSource", grant.sourceType)} ·{" "}
-                        {grant.validUntil ? (
-                          <Time iso={grant.validUntil} format="date" />
-                        ) : (
-                          t("forever")
-                        )}
+                {grants.map((grant) => {
+                  // Where it stands now, by the window rule Battleship's own
+                  // `active` follows: scheduled and run-out grants too.
+                  const status = grantStatus(grant, f.now);
+                  return (
+                    <li
+                      key={grant.grantId}
+                      className="row-gap"
+                      style={{ justifyContent: "space-between" }}
+                    >
+                      <span className="stack-sm" style={{ gap: 2 }}>
+                        <span className="mono small">{grant.feature}</span>
+                        <span className="small muted">
+                          {label("grantSource", grant.sourceType)} ·{" "}
+                          {grant.validUntil ? (
+                            <Time iso={grant.validUntil} format="date" />
+                          ) : (
+                            t("forever")
+                          )}
+                        </span>
                       </span>
-                    </span>
-                    <Status tone={grant.active ? "ok" : "neutral"}>
-                      {grant.active
-                        ? t("active")
-                        : label("grantState", grant.state)}
-                    </Status>
-                  </li>
-                ))}
+                      <GrantStatus status={status} label={label} />
+                    </li>
+                  );
+                })}
               </ul>
             )}
             {player.cosmetics && (

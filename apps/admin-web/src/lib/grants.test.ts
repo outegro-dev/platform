@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { grantPhase } from "./grants";
+import {
+  grantPhase,
+  grantPhases,
+  grantStatus,
+  isGrantState,
+  revocable,
+} from "./grants";
 
 const NOW = Date.parse("2026-10-04T12:00:00.000Z");
 const DAY = 86_400_000;
@@ -59,5 +65,81 @@ describe("where a grant stands", () => {
             JSON.stringify(value),
           ).toBe(inForce(value));
         }
+  });
+});
+
+describe("revoking a grant", () => {
+  it("is offered while it is in force or booked ahead, never once it ended", () => {
+    expect(grantPhases.filter(revocable)).toEqual(["scheduled", "active"]);
+  });
+
+  it("is not offered for a grant that ran out but Payments still calls active", () => {
+    // What the lists see: the recorded state says active, the window says
+    // it ended three days ago.
+    expect(revocable(grantPhase(grant("active", -40, -3), NOW))).toBe(false);
+    expect(revocable(grantPhase(grant("active", 2, 30), NOW))).toBe(true);
+    expect(revocable(grantPhase(grant("revoked", -3, null), NOW))).toBe(false);
+  });
+});
+
+describe("a grant's recorded state", () => {
+  it("is read only when Payments could have written it", () => {
+    for (const state of ["active", "revoked", "expired"])
+      expect(isGrantState(state), state).toBe(true);
+    for (const state of ["scheduled", "Active", "paused", ""])
+      expect(isGrantState(state), state).toBe(false);
+  });
+});
+
+describe("a grant's status in the lists", () => {
+  // Payments' lists: the user's "Product access", /payments/grants, an order.
+  const status = (state: string, from: number, until: number | null) =>
+    grantStatus({ ...grant("active", from, until), state }, NOW);
+
+  it("reads in force, in the kit's ok colour, only inside its window", () => {
+    expect(status("active", -3, 30)).toEqual({
+      phase: "active",
+      tone: "ok",
+      kind: "grantPhase",
+      value: "active",
+    });
+  });
+
+  it("reads scheduled, not active, before its window opens", () => {
+    expect(status("active", 2, 30)).toEqual({
+      phase: "scheduled",
+      tone: "info",
+      kind: "grantPhase",
+      value: "scheduled",
+    });
+  });
+
+  it("reads expired once its window closed, though Payments says active", () => {
+    expect(status("active", -40, -3)).toEqual({
+      phase: "expired",
+      tone: "neutral",
+      kind: "grantPhase",
+      value: "expired",
+    });
+    expect(status("expired", -40, -3).phase).toBe("expired");
+  });
+
+  it("reads revoked whatever its window", () => {
+    expect(status("revoked", -3, null)).toEqual({
+      phase: "revoked",
+      tone: "neutral",
+      kind: "grantPhase",
+      value: "revoked",
+    });
+  });
+
+  it("shows a state Payments does not write as recorded, with no phase", () => {
+    expect(status("frozen", -3, null)).toEqual({
+      phase: null,
+      tone: "neutral",
+      kind: "grantState",
+      value: "frozen",
+    });
+    expect(revocable(status("frozen", -3, null).phase)).toBe(false);
   });
 });

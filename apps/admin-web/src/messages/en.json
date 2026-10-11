@@ -28,6 +28,11 @@
     "reasonPlaceholder": "Why are you doing this? It goes to the audit log.",
     "reasonHint": "Required, 3–500 characters. Saved in the audit log with your name.",
     "cancel": "Cancel",
+    "offline": "You are offline, so nothing was sent. Your reason is kept: try again once you are back online.",
+    "backOnline": "You are back online. Your reason is kept: try again.",
+    "failed": "The console's server did not answer. Your reason is kept: try again.",
+    "offlineCommand": "You are offline, so nothing was sent. Try again once you are back online.",
+    "failedCommand": "The console's server did not answer. Try again.",
     "errors": {
       "invalid": "Check the fields: something is missing or not valid.",
       "forbidden": "Your role does not allow this. Nothing was changed.",
@@ -454,7 +459,12 @@
       "player_leaderboard_shown": "Shown on leaderboard",
       "book_imported": "Content imported",
       "book_status_changed": "Status changed",
-      "book_access_changed": "Access rule changed"
+      "book_access_changed": "Access rule changed",
+      "passkey_registered": "Passkey added",
+      "passkey_renamed": "Passkey renamed",
+      "passkey_removed": "Passkey removed by the user",
+      "passkey_revoked": "Passkey removed by an operator",
+      "passkey_counter_regression": "Passkey sign-in refused: possible copy"
     }
   },
   "dashboard": {
@@ -512,6 +522,8 @@
       "highSeverity": "{count, plural, one {# of high severity} other {# of high severity}}",
       "unmatchedEvents": "{count, plural, one {# provider event is unmatched} other {# provider events are unmatched}}",
       "refundsReview": "{count, plural, one {# refund needs review} other {# refunds need review}}",
+      "assistPaused": "Education's AI assistant is paused",
+      "assistPausedMeta": "Spending cap reached: {used} of {limit, plural, one {# call} other {# calls}} today. Back at 00:00 UTC",
       "allClear": "Nothing needs you right now",
       "allClearMeta": "No failures, paused channels or open issues",
       "openItem": "Open: {item}",
@@ -662,6 +674,8 @@
     "bySystem": "by the system",
     "byImport": "by the content import",
     "contentVersion": "content version {version}",
+    "request": "Request",
+    "copyRequest": "Copy request ID",
     "otherAction": "Other action",
     "actionCode": "Action code:",
     "was": "was",
@@ -848,6 +862,7 @@
       "colUntil": "Valid until",
       "colActions": "Actions",
       "forever": "No end date",
+      "from": "Starts",
       "ledgerTitle": "Grants in Payments",
       "ledgerNote": "The source of truth, including ended grants.",
       "ledgerWhat": "grants",
@@ -1413,7 +1428,7 @@
       "filters": "Grant filters",
       "userId": "User ID",
       "userIdPlaceholder": "A uuid",
-      "state": "State",
+      "state": "Recorded state",
       "anyState": "Any state",
       "source": "Source",
       "anySource": "Any source",
@@ -1649,7 +1664,6 @@
       "grants": "Premium and cosmetics",
       "noGrants": "No grants.",
       "forever": "no end date",
-      "active": "Active",
       "matchesTitle": "Recent matches"
     },
     "audit": {

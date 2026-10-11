@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import {
   expect,
+  expectAccessible,
   openFirstRow,
   openUserTab,
   phone,
@@ -218,3 +219,118 @@ for (const [device, options] of [
     });
   });
 }
+
+/** The "Grant role" dialog of a user's roles, filled with a role and a reason. */
+async function fillGrantRole(page: Page, query: string, name: string) {
+  await signIn(page, "owner", `/users?query=${query}`);
+  await page.getByRole("link", { name }).click();
+  await settle(page);
+  await openUserTab(page, "Roles");
+  await page.getByRole("button", { name: "Grant role" }).click();
+  const dialog = page.getByRole("dialog", { name: "Grant an admin role" });
+  await dialog.getByLabel("Role").selectOption("auditor");
+  await dialog.getByLabel("Reason").fill("Quarterly access review");
+  return dialog;
+}
+
+test.describe("a command that does not reach the server", () => {
+  // Offline, the console's own keepalive cannot load either.
+  test.use({ allowedConsoleErrors: [/Failed to load resource/] });
+
+  test("offline: nothing is sent, nothing typed is lost, and a retry sends it", async ({
+    page,
+    context,
+  }) => {
+    const dialog = await fillGrantRole(page, "ben.carter", "Ben Carter");
+    await context.setOffline(true);
+    await dialog.getByRole("button", { name: "Grant role" }).click();
+    const status = dialog.getByRole("status");
+    await expect(status).toHaveText(
+      "You are offline, so nothing was sent. Your reason is kept: try again once you are back online.",
+    );
+    await expect(status).toHaveAttribute("data-tone", "warn");
+    await expect(status.locator("svg")).toHaveAttribute("aria-hidden", "true");
+    // The page stays, and so does everything in the dialog.
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel("Reason")).toHaveValue(
+      "Quarterly access review",
+    );
+    await expect(dialog.getByLabel("Role")).toHaveValue("auditor");
+    // The warning in the kit's warn ink and its retry pass axe in the dialog.
+    await expectAccessible(page);
+
+    await context.setOffline(false);
+    await expect(status).toHaveText(
+      "You are back online. Your reason is kept: try again.",
+    );
+    await dialog.getByRole("button", { name: "Retry" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole("status").getByText("Role auditor granted."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("row", { name: /Auditor/ }).first(),
+    ).toContainText("Quarterly access review");
+  });
+
+  test("no answer: the reason stays, and a retry sends it", async ({
+    page,
+  }) => {
+    const dialog = await fillGrantRole(page, "emma.wilson", "Emma Wilson");
+    // The console's server drops the command (a restart, a network blip).
+    const drop = (url: URL) => url.origin === "http://localhost:3196";
+    await page.route(drop, (route) =>
+      route.request().method() === "POST" &&
+      route.request().headers()["next-action"]
+        ? route.abort("failed")
+        : route.continue(),
+    );
+    await dialog.getByRole("button", { name: "Grant role" }).click();
+    const status = dialog.getByRole("status");
+    await expect(status).toHaveText(
+      "The console's server did not answer. Your reason is kept: try again.",
+    );
+    await expect(status).toHaveAttribute("data-tone", "bad");
+    await expect(dialog.getByLabel("Reason")).toHaveValue(
+      "Quarterly access review",
+    );
+    await expect(dialog.getByLabel("Role")).toHaveValue("auditor");
+    await expectAccessible(page);
+
+    await page.unroute(drop);
+    await dialog.getByRole("button", { name: "Retry" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole("status").getByText("Role auditor granted."),
+    ).toBeVisible();
+  });
+
+  test("a refusal keeps every field as it was, with the reason why", async ({
+    page,
+  }) => {
+    // Lena already holds a manual Battleship Premium grant: Payments refuses
+    // a second one. The chosen feature stays chosen for another try.
+    await signIn(page, "owner", "/users?query=lena");
+    await page.getByRole("link", { name: "Lena Park" }).click();
+    await settle(page);
+    await openUserTab(page, "Product access");
+    await page.getByRole("button", { name: "Give access" }).click();
+    const dialog = page.getByRole("dialog", {
+      name: "Give access without a payment",
+    });
+    await dialog.getByLabel("Feature").selectOption("battleship:premium");
+    await dialog.getByLabel("Reason").fill("Second season of the beta");
+    await dialog.getByRole("button", { name: "Give access" }).click();
+    await expect(dialog.getByRole("status")).toHaveText(
+      "An active manual grant for this feature already exists.",
+    );
+    await expect(dialog.getByLabel("Feature")).toHaveValue(
+      "battleship:premium",
+    );
+    await expect(dialog.getByLabel("Reason")).toHaveValue(
+      "Second season of the beta",
+    );
+    // Nothing to send again: the server answered.
+    await expect(dialog.getByRole("button", { name: "Retry" })).toHaveCount(0);
+  });
+});

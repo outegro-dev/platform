@@ -277,6 +277,14 @@ let seq = 0;
 export const uniqueEmail = (prefix = "user") =>
   `${prefix}.${Date.now()}.${seq++}@example.test`;
 
-/** A client address from the benchmarking range (RFC 2544), one per call. */
-export const randomIp = () =>
-  `198.18.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
+/**
+ * A client address from the benchmarking range (RFC 2544) that no other
+ * call in this test file returned. Route limits are per address and live
+ * in the shared Valkey, so a repeated random address once let an earlier
+ * test's requests count against a limit check (CI, 11.10.2026).
+ */
+let nextIp = Math.floor(Math.random() * 256 * 254);
+export const randomIp = () => {
+  const n = nextIp++ % (256 * 254);
+  return `198.18.${Math.floor(n / 254)}.${1 + (n % 254)}`;
+};

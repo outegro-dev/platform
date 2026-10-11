@@ -181,6 +181,32 @@ describe("payments adapter", () => {
     });
   });
 
+  it("keeps the request behind an audit entry, and reads entries without one", async () => {
+    const entry = {
+      id: "a1",
+      actorId: "op-1",
+      action: "grant.revoked",
+      targetType: "grant",
+      targetId: "g1",
+      reason: "Refunded",
+      data: {},
+      createdAt: "2026-10-11T10:00:00.000Z",
+    };
+    const payments = new PaymentsAdmin(
+      "payments",
+      transport(() => ({
+        items: [
+          { ...entry, requestId: "req-7" },
+          { ...entry, id: "a2" },
+        ],
+        nextCursor: null,
+      })).transport,
+    );
+    const page = await payments.audit({});
+    expect(page.items[0]?.requestId).toBe("req-7");
+    expect(page.items[1]?.requestId).toBeUndefined();
+  });
+
   it("offers stop renewal while Lava may still charge, also to send it again", () => {
     const stoppable = (state: string, autoRenew = true) =>
       canStopRenewal({ state, autoRenew });

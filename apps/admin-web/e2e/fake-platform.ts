@@ -450,6 +450,20 @@ for (const [ago, action, targetId, reason, role, data] of seedAudit
     createdAt: iso(NOW - ago),
   });
 }
+// Support removed the passkey of Lena's lost phone along with her sessions,
+// in a request of its own (a UUID, as the services assign). Fixed ids:
+// uuid() would draw from the seeded generator and shift the data after it.
+authAudit.push({
+  id: "7f6b1c2e-1a10-4c3e-9f00-000000000b01",
+  actorId: personaIds.support,
+  action: "passkey.revoked",
+  targetType: "user",
+  targetId: userByEmail("lena.park@example.com").id,
+  reason: "Lost phone, confirmed by email",
+  data: { passkeyId: "7f6b1c2e-1a10-4c3e-9f00-000000000a04" },
+  requestId: "3f1d2a9c-5b7e-4c21-9a0d-6e8f4b2c1d70",
+  createdAt: iso(NOW - 6 * DAY + 5 * MINUTE),
+});
 authAudit.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
 // Commercial access as Identity projects it (from Payments).

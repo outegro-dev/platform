@@ -1,3 +1,4 @@
+import { eduAuditActionSchema } from "@outegro/contracts/edu";
 import type { Page } from "./result";
 
 /**
@@ -17,6 +18,45 @@ export const auditSources = [
 ] as const;
 export type AuditSource = (typeof auditSources)[number];
 
+/**
+ * Every action the services write to their audit logs, read from their code
+ * (11.10.2026): auth-backend `audit(…)`, the `admin_audit` inserts of
+ * notifications-, battleship- and edu-backend, payments-backend `audit(…)`.
+ * Each has a name in both languages (`labels.action`, checked by the
+ * messages test); an action added later still shows, as its code in words.
+ */
+export const auditActions = {
+  identity: [
+    "role.granted",
+    "role.revoked",
+    "sessions.revoked",
+    "user.active",
+    "user.suspended",
+    "identity.linked",
+    "identity.unlinked",
+    "passkey.registered",
+    "passkey.renamed",
+    "passkey.removed",
+    "passkey.revoked",
+    "passkey.counter_regression",
+  ],
+  notifications: ["delivery.retry", "settings.channels.update"],
+  battleship: [
+    "match.aborted",
+    "player.nickname.reset",
+    "player.leaderboard.hidden",
+    "player.leaderboard.shown",
+  ],
+  payments: [
+    "grant.created",
+    "grant.revoked",
+    "subscription.cancel",
+    "refund.requested",
+    "refund.matched",
+  ],
+  education: eduAuditActionSchema.options,
+} as const satisfies Record<AuditSource, readonly string[]>;
+
 export type TimelineEntry = {
   source: AuditSource;
   id: string;
@@ -26,6 +66,11 @@ export type TimelineEntry = {
   targetId: string;
   reason: string | null;
   data: Record<string, unknown>;
+  /**
+   * The HTTP request behind the change, the id its log lines carry; only
+   * services that record it send it (Identity, Payments).
+   */
+  requestId?: string | null;
   createdAt: string;
 };
 

@@ -14,20 +14,21 @@ import {
   TextField,
   Time,
 } from "@/components/ui/data";
-import { Panel, Status } from "@/components/ui/layout";
+import { GrantStatus } from "@/components/ui/grant-status";
+import { Panel } from "@/components/ui/layout";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { grantSources, grantStates } from "@/lib/adapters/payments";
 import { shortId } from "@/lib/format";
 import { grantTargets } from "@/lib/grant-targets";
+import { grantStatus, revocable } from "@/lib/grants";
 import { getLabels } from "@/lib/labels";
 import { one, oneOf, type SearchParams, uuidParam } from "@/lib/params";
 import { educationBooks, paymentsCatalog } from "@/lib/queries";
 import { getFormatter } from "@/lib/request";
 import { load } from "@/lib/result";
 import { services } from "@/lib/server";
-import { toneOf } from "@/lib/tones";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("payments.grants");
@@ -50,6 +51,7 @@ async function GrantsTable({
 }) {
   const t = await getTranslations("payments.grants");
   const label = await getLabels();
+  const f = await getFormatter();
   const result = await load(() =>
     services().payments.grants({ ...filter, limit: 25 }),
   );
@@ -97,72 +99,76 @@ async function GrantsTable({
           </tr>
         </thead>
         <tbody>
-          {items.map((grant) => (
-            <tr key={grant.id}>
-              <td data-primary="">
-                <span className="cell-main">{grant.feature}</span>
-                <span className="cell-sub mono">{grant.service}</span>
-              </td>
-              <td data-label={t("colHolder")}>
-                <Link href={`/users/${grant.userId}`} className="link mono">
-                  {shortId(grant.userId)}
-                </Link>
-              </td>
-              <td data-label={t("colSource")}>
-                {label("grantSource", grant.sourceType)}
-                {grant.reason && (
-                  <span className="cell-sub">“{grant.reason}”</span>
-                )}
-              </td>
-              <td data-label={t("colState")}>
-                <Status tone={toneOf("grant", grant.state)}>
-                  {label("grantState", grant.state)}
-                </Status>
-                {grant.revokeReason && (
-                  <span className="cell-sub">“{grant.revokeReason}”</span>
-                )}
-              </td>
-              <td data-label={t("colValid")}>
-                <Time iso={grant.validFrom} format="date" />
-                <span className="cell-sub">
-                  {grant.validUntil ? (
-                    <>
-                      {t("until")} <Time iso={grant.validUntil} format="date" />
-                    </>
-                  ) : (
-                    t("forever")
-                  )}
-                </span>
-              </td>
-              {canAssign && (
-                <td data-label={t("colActions")} className="num">
-                  {grant.state === "active" && (
-                    <ActionDialog
-                      action={revokeAccess}
-                      triggerLabel={t("revoke")}
-                      triggerVariant="ghost"
-                      triggerIcon={<XCircleIcon aria-hidden="true" />}
-                      title={t("revokeTitle")}
-                      description={t("revokeDescription", {
-                        feature: grant.feature,
-                      })}
-                      consequences={[
-                        t("revokeEffect"),
-                        ...(grant.sourceType === "subscription"
-                          ? [t("revokeRenewal")]
-                          : []),
-                        t("revokeOthers"),
-                        t("audited"),
-                      ]}
-                      confirmLabel={t("revokeConfirm")}
-                      destructive
-                      hidden={{ grantId: grant.id }}
-                    />
+          {items.map((grant) => {
+            // Where it stands now: Payments records booked-ahead and run-out
+            // grants as active too (the filter above is that record).
+            const status = grantStatus(grant, f.now);
+            return (
+              <tr key={grant.id}>
+                <td data-primary="">
+                  <span className="cell-main">{grant.feature}</span>
+                  <span className="cell-sub mono">{grant.service}</span>
+                </td>
+                <td data-label={t("colHolder")}>
+                  <Link href={`/users/${grant.userId}`} className="link mono">
+                    {shortId(grant.userId)}
+                  </Link>
+                </td>
+                <td data-label={t("colSource")}>
+                  {label("grantSource", grant.sourceType)}
+                  {grant.reason && (
+                    <span className="cell-sub">“{grant.reason}”</span>
                   )}
                 </td>
-              )}
-            </tr>
-          ))}
+                <td data-label={t("colState")}>
+                  <GrantStatus status={status} label={label} />
+                  {grant.revokeReason && (
+                    <span className="cell-sub">“{grant.revokeReason}”</span>
+                  )}
+                </td>
+                <td data-label={t("colValid")}>
+                  <Time iso={grant.validFrom} format="date" />
+                  <span className="cell-sub">
+                    {grant.validUntil ? (
+                      <>
+                        {t("until")}{" "}
+                        <Time iso={grant.validUntil} format="date" />
+                      </>
+                    ) : (
+                      t("forever")
+                    )}
+                  </span>
+                </td>
+                {canAssign && (
+                  <td data-label={t("colActions")} className="num">
+                    {revocable(status.phase) && (
+                      <ActionDialog
+                        action={revokeAccess}
+                        triggerLabel={t("revoke")}
+                        triggerVariant="ghost"
+                        triggerIcon={<XCircleIcon aria-hidden="true" />}
+                        title={t("revokeTitle")}
+                        description={t("revokeDescription", {
+                          feature: grant.feature,
+                        })}
+                        consequences={[
+                          t("revokeEffect"),
+                          ...(grant.sourceType === "subscription"
+                            ? [t("revokeRenewal")]
+                            : []),
+                          t("revokeOthers"),
+                          t("audited"),
+                        ]}
+                        confirmLabel={t("revokeConfirm")}
+                        destructive
+                        hidden={{ grantId: grant.id }}
+                      />
+                    )}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </DataTable>
       <Pager

@@ -228,6 +228,8 @@ const auditSchema = z.object({
   targetId: z.string(),
   reason: z.string().nullable(),
   data: z.unknown(),
+  /** The request behind the change (payments-backend records it). */
+  requestId: z.string().nullable().optional(),
   createdAt: iso,
 });
 
