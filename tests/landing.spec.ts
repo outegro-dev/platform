@@ -1368,8 +1368,13 @@ for (const [device, viewport] of [
   ["desktop", { width: 1280, height: 720 }],
   ["phone", { width: 390, height: 844 }],
 ] as const) {
-  for (const path of ["/", "/stack"]) {
-    test(`${device} ${path}: first load does not shift the layout (CLS < 0.02, cache disabled)`, async ({
+  for (const [path, locale] of [
+    ["/", "en"],
+    ["/", "ru"],
+    ["/stack", "en"],
+    ["/stack", "ru"],
+  ] as const) {
+    test(`${device} ${path} (${locale}): first load does not shift the layout (CLS < 0.02, cache disabled)`, async ({
       page,
       browserName,
     }) => {
@@ -1377,12 +1382,12 @@ for (const [device, viewport] of [
         browserName !== "chromium",
         "Layout-shift entries and network emulation are Chromium APIs.",
       );
-      // The zine faces are not preloaded (display: swap, no fallback
-      // metrics), so they arrive after the first paint and re-wrap the
-      // ransom-note headlines: CLS 0.03 to 0.11 measured on 11 October 2026,
-      // even without throttling. A font-loading decision, not a test one.
-      test.fixme(true, "the zine font swap shifts the covers (CLS 0.03–0.11)");
+      // The zine faces arrive after the first paint, so the covers are first
+      // set in their metric-matched local fallbacks (zine.css, per script)
+      // and the swap moves next to nothing: CLS under 0.002 on 11 October
+      // 2026, against 0.03 to 0.24 when the swap re-wrapped the headlines.
       test.setTimeout(90_000);
+      await useLocale(page.context(), locale);
       await page.setViewportSize(viewport);
       const cdp = await page.context().newCDPSession(page);
       await cdp.send("Network.enable");

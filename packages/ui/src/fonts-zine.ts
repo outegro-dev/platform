@@ -7,6 +7,18 @@ import localFont from "next/font/local";
  * a page fetches only the faces and scripts it actually sets.
  * Options must be literals (next/font reads them at build time).
  *
+ * So the faces arrive after the first paint, and what keeps the layout
+ * still is the fallback: zine.css sets every token on a local font sized to
+ * the face, per script ("og-*-fallback"), and the swap moves next to
+ * nothing. Hence adjustFontFallback: false here: next/font sizes only Arial
+ * or Times New Roman, by the Latin lower case, with no unicode-range, so a
+ * Cyrillic fallback would capture Latin text too. Preloading the headline
+ * faces measured worse: on Slow 4G it cost the first paint and LCP ~0.1 s
+ * and saved no shift. The stamp face is texture only and heavy (300 KB
+ * Latin), so it is optional: a cold visit keeps its fallback for the page's
+ * life instead of re-setting the stamps seconds in; the next one has it from
+ * the cache.
+ *
  * Eight faces, each with one job (smallest size it stays legible at):
  *   --og-body-*: old-standard-tt — loud body text, an old magazine column (17px)
  *   --og-mast-*: ruslan-display — masthead and big numbers (28px)
@@ -253,7 +265,7 @@ const stampCyrillic = localFont({
       style: "normal",
     },
   ],
-  display: "swap",
+  display: "optional",
   preload: false,
   adjustFontFallback: false,
   variable: "--og-stamp-cyrillic",
@@ -273,7 +285,7 @@ const stampLatin = localFont({
       style: "normal",
     },
   ],
-  display: "swap",
+  display: "optional",
   preload: false,
   adjustFontFallback: false,
   variable: "--og-stamp-latin",
