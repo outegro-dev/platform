@@ -474,7 +474,7 @@ export class PasskeysService {
    * the reason; the user gets a notice of its own, with the time only.
    */
   async revoke(
-    actor: { userId: string; requestId?: string | null },
+    actor: { userId: string; requestId: string | null },
     userId: string,
     passkeyId: string,
     reason: string,
@@ -484,7 +484,7 @@ export class PasskeysService {
       action: "passkey.revoked",
       notice: "security.passkey-revoked.v1",
       reason,
-      requestId: actor.requestId ?? null,
+      requestId: actor.requestId,
     });
   }
 

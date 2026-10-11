@@ -213,7 +213,8 @@ export const understandingChecks = pgTable(
 /**
  * Every request the assistant served, from the model or from the cache: the
  * reader's daily limit (today's uncached requests that reached the reader)
- * and the owner's bill (tokens).
+ * and the owner's bill (tokens). Purged with a deleted account; the cap of
+ * all readers is counted in `assist_days`, which keeps it.
  */
 export const assistUsage = pgTable(
   "assist_usage",
@@ -239,12 +240,31 @@ export const assistUsage = pgTable(
 );
 
 /**
+ * Requests to the model of all readers per UTC day, as the cap of all
+ * readers (`ASSIST_GLOBAL_DAILY_LIMIT`) counts them: taken together with the
+ * reader's usage row, given back when the provider refused the request
+ * outright. A count of its own, so a deleted account's requests stay in it.
+ */
+export const assistDays = pgTable("assist_days", {
+  day: date("day", { mode: "string" }).primaryKey(),
+  spent: integer("spent").notNull(),
+});
+
+/**
  * Answers to "explain this section in style X", shared by every reader of
  * the same book version. The key is a sha256 of what decides the answer
- * (book, content version, chapter, section, style, model, prompt revision).
+ * (book, content version, chapter, section, style, model, prompt revision);
+ * the book, its version, the model and the prompt revision are kept beside
+ * it, so answers no request can hit any more are found and dropped.
  */
 export const assistCache = pgTable("assist_cache", {
   key: text("key").primaryKey(),
+  bookId: uuid("book_id")
+    .notNull()
+    .references(() => books.id, { onDelete: "cascade" }),
+  contentVersion: integer("content_version").notNull(),
+  model: text("model").notNull(),
+  promptRevision: integer("prompt_revision").notNull(),
   text: text("text").notNull(),
   createdAt: at("created_at").notNull(),
   hits: integer("hits").notNull().default(0),

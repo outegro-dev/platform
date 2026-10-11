@@ -489,15 +489,17 @@ describe("Passkeys (ID-05)", () => {
     const before = await sessionsOf(session.user.id);
 
     // A copy of the key that is behind (or level with) the original.
+    const refusals: (string | undefined)[] = [];
     for (const counter of [2, 1, 0]) {
       const res = await signInWithPasskey(key, { counter }, 422);
       expect(res.body.error.fieldErrors).toEqual({ passkey: ["rejected"] });
+      refusals.push(res.headers["x-request-id"]);
     }
     expect(await sessionsOf(session.user.id)).toEqual(before);
     const [row] = await passkeysOf(session.user.id);
     expect(row?.signCount).toBe(2);
     const records = await db
-      .select({ data: auditLog.data })
+      .select({ data: auditLog.data, requestId: auditLog.requestId })
       .from(auditLog)
       .where(
         and(
@@ -510,6 +512,10 @@ describe("Passkeys (ID-05)", () => {
       passkeyId: passkey.id,
       storedCounter: 2,
     });
+    // Each record names the refused request, as its log lines do.
+    expect(records.map((record) => record.requestId).sort()).toEqual(
+      refusals.sort(),
+    );
     // The genuine key, one step ahead, still works.
     await signInWithPasskey(key, { counter: 3 }, 200);
 
@@ -710,6 +716,46 @@ describe("Passkeys (ID-05)", () => {
     ).not.toContain("security.passkey-renamed.v1");
   });
 
+  it("audit rows of the owner's passkey changes carry the id of their request", async () => {
+    const session = await signIn(uniqueEmail("pk"));
+    const added = await h.registerPasskey(
+      session.accessToken,
+      new SoftwareAuthenticator(),
+    );
+    expect(added.status).toBe(201);
+    const passkey = added.body;
+    await h
+      .http()
+      .patch(`/v1/me/passkeys/${passkey.id}`)
+      .set(auth(session))
+      .set("x-request-id", "req-passkey-rename-01")
+      .send({ name: "Work laptop" })
+      .expect(200);
+    // The verified email stays a way in, so the passkey may go.
+    await h
+      .http()
+      .delete(`/v1/me/passkeys/${passkey.id}`)
+      .set(auth(session))
+      .set("x-request-id", "req-passkey-remove-01")
+      .expect(204);
+    const trail = await db
+      .select({ action: auditLog.action, requestId: auditLog.requestId })
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.targetType, "user"),
+          eq(auditLog.targetId, session.user.id),
+        ),
+      );
+    expect(
+      Object.fromEntries(trail.map((row) => [row.action, row.requestId])),
+    ).toEqual({
+      "passkey.registered": added.headers["x-request-id"],
+      "passkey.renamed": "req-passkey-rename-01",
+      "passkey.removed": "req-passkey-remove-01",
+    });
+  });
+
   it("a suspended account neither signs in with a passkey nor adds one", async () => {
     const { session, authenticator } = await withPasskey();
     await db
@@ -901,7 +947,7 @@ describe("an operator removes a user's lost passkey", () => {
   async function operator(role: string) {
     const session = await signIn(uniqueEmail(role));
     await h.app.get(RolesService).grant(
-      { userId: null },
+      { userId: null, requestId: null },
       {
         userId: session.user.id,
         role,
@@ -957,7 +1003,9 @@ describe("an operator removes a user's lost passkey", () => {
   it("support removes it with a reason: audited, the user told, the passkey signs nobody in", async () => {
     const { session, authenticator, passkey } = await withPasskey();
     const support = await operator("support");
-    await revoke(support, session.user.id, passkey.id).expect(204);
+    const revoked = await revoke(support, session.user.id, passkey.id).expect(
+      204,
+    );
     expect(await passkeysOf(session.user.id)).toHaveLength(0);
 
     const entries = await db
@@ -975,6 +1023,7 @@ describe("an operator removes a user's lost passkey", () => {
         targetType: "user",
         reason: "Lost phone, owner confirmed in ticket 4521",
         data: { passkeyId: passkey.id },
+        requestId: revoked.headers["x-request-id"],
       },
     ]);
     // One notice of its own, with the time only: no name, no reason.

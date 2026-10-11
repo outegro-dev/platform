@@ -1,4 +1,11 @@
-import { Controller, Get, Global, Injectable, Module } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Global,
+  Injectable,
+  Logger,
+  Module,
+} from "@nestjs/common";
 import {
   HealthCheck,
   HealthCheckService,
@@ -66,9 +73,30 @@ export class HealthController {
   }
 }
 
+/**
+ * Terminus logs a failed readiness check as an error. A dependency that is
+ * down is expected (the probe answers 503 and Kubernetes keeps traffic away
+ * until it is back): a warning.
+ */
+@Injectable()
+class HealthCheckLogger extends Logger {
+  constructor() {
+    super("HealthCheck");
+  }
+
+  override error(message: unknown) {
+    this.warn(message);
+  }
+}
+
 @Global()
 @Module({
-  imports: [TerminusModule.forRoot({ errorLogStyle: "json" })],
+  imports: [
+    TerminusModule.forRoot({
+      errorLogStyle: "json",
+      logger: HealthCheckLogger,
+    }),
+  ],
   controllers: [HealthController],
   providers: [HealthRegistry],
   exports: [HealthRegistry],

@@ -89,7 +89,7 @@ async function signInAs(role: string) {
   const email = uniqueEmail(role);
   const first = await h.signIn(email);
   await roles.grant(
-    { userId: null },
+    { userId: null, requestId: null },
     { userId: first.user.id, role, reason: "test setup" },
   );
   await h.resetLimits();

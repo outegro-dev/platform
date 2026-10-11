@@ -54,7 +54,7 @@
     "@nestjs/terminus": "12.1.0",
     "@nestjs/testing": "12.1.2",
     "@nestjs/throttler": "6.7.1",
-    "@swc/core": "1.16.13",
+    "@swc/core": "1.16.2",
     "@testcontainers/rabbitmq": "12.2.0",
     "@testcontainers/valkey": "12.2.0",
     "@types/express": "^5.0.0",

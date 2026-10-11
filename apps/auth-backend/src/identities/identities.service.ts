@@ -95,7 +95,10 @@ export class IdentitiesService {
             profile.name,
           );
           if (created) {
-            await this.attach(tx, created.id, profile, now, "signup");
+            await this.attach(tx, created.id, profile, now, {
+              via: "signup",
+              requestId: client.requestId,
+            });
             user = created;
             signedUp = true;
           } else {
@@ -121,7 +124,7 @@ export class IdentitiesService {
   }
 
   /** Links a Google account to the signed-in user; ownership is the session. */
-  async link(userId: string, input: GoogleCode) {
+  async link(userId: string, input: GoogleCode, client: ClientContext) {
     const profile = await this.profile(input);
     const now = this.clock.now();
     await this.database.db.transaction(async (tx) => {
@@ -140,7 +143,10 @@ export class IdentitiesService {
           fieldErrors: { identity: ["in_use"] },
         });
       }
-      const attached = await this.attach(tx, userId, profile, now, "link");
+      const attached = await this.attach(tx, userId, profile, now, {
+        via: "link",
+        requestId: client.requestId,
+      });
       if (!attached)
         throw new AppError("CONFLICT", {
           fieldErrors: { identity: ["already_linked"] },
@@ -152,7 +158,7 @@ export class IdentitiesService {
   }
 
   /** Refuses to remove the last way to sign in (TC-ID-02-03, SignInMethods). */
-  async unlink(userId: string) {
+  async unlink(userId: string, client: ClientContext) {
     const now = this.clock.now();
     await this.database.db.transaction(async (tx) => {
       const [user] = await tx
@@ -182,6 +188,7 @@ export class IdentitiesService {
         targetType: "user",
         targetId: userId,
         data: { provider: "google" },
+        requestId: client.requestId,
         at: now,
       });
       await this.notify(
@@ -245,7 +252,7 @@ export class IdentitiesService {
     userId: string,
     profile: GoogleProfile,
     at: Date,
-    via: "signup" | "link",
+    by: { via: "signup" | "link"; requestId: string | null },
   ) {
     const [row] = await tx
       .insert(identities)
@@ -264,7 +271,8 @@ export class IdentitiesService {
       action: "identity.linked",
       targetType: "user",
       targetId: userId,
-      data: { provider: "google", via },
+      data: { provider: "google", via: by.via },
+      requestId: by.requestId,
       at,
     });
     return row.id;
