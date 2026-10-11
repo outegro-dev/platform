@@ -457,7 +457,7 @@ describe("tampered queries, paths and cursors", () => {
 describe("oversized and garbled bodies", () => {
   it("are refused before anything is stored, without parser details", async () => {
     const reader = randomUUID();
-    const quiet = vi
+    const errors = vi
       .spyOn(Logger.prototype, "error")
       .mockImplementation(() => undefined);
     const huge = await attempt(
@@ -470,9 +470,10 @@ describe("oversized and garbled bodies", () => {
         padding: "x".repeat(300_000),
       }),
     );
-    // body-parser refuses it (413); the shared error filter currently answers
-    // 500 INTERNAL for that error (reported) — never a 2xx, never an echo.
-    expect(huge.status).toBeGreaterThanOrEqual(400);
+    // body-parser refuses it: 413 in the contract shape, never a 2xx, never
+    // an echo.
+    expect(huge.status).toBe(413);
+    expect(huge.body.error.code).toBe("VALIDATION_FAILED");
     expect(huge.text).not.toContain("xxxx");
     const garbled = await attempt(
       "nodejs-internals",
@@ -483,7 +484,9 @@ describe("oversized and garbled bodies", () => {
     expect(garbled.status).toBe(400);
     expect(garbled.body.error.code).toBe("VALIDATION_FAILED");
     expect(garbled.text).not.toMatch(/Unexpected|JSON|at /);
-    quiet.mockRestore();
+    // The client's mistakes, not the service's: no error in the log.
+    expect(errors).not.toHaveBeenCalled();
+    errors.mockRestore();
     const big = await h
       .http()
       .post("/v1/me/books/nodejs-internals/assist/understanding")
