@@ -726,7 +726,7 @@ describe("overview", () => {
     expect(after.readers.active7d - before.readers.active7d).toBe(1);
     expect(after.grants.inForce - before.grants.inForce).toBe(1);
     expect(after.exercisesSolved7d - before.exercisesSolved7d).toBe(1);
-    expect(after.books).toEqual({ published: 4, draft: 0, archived: 0 });
+    expect(after.books).toEqual({ published: 5, draft: 0, archived: 0 });
     expect(fresh).toBeTruthy();
   });
 });
