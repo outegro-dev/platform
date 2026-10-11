@@ -21,6 +21,7 @@ import {
 import { and, desc, eq, ilike, isNull, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { audit } from "../common/audit.js";
+import { Client, type ClientContext } from "../common/client-context.js";
 import type { AuthDatabase } from "../common/database.js";
 import {
   auditLog,
@@ -37,7 +38,7 @@ import {
   FreshPermissionsGuard,
   RequireFreshPermissions,
 } from "./fresh-permissions.guard.js";
-import { RolesService } from "./roles.service.js";
+import { type Actor, RolesService } from "./roles.service.js";
 
 const reason = z.string().trim().min(3).max(500);
 const idParam = z.uuid();
@@ -75,6 +76,10 @@ const decodeCursor = (cursor: string) => {
     throw new AppError("VALIDATION_FAILED");
   return { at: date, id };
 };
+
+/** The operator and the request of the command: the audit row gets both. */
+const actorOf = (user: AuthenticatedUser, client: ClientContext) =>
+  ({ userId: user.userId, requestId: client.requestId }) satisfies Actor;
 
 /** Identity side of the admin console. Every command is audited with a reason. */
 @Controller("admin")
@@ -259,17 +264,15 @@ export class AdminController {
     @CurrentUser() actor: AuthenticatedUser,
     @Param("id") id: string,
     @Body({ schema: grantSchema }) body: z.infer<typeof grantSchema>,
+    @Client() client: ClientContext,
   ) {
     if (!idParam.safeParse(id).success) throw new AppError("NOT_FOUND");
-    return this.roles.grant(
-      { userId: actor.userId },
-      {
-        userId: id,
-        role: body.role,
-        reason: body.reason,
-        expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
-      },
-    );
+    return this.roles.grant(actorOf(actor, client), {
+      userId: id,
+      role: body.role,
+      reason: body.reason,
+      expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+    });
   }
 
   @Post("role-bindings/:id/revoke")
@@ -279,12 +282,13 @@ export class AdminController {
     @CurrentUser() actor: AuthenticatedUser,
     @Param("id") id: string,
     @Body({ schema: reasonSchema }) body: z.infer<typeof reasonSchema>,
+    @Client() client: ClientContext,
   ) {
     if (!idParam.safeParse(id).success) throw new AppError("NOT_FOUND");
-    await this.roles.revoke(
-      { userId: actor.userId },
-      { bindingId: id, reason: body.reason },
-    );
+    await this.roles.revoke(actorOf(actor, client), {
+      bindingId: id,
+      reason: body.reason,
+    });
   }
 
   @Post("users/:id/sessions/revoke-all")
@@ -294,6 +298,7 @@ export class AdminController {
     @CurrentUser() actor: AuthenticatedUser,
     @Param("id") id: string,
     @Body({ schema: reasonSchema }) body: z.infer<typeof reasonSchema>,
+    @Client() client: ClientContext,
   ) {
     if (!idParam.safeParse(id).success) throw new AppError("NOT_FOUND");
     const revoked = await this.sessions.revoke(id, "all", "admin", {
@@ -307,6 +312,7 @@ export class AdminController {
         targetId: id,
         reason: body.reason,
         data: { count: revoked.length },
+        requestId: client.requestId,
         at: this.clock.now(),
       }),
     );
@@ -330,11 +336,12 @@ export class AdminController {
     @Param("id") id: string,
     @Param("passkeyId") passkeyId: string,
     @Body({ schema: reasonSchema }) body: z.infer<typeof reasonSchema>,
+    @Client() client: ClientContext,
   ) {
     if (!idParam.safeParse(id).success || !idParam.safeParse(passkeyId).success)
       throw new AppError("NOT_FOUND");
     await this.passkeys.revoke(
-      { userId: actor.userId },
+      actorOf(actor, client),
       id,
       passkeyId,
       body.reason,
@@ -348,10 +355,11 @@ export class AdminController {
     @CurrentUser() actor: AuthenticatedUser,
     @Param("id") id: string,
     @Body({ schema: statusSchema }) body: z.infer<typeof statusSchema>,
+    @Client() client: ClientContext,
   ) {
     if (!idParam.safeParse(id).success) throw new AppError("NOT_FOUND");
     return this.users.setStatus(
-      { userId: actor.userId },
+      actorOf(actor, client),
       id,
       body.status,
       body.reason,

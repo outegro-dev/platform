@@ -41,7 +41,7 @@ try {
     const binding = await app
       .get(RolesService)
       .grant(
-        { userId: null },
+        { userId: null, requestId: null },
         { userId: user.id, role: "owner", reason: `cli: ${values.reason}` },
       );
     console.log(

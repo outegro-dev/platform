@@ -30,7 +30,7 @@ async function signInAs(role: string, options: { expiresAt?: Date } = {}) {
   const email = uniqueEmail(role);
   const first = await h.signIn(email);
   await roles.grant(
-    { userId: null },
+    { userId: null, requestId: null },
     {
       userId: first.user.id,
       role,
@@ -259,7 +259,7 @@ describe("roles and permissions", () => {
     for (const role of ["constructor", "toString", "__proto__", "valueOf"])
       await expect(
         roles.grant(
-          { userId: null },
+          { userId: null, requestId: null },
           { userId: target.user.id, role, reason: "hardening" },
         ),
         role,
@@ -290,7 +290,7 @@ describe("owner protection", () => {
       for (const binding of other.body.roleBindings ?? []) {
         if (binding.role === "owner" && binding.state === "active") {
           await roles.revoke(
-            { userId: owner.user.id },
+            { userId: owner.user.id, requestId: null },
             { bindingId: binding.id, reason: "cleanup" },
           );
         }
@@ -342,7 +342,7 @@ describe("owner protection", () => {
       for (const binding of other.body.roleBindings ?? []) {
         if (binding.role === "owner" && binding.state === "active") {
           await roles.revoke(
-            { userId: a.user.id },
+            { userId: a.user.id, requestId: null },
             { bindingId: binding.id, reason: "cleanup" },
           );
         }
@@ -354,15 +354,114 @@ describe("owner protection", () => {
     ]);
     const results = await Promise.allSettled([
       roles.revoke(
-        { userId: a.user.id },
+        { userId: a.user.id, requestId: null },
         { bindingId: bindingB, reason: "race" },
       ),
       roles.revoke(
-        { userId: b.user.id },
+        { userId: b.user.id, requestId: null },
         { bindingId: bindingA, reason: "race" },
       ),
     ]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  });
+});
+
+describe("audit rows carry the request id (AuditEvent, chapter 7.8)", () => {
+  type Session = Awaited<ReturnType<typeof signInAs>>;
+  /** The audit rows of a target, read the way the admin console reads them. */
+  const trailOf = async (owner: Session, targetId: string) =>
+    (
+      await h
+        .http()
+        .get(`/v1/admin/audit?targetId=${targetId}&limit=100`)
+        .set(h.auth(owner.accessToken))
+        .expect(200)
+    ).body.items as { action: string; requestId: string | null }[];
+  const requestIds = (trail: { action: string; requestId: string | null }[]) =>
+    Object.fromEntries(trail.map((entry) => [entry.action, entry.requestId]));
+
+  it("role grants and revokes, status changes and session revocation record the id of their request", async () => {
+    const owner = await signInAs("owner");
+    const target = await h.signIn(uniqueEmail("audited"));
+    const command = (path: string, requestId: string) =>
+      h
+        .http()
+        .post(path)
+        .set(h.auth(owner.accessToken))
+        .set("x-request-id", requestId);
+
+    const granted = await command(
+      `/v1/admin/users/${target.user.id}/role-bindings`,
+      "req-audit-grant-0001",
+    )
+      .send({ role: "support", reason: "joins support" })
+      .expect(201);
+    await command(
+      `/v1/admin/role-bindings/${granted.body.id}/revoke`,
+      "req-audit-revoke-0001",
+    )
+      .send({ reason: "left support" })
+      .expect(204);
+    await command(
+      `/v1/admin/users/${target.user.id}/sessions/revoke-all`,
+      "req-audit-sessions-0001",
+    )
+      .send({ reason: "lost laptop" })
+      .expect(200);
+    await command(
+      `/v1/admin/users/${target.user.id}/status`,
+      "req-audit-suspend-0001",
+    )
+      .send({ status: "suspended", reason: "abuse report" })
+      .expect(200);
+    await command(
+      `/v1/admin/users/${target.user.id}/status`,
+      "req-audit-restore-0001",
+    )
+      .send({ status: "active", reason: "report resolved" })
+      .expect(200);
+
+    const trail = await trailOf(owner, target.user.id);
+    expect(trail).toHaveLength(5);
+    expect(requestIds(trail)).toEqual({
+      "role.granted": "req-audit-grant-0001",
+      "role.revoked": "req-audit-revoke-0001",
+      "sessions.revoked": "req-audit-sessions-0001",
+      "user.suspended": "req-audit-suspend-0001",
+      "user.active": "req-audit-restore-0001",
+    });
+    // The owner's own role came the CLI way: no request, so no id.
+    expect(requestIds(await trailOf(owner, owner.user.id))).toMatchObject({
+      "role.granted": null,
+    });
+  });
+
+  it("without a usable x-request-id the row gets the id the response and the logs carry", async () => {
+    const owner = await signInAs("owner");
+    const target = await h.signIn(uniqueEmail("audited"));
+    const plain = await h
+      .http()
+      .post(`/v1/admin/users/${target.user.id}/sessions/revoke-all`)
+      .set(h.auth(owner.accessToken))
+      .send({ reason: "lost laptop" })
+      .expect(200);
+    const malformed = await h
+      .http()
+      .post(`/v1/admin/users/${target.user.id}/status`)
+      .set(h.auth(owner.accessToken))
+      .set("x-request-id", "not ok")
+      .send({ status: "suspended", reason: "abuse report" })
+      .expect(200);
+
+    const [plainId, malformedId] = [plain, malformed].map(
+      (res) => res.headers["x-request-id"],
+    );
+    for (const id of [plainId, malformedId])
+      expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(requestIds(await trailOf(owner, target.user.id))).toEqual({
+      "sessions.revoked": plainId,
+      "user.suspended": malformedId,
+    });
   });
 });
 
