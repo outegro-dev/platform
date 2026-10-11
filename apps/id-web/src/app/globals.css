@@ -1,6 +1,9 @@
 /*
- * Account app layout only. Colours, type, glass and components come from
- * @outegro/ui — no raw palette values here, only tokens.
+ * Account app layout only. Colours, type and components come from
+ * @outegro/ui in the calm level of its zine theme (data-theme="zine-calm" on
+ * <html>): paper and ink, hard offset shadows, square corners, headlines in
+ * the sign face. No raw palette values here, only tokens; the few rules that
+ * must outrank the theme (it is unlayered) are at the end.
  */
 
 @layer base {
@@ -8,20 +11,14 @@
      longer list of sessions) would show a classic scrollbar only then and
      move the whole layout sideways. The scrollbar stays. A reserved
      scrollbar-gutter would do the same, but the gutter shows the base
-     colour only and would cut the glow below at the right edge. */
+     colour only and would cut the paper's grain at the right edge. */
   html {
     overflow-y: scroll;
   }
+  /* The paper, its grain and halftone come from the theme. */
   body {
     margin: 0;
     min-height: 100dvh;
-    background:
-      radial-gradient(
-        1200px 600px at 85% -10%,
-        var(--secondary),
-        transparent 70%
-      ),
-      var(--background);
   }
   a {
     color: inherit;
@@ -48,13 +45,15 @@
 }
 
 @layer components {
-  /* Header shared by sign-in and the account pages. */
+  /* Header shared by sign-in and the account pages: a masthead over a
+     double rule. */
   .brand-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding-block: 28px;
+    padding-block: 24px;
+    border-bottom: 3px double var(--border);
   }
   .brand {
     display: inline-flex;
@@ -63,15 +62,16 @@
     border-radius: var(--radius-sm);
   }
   .brand:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: 4px;
   }
+  /* The masthead face, at its smallest legible size or above (28 px). */
   .brand-word {
-    font-family: var(--font-display);
+    font-family: var(--font-mast);
     font-size: 30px;
-    font-style: italic;
-    font-weight: 500;
-    letter-spacing: -0.02em;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.02em;
   }
   .brand-actions {
     display: flex;
@@ -91,6 +91,10 @@
     font-family: var(--font-mono);
     font-size: 0.92em;
   }
+  /* The typewriter face runs large: a small line keeps its small size. */
+  .mono.small {
+    font-size: 13px;
+  }
   .stack {
     display: grid;
     gap: 24px;
@@ -104,44 +108,53 @@
   .field-legend {
     margin-bottom: 8px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
   }
   .choices {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
   }
+  /* A boxed option; the chosen one stands on a hard shadow. The border
+     keeps its width, so choosing moves nothing. */
   .choice {
     display: inline-flex;
     align-items: center;
     gap: 10px;
     min-height: 44px;
     padding-inline: 16px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-pill);
     background: var(--surface);
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
-    transition: border-color var(--duration-fast) var(--ease-out);
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
   }
-  .choice:hover,
+  .choice:hover {
+    background: var(--secondary);
+  }
   .choice:has(input:checked) {
-    border-color: var(--border-strong);
+    background: var(--surface);
+    box-shadow: 3px 3px 0 var(--foreground);
   }
-  /* The ring goes around the whole pill; an outline never changes its size. */
+  /* The ring goes around the whole box; an outline never changes its size. */
   .choice:has(input:focus-visible) {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: 3px;
   }
   .choice input:focus-visible {
     outline: none;
   }
+  /* Native controls in ink: red would read as an error on this paper. */
   .choice input,
   .check input {
     width: 18px;
     height: 18px;
     margin: 0;
-    accent-color: var(--primary);
+    accent-color: var(--foreground);
   }
   /* Button and result share a row when there is room for both; otherwise the
      result always takes the next line. Either way its two lines are reserved,
@@ -178,11 +191,12 @@
     gap: 20px;
     max-width: 620px;
   }
+  /* The sign face (from the theme) is wide: a size that keeps every word
+     of the title whole on a phone. */
   .login-intro h1 {
-    font-size: clamp(44px, 6vw, 84px);
-    font-weight: 500;
-    line-height: 0.98;
-    letter-spacing: -0.035em;
+    font-size: clamp(40px, 5.4vw, 76px);
+    line-height: 1.04;
+    overflow-wrap: break-word;
   }
   .login-intro h1 .og-accent {
     display: block;
@@ -214,7 +228,7 @@
     overflow-wrap: anywhere;
   }
   .login-sent[data-tone="warning"] {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .code-input {
     height: 64px;
@@ -241,11 +255,13 @@
       gap: 16px;
     }
   }
+  /* A boxed note with a shadow in its own ink, like the kit's Notice. */
   .login-notice {
     padding: 12px 16px;
-    border: 1px solid color-mix(in oklab, var(--destructive) 35%, transparent);
+    border: 2px solid var(--danger);
     border-radius: var(--radius-md);
-    background: color-mix(in oklab, var(--destructive) 7%, transparent);
+    background: var(--danger-soft);
+    box-shadow: 4px 4px 0 var(--danger);
     font-size: 14px;
     line-height: 1.5;
   }
@@ -253,19 +269,21 @@
     display: grid;
     gap: 16px;
   }
+  /* A dashed cut with a typewritten "or" in it. */
   .login-divider {
     display: flex;
     align-items: center;
     gap: 12px;
     color: var(--muted-foreground);
+    font-family: var(--font-mono);
     font-size: 13px;
+    letter-spacing: 0.02em;
   }
   .login-divider::before,
   .login-divider::after {
     content: "";
     flex: 1;
-    height: 1px;
-    background: var(--border);
+    border-top: 1.5px dashed var(--border);
   }
   .login-google {
     width: 100%;
@@ -290,7 +308,7 @@
     align-items: center;
     gap: 16px;
     padding-block: 18px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px dashed var(--border);
   }
   .method:last-child {
     border-bottom: 0;
@@ -305,7 +323,7 @@
     min-width: 0;
   }
   .method-text strong {
-    font-weight: 600;
+    font-weight: 700;
   }
   .method-text span {
     color: var(--muted-foreground);
@@ -334,7 +352,7 @@
     outline: none;
   }
   .panel-head h2:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: 4px;
   }
   .dialog-form {
@@ -349,7 +367,8 @@
   }
   .text-link {
     text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
   }
   /* Reserved height: status changes never move the rest of the page. */
   .channel-status {
@@ -358,10 +377,10 @@
     line-height: 1.5;
   }
   .channel-status[data-tone="success"] {
-    color: var(--success);
+    color: var(--ok);
   }
   .channel-status[data-tone="error"] {
-    color: var(--destructive);
+    color: var(--danger);
   }
 
   /* Full-page notices: invalid SSO request, errors. */
@@ -374,11 +393,12 @@
     max-width: 640px;
     padding-block: 48px 96px;
   }
+  /* Sized so the longest word ("недействительна") fits a 320 px phone;
+     a longer one would break rather than widen the page. */
   .notice h1 {
-    font-size: clamp(36px, 5vw, 56px);
-    font-weight: 500;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
+    font-size: clamp(24px, 7.4vw, 52px);
+    line-height: 1.1;
+    overflow-wrap: break-word;
   }
   .notice p {
     color: var(--muted-foreground);
@@ -412,18 +432,22 @@
     display: grid;
     gap: 4px;
   }
+  /* Sections as index tabs; the open one is printed in reverse on a red
+     shadow. The border is always there (transparent), so nothing moves. */
   .account-nav a {
     display: flex;
     align-items: center;
     gap: 12px;
     min-height: 44px;
-    padding-inline: 16px;
+    padding-inline: 14px;
+    border: 2px solid transparent;
     border-radius: var(--radius-pill);
     color: var(--muted-foreground);
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
     transition:
       background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
       color var(--duration-fast) var(--ease-out);
   }
   .account-nav a svg {
@@ -433,14 +457,17 @@
   }
   .account-nav a:hover {
     color: var(--foreground);
-    background: var(--secondary);
+    border-color: var(--border);
+    background: var(--surface);
   }
   .account-nav a[aria-current="page"] {
-    color: var(--primary-foreground);
-    background: var(--primary);
+    color: var(--background);
+    border-color: var(--foreground);
+    background: var(--foreground);
+    box-shadow: 3px 3px 0 var(--primary);
   }
   .account-nav a:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
   .account-main {
@@ -453,11 +480,12 @@
     gap: 10px;
     margin-bottom: 8px;
   }
+  /* The sign face is wide: the longest title stays one word on a 360 px
+     phone. */
   .page-head h1 {
-    font-size: clamp(36px, 4.5vw, 56px);
-    font-weight: 500;
-    line-height: 1;
-    letter-spacing: -0.03em;
+    font-size: clamp(28px, 4.2vw, 52px);
+    line-height: 1.08;
+    overflow-wrap: break-word;
   }
   .page-head p {
     color: var(--muted-foreground);
@@ -473,10 +501,13 @@
     display: grid;
     gap: 16px;
   }
+  /* Typewritten captions over the values. */
   .facts dt {
     margin-bottom: 6px;
     color: var(--muted-foreground);
+    font-family: var(--font-mono);
     font-size: 13px;
+    letter-spacing: 0.02em;
   }
   .facts dd {
     display: flex;
@@ -499,8 +530,7 @@
   }
   .panel-head h2 {
     font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    line-height: 1.3;
   }
   .app-links {
     display: grid;
@@ -524,19 +554,22 @@
     background: var(--secondary);
   }
   .app-link:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
+  /* An inked tile; a highlighter swipe under the pointer. */
   .app-link-icon {
     display: grid;
     place-items: center;
     width: 44px;
     height: 44px;
-    border-radius: var(--radius-md);
-    background: var(--secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    transition: background-color var(--duration-fast) var(--ease-out);
   }
   .app-link:hover .app-link-icon {
-    background: var(--surface);
+    background: var(--spot-yellow);
   }
   .app-link-icon svg {
     width: 22px;
@@ -549,7 +582,7 @@
   }
   .app-link-name {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .app-link-arrow {
     width: 18px;
@@ -582,10 +615,8 @@
     padding: 20px 24px;
     transition: border-color var(--duration-fast) var(--ease-out);
   }
-  .row[data-unread] {
-    border-color: var(--border-strong);
-  }
-  /* A read message keeps the note in the button's place and size. */
+  /* A read message keeps the note in the button's place and size (the
+     theme's buttons are bold, with a 2 px border even when ghost). */
   .row-done {
     position: relative;
     display: inline-flex;
@@ -593,8 +624,9 @@
     flex-shrink: 0;
     height: 40px;
     padding-inline: 20px;
+    border: 2px solid transparent;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 700;
     white-space: nowrap;
   }
   .row-done-label {
@@ -604,7 +636,7 @@
     align-items: center;
     gap: 8px;
     padding-inline-start: 20px;
-    color: var(--success);
+    color: var(--ok);
   }
   .row-done-label svg {
     width: 16px;
@@ -622,7 +654,7 @@
     align-items: center;
     gap: 10px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .row-body {
     font-size: 15px;
@@ -631,7 +663,7 @@
     overflow-wrap: anywhere;
   }
   /* In the row's left gutter, level with the title: it can disappear without
-     moving any text. */
+     moving any text. Red ink, like the unread row's shadow (at the end). */
   .unread-dot {
     position: absolute;
     top: 28px;
@@ -639,7 +671,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--live);
+    background: var(--primary);
     opacity: 0;
     transition: opacity var(--duration-fast) var(--ease-out);
   }
@@ -662,20 +694,27 @@
   .matrix thead td:first-child {
     width: 34%;
   }
+  /* A ledger: a heavy rule under the typewritten heads, thin ones between
+     the rows (solid, so they run unbroken across the cells). */
   .matrix th,
   .matrix td {
     padding: 14px 12px;
     border-bottom: 1px solid var(--border);
     text-align: center;
   }
+  .matrix thead :is(th, td) {
+    border-bottom: 2px solid var(--border);
+  }
   .matrix thead th {
     color: var(--muted-foreground);
+    font-family: var(--font-mono);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 400;
+    letter-spacing: 0.02em;
   }
   .matrix tbody th {
     text-align: start;
-    font-weight: 500;
+    font-weight: 600;
   }
   .matrix tbody tr:last-child > * {
     border-bottom: 0;
@@ -698,12 +737,13 @@
   .check:has(input:not(:disabled)):hover {
     background: var(--secondary);
   }
+  /* The typewriter face reads from 12 px. */
   .check-note {
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-size: 12px;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
   }
 
   /* Inbox pages. */
@@ -717,13 +757,15 @@
     margin-inline-start: auto;
   }
 
-  /* Site links under every page. */
+  /* Site links under every page, typed like a magazine's imprint. */
   .app-footer {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 24px;
-    padding-block: 32px;
+    padding-block: 24px 32px;
+    border-top: 1.5px dashed var(--border);
     color: var(--muted-foreground);
+    font-family: var(--font-mono);
     font-size: 13px;
   }
   .app-footer a {
@@ -731,12 +773,12 @@
     align-items: center;
     min-height: 44px;
     text-decoration: underline;
-    text-decoration-color: var(--border);
     text-underline-offset: 4px;
   }
   .app-footer a:hover {
     color: var(--foreground);
-    text-decoration-color: currentColor;
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 2px;
   }
 
   /* Result of a list action: fixed to the viewport, so it moves nothing. */
@@ -750,6 +792,7 @@
     padding-inline: 16px;
     pointer-events: none;
   }
+  /* A slip pasted over the page, on the theme's hard shadow. */
   .action-status-card {
     display: flex;
     align-items: center;
@@ -757,11 +800,10 @@
     width: min(100%, 480px);
     min-height: 56px;
     padding: 6px 6px 6px 18px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-lg);
     background: var(--surface);
-    box-shadow: 0 12px 32px
-      color-mix(in srgb, var(--foreground) 14%, transparent);
+    box-shadow: var(--shadow-soft);
     opacity: 0;
     translate: 0 12px;
     transition:
@@ -779,11 +821,11 @@
     flex-shrink: 0;
   }
   .action-status[data-tone="success"] .action-status-icon {
-    color: var(--success);
+    color: var(--ok);
   }
   .action-status[data-tone="error"] .action-status-icon,
   .action-status[data-tone="offline"] .action-status-icon {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .action-status-text {
     flex: 1;
@@ -807,14 +849,42 @@
       grid-template-columns: minmax(0, 1fr);
       padding-top: 8px;
     }
-    /* All sections stay visible: no hidden tab behind a scroll. */
+    /* All sections stay visible: no hidden tab behind a scroll. Each takes
+       its label's width and an equal share of the rest, so the longest
+       label (Russian "Безопасность") is never squeezed by the shortest. */
     .account-nav {
       position: static;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      display: flex;
+      gap: 4px;
     }
     .account-nav a {
+      flex: 1 1 auto;
+      min-width: 44px;
       justify-content: center;
-      padding-inline: 8px;
+      gap: 8px;
+      padding-inline: 10px;
+      font-size: 14px;
+    }
+  }
+  /* Icons over labels, sized to fit five across, whole words, down to
+     360 px (Russian included); a label never spills out of its tab. */
+  @media (max-width: 720px) {
+    .account-nav {
+      gap: 2px;
+    }
+    .account-nav a {
+      flex-direction: column;
+      gap: 4px;
+      min-height: 60px;
+      padding: 8px 2px;
+      border-width: 0;
+      border-radius: var(--radius-md);
+      font-size: clamp(10px, 2.95vw, 13px);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      text-align: center;
+      hyphens: auto;
+      overflow-wrap: anywhere;
     }
   }
   @media (max-width: 640px) {
@@ -829,10 +899,11 @@
     .row {
       flex-direction: column;
     }
-    /* Under the text, a ghost button lines its label up with it. */
+    /* Under the text, a ghost button lines its label up with it (its
+       padding and transparent border). */
     .row > form,
     .row > .row-done {
-      margin-inline-start: -20px;
+      margin-inline-start: -22px;
     }
     /* A passkey's actions go under its name, level with the text. */
     .method.passkey {
@@ -841,17 +912,7 @@
     .method.passkey .method-actions {
       grid-column: 2;
       justify-content: flex-start;
-      margin-inline-start: -20px;
-    }
-    .account-nav a {
-      flex-direction: column;
-      gap: 4px;
-      min-height: 60px;
-      padding: 8px 4px;
-      border-radius: var(--radius-md);
-      font-size: 12px;
-      line-height: 1.2;
-      text-align: center;
+      margin-inline-start: -22px;
     }
     /* Preferences: one block per category, one row per channel. */
     .matrix thead {
@@ -866,7 +927,7 @@
     }
     .matrix tr {
       padding-block: 8px 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1.5px dashed var(--border);
     }
     .matrix tbody tr:last-child {
       border-bottom: 0;
@@ -878,7 +939,7 @@
     }
     .matrix tbody th {
       padding-block: 8px 4px;
-      font-weight: 600;
+      font-weight: 700;
     }
     .matrix td:empty {
       display: none;
@@ -899,6 +960,13 @@
       gap: 12px;
     }
   }
+  /* Narrower than 360 px the five no longer fit in a row: three and two. */
+  @media (max-width: 359px) {
+    .account-nav {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
   /* The smallest phones: the header keeps language switch and sign-out on one line. */
   @media (max-width: 360px) {
     .brand-header {
@@ -907,5 +975,34 @@
     .brand-actions {
       gap: 2px;
     }
+  }
+}
+
+/*
+ * The theme's own rules are unlayered and outrank everything above; these
+ * few outrank them in turn (higher specificity).
+ */
+
+/* An unread message is pasted in on red ink; read, it keeps the ink shadow. */
+[data-theme="zine-calm"] [data-slot="surface"].row[data-unread] {
+  box-shadow: 4px 4px 0 var(--primary);
+}
+/* The ring goes around the option box (above), not the radio inside it. */
+[data-theme="zine-calm"] .choice input:focus-visible {
+  outline: none;
+}
+/* With reduced motion the kit's own buttons keep still on hover and press
+   (motion-safe); the theme's lift and sink do not ask yet, so they are held
+   here. Drop this once zine.css guards them itself. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="zine-calm"]
+    :is(
+      [data-slot="button"],
+      [data-slot="dialog-trigger"],
+      [data-slot="dialog-close"],
+      [data-slot="copy-button"],
+      [data-slot="account-menu-sign-in"]
+    ):is(:hover, :active) {
+    translate: none;
   }
 }
