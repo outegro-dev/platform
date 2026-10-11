@@ -61,6 +61,14 @@ export const BOOK_TECH: Readonly<Record<string, TechContext>> = {
     codeLang: "современный JavaScript",
     fences: ["js"],
   },
+  "rust-go-quickstart": {
+    audience:
+      "на backend-разработчика, который переходит с Node.js и NestJS на Go и Rust",
+    tech: "Go 1.27 и Rust 1.99 (edition 2024, tokio) в сравнении с NestJS 12 и Node.js 24",
+    codeLang:
+      "Go или Rust — тот, о котором раздел; для сравнения — TypeScript с NestJS",
+    fences: ["go", "rust", "ts"],
+  },
 };
 
 export const NEUTRAL_TECH: TechContext = {
