@@ -4,6 +4,14 @@
  * do without). Tokens only; the book's accent (--bk, from its data) marks
  * diagrams and interactive states, never the page chrome. The diagram
  * vocabulary is shared with the covers: globals.css.
+ *
+ * In the calm zine theme: the text on clean paper (no halftone under it),
+ * Manrope 18/1.7 at about 68 characters, section headlines in the sign
+ * face. What the reader acts on (exercises, sandboxes, the simulator, the
+ * deck, the pager) is an inked card on a hard shadow; what they only read
+ * (code, tables, figures, notes) is framed flat. The rules that must
+ * outrank the unlayered theme (focus rings inside scrolling boxes, cards
+ * nested in cards, the book's colour on its tabs) are at the end.
  */
 
 @layer components {
@@ -64,12 +72,13 @@
     transition: background-color var(--duration-fast) var(--ease-out);
   }
   .toc-link:hover {
-    background: color-mix(in srgb, var(--surface) 75%, transparent);
+    background: var(--surface);
   }
+  /* The chapter open now: an inked box, drawn inside (the aside scrolls). */
   .toc-link[aria-current="page"] {
     background: var(--surface);
-    box-shadow: 0 0 0 1px var(--border);
-    font-weight: 600;
+    box-shadow: inset 0 0 0 2px var(--border);
+    font-weight: 700;
   }
   .toc-n {
     display: inline-grid;
@@ -98,7 +107,7 @@
     white-space: nowrap;
   }
   .toc-progress[data-done] {
-    color: var(--success);
+    color: var(--ok);
   }
   .toc-lock {
     width: 15px;
@@ -109,7 +118,7 @@
     display: grid;
     margin: 2px 0 8px 32px;
     padding-inline-start: 4px;
-    border-inline-start: 1px solid var(--border);
+    border-inline-start: 1.5px dashed var(--border);
   }
   .toc-sections a {
     display: flex;
@@ -123,13 +132,13 @@
   }
   .toc-sections a:hover {
     color: var(--foreground);
-    background: color-mix(in srgb, var(--surface) 75%, transparent);
+    background: var(--surface);
   }
   /* The section being read: colour and a bar only, so nothing reflows. */
   .toc-sections a[aria-current="location"] {
     color: var(--foreground);
-    background: color-mix(in srgb, var(--surface) 75%, transparent);
-    box-shadow: inset 2px 0 0 var(--bk);
+    background: var(--surface);
+    box-shadow: inset 3px 0 0 var(--bk);
   }
   /* Understood and solved, side by side at the end of a chapter's line. */
   .toc-meta {
@@ -142,7 +151,7 @@
     place-items: center;
     width: 15px;
     height: 15px;
-    color: var(--success);
+    color: var(--ok);
     visibility: hidden;
   }
   .toc-understood[data-on] {
@@ -152,22 +161,22 @@
     width: 15px;
     height: 15px;
   }
-  /* The aside scrolls: an outer ring would be cut off at its edges. */
-  .toc-aside :focus-visible {
-    outline-offset: -2px;
-  }
   .toc-extra {
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid var(--border);
+    border-top: 1.5px dashed var(--border);
   }
 
-  /* The same contents, folded, on narrower screens. */
+  /* The same contents, folded, on narrower screens: an inked card. It
+     takes the column's width and never widens it: a long chapter name in
+     the summary (one line) ends in an ellipsis instead. */
   .toc-disclosure {
     display: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    min-width: 0;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: 3px 3px 0 var(--border);
   }
   .toc-disclosure > summary {
     display: flex;
@@ -175,7 +184,7 @@
     gap: 12px;
     min-height: 52px;
     padding: 6px 16px;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     cursor: pointer;
     list-style: none;
   }
@@ -197,7 +206,7 @@
     transform: translateY(2px) rotate(-135deg);
   }
   .toc-disclosure-title {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 15px;
   }
   .toc-disclosure-current {
@@ -210,16 +219,16 @@
   }
   .toc-disclosure .toc {
     padding: 6px 8px 12px;
-    border-top: 1px solid var(--border);
+    border-top: 1.5px dashed var(--border);
   }
 
-  /* ─── Chapter head ───────────────────────────────────── */
+  /* ─── Chapter head: closed by a double rule ─────────── */
   .chapter-head {
     display: grid;
-    gap: 12px;
+    gap: 14px;
     padding-bottom: 28px;
     margin-bottom: 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px double var(--border);
   }
   .chapter-index {
     display: flex;
@@ -235,12 +244,15 @@
   .chapter-n {
     color: var(--foreground);
   }
+  /* The sign face (the theme's h1) at a reading size, not a display one:
+     this is the start of the text. Long words break rather than widen. */
   .chapter-title {
-    font-size: clamp(30px, 3.8vw, 42px);
-    font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 900;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
     text-wrap: balance;
+    overflow-wrap: anywhere;
   }
   .chapter-lead {
     color: var(--muted-foreground);
@@ -262,19 +274,22 @@
     > :last-child {
     margin-bottom: 0;
   }
+  /* Section headlines in the sign face (the theme's h2); h3 stays in the
+     reading face, heavier. */
   .book-h2 {
-    margin: 2.1em 0 0.55em;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
+    margin: 2.1em 0 0.6em;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.32;
+    letter-spacing: -0.015em;
     text-wrap: balance;
+    overflow-wrap: anywhere;
     scroll-margin-top: 20px;
   }
   .book-h3 {
     margin: 1.6em 0 0.5em;
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 800;
     line-height: 1.3;
     letter-spacing: -0.01em;
     text-wrap: balance;
@@ -332,26 +347,36 @@
   .book-article strong {
     font-weight: 700;
   }
+  /* A term where it is defined: a swipe of the yellow highlighter. */
   .book-article dfn {
     font-style: normal;
-    font-weight: 600;
-    background: linear-gradient(transparent 62%, var(--secondary) 62%);
+    font-weight: 700;
+    background: linear-gradient(
+      transparent 60%,
+      color-mix(in srgb, var(--spot-yellow) 55%, transparent) 60%
+    );
   }
   .book-text :is(p, li, td) a,
   .chapter-lead a {
     color: var(--bk-text);
     text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+    text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 3px;
+  }
+  .book-text :is(p, li, td) a:hover,
+  .chapter-lead a:hover {
+    text-decoration-color: currentColor;
   }
 
   /* ─── Code ───────────────────────────────────────────── */
   .code-group {
     margin: 1.4em 0;
   }
+  /* Code to read: framed flat in ink, no shadow (that is for what you act on). */
   .code-block {
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--code-bg);
   }
@@ -365,7 +390,7 @@
     gap: 12px;
     min-height: 44px;
     padding: 0 4px 0 14px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px solid var(--border);
     color: var(--muted-foreground);
     font-size: 13px;
   }
@@ -380,9 +405,6 @@
   }
   .code-scroll {
     overflow-x: auto;
-  }
-  .code-scroll:focus-visible {
-    outline-offset: -2px;
   }
   .code-pre {
     margin: 0;
@@ -400,7 +422,7 @@
   .output-block {
     overflow: hidden;
     margin: 1.4em 0;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
   }
@@ -412,17 +434,18 @@
   .output-block .code-head {
     border-bottom-style: dashed;
   }
-  /* Highlight.js classes, in platform tokens (each AA on the code ground). */
+  /* Highlight.js classes in the kit's status inks (each AA on the code
+     ground, on paper and on paper-white). */
   .hljs-keyword,
   .hljs-selector-tag,
   .hljs-type {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .hljs-string,
   .hljs-regexp,
   .hljs-template-string,
   .hljs-addition {
-    color: var(--success);
+    color: var(--ok);
   }
   .hljs-number,
   .hljs-literal,
@@ -431,7 +454,7 @@
   .hljs-attribute,
   .hljs-property,
   .hljs-symbol {
-    color: var(--warning);
+    color: var(--warn);
   }
   .hljs-title,
   .hljs-title.function_,
@@ -439,7 +462,7 @@
   .hljs-params,
   .hljs-meta,
   .hljs-variable.language_ {
-    color: var(--ring);
+    color: var(--info);
   }
   .hljs-comment,
   .hljs-quote,
@@ -455,7 +478,7 @@
   .figure-scroll {
     overflow-x: auto;
     padding: 14px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-lg);
     background: var(--surface);
   }
@@ -473,10 +496,11 @@
     line-height: 1.55;
   }
   /* ─── Tables ─────────────────────────────────────────── */
+  /* Tables: an inked frame and head rule, faded rules between the rows. */
   .table-scroll {
     margin: 1.4em 0;
     overflow-x: auto;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
   }
@@ -487,11 +511,12 @@
   }
   .book-table :is(th, td) {
     padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--rule);
     text-align: start;
     vertical-align: top;
   }
   .book-table th {
+    border-bottom: 2px solid var(--border);
     background: var(--code-bg);
     color: var(--muted-foreground);
     font-family: var(--font-mono);
@@ -506,11 +531,12 @@
   }
 
   /* ─── Notes, recap, details ──────────────────────────── */
+  /* Notes: a soft fill of their state with its ink down the edge. */
   .note {
     margin: 1.6em 0;
     padding: 16px 20px;
-    border-inline-start: 3px solid var(--warn);
-    border-radius: var(--radius-md);
+    border-inline-start: 4px solid var(--warn);
+    border-radius: var(--radius-sm);
     background: var(--warn-soft);
     font-size: 16px;
   }
@@ -523,7 +549,7 @@
     background: var(--info-soft);
   }
   .note[data-tone="deep"] {
-    border-color: var(--border-strong);
+    border-color: var(--border);
     background: var(--secondary);
   }
   .book-text .note > .note-title,
@@ -532,7 +558,7 @@
     color: var(--warn);
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: 0.06em;
     line-height: 1.5;
     text-transform: uppercase;
@@ -553,13 +579,14 @@
     margin: 2.2em 0 1.4em;
     padding: 18px 22px;
   }
+  /* A Surface (kit, a pasted-in card); its title is the tabloid italic. */
   .book-text .recap > .recap-title,
   .recap-title {
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     font-family: var(--font-display);
     font-size: 24px;
     font-style: italic;
-    font-weight: 500;
+    font-weight: 900;
     line-height: 1.2;
   }
   .recap .book-list {
@@ -575,7 +602,7 @@
     min-height: 44px;
     border-radius: var(--radius-sm);
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.45;
     cursor: pointer;
     list-style: none;
@@ -600,10 +627,10 @@
   }
 
   /* ─── Explain from different angles ──────────────────── */
+  /* A Surface (kit): inked frame and hard shadow from the theme. */
   .explain {
     margin: 1.8em 0;
     overflow: hidden;
-    box-shadow: var(--shadow-soft);
   }
   .explain-head {
     display: flex;
@@ -616,29 +643,23 @@
     color: var(--bk-text);
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
   .explain-topic {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.4;
   }
   .explain-body {
     padding: 18px 20px 6px;
     font-size: 16px;
   }
-  .explain-body:focus-visible {
-    outline-offset: -4px;
-  }
   .explain-body .code-group,
   .explain-body .figure,
   .explain-body .sandbox {
     margin: 12px 0 16px;
-  }
-  .explain-body .sandbox {
-    box-shadow: none;
   }
   .explain-hint {
     padding: 4px 20px 16px;
@@ -648,10 +669,10 @@
   }
 
   /* ─── Exercises ──────────────────────────────────────── */
+  /* A Surface (kit): inked frame and hard shadow from the theme. */
   .exercise {
     margin: 1.8em 0;
     padding: 18px 20px 20px;
-    box-shadow: var(--shadow-soft);
     font-size: 16px;
     line-height: 1.55;
     /* A link to an exercise (#id) stops with a little room above it. */
@@ -667,7 +688,7 @@
     color: var(--bk-text);
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
@@ -675,10 +696,10 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--success);
+    color: var(--ok);
     font-family: var(--font-sans);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0;
     text-transform: none;
   }
@@ -689,7 +710,7 @@
   .ex-question {
     margin-bottom: 14px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.55;
   }
   .ex-question > p {
@@ -725,7 +746,7 @@
     margin-top: 10px;
   }
   .ex-result {
-    font-weight: 600;
+    font-weight: 700;
   }
   /*
    * Whether the attempt reached the account: the line is as tall as its
@@ -748,17 +769,17 @@
     align-items: center;
   }
   .save-message:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
   .save-action {
     flex: none;
   }
+  /* The book's explanation: paper-deep with an inked edge. */
   .why {
     margin-top: 16px;
     padding: 14px 16px;
-    border-radius: var(--radius-md);
+    border-inline-start: 4px solid var(--border);
+    border-radius: var(--radius-sm);
     background: var(--secondary);
     font-size: 16px;
   }
@@ -768,7 +789,7 @@
     color: var(--muted-foreground);
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -776,10 +797,15 @@
     margin: 0.6em 0;
   }
 
-  /* Quiz. */
+  /*
+   * Quiz. Options are inked boxes; the border keeps its width in every
+   * state, so marking moves nothing. Chosen: the book's colour. Right and
+   * wrong: the kit's status inks on their soft fills, and said in words
+   * (the mark), never by colour alone.
+   */
   .quiz-options {
     display: grid;
-    gap: 8px;
+    gap: 10px;
   }
   .quiz-option {
     display: flex;
@@ -788,7 +814,7 @@
     width: 100%;
     min-height: 48px;
     padding: 10px 14px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
     font-size: 16px;
@@ -800,7 +826,7 @@
       background-color var(--duration-fast) var(--ease-out);
   }
   .quiz-option:hover:not([aria-disabled]) {
-    border-color: var(--bk-line);
+    background: var(--bk-soft);
   }
   .quiz-option[aria-disabled] {
     cursor: default;
@@ -813,9 +839,9 @@
     height: 26px;
     border-radius: var(--radius-sm);
     background: var(--secondary);
-    color: var(--muted-foreground);
+    color: var(--foreground);
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 13px;
   }
   .quiz-text {
     flex: 1;
@@ -827,7 +853,7 @@
     flex: none;
     align-self: center;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
   }
   .quiz-mark:empty {
@@ -888,7 +914,7 @@
   .order-list {
     display: grid;
     align-content: start;
-    gap: 6px;
+    gap: 8px;
   }
   .order-item {
     display: flex;
@@ -897,17 +923,19 @@
     width: 100%;
     min-height: 48px;
     padding: 8px 12px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
     font-size: 15px;
     line-height: 1.45;
     text-align: start;
     cursor: pointer;
-    transition: border-color var(--duration-fast) var(--ease-out);
+    transition:
+      border-color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out);
   }
   .order-item:hover:not([aria-disabled]) {
-    border-color: var(--bk-line);
+    background: var(--bk-soft);
   }
   .order-item[aria-disabled] {
     cursor: default;
@@ -920,9 +948,9 @@
     height: 26px;
     border-radius: var(--radius-sm);
     background: var(--secondary);
-    color: var(--muted-foreground);
+    color: var(--foreground);
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 13px;
   }
   .order-n svg {
     width: 13px;
@@ -953,7 +981,7 @@
     flex: none;
     color: var(--danger);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
   }
   .order-empty {
@@ -961,7 +989,7 @@
     align-items: center;
     min-height: 48px;
     padding: 8px 12px;
-    border: 1px dashed var(--border-strong);
+    border: 2px dashed var(--border);
     border-radius: var(--radius-md);
     color: var(--muted-foreground);
     font-size: 14px;
@@ -976,7 +1004,7 @@
     display: grid;
     gap: 10px;
     padding: 12px 14px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
   }
   .sort-row[data-state="right"] {
@@ -1000,17 +1028,20 @@
   .sort-bucket {
     min-height: 44px;
     padding: 6px 14px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-lg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--surface);
     font-size: 14px;
+    font-weight: 600;
     line-height: 1.3;
     text-align: start;
     cursor: pointer;
-    transition: border-color var(--duration-fast) var(--ease-out);
+    transition:
+      border-color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out);
   }
   .sort-bucket:hover:not([aria-disabled]) {
-    border-color: var(--bk);
+    background: var(--bk-soft);
   }
   .sort-bucket[aria-disabled] {
     cursor: default;
@@ -1052,7 +1083,8 @@
   /*
    * A card: the button (named by its question) and the answer face beside
    * it, laid over it in one grid cell, so a turned card keeps its height.
-   * The answer lets clicks through to the button underneath.
+   * The answer lets clicks through to the button underneath. Index cards
+   * on a hard shadow; the shadow never moves, so the faces stay aligned.
    */
   .flash-item {
     display: grid;
@@ -1063,17 +1095,20 @@
     width: 100%;
     min-height: 120px;
     padding: 0;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: 3px 3px 0 var(--border);
     font-size: 15px;
     line-height: 1.5;
     text-align: start;
     cursor: pointer;
-    transition: border-color var(--duration-fast) var(--ease-out);
+    transition:
+      border-color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out);
   }
   .flash-card:hover {
-    border-color: var(--bk-line);
+    background: var(--bk-soft);
   }
   .flash-face {
     display: grid;
@@ -1084,11 +1119,11 @@
     border-radius: inherit;
   }
   .flash-front {
-    font-weight: 600;
+    font-weight: 700;
   }
   .flash-back {
-    margin: 1px;
-    border-radius: calc(var(--radius-md) - 1px);
+    margin: 2px;
+    border-radius: calc(var(--radius-md) - 2px);
     font-size: 15px;
     line-height: 1.5;
     visibility: hidden;
@@ -1105,7 +1140,7 @@
     color: var(--bk-text);
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -1114,16 +1149,16 @@
   }
 
   /* ─── SQL sandbox ────────────────────────────────────── */
+  /* A Surface (kit): inked frame and hard shadow from the theme; flat
+     inside an exercise or an explanation (end of file). */
   .sandbox {
     margin: 1.6em 0;
     overflow: hidden;
-    box-shadow: var(--shadow-soft);
     font-size: 15px;
     line-height: 1.5;
   }
   .sandbox-task {
     margin: 14px 0 0;
-    box-shadow: none;
   }
   .sandbox-head {
     display: flex;
@@ -1132,13 +1167,13 @@
     justify-content: space-between;
     gap: 4px 12px;
     padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px solid var(--border);
   }
   .sandbox-title {
     color: var(--bk-text);
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
@@ -1153,7 +1188,7 @@
     margin: 0;
     padding: 12px 14px;
     border: 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px solid var(--border);
     border-radius: 0;
     background: var(--code-bg);
     color: var(--foreground);
@@ -1162,11 +1197,6 @@
     line-height: 1.6;
     resize: vertical;
     tab-size: 2;
-  }
-  /* Inside the box an outer ring would be cut off. */
-  .sql-editor:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -3px;
   }
   .sandbox-actions {
     display: flex;
@@ -1186,14 +1216,10 @@
   .sandbox-output {
     height: var(--sql-output-h, 24rem);
     overflow: auto;
-    border-top: 1px solid var(--border);
+    border-top: 1.5px solid var(--border);
   }
   .sandbox-task .sandbox-output {
     --sql-output-h: 28rem;
-  }
-  .sandbox-output:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -3px;
   }
   /* Results share the box: a long table scrolls inside, its header and row count stay. */
   .sandbox-output-body {
@@ -1224,6 +1250,7 @@
     overflow-wrap: anywhere;
   }
   .sql-message[data-tone="error"] {
+    box-shadow: inset 4px 0 0 var(--danger);
     background: var(--danger-soft);
   }
   /* Offline, the engine did not load: why, and a retry under it. */
@@ -1240,35 +1267,35 @@
     margin-bottom: 6px;
     color: var(--muted-foreground);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .sql-table-wrap {
     min-height: 0;
     overflow: auto;
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
-  }
-  .sql-table-wrap:focus-visible {
-    outline-offset: 2px;
+    background: var(--surface);
   }
   .sql-table {
     width: 100%;
     font-family: var(--font-mono);
     font-size: 13px;
   }
+  /* The head keeps its rule while the rows scroll under it (a sticky
+     cell's own border would scroll away with the table). */
   .sql-table th {
     position: sticky;
     top: 0;
     padding: 7px 10px;
-    border-bottom: 1px solid var(--border);
     background: var(--code-bg);
-    font-weight: 500;
+    box-shadow: inset 0 -1.5px 0 var(--border);
+    font-weight: 400;
     text-align: start;
     white-space: nowrap;
   }
   .sql-table td {
     padding: 6px 10px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--rule);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -1290,6 +1317,7 @@
   .task-hint {
     margin-top: 12px;
     padding: 10px 14px;
+    border-inline-start: 4px solid var(--warn);
     border-radius: var(--radius-sm);
     background: var(--warn-soft);
     font-size: 15px;
@@ -1326,7 +1354,7 @@
   }
   .schema-table {
     padding: 12px 14px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
   }
@@ -1343,7 +1371,7 @@
     padding: 0;
     background: none;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 700;
   }
   .schema-rows {
     color: var(--muted-foreground);
@@ -1363,10 +1391,10 @@
   }
 
   /* ─── Event loop simulator ───────────────────────────── */
+  /* A Surface (kit): inked frame and hard shadow from the theme. */
   .simulator {
     margin: 2em 0;
     overflow: hidden;
-    box-shadow: var(--shadow-soft);
     container-type: inline-size;
     font-size: 15px;
     line-height: 1.5;
@@ -1378,13 +1406,13 @@
     justify-content: space-between;
     gap: 10px;
     padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px solid var(--border);
   }
   .sim-title {
     color: var(--bk-text);
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
@@ -1394,11 +1422,8 @@
   }
   .sim-code-scroll {
     overflow-x: auto;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px solid var(--border);
     background: var(--code-bg);
-  }
-  .sim-code-scroll:focus-visible {
-    outline-offset: -3px;
   }
   .sim-code {
     padding: 10px 0;
@@ -1458,34 +1483,39 @@
   /* The strip's two breaks (before the loop, after it) are thin rules. */
   .sim-phases .sim-sep {
     align-self: stretch;
-    width: 1px;
+    width: 2px;
     margin-inline: 4px;
     padding: 0;
     border-radius: 0;
-    background: var(--border-strong);
+    background: var(--border);
   }
   .sim-queues {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
+  /* A queue: a faded frame; the one the step works on is inked in the
+     book's colour and stands on a shadow of it. */
   .sim-queue {
     min-width: 0;
     min-height: 92px;
     padding: 8px 10px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--rule);
     border-radius: var(--radius-sm);
-    transition: border-color var(--duration-fast) var(--ease-out);
+    background: var(--surface);
+    transition:
+      border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
   }
   .sim-queue[data-hot] {
     border-color: var(--bk);
-    box-shadow: inset 0 0 0 1px var(--bk);
+    box-shadow: 3px 3px 0 var(--bk);
   }
   .sim-queue-title {
     margin-bottom: 6px;
     color: var(--muted-foreground);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.05em;
     line-height: 1.3;
     text-transform: uppercase;
@@ -1542,7 +1572,7 @@
   .sim-note {
     min-height: calc(3 * 1.6em + 26px);
     padding: 12px 14px;
-    border-top: 1px solid var(--border);
+    border-top: 1.5px solid var(--border);
     font-size: 16px;
     line-height: 1.6;
   }
@@ -1553,7 +1583,7 @@
     justify-content: space-between;
     gap: 8px;
     padding: 10px 14px;
-    border-top: 1px solid var(--border);
+    border-top: 1.5px solid var(--border);
   }
   .sim-step {
     color: var(--muted-foreground);
@@ -1577,7 +1607,7 @@
     }
     .sim-code-scroll {
       border-bottom: 0;
-      border-inline-end: 1px solid var(--border);
+      border-inline-end: 1.5px solid var(--border);
     }
     .sim-queues {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1589,10 +1619,10 @@
     margin-bottom: 0.8em;
     color: var(--muted-foreground);
   }
+  /* A Surface (kit): inked frame and hard shadow from the theme. */
   .deck {
     margin-top: 20px;
     padding: clamp(16px, 2.4vw, 22px);
-    box-shadow: var(--shadow-soft);
     font-size: 15px;
     line-height: 1.5;
   }
@@ -1615,25 +1645,30 @@
   .deck-filter-label {
     color: var(--muted-foreground);
   }
+  /* A boxed field with a pressed-in edge, like the kit's Input. */
   .deck-filter select {
     min-height: 44px;
     max-width: 100%;
     padding: 0 12px;
-    border: 1px solid var(--border-strong);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: inset 2px 2px 0 var(--halftone);
     color: var(--foreground);
     font: inherit;
     font-size: 14px;
+    font-weight: 600;
   }
-  /* Two bars over one track, sized by transform only (no layout work). */
+  /* Two bars over one track in an inked frame, sized by transform only
+     (no layout work). */
   .deck-meter {
     position: relative;
-    height: 8px;
+    height: 12px;
     margin-top: 16px;
     overflow: hidden;
-    border-radius: var(--radius-pill);
-    background: var(--secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
   }
   .deck-meter > span {
     position: absolute;
@@ -1642,10 +1677,10 @@
     transition: transform var(--duration-base) var(--ease-out);
   }
   .deck-meter [data-kind="know"] {
-    background: var(--success);
+    background: var(--ok);
   }
   .deck-meter [data-kind="again"] {
-    background: var(--warning);
+    background: var(--warn);
   }
   .deck-stats {
     display: flex;
@@ -1664,6 +1699,8 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+  /* The card on the table: paper in an inked frame, a red rule on top
+     like an index card. */
   .deck-card {
     display: grid;
     align-content: start;
@@ -1671,6 +1708,8 @@
     min-height: 210px;
     margin: 18px 0 14px;
     padding: clamp(16px, 2.4vw, 24px);
+    border: 2px solid var(--border);
+    border-top: 6px solid var(--primary);
     border-radius: var(--radius-md);
     background: var(--background);
   }
@@ -1680,12 +1719,12 @@
   }
   .deck-question {
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.45;
   }
   .deck-answer {
     padding-top: 12px;
-    border-top: 1px dashed var(--border-strong);
+    border-top: 1.5px dashed var(--border);
     font-size: 18px;
     line-height: 1.65;
   }
@@ -1718,13 +1757,15 @@
     display: flex;
     margin: -0.15em 0 0.9em;
   }
+  /* The assistant's panel: an inked box on a hard shadow in the book's
+     colour (the kit's Notice wears its tone the same way). */
   .assist-panel {
-    margin: 0 0 1.4em;
+    margin: 0 0 1.6em;
     padding: 16px 18px 14px;
-    border: 1px solid var(--border);
-    border-inline-start: 3px solid var(--bk);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: 4px 4px 0 var(--bk);
     font-size: 16px;
     line-height: 1.55;
   }
@@ -1747,30 +1788,30 @@
     align-items: end;
     gap: 10px;
   }
+  /* A boxed field with a pressed-in edge, like the kit's Input; an error
+     changes its colour, not its width. */
   .assist-field {
     display: block;
     width: 100%;
     min-height: 64px;
     margin: 0;
     padding: 10px 12px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: inset 2px 2px 0 var(--halftone);
     color: var(--foreground);
     font: inherit;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.5;
     resize: vertical;
   }
   .assist-field::placeholder {
     color: var(--muted-foreground);
   }
-  .assist-field:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-  }
   .assist-field[aria-invalid="true"] {
     border-color: var(--danger);
+    box-shadow: inset 2px 2px 0 var(--danger-soft);
   }
   .assist-field-note {
     margin-top: -4px;
@@ -1789,13 +1830,9 @@
     height: var(--assist-out-h, min(30rem, 62svh));
     /* Scrolls inside; past its ends the page scrolls on (no trap). */
     overflow: auto;
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--background);
-  }
-  .assist-out:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -3px;
   }
   /*
    * Before the first request the answer's live region is already there
@@ -1810,15 +1847,11 @@
   }
   .assist-text {
     padding: 12px 14px;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.6;
   }
   .assist-text:focus {
     outline: none;
-  }
-  .assist-text:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -4px;
   }
   .assist-wait {
     display: flex;
@@ -1834,7 +1867,7 @@
   .assist-dots i {
     width: 6px;
     height: 6px;
-    border-radius: var(--radius-pill);
+    border-radius: 50%;
     background: currentColor;
     opacity: 0.35;
   }
@@ -1900,8 +1933,9 @@
   }
   .assist-link {
     color: inherit;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: underline;
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 3px;
   }
   .assist-actions {
@@ -1932,10 +1966,10 @@
     margin-bottom: 8px;
     color: var(--muted-foreground);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .own-words-best[data-understood] {
-    color: var(--success);
+    color: var(--ok);
   }
   .own-words-best svg {
     width: 16px;
@@ -1982,10 +2016,12 @@
   .gate-more {
     margin-top: 16px;
   }
+  /* Previous and next: inked cards on a hard shadow that lift a pixel
+     under the pointer and press in on a click, like the kit's buttons. */
   .pager {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 16px;
     max-width: 68ch;
     font-size: 18px;
   }
@@ -1995,13 +2031,23 @@
     gap: 4px;
     min-height: 76px;
     padding: 14px 18px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--surface);
-    transition: border-color var(--duration-fast) var(--ease-out);
+    box-shadow: 3px 3px 0 var(--border);
+    transition:
+      translate var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
   }
-  .pager-link:hover {
-    border-color: var(--border-strong);
+  @media (prefers-reduced-motion: no-preference) {
+    .pager-link:hover {
+      translate: -1px -1px;
+      box-shadow: 4px 4px 0 var(--border);
+    }
+    .pager-link:active {
+      translate: 2px 2px;
+      box-shadow: 1px 1px 0 var(--border);
+    }
   }
   .pager-next {
     justify-items: end;
@@ -2013,7 +2059,7 @@
     gap: 6px;
     color: var(--muted-foreground);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .pager-dir svg {
     width: 15px;
@@ -2021,13 +2067,13 @@
   }
   .pager-title {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.35;
   }
   .pager-n {
     color: var(--bk-text);
     font-family: var(--font-mono);
-    font-weight: 500;
+    font-weight: 400;
   }
 
   /* ─── Loading (loading.tsx): the reader's frame, drawn ── */
@@ -2041,12 +2087,14 @@
     display: grid;
     gap: 14px;
   }
+  /* The folded contents' card, drawn the same while the page loads. */
   .skeleton-disclosure {
     display: none;
-    padding: 13px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: 3px 3px 0 var(--border);
   }
   .skeleton-article {
     display: grid;
@@ -2128,6 +2176,14 @@
     .book-article {
       font-size: 18px;
     }
+    /* The sign face is wide: a long word ("производительность") stays
+       whole from a 320 px phone up. */
+    .chapter-title {
+      font-size: clamp(20px, 6.2vw, 26px);
+    }
+    .book-h2 {
+      font-size: clamp(18px, 5.6vw, 20px);
+    }
     .pager {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -2152,4 +2208,49 @@
       transition-duration: 1ms;
     }
   }
+}
+
+/*
+ * ─── Outranking the theme ─────────────────────────────────
+ * zine.css is unlayered, so it wins over everything in the layers above.
+ * These few rules are unlayered too and more specific than the theme's.
+ */
+
+/* The text lies on clean paper: grain, no halftone screen under it. */
+[data-theme="zine-calm"] body:has(.reader-page) {
+  background-image: var(--grain);
+  background-size: 220px 220px;
+}
+
+/*
+ * Focus rings inside boxes that scroll or clip (the contents aside, code,
+ * the editor, results, the assistant's answer) are drawn inside them,
+ * where they cannot be cut off: the theme's 3 px ring, offset by its own
+ * width inwards.
+ */
+.reader .toc-aside :focus-visible,
+.reader :is(.code-scroll, .sim-code-scroll):focus-visible,
+.reader :is(.sql-editor, .sandbox-output, .assist-out):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: -3px;
+}
+.reader .explain .explain-body:focus-visible,
+.reader .assist-out .assist-text:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: -6px;
+}
+
+/* A sandbox inside an exercise or an explanation is part of that card:
+   framed, without a second shadow. */
+.reader :is(.exercise, .explain) .sandbox[data-slot="surface"] {
+  box-shadow: none;
+}
+
+/* The tab open in "see it from different angles" is underlined in the
+   book's colour, not the theme's red. */
+.reader
+  .explain
+  [data-slot="tabs-list"][data-variant="line"]
+  [data-slot="tabs-trigger"][data-state="active"] {
+  border-bottom-color: var(--bk);
 }
