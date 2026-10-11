@@ -1,6 +1,6 @@
 # PAY-11. Pay web/история/подписки
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

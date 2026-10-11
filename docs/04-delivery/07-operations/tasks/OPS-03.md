@@ -1,6 +1,6 @@
 # OPS-03. GitOps chart/migration job
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 07-operations
 

@@ -1,6 +1,6 @@
 # PAY-04. Durable authenticated webhook inbox
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

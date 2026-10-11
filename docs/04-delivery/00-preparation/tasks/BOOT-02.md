@@ -1,6 +1,6 @@
 # BOOT-02. Инвентаризация повторного использования
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 00-preparation
 

@@ -1,6 +1,6 @@
 # OPS-06. Backup/WAL/secret recovery
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 07-operations
 

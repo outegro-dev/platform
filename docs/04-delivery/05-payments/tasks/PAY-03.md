@@ -1,6 +1,6 @@
 # PAY-03. Idempotent checkout state machine
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

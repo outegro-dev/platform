@@ -8,13 +8,13 @@
 
 | ID | Результат | Hard dependencies | Статус |
 |---|---|---|---|
-| [BE-01](tasks/BE-01.md) | Матрица Node/Nest/AMQP/Drizzle | [L-10](../01-landing-design/tasks/L-10.md) | planned |
-| [BE-02](tasks/BE-02.md) | Решить RabbitMQ adapter compatibility | [BE-01](tasks/BE-01.md) | planned |
-| [BE-03](tasks/BE-03.md) | Схемы новых DB + migrations | [BE-01](tasks/BE-01.md) | planned |
-| [BE-04](tasks/BE-04.md) | Контракты ошибок/events/IDs | [BE-01](tasks/BE-01.md) | planned |
-| [BE-05](tasks/BE-05.md) | Outbox relay с lease и confirms | [BE-02](tasks/BE-02.md), [BE-03](tasks/BE-03.md), [BE-04](tasks/BE-04.md) | planned |
-| [BE-07](tasks/BE-07.md) | Runtime/migration DB roles | [BE-03](tasks/BE-03.md) | planned |
-| [BE-06](tasks/BE-06.md) | Consumer inbox/idempotency/retry | [BE-05](tasks/BE-05.md) | planned |
+| [BE-01](tasks/BE-01.md) | Матрица Node/Nest/AMQP/Drizzle | [L-10](../01-landing-design/tasks/L-10.md) | done |
+| [BE-02](tasks/BE-02.md) | Решить RabbitMQ adapter compatibility | [BE-01](tasks/BE-01.md) | done |
+| [BE-03](tasks/BE-03.md) | Схемы новых DB + migrations | [BE-01](tasks/BE-01.md) | done |
+| [BE-04](tasks/BE-04.md) | Контракты ошибок/events/IDs | [BE-01](tasks/BE-01.md) | done |
+| [BE-05](tasks/BE-05.md) | Outbox relay с lease и confirms | [BE-02](tasks/BE-02.md), [BE-03](tasks/BE-03.md), [BE-04](tasks/BE-04.md) | done |
+| [BE-07](tasks/BE-07.md) | Runtime/migration DB roles | [BE-03](tasks/BE-03.md) | done |
+| [BE-06](tasks/BE-06.md) | Consumer inbox/idempotency/retry | [BE-05](tasks/BE-05.md) | done |
 
 ## Выход
 

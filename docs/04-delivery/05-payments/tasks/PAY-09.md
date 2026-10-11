@@ -1,6 +1,6 @@
 # PAY-09. Refund/dispute inbox и unmatched
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

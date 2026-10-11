@@ -1,6 +1,6 @@
 # PAY-02. Catalog/price/order/payment schema
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 
