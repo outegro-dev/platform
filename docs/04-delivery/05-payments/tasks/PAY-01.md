@@ -1,6 +1,6 @@
 # PAY-01. Provider contract fixture suite
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

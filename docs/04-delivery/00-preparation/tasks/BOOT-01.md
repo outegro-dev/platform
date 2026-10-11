@@ -1,6 +1,6 @@
 # BOOT-01. Независимый корень и Git hygiene
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 00-preparation
 

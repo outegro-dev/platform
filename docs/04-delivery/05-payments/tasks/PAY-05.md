@@ -1,6 +1,6 @@
 # PAY-05. Payment processing/journal/outbox
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

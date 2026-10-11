@@ -1,6 +1,6 @@
 # PAY-08. Cancel workflow и paid-until UX
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

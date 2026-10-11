@@ -1,6 +1,6 @@
 # PAY-10. Reconciliation jobs/issues
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

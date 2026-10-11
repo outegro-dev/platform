@@ -2,6 +2,8 @@
 
 92 отдельные карточки: **85 для базового выпуска**, **1 для будущего ТЗ игры**, **6 условных wallet-задач**. По сравнению с 82 исходными пунктами добавлены 4 задачи подготовки, а ранее перечисленный одной строкой wallet вынесен в 6 карточек. Число карточек не означает завершённый код.
 
+Ещё 30 карточек есть только на [доске](https://github.com/orgs/outegro-dev/projects/1): BS-01…04 (Морской бой) и этап 11-zine (ZN-01…20, EDU-B1, MNT-01…05). В task-index.json у них URL issue вместо пути к карточке. Состояние на 11.10.2026 (сверено с доской): из 122 задач 96 done, 14 in_progress, 6 planned (H-06, H-08…H-11, ZN-20), 6 deferred (wallet).
+
 У каждой карточки context, dependency links, required docs, область файлов, четыре предметных шага, checkpoints, конкретные test cases, DoD и rollback. [Machine index](task-index.json) содержит граф и статусы. [Каталог тестов](../05-quality/test-catalog.md) связывает все TC с задачами.
 
 ## Этапы
@@ -28,6 +30,8 @@
 
 - [Будущие приложения](10-future/README.md): После первого production собрать отдельное ТЗ Battleship. Не реализовывать игру в рамках текущего плана.
 
+- [Журнальная тема и сопровождение](https://github.com/outegro-dev/platform/issues?q=label%3Astage%2F11-zine): лендинг как журнальный номер (тема zine), тихий вход SSO, тема zine для остальных приложений, учебники Обучения, обновления зависимостей и follow-up. Карточки только на доске.
+
 - [Условный этап wallet](90-optional-wallet/README.md): Не выполнять до явного выбора владельца и проверки merchant. Расширяет базовый scope и оценку.
 
 ## Порядок без циклов
@@ -40,7 +44,7 @@ BOOT-01 → BOOT-02 → BOOT-03 → BOOT-04 → L-01 → DS-01 → L-02 → DS-0
 
 ## Выбор следующей задачи
 
-Брать planned задачу, у которой все hard dependencies done и необходимые inputs доступны. Wallet со статусом deferred не становится ready автоматически после Payments. Отсутствие текущих completed tasks означает, что только BOOT-01 готова к старту реализации.
+Брать planned задачу, у которой все hard dependencies done и необходимые inputs доступны. Wallet со статусом deferred не становится ready автоматически после Payments. Готовые к старту задачи по записанным статусам показывает `ready_by_recorded_status` в выводе `python tools/documentation/validate.py`; порядок ближайшей работы — [next-steps](../00-start-here/next-steps.md).
 
 ## Оценка
 

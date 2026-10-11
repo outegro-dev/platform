@@ -1,6 +1,6 @@
 # OPS-07. Restore rehearsal
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 07-operations
 

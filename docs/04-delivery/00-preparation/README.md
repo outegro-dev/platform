@@ -8,10 +8,10 @@
 
 | ID | Результат | Hard dependencies | Статус |
 |---|---|---|---|
-| [BOOT-01](tasks/BOOT-01.md) | Независимый корень и Git hygiene | — | planned |
-| [BOOT-02](tasks/BOOT-02.md) | Инвентаризация повторного использования | [BOOT-01](tasks/BOOT-01.md) | planned |
-| [BOOT-03](tasks/BOOT-03.md) | Frontend workspace без backend зависимости | [BOOT-02](tasks/BOOT-02.md) | planned |
-| [BOOT-04](tasks/BOOT-04.md) | Рабочие команды и test harness | [BOOT-03](tasks/BOOT-03.md) | planned |
+| [BOOT-01](tasks/BOOT-01.md) | Независимый корень и Git hygiene | — | done |
+| [BOOT-02](tasks/BOOT-02.md) | Инвентаризация повторного использования | [BOOT-01](tasks/BOOT-01.md) | done |
+| [BOOT-03](tasks/BOOT-03.md) | Frontend workspace без backend зависимости | [BOOT-02](tasks/BOOT-02.md) | done |
+| [BOOT-04](tasks/BOOT-04.md) | Рабочие команды и test harness | [BOOT-03](tasks/BOOT-03.md) | done |
 
 ## Выход
 

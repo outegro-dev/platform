@@ -1,12 +1,12 @@
 {
-  "version": "0.3",
-  "status_note": "All implementation work is planned; docs generated is not task done.",
+  "version": "0.4",
+  "status_note": "Statuses synced with the GitHub board (outegro-dev project #1) on 2026-10-11. done: issue closed as completed or work merged to master; in_progress: open issue with work started; planned: not started; deferred: optional wallet. A card-file path means the v0.3 card; an issue URL path means the card lives only on the board. Per-task evidence exists only where docs/09-evidence/<ID>/ has a report.",
   "tasks": [
     {
       "id": "BOOT-01",
       "title": "Независимый корень и Git hygiene",
       "stage": "00-preparation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/00-preparation/tasks/BOOT-01.md",
       "dependencies": [],
@@ -30,7 +30,7 @@
       "id": "BOOT-02",
       "title": "Инвентаризация повторного использования",
       "stage": "00-preparation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/00-preparation/tasks/BOOT-02.md",
       "dependencies": [
@@ -56,7 +56,7 @@
       "id": "BOOT-03",
       "title": "Frontend workspace без backend зависимости",
       "stage": "00-preparation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/00-preparation/tasks/BOOT-03.md",
       "dependencies": [
@@ -82,7 +82,7 @@
       "id": "BOOT-04",
       "title": "Рабочие команды и test harness",
       "stage": "00-preparation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/00-preparation/tasks/BOOT-04.md",
       "dependencies": [
@@ -108,7 +108,7 @@
       "id": "L-01",
       "title": "Зафиксировать brief и карту секций",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-01.md",
       "dependencies": [
@@ -135,7 +135,7 @@
       "id": "DS-01",
       "title": "Выбрать типографику и semantic tokens",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/DS-01.md",
       "dependencies": [
@@ -161,7 +161,7 @@
       "id": "L-02",
       "title": "Составить EN/RU content skeleton",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-02.md",
       "dependencies": [
@@ -188,7 +188,7 @@
       "id": "DS-02",
       "title": "Button/Link/FormField/Input/focus",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/DS-02.md",
       "dependencies": [
@@ -215,7 +215,7 @@
       "id": "L-03",
       "title": "Сгенерировать/подготовить визуальные варианты hero",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-03.md",
       "dependencies": [
@@ -243,7 +243,7 @@
       "id": "L-06",
       "title": "Настроить EN-default routing/messages",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-06.md",
       "dependencies": [
@@ -271,7 +271,7 @@
       "id": "DS-03",
       "title": "Dialog/Menu/LocaleSwitch/feedback",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/DS-03.md",
       "dependencies": [
@@ -297,7 +297,7 @@
       "id": "DS-04",
       "title": "Table/filters/status/timeline/amount",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/DS-04.md",
       "dependencies": [
@@ -323,7 +323,7 @@
       "id": "L-04",
       "title": "Реализовать R3F silver prototype",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-04.md",
       "dependencies": [
@@ -350,7 +350,7 @@
       "id": "L-08",
       "title": "Реализовать expertise/approach/projects",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-08.md",
       "dependencies": [
@@ -379,7 +379,7 @@
       "id": "DS-05",
       "title": "Сборка shell id/pay/admin",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/DS-05.md",
       "dependencies": [
@@ -406,7 +406,7 @@
       "id": "L-05",
       "title": "Измерить профили качества",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-05.md",
       "dependencies": [
@@ -435,7 +435,7 @@
       "id": "L-09",
       "title": "Footer/contact/metadata",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-09.md",
       "dependencies": [
@@ -465,7 +465,7 @@
       "id": "L-07",
       "title": "Реализовать hero/header",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-07.md",
       "dependencies": [
@@ -494,7 +494,7 @@
       "id": "L-10",
       "title": "Mobile/a11y/performance acceptance",
       "stage": "01-landing-design",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/01-landing-design/tasks/L-10.md",
       "dependencies": [
@@ -524,7 +524,7 @@
       "id": "BE-01",
       "title": "Матрица Node/Nest/AMQP/Drizzle",
       "stage": "02-backend-foundation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/02-backend-foundation/tasks/BE-01.md",
       "dependencies": [
@@ -552,7 +552,7 @@
       "id": "OPS-01",
       "title": "Чистый bootstrap и DNS/TLS",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-01.md",
       "dependencies": [
@@ -582,7 +582,7 @@
       "id": "BE-02",
       "title": "Решить RabbitMQ adapter compatibility",
       "stage": "02-backend-foundation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/02-backend-foundation/tasks/BE-02.md",
       "dependencies": [
@@ -610,7 +610,7 @@
       "id": "BE-03",
       "title": "Схемы новых DB + migrations",
       "stage": "02-backend-foundation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/02-backend-foundation/tasks/BE-03.md",
       "dependencies": [
@@ -638,7 +638,7 @@
       "id": "BE-04",
       "title": "Контракты ошибок/events/IDs",
       "stage": "02-backend-foundation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/02-backend-foundation/tasks/BE-04.md",
       "dependencies": [
@@ -666,7 +666,7 @@
       "id": "H-01",
       "title": "Подтверждены Plus OAuth, runtime, модель и каталог как workload",
       "stage": "08-hermes",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/08-hermes/tasks/H-01.md",
       "dependencies": [
@@ -695,7 +695,7 @@
       "id": "BE-05",
       "title": "Outbox relay с lease и confirms",
       "stage": "02-backend-foundation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/02-backend-foundation/tasks/BE-05.md",
       "dependencies": [
@@ -726,7 +726,7 @@
       "id": "BE-07",
       "title": "Runtime/migration DB roles",
       "stage": "02-backend-foundation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/02-backend-foundation/tasks/BE-07.md",
       "dependencies": [
@@ -754,7 +754,7 @@
       "id": "H-02",
       "title": "Воспроизводимый pinned image/PVC/startup",
       "stage": "08-hermes",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/08-hermes/tasks/H-02.md",
       "dependencies": [
@@ -782,7 +782,7 @@
       "id": "ID-01",
       "title": "Email-code lifecycle на Drizzle",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-01.md",
       "dependencies": [
@@ -812,7 +812,7 @@
       "id": "ID-06",
       "title": "Roles/permissions/bindings",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-06.md",
       "dependencies": [
@@ -842,7 +842,7 @@
       "id": "N-01",
       "title": "Intent/delivery/inbox/preferences schema",
       "stage": "04-notifications",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/04-notifications/tasks/N-01.md",
       "dependencies": [
@@ -871,7 +871,7 @@
       "id": "OPS-04",
       "title": "Метрики/логи/correlation",
       "stage": "07-operations",
-      "status": "in_progress",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-04.md",
       "dependencies": [
@@ -899,7 +899,7 @@
       "id": "PAY-01",
       "title": "Provider contract fixture suite",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-01.md",
       "dependencies": [
@@ -927,7 +927,7 @@
       "id": "BE-06",
       "title": "Consumer inbox/idempotency/retry",
       "stage": "02-backend-foundation",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/02-backend-foundation/tasks/BE-06.md",
       "dependencies": [
@@ -956,7 +956,7 @@
       "id": "H-03",
       "title": "Приватный OAuth, auth persistence и reauth",
       "stage": "08-hermes",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/08-hermes/tasks/H-03.md",
       "dependencies": [
@@ -985,7 +985,7 @@
       "id": "H-04",
       "title": "Allowlist канала, tools/egress/resource policy",
       "stage": "08-hermes",
-      "status": "planned",
+      "status": "in_progress",
       "scope": "base-release",
       "path": "docs/04-delivery/08-hermes/tasks/H-04.md",
       "dependencies": [
@@ -1014,7 +1014,7 @@
       "id": "ID-02",
       "title": "Google/linking + account ownership",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-02.md",
       "dependencies": [
@@ -1044,7 +1044,7 @@
       "id": "ID-03",
       "title": "Sessions/refresh concurrency",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-03.md",
       "dependencies": [
@@ -1074,7 +1074,7 @@
       "id": "N-02",
       "title": "Email и auth-code priority path",
       "stage": "04-notifications",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/04-notifications/tasks/N-02.md",
       "dependencies": [
@@ -1107,7 +1107,7 @@
       "id": "OPS-02",
       "title": "PG/Redis/Rabbit PVC/roles/limits",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-02.md",
       "dependencies": [
@@ -1135,7 +1135,7 @@
       "id": "OPS-05",
       "title": "Dashboards/alerts/runbooks",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "in_progress",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-05.md",
       "dependencies": [
@@ -1164,7 +1164,7 @@
       "id": "PAY-02",
       "title": "Catalog/price/order/payment schema",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-02.md",
       "dependencies": [
@@ -1193,7 +1193,7 @@
       "id": "H-05",
       "title": "No-spend/auxiliary/quota acceptance",
       "stage": "08-hermes",
-      "status": "planned",
+      "status": "in_progress",
       "scope": "base-release",
       "path": "docs/04-delivery/08-hermes/tasks/H-05.md",
       "dependencies": [
@@ -1223,7 +1223,7 @@
       "id": "H-07",
       "title": "Topics routing, owner/chat allowlist, versioned rules",
       "stage": "08-hermes",
-      "status": "planned",
+      "status": "in_progress",
       "scope": "base-release",
       "path": "docs/04-delivery/08-hermes/tasks/H-07.md",
       "dependencies": [
@@ -1251,7 +1251,7 @@
       "id": "ID-04",
       "title": "SSO client/code/PKCE/BFF",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-04.md",
       "dependencies": [
@@ -1281,7 +1281,7 @@
       "id": "N-03",
       "title": "Delivery claim/retry/DLQ",
       "stage": "04-notifications",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/04-notifications/tasks/N-03.md",
       "dependencies": [
@@ -1311,7 +1311,7 @@
       "id": "OPS-03",
       "title": "GitOps chart/migration job",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-03.md",
       "dependencies": [
@@ -1339,7 +1339,7 @@
       "id": "OPS-06",
       "title": "Backup/WAL/secret recovery",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-06.md",
       "dependencies": [
@@ -1368,7 +1368,7 @@
       "id": "PAY-04",
       "title": "Durable authenticated webhook inbox",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-04.md",
       "dependencies": [
@@ -1458,7 +1458,7 @@
       "id": "ID-05",
       "title": "Passkeys и RP id.outegro.dev",
       "stage": "03-identity",
-      "status": "review",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-05.md",
       "dependencies": [
@@ -1487,7 +1487,7 @@
       "id": "PAY-03",
       "title": "Idempotent checkout state machine",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-03.md",
       "dependencies": [
@@ -1518,7 +1518,7 @@
       "id": "PAY-05",
       "title": "Payment processing/journal/outbox",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-05.md",
       "dependencies": [
@@ -1579,7 +1579,7 @@
       "id": "ID-07",
       "title": "Owner bootstrap и step-up",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-07.md",
       "dependencies": [
@@ -1609,7 +1609,7 @@
       "id": "PAY-06",
       "title": "Source grants и expiry",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-06.md",
       "dependencies": [
@@ -1638,7 +1638,7 @@
       "id": "A-01",
       "title": "Admin auth/shell/permissions",
       "stage": "06-admin",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/06-admin/tasks/A-01.md",
       "dependencies": [
@@ -1699,7 +1699,7 @@
       "id": "ID-08",
       "title": "Коммерческая grant projection",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-08.md",
       "dependencies": [
@@ -1730,7 +1730,7 @@
       "id": "ID-09",
       "title": "Кабинет/сессии/locale",
       "stage": "03-identity",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-09.md",
       "dependencies": [
@@ -1762,7 +1762,7 @@
       "id": "PAY-07",
       "title": "Subscription root/renew/period model",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-07.md",
       "dependencies": [
@@ -1792,7 +1792,7 @@
       "id": "PAY-09",
       "title": "Refund/dispute inbox и unmatched",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-09.md",
       "dependencies": [
@@ -1823,7 +1823,7 @@
       "id": "A-02",
       "title": "User search/profile/session actions",
       "stage": "06-admin",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/06-admin/tasks/A-02.md",
       "dependencies": [
@@ -1853,7 +1853,7 @@
       "id": "A-06",
       "title": "Role/flag/catalog management minimum",
       "stage": "06-admin",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/06-admin/tasks/A-06.md",
       "dependencies": [
@@ -1917,7 +1917,7 @@
       "id": "ID-10",
       "title": "Key rotation/revoke/CSRF tests",
       "stage": "03-identity",
-      "status": "review",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/03-identity/tasks/ID-10.md",
       "dependencies": [
@@ -1949,7 +1949,7 @@
       "id": "N-04",
       "title": "Telegram link/channel",
       "stage": "04-notifications",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/04-notifications/tasks/N-04.md",
       "dependencies": [
@@ -1980,7 +1980,7 @@
       "id": "N-05",
       "title": "Inbox/settings UI",
       "stage": "04-notifications",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/04-notifications/tasks/N-05.md",
       "dependencies": [
@@ -2010,7 +2010,7 @@
       "id": "N-06",
       "title": "Billing/security templates EN/RU",
       "stage": "04-notifications",
-      "status": "review",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/04-notifications/tasks/N-06.md",
       "dependencies": [
@@ -2041,7 +2041,7 @@
       "id": "PAY-08",
       "title": "Cancel workflow и paid-until UX",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-08.md",
       "dependencies": [
@@ -2071,7 +2071,7 @@
       "id": "PAY-10",
       "title": "Reconciliation jobs/issues",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-10.md",
       "dependencies": [
@@ -2102,7 +2102,7 @@
       "id": "PAY-11",
       "title": "Pay web/история/подписки",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-11.md",
       "dependencies": [
@@ -2136,7 +2136,7 @@
       "id": "A-03",
       "title": "Orders/subscriptions/journal screens",
       "stage": "06-admin",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/06-admin/tasks/A-03.md",
       "dependencies": [
@@ -2167,7 +2167,7 @@
       "id": "A-04",
       "title": "Event chain и reconciliation issues",
       "stage": "06-admin",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/06-admin/tasks/A-04.md",
       "dependencies": [
@@ -2200,7 +2200,7 @@
       "id": "OPS-07",
       "title": "Restore rehearsal",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-07.md",
       "dependencies": [
@@ -2230,7 +2230,7 @@
       "id": "PAY-12",
       "title": "Provider account integration test",
       "stage": "05-payments",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/05-payments/tasks/PAY-12.md",
       "dependencies": [
@@ -2293,7 +2293,7 @@
       "id": "A-05",
       "title": "Controlled retry/replay commands",
       "stage": "06-admin",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/06-admin/tasks/A-05.md",
       "dependencies": [
@@ -2354,7 +2354,7 @@
       "id": "A-07",
       "title": "Audit view и sensitive actions",
       "stage": "06-admin",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/06-admin/tasks/A-07.md",
       "dependencies": [
@@ -2419,7 +2419,7 @@
       "id": "OPS-08",
       "title": "Ресурсный профиль 8 ГБ",
       "stage": "07-operations",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/07-operations/tasks/OPS-08.md",
       "dependencies": [
@@ -2453,7 +2453,7 @@
       "id": "R-01",
       "title": "Интеграция landing/service navigation",
       "stage": "09-release",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/09-release/tasks/R-01.md",
       "dependencies": [
@@ -2516,7 +2516,7 @@
       "id": "R-02",
       "title": "E2E матрица и failure scenarios",
       "stage": "09-release",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/09-release/tasks/R-02.md",
       "dependencies": [
@@ -2580,7 +2580,7 @@
       "id": "R-03",
       "title": "Production readiness review",
       "stage": "09-release",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/09-release/tasks/R-03.md",
       "dependencies": [
@@ -2639,7 +2639,7 @@
       "id": "R-04",
       "title": "Deploy immutable release",
       "stage": "09-release",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/09-release/tasks/R-04.md",
       "dependencies": [
@@ -2668,7 +2668,7 @@
       "id": "R-05",
       "title": "Post-release review/runbooks",
       "stage": "09-release",
-      "status": "planned",
+      "status": "done",
       "scope": "base-release",
       "path": "docs/04-delivery/09-release/tasks/R-05.md",
       "dependencies": [
@@ -2695,7 +2695,7 @@
       "id": "NEXT-01",
       "title": "Отдельное ТЗ Battleship",
       "stage": "10-future",
-      "status": "planned",
+      "status": "done",
       "scope": "future",
       "path": "docs/04-delivery/10-future/tasks/NEXT-01.md",
       "dependencies": [
@@ -2715,6 +2715,636 @@
         "TC-NEXT-01-02",
         "TC-NEXT-01-03"
       ]
+    },
+    {
+      "id": "BS-01",
+      "title": "Battleship engine: rules, match state machine, bots, Elo",
+      "stage": "10-future",
+      "status": "done",
+      "scope": "future",
+      "path": "https://github.com/outegro-dev/platform/issues/93",
+      "dependencies": [
+        "NEXT-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/16-battleship.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "BS-02",
+      "title": "Battleship backend: WebSocket game server, matchmaking, rating, grants",
+      "stage": "10-future",
+      "status": "done",
+      "scope": "future",
+      "path": "https://github.com/outegro-dev/platform/issues/94",
+      "dependencies": [
+        "BS-01"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/16-battleship.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "BS-03",
+      "title": "Battleship web: MobX stores, GameSocket, animations, shop",
+      "stage": "10-future",
+      "status": "done",
+      "scope": "future",
+      "path": "https://github.com/outegro-dev/platform/issues/95",
+      "dependencies": [
+        "BS-02"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/16-battleship.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "BS-04",
+      "title": "Battleship in production: images, gitops, battleship.outegro.dev",
+      "stage": "10-future",
+      "status": "done",
+      "scope": "future",
+      "path": "https://github.com/outegro-dev/platform/issues/96",
+      "dependencies": [
+        "BS-03"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/events.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/16-battleship.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-01",
+      "title": "Landing: copy and readability fixes",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/99",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-02",
+      "title": "Landing: classifieds with already torn tabs, whole ad links to Telegram",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/100",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-03",
+      "title": "Landing: call to action, book a call on Calendly",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/101",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-04",
+      "title": "Landing: less tech on the main page; /stack page with jokes",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/102",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-05",
+      "title": "Landing: initial loader, the port gates of «Причал №1»",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/103",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-06",
+      "title": "Landing: bottom strip changes with the section",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/104",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-07",
+      "title": "Landing: polish the paper cartoon",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/105",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-08",
+      "title": "Landing: account menu in the header (landing-web as an SSO client)",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/106",
+      "dependencies": [
+        "ID-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-09",
+      "title": "SSO: apps miss an existing id.outegro.dev session",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/107",
+      "dependencies": [
+        "ID-04"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/identity-access.md",
+        "docs/02-contracts/http-errors.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/04-identity-access.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-10",
+      "title": "UI kit: harden the zine theme and add component variants",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/108",
+      "dependencies": [
+        "DS-05"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-11",
+      "title": "Zine theme for id-web",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/109",
+      "dependencies": [
+        "ZN-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-12",
+      "title": "Zine theme for battleship-web, then new landing screenshots",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/110",
+      "dependencies": [
+        "ZN-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-13",
+      "title": "Zine theme for admin-web",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/111",
+      "dependencies": [
+        "ZN-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-14",
+      "title": "Zine theme for edu-web",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/112",
+      "dependencies": [
+        "ZN-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-15",
+      "title": "Zine theme for pay-web",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/113",
+      "dependencies": [
+        "ZN-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-16",
+      "title": "UI kit in Figma and Claude Design: options",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/114",
+      "dependencies": [
+        "ZN-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-17",
+      "title": "Landing: FAQ rubric «Вопрос — ответ»",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/115",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-18",
+      "title": "Landing: Google Analytics through GTM with consent",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/116",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-19",
+      "title": "Landing: magazine-style OG image",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/117",
+      "dependencies": [
+        "L-10"
+      ],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "ZN-20",
+      "title": "Idea: a case study on a project that is useful to people",
+      "stage": "11-zine",
+      "status": "planned",
+      "scope": "future",
+      "path": "https://github.com/outegro-dev/platform/issues/118",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/design-i18n.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/01-landing.md",
+        "docs/01-specification/chapters/02-design-system.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "EDU-B1",
+      "title": "Education: rewrite both books as proper sequential textbooks",
+      "stage": "11-zine",
+      "status": "done",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/119",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/010-education.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/17-education.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-01",
+      "title": "Dependencies: safe minor and patch batch",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/120",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/009-backend-stack.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-02",
+      "title": "Dependencies: majors",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/121",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/009-backend-stack.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-03",
+      "title": "Open follow-ups from handoff and evidence (code)",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/122",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/00-start-here/handoff.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/03-platform-architecture.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-04",
+      "title": "Docs: sync task-index.json and next-steps.md with the board",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/123",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/00-start-here/handoff.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/14-atomic-roadmap.md"
+      ],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-05",
+      "title": "Infra pins: RabbitMQ, Valkey, mailpit, Hermes, CI actions",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/124",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/02-contracts/deployment.md",
+        "docs/06-operations/production.md"
+      ],
+      "chapter_refs": [
+        "docs/01-specification/chapters/10-k3s-infrastructure.md"
+      ],
+      "test_case_ids": []
     }
   ]
 }

@@ -1,6 +1,6 @@
 # OPS-01. Чистый bootstrap и DNS/TLS
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 07-operations
 

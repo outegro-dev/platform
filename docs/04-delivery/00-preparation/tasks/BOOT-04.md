@@ -1,6 +1,6 @@
 # BOOT-04. Рабочие команды и test harness
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 00-preparation
 
