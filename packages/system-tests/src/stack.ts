@@ -47,19 +47,29 @@ const examplePorts: Record<Service, number> = {
   edu: 4005,
 };
 
-const freePort = () =>
-  new Promise<number>((resolve, reject) => {
+const canListen = (port: number) =>
+  new Promise<boolean>((resolve) => {
     const server = createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      server.close(() =>
-        typeof address === "object" && address
-          ? resolve(address.port)
-          : reject(new Error("no port")),
-      );
-    });
+    server.once("error", () => resolve(false));
+    server.listen(port, "0.0.0.0", () => server.close(() => resolve(true)));
   });
+
+/**
+ * A port for a service to listen on later, below Linux's ephemeral range
+ * (32768+). A port from listen(0) comes from that range, so between this
+ * check and the service binding it an outgoing connection or a container's
+ * published port could take it: battleship once failed to start with
+ * EADDRINUSE in CI (11.10.2026). Never the same port twice in one stack.
+ */
+const handedOut = new Set<number>();
+const freePort = async () => {
+  for (;;) {
+    const port = 20_000 + Math.floor(Math.random() * 12_000);
+    if (handedOut.has(port) || !(await canListen(port))) continue;
+    handedOut.add(port);
+    return port;
+  }
+};
 
 const exampleOf = (service: Service) =>
   Object.fromEntries(
