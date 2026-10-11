@@ -28,6 +28,7 @@ const CHAPTERS: Record<string, number> = {
   "sql-internals": 15,
   "message-brokers": 13,
   "javascript-basics": 13,
+  "rust-go-quickstart": 15,
 };
 const MANIFEST = Object.keys(CHAPTERS);
 /** The same books as the database lists them, by slug. */
@@ -483,7 +484,7 @@ describe("content import (TC-EDU-04)", () => {
       );
       expect(
         (await race.db.select({ value: count() }).from(chapters))[0]?.value,
-      ).toBe(13 + 15 + 13 + 13);
+      ).toBe(Object.values(CHAPTERS).reduce((sum, n) => sum + n, 0));
     } finally {
       await race.close();
     }

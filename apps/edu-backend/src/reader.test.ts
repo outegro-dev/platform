@@ -214,6 +214,7 @@ describe("library", () => {
       "javascript-basics": "sign_in",
       "message-brokers": "sign_in",
       "nodejs-internals": "sign_in",
+      "rust-go-quickstart": "sign_in",
       "sql-internals": "sign_in",
       "sample-free": "open",
       "sample-members": "sign_in",
@@ -245,6 +246,7 @@ describe("library", () => {
       "javascript-basics": "preview",
       "message-brokers": "preview",
       "nodejs-internals": "preview",
+      "rust-go-quickstart": "preview",
       "sql-internals": "preview",
       "sample-free": "open",
       "sample-members": "open",
@@ -266,6 +268,7 @@ describe("library", () => {
       "javascript-basics": "granted",
       "message-brokers": "granted",
       "nodejs-internals": "granted",
+      "rust-go-quickstart": "granted",
       "sql-internals": "granted",
       "sample-closed": "locked",
     });

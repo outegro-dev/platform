@@ -23,7 +23,22 @@ describe("highlighting", () => {
     ).toContain("hljs-keyword");
     expect(highlight("plain", "text")).toBeNull();
     expect(highlight("plain", undefined)).toBeNull();
-    expect(highlight("fn main() {}", "rust")).toBeNull();
+    expect(highlight("fn main() {}", "kotlin")).toBeNull();
+  });
+
+  it("knows Go, Rust and their build files (the Rust and Go book)", () => {
+    expect(highlight("func main() { go run() }", "go")).toContain(
+      "hljs-keyword",
+    );
+    expect(highlight("let mut n: u32 = 1;", "rust")).toContain("hljs-keyword");
+    expect(highlight("fn main() {}", "rs")).toContain("hljs-keyword");
+    expect(highlight('[package]\nname = "watchdog"', "toml")).toContain(
+      "hljs-section",
+    );
+    expect(highlight("FROM golang:1.27 AS build", "dockerfile")).toContain(
+      "hljs-keyword",
+    );
+    expect(highlight("test:\n\tgo test ./...", "makefile")).toContain("hljs-");
   });
 
   it("escapes the code it highlights", () => {

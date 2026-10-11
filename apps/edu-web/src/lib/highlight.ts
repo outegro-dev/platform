@@ -1,7 +1,12 @@
 import hljs from "highlight.js/lib/core";
 import bash from "highlight.js/lib/languages/bash";
+import dockerfile from "highlight.js/lib/languages/dockerfile";
+import go from "highlight.js/lib/languages/go";
+import ini from "highlight.js/lib/languages/ini";
 import javascript from "highlight.js/lib/languages/javascript";
 import json from "highlight.js/lib/languages/json";
+import makefile from "highlight.js/lib/languages/makefile";
+import rust from "highlight.js/lib/languages/rust";
 import sql from "highlight.js/lib/languages/sql";
 import typescript from "highlight.js/lib/languages/typescript";
 import xml from "highlight.js/lib/languages/xml";
@@ -9,8 +14,8 @@ import yaml from "highlight.js/lib/languages/yaml";
 
 /*
  * Code is highlighted on the server, once, with only the languages the
- * books use (js, ts, bash, json, sql, yaml, html; "text" and anything
- * unknown stay plain). The browser gets the markup and no highlighter.
+ * books use (js, ts, bash, json, sql, yaml, html, go, rust, toml,
+ * dockerfile, makefile; "text" and anything unknown stay plain). The browser gets the markup and no highlighter.
  * highlight.js output is escaped text inside <span class="hljs-…">
  * elements: the one kind of HTML (besides the importer's sanitized SVG)
  * that the app injects.
@@ -23,6 +28,12 @@ hljs.registerLanguage("typescript", typescript);
 hljs.registerLanguage("yaml", yaml);
 // HTML is highlight.js's "xml"; scripts inside it are highlighted as JavaScript.
 hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("go", go);
+hljs.registerLanguage("rust", rust);
+// TOML (Cargo.toml) is highlight.js's "ini".
+hljs.registerLanguage("ini", ini);
+hljs.registerLanguage("dockerfile", dockerfile);
+hljs.registerLanguage("makefile", makefile);
 
 const languages: Record<string, string> = {
   js: "javascript",
@@ -42,6 +53,15 @@ const languages: Record<string, string> = {
   yml: "yaml",
   html: "xml",
   xml: "xml",
+  go: "go",
+  golang: "go",
+  rust: "rust",
+  rs: "rust",
+  toml: "ini",
+  dockerfile: "dockerfile",
+  docker: "dockerfile",
+  makefile: "makefile",
+  make: "makefile",
 };
 
 /** Highlighted markup, or null for a language the books do not use. */
