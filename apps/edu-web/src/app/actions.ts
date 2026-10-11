@@ -2,7 +2,12 @@
 
 import { BackendError, BackendUnavailable } from "@outegro/bff/backend";
 import { clientHeaders } from "@outegro/bff/client";
-import { clearSession, REFRESH_COOKIE } from "@outegro/bff/session";
+import {
+  clearSession,
+  isSecureRequest,
+  markSilent,
+  REFRESH_COOKIE,
+} from "@outegro/bff/session";
 import { endSession } from "@outegro/bff/sso";
 import {
   attemptResultSchema,
@@ -181,14 +186,24 @@ export async function savePosition(
   }
 }
 
-/** Ends this app's session in Identity, forgets the cookies, back home. */
+/**
+ * Ends this app's session in Identity, forgets the cookies, back home.
+ * og_silent says "out", so the session at id.outegro.dev does not sign the
+ * reader back in silently.
+ */
 export async function signOut() {
   const jar = await cookies();
+  const requestHeaders = await headers();
   await endSession(
     env.AUTH_API_URL,
     jar.get(REFRESH_COOKIE)?.value,
-    clientHeaders(await headers(), env.CLIENT_IP_SOURCE),
+    clientHeaders(requestHeaders, env.CLIENT_IP_SOURCE),
   );
   clearSession(jar);
+  markSilent(
+    jar,
+    "out",
+    isSecureRequest(requestHeaders, requestHeaders.get("origin") ?? ""),
+  );
   redirect("/");
 }

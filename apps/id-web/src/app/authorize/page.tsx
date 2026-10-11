@@ -1,47 +1,50 @@
-import { BackendError, BackendUnavailable } from "@outegro/bff/backend";
+import { BackendError } from "@outegro/bff/backend";
 import { Button } from "@outegro/ui/button";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { z } from "zod";
 import { AppFooter } from "@/components/app-footer";
 import { BrandHeader } from "@/components/brand-header";
 import { accessToken, authApi } from "@/lib/api";
-
-const paramsSchema = z.object({
-  response_type: z.literal("code").optional(),
-  client_id: z.string().regex(/^[a-z][a-z0-9-]{2,40}$/),
-  redirect_uri: z.url().max(500),
-  state: z.string().min(16).max(256),
-  code_challenge: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
-  code_challenge_method: z.literal("S256"),
-});
+import {
+  parseAuthorizeRequest,
+  registryFailure,
+  type SilentError,
+  silentAnswer,
+  silentError,
+} from "@/lib/authorize";
+import { platformUrls } from "@/lib/env";
 
 /**
  * SSO entry for platform apps (ID-04). Nothing is redirected to an
  * unregistered address: invalid requests end on this page.
+ *
+ * `prompt=none` is an app's silent sign-in: the visitor did not ask to sign
+ * in, so once the redirect URI is known to be the app's, no page is shown.
+ * With a session here the code is issued as usual; without one, or when
+ * Identity refuses or cannot answer, the app's callback gets an OIDC error
+ * (`login_required`, ...) and the visitor stays there, signed out.
  */
 export default async function AuthorizePage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const raw = await searchParams;
-  const parsed = paramsSchema.safeParse(
-    Object.fromEntries(
-      Object.entries(raw).filter(([, v]) => typeof v === "string"),
-    ),
-  );
-  if (!parsed.success) return <Invalid />;
-  const p = parsed.data;
+  const p = parseAuthorizeRequest(await searchParams);
+  if (!p) return <Invalid />;
+  const { silent } = p;
+  const answer = (error: SilentError) =>
+    redirect(silentAnswer(p.redirect_uri, p.state, error));
 
   try {
     await authApi(
       `/v1/oauth/clients/${p.client_id}?redirectUri=${encodeURIComponent(p.redirect_uri)}`,
     );
   } catch (error) {
+    const failure = registryFailure(error, p, platformUrls);
+    if (failure === "invalid") return <Invalid />;
+    if (failure === "answer") answer("temporarily_unavailable");
     // An outage is not a bad link: the error page offers a retry.
-    if (error instanceof BackendUnavailable) throw error;
-    return <Invalid />;
+    throw error;
   }
 
   const query = new URLSearchParams({
@@ -53,7 +56,10 @@ export default async function AuthorizePage({
   });
   const self = `/authorize?${query}`;
   const token = await accessToken();
-  if (!token) redirect(`/login?continue=${encodeURIComponent(self)}`);
+  if (!token) {
+    if (silent) answer("login_required");
+    redirect(`/login?continue=${encodeURIComponent(self)}`);
+  }
 
   let code: string;
   try {
@@ -68,6 +74,7 @@ export default async function AuthorizePage({
       },
     }));
   } catch (error) {
+    if (silent) answer(silentError(error));
     if (error instanceof BackendError && error.status === 401) {
       redirect(`/login?continue=${encodeURIComponent(self)}`);
     }

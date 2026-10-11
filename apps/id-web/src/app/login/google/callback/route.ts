@@ -4,7 +4,6 @@ import {
   isSecureRequest,
   REFRESH_COOKIE,
   type SessionTokens,
-  writeSession,
 } from "@outegro/bff/session";
 import type { NextRequest } from "next/server";
 import { authApi } from "@/lib/api";
@@ -17,7 +16,7 @@ import {
   sameState,
 } from "@/lib/google";
 import { redirectTo } from "@/lib/redirect";
-import { endSession } from "@/lib/session";
+import { endSession, writeIdSession } from "@/lib/session";
 
 /**
  * Google redirects here (registered redirect URI). The state must match the
@@ -66,7 +65,7 @@ export async function GET(request: NextRequest) {
       return fail("login", googleErrorKey(error));
     }
     const response = go(pending.continueTo);
-    writeSession(
+    writeIdSession(
       response.cookies,
       tokens,
       isSecureRequest(request.headers, request.url),

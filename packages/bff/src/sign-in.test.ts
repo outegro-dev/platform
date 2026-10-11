@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { askIdentity, type SignInOptions, startSignIn } from "./sign-in";
+import {
+  askIdentity,
+  type CallbackOptions,
+  finishSignIn,
+  type SignInOptions,
+  startSignIn,
+} from "./sign-in";
+import { beginSignIn } from "./sso";
 
 const NOW = Date.parse("2026-09-30T12:00:00Z");
 /** A JWT-shaped access token expiring `left` seconds after NOW. */
@@ -215,6 +222,291 @@ describe("startSignIn", () => {
     });
     expect(pendingOf(response).returnTo).toBe("/orders");
   });
+});
+
+describe("startSignIn, silently", () => {
+  const silentVisit = (
+    cookies: Record<string, string>,
+    returnTo = "/leaderboard",
+  ) =>
+    new NextRequest(
+      `https://battleship.outegro.test/auth/sign-in?returnTo=${encodeURIComponent(returnTo)}&silent=1`,
+      {
+        headers: {
+          cookie: Object.entries(cookies)
+            .map(([name, value]) => `${name}=${value}`)
+            .join("; "),
+          "x-forwarded-proto": "https",
+        },
+      },
+    );
+
+  it("asks Identity without its sign-in page and marks the attempt", async () => {
+    const response = await startSignIn(silentVisit({ og_hint: "1" }), options);
+    toAuthorize(response);
+    expect(location(response).searchParams.get("prompt")).toBe("none");
+    const pending = pendingOf(response) as {
+      silent?: boolean;
+      returnTo: string;
+    };
+    expect(pending).toMatchObject({ silent: true, returnTo: "/leaderboard" });
+    const tried = response.headers
+      .getSetCookie()
+      .find((cookie) => cookie.startsWith("og_silent="));
+    expect(tried).toMatch(/^og_silent=tried;/);
+    expect(tried).toMatch(/Max-Age=300/);
+    expect(tried).toMatch(/HttpOnly/i);
+    expect(identity).not.toHaveBeenCalled();
+  });
+
+  it("starts again once a silent session here has expired", async () => {
+    const response = await startSignIn(
+      silentVisit({ og_hint: "1", og_silent: "silent" }),
+      options,
+    );
+    toAuthorize(response);
+  });
+
+  it.each([
+    ["without the hint", {}],
+    ["right after an attempt", { og_hint: "1", og_silent: "tried" }],
+    ["after a sign-out here", { og_hint: "1", og_silent: "out" }],
+  ])("goes straight back %s", async (_, cookies) => {
+    const response = await startSignIn(silentVisit(cookies), options);
+    expect(response.status).toBe(303);
+    expect(location(response).toString()).toBe(
+      "https://battleship.outegro.test/leaderboard",
+    );
+    expect(setCookies(response)).toEqual([]);
+  });
+
+  it("returns only to this app", async () => {
+    const response = await startSignIn(
+      silentVisit({}, "https://evil.test/"),
+      options,
+    );
+    expect(location(response).toString()).toBe(
+      "https://battleship.outegro.test/",
+    );
+  });
+});
+
+describe("finishSignIn", () => {
+  const callbackOptions: CallbackOptions = {
+    client: options.client,
+    appUrl: options.appUrl,
+    fallback: "/",
+    errorPath: (reason) => `/auth/error?reason=${reason}`,
+    clientIpSource: "x-forwarded-for",
+  };
+  const tokens = {
+    sessionId: "s1",
+    accessToken: "access",
+    accessTokenExpiresAt: "2026-09-30T12:05:00.000Z",
+    refreshToken: "refresh",
+    refreshTokenExpiresAt: "2026-10-30T12:00:00.000Z",
+  };
+  const back = (
+    params: Record<string, string>,
+    cookies: Record<string, string>,
+  ) =>
+    new NextRequest(
+      `https://battleship.outegro.test/auth/callback?${new URLSearchParams(params)}`,
+      {
+        headers: {
+          cookie: Object.entries(cookies)
+            .map(([name, value]) => `${name}=${value}`)
+            .join("; "),
+          "x-forwarded-proto": "https",
+        },
+      },
+    );
+  const started = (silent: boolean) => {
+    const { url, cookie } = beginSignIn(options.client, "/leaderboard", {
+      silent,
+    });
+    return {
+      state: new URL(url).searchParams.get("state") ?? "",
+      cookies: { og_sso: cookie, ...(silent ? { og_silent: "tried" } : {}) },
+    };
+  };
+
+  it("writes the session, marks it as silent and returns", async () => {
+    identity.mockResolvedValue(Response.json(tokens));
+    const { state, cookies } = started(true);
+    const response = await finishSignIn(
+      back({ code: "c".repeat(43), state }, cookies),
+      callbackOptions,
+    );
+    expect(location(response).toString()).toBe(
+      "https://battleship.outegro.test/leaderboard",
+    );
+    expect(setCookies(response)).toEqual([
+      "og_at=access",
+      "og_rt=refresh",
+      "og_silent=silent",
+      "og_sso=",
+    ]);
+  });
+
+  it("clears any mark when the visitor asked to sign in", async () => {
+    identity.mockResolvedValue(Response.json(tokens));
+    const { state, cookies } = started(false);
+    const fresh = await finishSignIn(
+      back({ code: "c".repeat(43), state }, cookies),
+      callbackOptions,
+    );
+    expect(setCookies(fresh)).toEqual([
+      "og_at=access",
+      "og_rt=refresh",
+      "og_sso=",
+    ]);
+
+    // Signed out here before: a later expiry may be picked up silently again.
+    identity.mockResolvedValue(Response.json(tokens));
+    const again = started(false);
+    const response = await finishSignIn(
+      back(
+        { code: "c".repeat(43), state: again.state },
+        { ...again.cookies, og_silent: "out" },
+      ),
+      callbackOptions,
+    );
+    expect(setCookies(response)).toEqual([
+      "og_at=access",
+      "og_rt=refresh",
+      "og_silent=",
+      "og_sso=",
+    ]);
+  });
+
+  it("lands a silent attempt Identity had no session for on its page, signed out", async () => {
+    const { state, cookies } = started(true);
+    const response = await finishSignIn(
+      back({ error: "login_required", state }, cookies),
+      callbackOptions,
+    );
+    expect(location(response).toString()).toBe(
+      "https://battleship.outegro.test/leaderboard",
+    );
+    // The "tried" mark stays: no new attempt for a while.
+    expect(setCookies(response)).toEqual(["og_sso="]);
+    expect(identity).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, Record<string, string>, () => void]>([
+    [
+      "an outage",
+      { code: "c".repeat(43) },
+      () => identity.mockRejectedValue(new TypeError("fetch failed")),
+    ],
+    ["Identity's outage", { error: "temporarily_unavailable" }, () => {}],
+  ])(
+    "lands a silent attempt during %s on its page too, to try again soon",
+    async (_, params, answer) => {
+      answer();
+      const { state, cookies } = started(true);
+      const response = await finishSignIn(
+        back({ ...params, state }, cookies),
+        callbackOptions,
+      );
+      expect(location(response).pathname).toBe("/leaderboard");
+      expect(setCookies(response)).toEqual(["og_sso="]);
+    },
+  );
+
+  it.each<[string, Record<string, string>, () => void]>([
+    ["a refused request", { error: "invalid_request" }, () => {}],
+    [
+      "a refused code",
+      { code: "c".repeat(43) },
+      () => identity.mockResolvedValue(refusal(422, "UNPROCESSABLE")),
+    ],
+  ])(
+    "waits a day after a silent attempt ends in %s, which would only repeat",
+    async (_, params, answer) => {
+      answer();
+      const { state, cookies } = started(true);
+      const response = await finishSignIn(
+        back({ ...params, state }, cookies),
+        callbackOptions,
+      );
+      expect(location(response).pathname).toBe("/leaderboard");
+      const tried = response.headers
+        .getSetCookie()
+        .find((cookie) => cookie.startsWith("og_silent="));
+      expect(tried).toMatch(/^og_silent=tried;/);
+      expect(tried).toMatch(/Max-Age=86400/);
+    },
+  );
+
+  it("explains a failed sign-in the visitor asked for", async () => {
+    identity.mockRejectedValue(new TypeError("fetch failed"));
+    const { state, cookies } = started(false);
+    const response = await finishSignIn(
+      back({ code: "c".repeat(43), state }, cookies),
+      callbackOptions,
+    );
+    expect(location(response).toString()).toBe(
+      "https://battleship.outegro.test/auth/error?reason=unavailable",
+    );
+    expect(setCookies(response)).toEqual(["og_sso="]);
+  });
+
+  it("shows a forged or expired callback for what it is", async () => {
+    const { cookies } = started(false);
+    const response = await finishSignIn(
+      back({ code: "c".repeat(43), state: "forged-state-value" }, cookies),
+      callbackOptions,
+    );
+    expect(location(response).toString()).toBe(
+      "https://battleship.outegro.test/auth/error?reason=state_mismatch",
+    );
+    expect(setCookies(response)).toEqual(["og_sso="]);
+    expect(identity).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["while a silent attempt is under way", { og_silent: "tried" }],
+    ["when another tab already signed in", { og_at: "access" }],
+  ])(
+    "lands a callback of a lost parallel attempt quietly %s and leaves the pending sign-in",
+    async (_, extra) => {
+      const { cookies } = started(true);
+      const response = await finishSignIn(
+        back(
+          { error: "login_required", state: "another-tab-state-value" },
+          { og_sso: cookies.og_sso, ...extra },
+        ),
+        callbackOptions,
+      );
+      expect(location(response).toString()).toBe(
+        "https://battleship.outegro.test/",
+      );
+      expect(setCookies(response)).toEqual([]);
+    },
+  );
+
+  it.each([
+    ["shortly after a silent attempt", { og_silent: "tried" }],
+    ["with a session already here", { og_at: "access" }],
+  ])(
+    "still explains a mismatched sign-in the visitor asked for %s",
+    async (_, extra) => {
+      // Two sign-in tabs, or too long on Identity's sign-in page.
+      const { cookies } = started(false);
+      const response = await finishSignIn(
+        back(
+          { code: "c".repeat(43), state: "another-tab-state-value" },
+          { ...cookies, ...extra },
+        ),
+        callbackOptions,
+      );
+      expect(location(response).toString()).toBe(
+        "https://battleship.outegro.test/auth/error?reason=state_mismatch",
+      );
+    },
+  );
 });
 
 describe("askIdentity", () => {

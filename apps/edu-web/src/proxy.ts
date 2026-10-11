@@ -1,17 +1,21 @@
-import { refreshSession } from "@outegro/bff/proxy";
+import { refreshSession, silentSignIn } from "@outegro/bff/proxy";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 
 /**
  * Every page and server action: keep the session fresh (refresh rotation
- * happens here, before rendering) and set a nonce-based CSP that also
- * admits the SQL sandbox's Web Worker. No page needs sign-in before it
- * renders: a chapter that needs an account shows its own sign-in gate.
+ * happens here, before rendering), sign in silently a visitor already
+ * signed in at id.outegro.dev, and set a nonce-based CSP that also admits
+ * the SQL sandbox's Web Worker. No page needs sign-in before it renders: a
+ * chapter that needs an account shows its own sign-in gate.
  */
 export async function proxy(request: NextRequest) {
   const session = await refreshSession(request, env.AUTH_API_URL, {
     clientIpSource: env.CLIENT_IP_SOURCE,
+    silent: true,
   });
+  const silent = silentSignIn(request, session.outcome, env.APP_URL);
+  if (silent) return session.apply(silent);
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const dev = process.env.NODE_ENV === "development";
   const https =

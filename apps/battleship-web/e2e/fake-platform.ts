@@ -574,6 +574,16 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
         "<!doctype html><title>Invalid</title><h1>This link is not valid</h1>",
       );
     }
+    // Silent sign-in (prompt=none): the persona cookie plays the session at
+    // id.outegro.dev; without one the app hears so instead of a page.
+    if (q.get("prompt") === "none" && !isPersona(persona)) {
+      const target = new URL(CALLBACK);
+      target.searchParams.set("error", "login_required");
+      target.searchParams.set("state", q.get("state") ?? "");
+      res.statusCode = 302;
+      res.setHeader("location", target.toString());
+      return res.end();
+    }
     const code = randomBytes(32).toString("base64url");
     codes.set(code, {
       persona: isPersona(persona) ? persona : "free",

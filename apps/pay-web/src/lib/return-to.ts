@@ -1,27 +1,34 @@
 import { safeReturnUrl } from "@outegro/bff/safe-redirect";
-import type { PlatformApp } from "@outegro/ui/lib/platform";
+import type { PlatformSite } from "@outegro/ui/lib/platform";
 import { platformUrls } from "./env";
 
 /*
- * "Back to Battleship": apps link here with ?return=<their page>. Only an
- * absolute URL on the origin of a platform app counts (see safeReturnUrl);
- * anything else is ignored. The accepted target is kept in a host-only
- * cookie for a while, so it survives moving between purchases and
- * subscriptions, and is checked against the list again whenever it is read.
+ * "Back to Battleship": apps and the portfolio site link here with
+ * ?return=<their page>. Only an absolute URL on the origin of one of them
+ * counts (see safeReturnUrl); anything else is ignored. The accepted target
+ * is kept in a host-only cookie for a while, so it survives moving between
+ * purchases and subscriptions, and is checked against the list again
+ * whenever it is read.
  */
 
 export const RETURN_COOKIE = "og_return";
 /** Long enough to look around, short enough not to linger for days. */
 export const RETURN_MAX_AGE_SECONDS = 2 * 60 * 60;
 
-/** Apps a buyer may come from, the only places "Back to …" leads. */
-const returnApps: readonly PlatformApp[] = ["battleship", "edu", "id", "admin"];
+/** Sites a buyer may come from, the only places "Back to …" leads. */
+export const returnApps: readonly PlatformSite[] = [
+  "battleship",
+  "edu",
+  "id",
+  "admin",
+  "site",
+];
 
 const appByOrigin = new Map(
   returnApps.map((app) => [new URL(platformUrls[app]).origin, app] as const),
 );
 
-export type ReturnTarget = { href: string; app: PlatformApp };
+export type ReturnTarget = { href: string; app: PlatformSite };
 
 /** The way back for a `?return=` value or the cookie; null when not allowed. */
 export function returnTarget(

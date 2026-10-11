@@ -1,3 +1,4 @@
+import { hintDomain } from "@outegro/bff/session";
 import type { PlatformUrls } from "@outegro/ui/lib/platform";
 import { z } from "zod";
 
@@ -34,3 +35,6 @@ export const platformUrls: PlatformUrls = {
   edu: env.EDU_URL,
   admin: env.ADMIN_URL,
 };
+
+/** The platform's sign-in hint lives on the parent domain of this app. */
+export const hintCookieDomain = hintDomain(env.ID_URL);

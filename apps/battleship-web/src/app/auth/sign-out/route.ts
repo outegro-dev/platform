@@ -1,5 +1,10 @@
 import { clientHeaders } from "@outegro/bff/client";
-import { clearSession, REFRESH_COOKIE } from "@outegro/bff/session";
+import {
+  clearSession,
+  isSecureRequest,
+  markSilent,
+  REFRESH_COOKIE,
+} from "@outegro/bff/session";
 import { endSession } from "@outegro/bff/sso";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
@@ -10,6 +15,8 @@ export const dynamic = "force-dynamic";
 /**
  * Sign-out is a POST from this app's own form: end the session in Identity,
  * then forget the cookies (locally even when Identity is unreachable).
+ * og_silent says "out", so the session at id.outegro.dev does not sign the
+ * player back in silently.
  */
 export async function POST(request: NextRequest) {
   if (!fromThisApp(request)) {
@@ -22,5 +29,10 @@ export async function POST(request: NextRequest) {
   );
   const response = NextResponse.redirect(appUrl("/"), 303);
   clearSession(response.cookies);
+  markSilent(
+    response.cookies,
+    "out",
+    isSecureRequest(request.headers, request.url),
+  );
   return response;
 }

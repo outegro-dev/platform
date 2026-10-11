@@ -1,7 +1,8 @@
+import { NextResponse } from "next/server";
 import { describe, expect, it } from "vitest";
 import { clientHeaders } from "./client";
 import { safeRedirectPath, safeReturnUrl } from "./safe-redirect";
-import { secondsLeft } from "./session";
+import { clearHint, hintDomain, secondsLeft, writeHint } from "./session";
 
 describe("safeRedirectPath", () => {
   it("keeps same-origin paths with their query", () => {
@@ -19,6 +20,16 @@ describe("safeRedirectPath", () => {
     null,
   ])("rejects %s", (value) => {
     expect(safeRedirectPath(value, "/account")).toBe("/account");
+  });
+
+  it("keeps an overlong page without its query, so the sign-in cookie fits", () => {
+    const query = `?q=${"x".repeat(3000)}`;
+    expect(safeRedirectPath(`/books/sql${query}`)).toBe("/books/sql");
+    expect(safeRedirectPath(`/${"a".repeat(2000)}`, "/account")).toBe(
+      "/account",
+    );
+    const fits = `/books/sql?q=${"x".repeat(1000)}`;
+    expect(safeRedirectPath(fits)).toBe(fits);
   });
 });
 
@@ -87,6 +98,50 @@ describe("secondsLeft", () => {
   it("treats missing or broken tokens as expired", () => {
     expect(secondsLeft(undefined)).toBe(0);
     expect(secondsLeft("garbage")).toBe(0);
+  });
+});
+
+describe("hintDomain", () => {
+  it.each([
+    ["https://id.outegro.dev", "outegro.dev"],
+    ["https://id.staging.outegro.dev", "staging.outegro.dev"],
+    ["http://id.outegro.localhost:3002", "outegro.localhost"],
+  ])("puts the hint of %s on %s", (idUrl, domain) => {
+    expect(hintDomain(idUrl)).toBe(domain);
+  });
+
+  it.each([
+    "http://localhost:3002",
+    "http://127.0.0.1:3002",
+    "http://[::1]:3002",
+    // Never a public suffix: a two-label host keeps the hint to itself.
+    "https://outegro.dev",
+  ])("keeps the hint of %s host-only", (idUrl) => {
+    expect(hintDomain(idUrl)).toBeUndefined();
+  });
+});
+
+describe("the sign-in hint", () => {
+  const expires = { refreshTokenExpiresAt: "2026-11-10T12:00:00.000Z" };
+
+  it("is written on the domain and deleted on the same domain", () => {
+    const response = NextResponse.next();
+    writeHint(response.cookies, expires, true, "outegro.dev");
+    expect(response.headers.getSetCookie()[0]).toBe(
+      "og_hint=1; Path=/; Expires=Tue, 10 Nov 2026 12:00:00 GMT; Domain=outegro.dev; Secure; HttpOnly; SameSite=lax",
+    );
+    clearHint(response.cookies, true, "outegro.dev");
+    expect(response.headers.getSetCookie()[0]).toBe(
+      "og_hint=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Domain=outegro.dev; Secure; HttpOnly; SameSite=lax",
+    );
+  });
+
+  it("stays host-only without a domain (localhost)", () => {
+    const response = NextResponse.next();
+    writeHint(response.cookies, expires, false, undefined);
+    const cookie = response.headers.getSetCookie()[0];
+    expect(cookie).not.toMatch(/Domain=/i);
+    expect(cookie).not.toMatch(/Secure/i);
   });
 });
 

@@ -1,17 +1,19 @@
 import { refreshSession } from "@outegro/bff/proxy";
 import { safeRedirectPath } from "@outegro/bff/safe-redirect";
 import { type NextRequest, NextResponse } from "next/server";
-import { env } from "@/lib/env";
+import { env, hintCookieDomain } from "@/lib/env";
 
 /**
  * Every page request: keep the session fresh (refresh rotation happens here,
- * before rendering), guard /account, skip /login for signed-in users unless
- * they are asked to sign in again (`reauth=1`, e.g. before adding a
- * passkey), and set a nonce-based CSP.
+ * before rendering) together with the platform's sign-in hint, guard
+ * /account, skip /login for signed-in users unless they are asked to sign
+ * in again (`reauth=1`, e.g. before adding a passkey), and set a
+ * nonce-based CSP.
  */
 export async function proxy(request: NextRequest) {
   const session = await refreshSession(request, env.AUTH_API_URL, {
     clientIpSource: env.CLIENT_IP_SOURCE,
+    hint: { domain: hintCookieDomain },
   });
   const signedIn =
     session.outcome === "fresh" || session.outcome === "refreshed";

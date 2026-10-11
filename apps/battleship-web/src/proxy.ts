@@ -1,4 +1,4 @@
-import { refreshSession } from "@outegro/bff/proxy";
+import { refreshSession, silentSignIn } from "@outegro/bff/proxy";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { requiresSignIn } from "@/lib/routes";
@@ -6,11 +6,13 @@ import { requiresSignIn } from "@/lib/routes";
 /**
  * Every page and API request: keep the session fresh (refresh rotation
  * happens here, before rendering), send signed-out visitors of game pages to
- * sign-in, and set a nonce-based CSP that also admits the game WebSocket.
+ * sign-in, sign in silently a visitor already signed in at id.outegro.dev,
+ * and set a nonce-based CSP that also admits the game WebSocket.
  */
 export async function proxy(request: NextRequest) {
   const session = await refreshSession(request, env.AUTH_API_URL, {
     clientIpSource: env.CLIENT_IP_SOURCE,
+    silent: true,
   });
   const signedIn =
     session.outcome === "fresh" || session.outcome === "refreshed";
@@ -25,6 +27,8 @@ export async function proxy(request: NextRequest) {
     signIn.searchParams.set("returnTo", `${pathname}${search}`);
     return session.apply(NextResponse.redirect(signIn));
   }
+  const silent = silentSignIn(request, session.outcome, env.APP_URL);
+  if (silent) return session.apply(silent);
 
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const dev = process.env.NODE_ENV === "development";
