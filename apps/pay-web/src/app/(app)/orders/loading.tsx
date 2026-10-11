@@ -13,7 +13,7 @@ export default async function Loading() {
         accent={t("titleAccent")}
         lead={t("lead")}
       />
-      <div className="order-list">
+      <div className="order-ledger">
         <div className="list-head og-eyebrow" aria-hidden="true">
           <span />
           <span>{t("product")}</span>

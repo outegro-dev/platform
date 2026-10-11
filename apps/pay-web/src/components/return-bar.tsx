@@ -13,11 +13,7 @@ export async function ReturnBar() {
   const t = await getTranslations("return");
   return (
     <nav className="return-bar og-container" aria-label={t("label")}>
-      <a
-        className="return-link og-glass"
-        href={back.href}
-        data-testid="return-link"
-      >
+      <a className="return-link" href={back.href} data-testid="return-link">
         <ArrowLeftIcon aria-hidden="true" />
         {t(`to.${back.app}`)}
       </a>

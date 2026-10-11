@@ -296,7 +296,8 @@ function HeroFootLine({
   );
 }
 
-/** Calm processing mark: a slowly turning silver orb with breathing rings. */
+/** Calm processing mark: a stopwatch whose hand goes round slowly, with
+ * ink rings spreading from it (still under reduced motion). */
 function Orb() {
   return (
     <span className="orb" aria-hidden="true">
@@ -307,6 +308,7 @@ function Orb() {
   );
 }
 
+/** Settled mark: a rubber stamp in the outcome's ink. */
 function Medallion({
   tone,
   icon,

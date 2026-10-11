@@ -20,7 +20,7 @@ export function AppNav() {
   const t = useTranslations("nav");
   const pathname = usePathname();
   return (
-    <nav className="app-nav og-glass" aria-label={t("sections")}>
+    <nav className="app-nav" aria-label={t("sections")}>
       {items.map(({ href, key, Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
