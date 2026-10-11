@@ -1,15 +1,6 @@
 import { generator, pick, seed, tilt } from "./random";
 
-const FACES = [
-  "mast",
-  "loud",
-  "tabloid",
-  "sign",
-  "kitsch",
-  "stamp",
-  "pixel",
-  "body",
-] as const;
+const FACES = ["mast", "loud", "tabloid", "sign", "stamp", "body"] as const;
 const PAPERS = ["white", "yellow", "ink", "red", "blue", "news", "pink"];
 
 /**

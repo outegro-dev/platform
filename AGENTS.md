@@ -14,7 +14,7 @@
 
 ## Project boundaries
 
-- Nick Lukashik; outegro.dev; silver liquid signature + liquid glass; landing first.
+- Nick Lukashik; outegro.dev; лендинг — номер старого журнала (тема zine в @outegro/ui, DESIGN.md); landing first.
 - Один VPS: 4 vCPU, 8 ГБ RAM, 200 ГБ SSD. Только вертикальное увеличение.
 - Новые БД. Старый проект и VPS — read-only reference. Не переносить production secrets, users, passkeys, volumes и данные.
 - Legacy root: `C:\Users\working\Desktop\outegro`. Не менять файлы там в ходе задач этого проекта.

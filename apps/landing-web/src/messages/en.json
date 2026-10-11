@@ -3,12 +3,17 @@
     "title": "Nick Lukashik — Senior full-stack engineer",
     "description": "Senior full-stack engineer. Web products built turnkey — interface design, frontend, backend, payments, infrastructure and monitoring, from the idea to launch and support."
   },
+  "loader": {
+    "pier": "Pier No. 1",
+    "opening": "Now opening"
+  },
   "nav": {
     "projects": "Projects",
     "platform": "Platform",
     "services": "Services",
     "process": "Process",
     "stack": "Stack",
+    "faq": "FAQ",
     "contact": "Contact",
     "menu": "Open navigation",
     "close": "Close navigation",
@@ -16,35 +21,13 @@
     "homePage": "Nick Lukashik, main page",
     "skip": "Skip to content",
     "language": "Language",
-    "sections": "Sections"
-  },
-  "hero": {
-    "eyebrow": "Senior full-stack engineer · Tbilisi",
-    "line1": "Depth in",
-    "line2": "every detail.",
-    "description": "I build web products turnkey — from the idea and interface design through frontend, backend, payments and infrastructure to launch and support.",
-    "cta": "See the work",
-    "contact": "Get in touch",
-    "art": "Liquid silver NL signature",
-    "scroll": "Scroll"
-  },
-  "turnkey": {
-    "label": "Turnkey: every stage, one engineer",
-    "steps": [
-      "Idea",
-      "Interface design",
-      "Frontend",
-      "Backend",
-      "Payments & integrations",
-      "Infrastructure",
-      "CI/CD",
-      "Monitoring",
-      "Launch",
-      "Support"
-    ]
+    "sections": "Sections",
+    "book": "Book a call",
+    "bookShort": "Call",
+    "bookHint": "30 minutes, pick a time that suits you"
   },
   "projects": {
-    "index": "01",
+    "index": "02",
     "label": "Projects",
     "title": "Built, shipped",
     "titleAccent": "and live.",
@@ -60,21 +43,11 @@
       "Quick matches by Elo rating and private rooms by link",
       "Leaderboard, player stats, a shot heatmap and match replays",
       "A Premium subscription and a one-time Silver Fleet, paid through Lava",
-      "English and Russian, on a desktop and on a phone"
+      "A multilingual interface, on a desktop and on a phone"
     ],
     "account": "One account at <id>id.outegro.dev</id> works across every outegro.dev app; purchases and subscriptions are managed at <pay>pay.outegro.dev</pay>.",
     "stackTitle": "Runs on",
-    "stack": [
-      "Next.js 16",
-      "React 19",
-      "MobX",
-      "NestJS 12",
-      "WebSocket",
-      "PostgreSQL",
-      "Valkey",
-      "RabbitMQ",
-      "K3s"
-    ],
+    "stack": ["Next.js", "NestJS", "WebSocket", "PostgreSQL", "Kubernetes"],
     "note": "Screens from a local build with test data.",
     "shots": {
       "battle": {
@@ -105,7 +78,7 @@
     }
   },
   "platform": {
-    "index": "02",
+    "index": "03",
     "label": "Platform",
     "title": "One platform",
     "titleAccent": "under every app.",
@@ -117,18 +90,15 @@
         "items": [
           {
             "name": "Sign-in",
-            "result": "One account for every app: an email code or Google, active sessions, a security page and Telegram linking.",
-            "tech": "id.outegro.dev · SSO · ES256 JWT"
+            "result": "One account for every app: an email code or Google, active sessions, a security page and Telegram linking."
           },
           {
             "name": "Notifications",
-            "result": "Email and Telegram in English and Russian, with billing and security templates.",
-            "tech": "Resend · grammY · RabbitMQ"
+            "result": "Multilingual email and Telegram messages, with billing and security templates."
           },
           {
             "name": "Payments",
-            "result": "One-time purchases and subscriptions through Lava, with receipts, refunds, reconciliation and protection from paying twice.",
-            "tech": "Lava · webhooks · reconciliation"
+            "result": "One-time purchases and subscriptions through Lava, with receipts, refunds, reconciliation and protection from paying twice."
           }
         ]
       },
@@ -137,18 +107,15 @@
         "items": [
           {
             "name": "Operator console",
-            "result": "Users, roles, payments, notifications and game moderation, with an audit log of operator actions.",
-            "tech": "admin.outegro.dev · Next.js · MobX"
+            "result": "Users, roles, payments, notifications and game moderation, with an audit log of operator actions."
           },
           {
             "name": "Monitoring",
-            "result": "Metrics and logs from every service, with Telegram alerts for failing pods, expiring certificates, stale backups and stuck queues.",
-            "tech": "Prometheus · Loki · Telegram"
+            "result": "Metrics and logs from every service, with Telegram alerts for failing pods, expiring certificates, stale backups and stuck queues."
           },
           {
             "name": "Delivery",
-            "result": "Every change is linted, type-checked, tested and built; Argo CD rolls it out from Git, and a rollback is a revert.",
-            "tech": "GitHub Actions · GHCR · Argo CD"
+            "result": "Every change is linted, type-checked, tested and built; Argo CD rolls it out from Git, and a rollback is a revert."
           }
         ]
       },
@@ -157,18 +124,15 @@
         "items": [
           {
             "name": "Data",
-            "result": "PostgreSQL with a database per service, continuous WAL archiving and daily backups to Cloudflare R2. Restore is tested: all four databases rebuilt from backup in 81 seconds.",
-            "tech": "CloudNativePG · Drizzle · R2"
+            "result": "PostgreSQL with a database per service, continuous WAL archiving and daily backups to Cloudflare R2. Restore is tested: all four databases rebuilt from backup in 81 seconds."
           },
           {
             "name": "Messaging",
-            "result": "Events between services go through an outbox and an inbox: none are lost, none are applied twice.",
-            "tech": "RabbitMQ · outbox · inbox"
+            "result": "Events between services go through an outbox and an inbox: none are lost, none are applied twice."
           },
           {
             "name": "Cluster",
-            "result": "One K3s node behind Cloudflare, with TLS certificates renewed automatically and secrets sealed in Git.",
-            "tech": "K3s · Traefik · cert-manager"
+            "result": "One K3s node behind Cloudflare, with TLS certificates renewed automatically and secrets sealed in Git."
           }
         ]
       }
@@ -192,56 +156,54 @@
     "replay": "Break the block again"
   },
   "services": {
-    "index": "03",
-    "label": "Services",
+    "index": "04",
     "title": "What I can build",
     "titleAccent": "for you.",
     "intro": "6+ years in the JavaScript ecosystem. You bring an idea or an existing product; I take it through design, code, payments and infrastructure to launch, and stay for support. One engineer for the whole chain: no handoffs, one person answerable for the result.",
-    "art": "Liquid silver knot",
     "items": [
       {
         "title": "Web products and SaaS",
         "body": "Customer-facing apps with accounts, subscriptions, notifications and an admin panel behind them.",
-        "stack": ["Next.js", "React", "NestJS", "PostgreSQL"],
+        "stack": ["Next.js", "NestJS", "PostgreSQL"],
         "proof": "Live: battleship.outegro.dev",
         "href": "https://battleship.outegro.dev"
       },
       {
         "title": "Payments and subscriptions",
         "body": "Checkout, one-time purchases and subscriptions, receipts and refunds — reconciled with the provider, so money and access never drift apart.",
-        "stack": ["Lava", "Webhooks", "Outbox", "RabbitMQ"],
+        "stack": ["Lava", "Webhooks"],
         "proof": "Live: the Battleship shop",
         "href": "https://battleship.outegro.dev/shop"
       },
       {
         "title": "Accounts and sign-in",
         "body": "Single sign-on across your apps with email codes and Google, plus active sessions and a security page for your users.",
-        "stack": ["SSO", "OAuth 2.0 · PKCE", "JWT", "Valkey"],
+        "stack": ["SSO", "OAuth 2.0"],
         "proof": "Live: id.outegro.dev",
         "href": "https://id.outegro.dev"
       },
       {
         "title": "Real-time and interactive",
         "body": "WebSocket apps and games, fast and accessible interfaces, and 3D in the browser where it serves the product.",
-        "stack": ["WebSocket", "MobX", "Three.js", "React Three Fiber"],
+        "stack": ["WebSocket", "Three.js"],
         "proof": "Live: Battleship and this site"
       },
       {
         "title": "Internal tools and integrations",
         "body": "Admin consoles with roles and an audit log, Telegram and email notifications, integrations with payment and email providers.",
-        "stack": ["Next.js", "Telegram", "Resend", "RabbitMQ"],
+        "stack": ["Next.js", "Telegram"],
         "proof": "Live: the outegro.dev operator console"
       },
       {
         "title": "Infrastructure and DevOps",
         "body": "Kubernetes, CI/CD with GitOps, monitoring, alerts and backups with a tested restore — set up so a release is a merge and a rollback is a revert.",
-        "stack": ["K3s", "Argo CD", "GitHub Actions", "Prometheus", "Loki"],
+        "stack": ["Kubernetes", "Argo CD", "Prometheus"],
         "proof": "Live: every outegro.dev app"
       }
     ]
   },
   "process": {
-    "index": "04",
+    "index": "05",
     "label": "Process",
     "title": "Clear steps,",
     "titleAccent": "visible progress.",
@@ -277,8 +239,7 @@
     "ai": "AI coding agents take the routine; contracts, tests and my review decide what ships."
   },
   "engagement": {
-    "index": "05",
-    "label": "Working together",
+    "index": "06",
     "title": "Yours to keep,",
     "titleAccent": "from day one.",
     "deliverablesTitle": "What you get",
@@ -325,8 +286,43 @@
     ],
     "cta": "Discuss your project"
   },
+  "faq": {
+    "index": "07",
+    "label": "Letters to the editor",
+    "title": "Your questions,",
+    "titleAccent": "straight answers.",
+    "intro": "What people usually ask before we start.",
+    "answer": "The editor replies",
+    "items": [
+      {
+        "q": "Who owns the code and the accounts?",
+        "a": "You do, from day one. The repository, the domain, hosting, payment and email services are set up in your name or your company’s, and I work in them as an invited member. All the code and its full history stay in your repository."
+      },
+      {
+        "q": "What if the developer disappears?",
+        "a": "The project does not hang on one person. Documentation on the architecture, setup and operations, tests and automated builds are part of the work, not an extra. You hold every access from the start, so your team or another engineer can pick it up. And when we wrap up, I hand the project over and walk your team through it."
+      },
+      {
+        "q": "Will you sign an NDA?",
+        "a": "Yes. If the task cannot be described without a non-disclosure agreement, send me yours and we sign it before getting into the details."
+      },
+      {
+        "q": "How much does it cost, and can I pay in parts?",
+        "a": "It depends on the scope and the format: a project is priced by estimate, long-term work by the month, an audit at a fixed price. Bigger work is split into stages and paid stage by stage, and every stage ends with something you can open and check. We settle the exact amount and the payment schedule after a short call about the task."
+      },
+      {
+        "q": "Who makes changes and supports the product after launch?",
+        "a": "We can keep going as long-term work: fixes, improvements, new features and an eye on metrics and alerts. Or your own team takes over — by then it has everything it needs: the code, documentation, tests and access."
+      },
+      {
+        "q": "How fast do you reply?",
+        "a": "Usually within a day. If you would rather talk, book a call: 30 minutes at a time that suits you."
+      }
+    ],
+    "more": "Didn’t find your question? Ask it on a call."
+  },
   "contact": {
-    "index": "06",
+    "index": "08",
     "label": "Contact",
     "title": "Good things start",
     "titleAccent": "with a conversation.",
@@ -334,17 +330,19 @@
     "button": "Contact",
     "dialogTitle": "Let’s talk.",
     "dialogDescription": "Pick whatever is easiest. I usually reply within a day.",
+    "calendly": "Calendly · 30 minutes",
     "email": "Email",
     "telegram": "Telegram",
     "linkedin": "LinkedIn",
     "github": "GitHub",
     "close": "Close contact details",
-    "location": "Based in Tbilisi. Working in English & Russian."
+    "reply": "I usually reply within a day."
   },
   "footer": {
     "role": "Senior full-stack engineer",
     "back": "Back to top",
     "privacy": "Privacy",
+    "analytics": "Statistics settings",
     "stack": "Stack",
     "platform": "Platform",
     "site": "This site",
@@ -357,75 +355,161 @@
   "stackPage": {
     "meta": {
       "title": "Stack — Nick Lukashik",
-      "description": "The technologies behind outegro.dev and how each one is used in production: frontend, backend, data, messaging, infrastructure and delivery, observability, testing and AI-assisted development."
+      "description": "The technologies behind outegro.dev, served as a restaurant menu, and how each one is used in production: frontend, backend, data, messaging, infrastructure and delivery, observability, testing and AI-assisted development."
     },
-    "eyebrow": "Stack",
-    "title": "The stack",
-    "titleAccent": "behind the platform.",
-    "intro": "Everything here runs in production at outegro.dev today — grouped by job, with what each piece does in the platform and where you can see it live.",
-    "groupsLabel": "Groups",
-    "art": "Flowing liquid silver bands",
-    "live": "See it live",
-    "groups": {
+    "houseKicker": "Restaurant",
+    "house": "“Pier No. 1”",
+    "title": "Menu",
+    "titleAccent": "the whole outegro.dev stack",
+    "chef": "Head chef: Nick Lukashik",
+    "hours": "Kitchen open 24/7",
+    "stamp": "Served in production",
+    "intro": "Everything on this menu is served in production at outegro.dev today. Each dish comes with its kitchen name, the honest ingredients (what it really does in the platform) and, where there is one, a link to taste it live.",
+    "sectionsLabel": "Menu sections",
+    "priceLabel": "Price",
+    "fact": "In production",
+    "live": "Taste it live",
+    "qc": "QC passed",
+    "fine": "All prices include tax: nerves, deadlines and sleep.",
+    "sections": {
       "frontend": {
-        "title": "Frontend",
-        "lead": "Five web apps on one design system: this site, sign-in, payments, the game and the operator console."
+        "title": "Starters",
+        "kind": "frontend",
+        "lead": "Six web apps on one design system: this site, sign-in, payments, the game, Education and the operator console.",
+        "note": "Served first, while the kitchen is still sizzling"
       },
       "backend": {
-        "title": "Backend",
-        "lead": "Four services — identity, notifications, payments and the game server — and the providers they talk to."
+        "title": "Mains",
+        "kind": "backend",
+        "lead": "Five services (identity, notifications, payments, the game server and Education) and the providers they talk to.",
+        "note": "Cooked on the server, served hot"
       },
       "data": {
-        "title": "Data",
-        "lead": "Every service owns its data; nothing reads another service’s database."
+        "title": "The cellar",
+        "kind": "data",
+        "lead": "Every service owns its data; nothing reads another service’s database.",
+        "note": "Kept cool, backed up daily"
       },
       "messaging": {
-        "title": "Messaging",
-        "lead": "Services react to each other through events, not direct calls."
+        "title": "The post room",
+        "kind": "messaging",
+        "lead": "Services react to each other through events, not direct calls.",
+        "note": "The postman rings twice; the order is applied once"
       },
       "delivery": {
-        "title": "Infrastructure and delivery",
-        "lead": "From a merge to production without manual steps, on one server."
+        "title": "The kitchen",
+        "kind": "infrastructure and delivery",
+        "lead": "From a merge to production without manual steps, on one server.",
+        "note": "One stove, zero manual steps"
       },
       "observability": {
-        "title": "Observability",
-        "lead": "Metrics, logs and alerts, so problems are seen before users report them."
+        "title": "Health inspection",
+        "kind": "observability",
+        "lead": "Metrics, logs and alerts, so problems are seen before users report them.",
+        "note": "Inspected every five minutes, not once a year"
       },
       "quality": {
-        "title": "Quality and testing",
-        "lead": "Checks that run on every change, against real databases and real browsers."
+        "title": "Quality control",
+        "kind": "quality and testing",
+        "lead": "Checks that run on every change, against real databases and real browsers.",
+        "note": "Every dish is tasted before it leaves the kitchen"
       },
       "ai": {
-        "title": "AI-assisted development",
-        "lead": "Agents speed up the work; the gates stay the same."
+        "title": "Robot chefs",
+        "kind": "AI-assisted development",
+        "lead": "Agents speed up the work; the gates stay the same.",
+        "note": "They chop fast, never tire and never ask for a day off"
       }
+    },
+    "prices": {
+      "oss": "$0 · open source",
+      "nerves": "paid in nerves",
+      "priceless": "priceless",
+      "house": "on the house",
+      "tokens": "paid in tokens",
+      "cut": "a cut of the bill",
+      "market": "market price",
+      "sleep": "one sleepless night",
+      "coffee": "two cups of coffee"
     },
     "names": {
       "bff": "Backend for frontend",
       "google": "Google sign-in",
+      "assist": "AI helper in the books",
       "outbox": "Outbox and inbox",
       "watchdog": "Watchdog → Telegram",
       "gate": "Contracts and tests as the gate"
     },
+    "jokes": {
+      "next": "House special: cooked on the server, served with a fresh nonce.",
+      "react": "A classic. The compiler decides what to memoize, so the cook can rest.",
+      "typescript": "Strict diet: no any.",
+      "ui": "Utility-class canapés with accessibility in the filling.",
+      "intl": "A multilingual menu: your language is remembered at every table.",
+      "mobx": "Reactive sauce: change an ingredient and the plate updates itself.",
+      "three": "A paper diorama at twelve frames a second, like an old cartoon.",
+      "sqljs": "SQL prepared right at your table.",
+      "node": "The stock every other dish is made from.",
+      "nest": "Served in five pots, one per service.",
+      "zod": "The bouncer at the door of every request.",
+      "jwt": "A wristband at the door: short shelf life, forgeries spotted at once.",
+      "ws": "Served live: fire a shot and it lands on the table.",
+      "bff": "The waiter: walks to the kitchen himself and never hands the guest a token.",
+      "lava": "Bill, please. The webhook knocks twice; the charge happens once.",
+      "email": "A note from the chef, in the guest’s language.",
+      "telegram": "The bell on the counter, only in Telegram.",
+      "google": "Walk in with your Google card; same table as before.",
+      "passkeys": "Fingerprint entry, like a restaurant for spies.",
+      "assist": "A sous-chef who explains the recipe, just not a hundred times a night.",
+      "postgres": "Aged 30 days in storage; restores in 81 seconds.",
+      "drizzle": "A light drizzle of SQL over the types.",
+      "valkey": "The fridge by the stove: everything needed right now.",
+      "rabbitmq": "A rabbit courier: nobody home, he comes back later; hopeless cases go to dead-letter.",
+      "outbox": "A letter goes out only once the till has rung.",
+      "k3s": "One stove, every burner on.",
+      "cloudflare": "The doorman out front; nobody gets in through the back.",
+      "traefik": "The maître d’: seats the guests and renews the certificates himself.",
+      "argo": "The kitchen cooks strictly from the recipe book in Git. Not tasty? git revert.",
+      "actions": "A dishwasher that tastes every dish on the way.",
+      "docker": "One oven, one baking schedule for the whole menu.",
+      "sealed": "The secret sauce stays in a safe, even in Git.",
+      "monorepo": "One pantry, shelves in dependency order.",
+      "prometheus": "A thermometer in every pot.",
+      "grafana": "The big board in the kitchen: shows what is burning.",
+      "loki": "A week of the kitchen log, tokens blotted out with correction fluid.",
+      "pino": "The order number on every ticket.",
+      "watchdog": "The watchdog: patrols the kitchen every five minutes and barks into Telegram.",
+      "vitest": "Every ingredient tasted on its own.",
+      "testcontainers": "Tasted on real ingredients, no plastic food.",
+      "playwright": "A mystery diner in three browsers at once.",
+      "axe": "Makes sure any guest can sit at any table.",
+      "biome": "One plating standard: every plate looks the same.",
+      "agents": "Robot cooks, each at their own station.",
+      "context7": "A fresh cookbook instead of memories.",
+      "gate": "The head chef tastes every plate before it goes out."
+    },
     "items": {
       "next": "Every web app of the platform. Server rendering, standalone builds and a strict content security policy with a nonce per request.",
-      "react": "Components in all five apps, compiled by the React Compiler everywhere except the game, whose MobX observers opt out.",
+      "react": "Components in all six apps, compiled by the React Compiler everywhere except the game, whose MobX observers opt out.",
       "typescript": "One language across the monorepo — apps, services and the contracts between them.",
       "ui": "The shared @outegro/ui kit: tokens, components and self-hosted fonts for every app; Radix takes care of keyboard and focus.",
-      "intl": "English and Russian in every app; the choice lives in a cookie shared by all outegro.dev subdomains.",
-      "mobx": "State of the game, the payment pages and the operator console, in small stores with one job each.",
-      "three": "The liquid-silver scenes on this site, rendered only while visible, with pre-rendered posters for reduced motion and slow GPUs.",
+      "intl": "Every app is multilingual; the chosen language lives in a cookie shared by all outegro.dev subdomains.",
+      "mobx": "State of the game, the payment pages, the books and the operator console, in small stores with one job each.",
+      "three": "The paper diorama and the paper boat on this site: frames render only on demand, and without a real GPU or with reduced motion the plain layout stays.",
+      "sqljs": "SQL exercises in the books run right in the browser, inside a Web Worker; the server checks the answer.",
       "node": "The runtime of every service and web app, shipped in slim container images.",
-      "nest": "The four services: identity, notifications, payments and the game server.",
+      "nest": "The five services: identity, notifications, payments, the game server and Education.",
       "zod": "The same schemas validate requests and define the contracts shared by apps and services.",
       "jwt": "Short-lived access tokens signed by identity and verified by every service against the keys identity publishes.",
       "ws": "The live game: turns, shots and reconnects, opened with a one-time ticket.",
       "bff": "Web apps call the services from the server; the browser holds only HttpOnly cookies, never tokens.",
       "lava": "Checkout, subscriptions and refunds; webhooks are verified, stored and applied once, even when they arrive again.",
-      "email": "Sign-in codes, receipts and security notices by email, in English and Russian.",
+      "email": "Sign-in codes, receipts and security notices by email, in the user’s language.",
       "telegram": "The Telegram bot for notifications and linking a Telegram account.",
       "google": "Sign-in with Google next to email codes, linked to the same account.",
-      "postgres": "A database and a role per service, continuous WAL archiving and a daily backup to Cloudflare R2, kept for 30 days. Restore is tested: all four databases were rebuilt from the backups in 81 seconds, with the same row counts and constraints.",
+      "passkeys": "Sign-in with a passkey (fingerprint, face or device PIN) into the same account, no password needed.",
+      "assist": "Explains chapters and gives hints on exercises; the model plugs in through its own adapter, with limits per reader and per day.",
+      "postgres": "A database and a role per service, continuous WAL archiving and a daily backup to Cloudflare R2, kept for 30 days. Restore is drilled: four databases were rebuilt from the backups in 81 seconds, with the same row counts and constraints.",
       "drizzle": "Typed schemas and SQL migrations; migrations run before every rollout.",
       "valkey": "Refresh-token rotation, rate limits, the matchmaking queue, game rooms and socket tickets.",
       "rabbitmq": "A payment grants Premium in the game and sends a receipt; failed deliveries retry through delay queues, and those that keep failing wait in dead-letter queues.",
@@ -439,6 +523,7 @@
       "sealed": "Secrets are kept in Git encrypted; plain values never leave the cluster.",
       "monorepo": "One repository: apps, services and shared packages build in dependency order, with caching.",
       "prometheus": "Metrics from the node, Kubernetes, Traefik, PostgreSQL, RabbitMQ and every service, with alert rules for disks, errors, queues, backups and payments.",
+      "grafana": "Metric and log dashboards behind the operator console’s sign-in: Traefik asks the console before letting each request through.",
       "loki": "Logs of every pod for a week, searchable by request and correlation id; tokens are masked before they are stored.",
       "pino": "Structured JSON logs; one correlation id follows a request through every service it touches.",
       "watchdog": "Every five minutes: pods, the node, certificates, backups, Argo CD and HTTP checks, with alerts and a daily digest in Telegram.",
@@ -451,114 +536,74 @@
       "context7": "Current library documentation for the agents, instead of stale memory.",
       "gate": "Agents are fast; typed contracts, tests, lint and review decide what ships."
     },
+    "trumps": {
+      "index": "14",
+      "label": "Pull-out",
+      "title": "The stack in trading cards,",
+      "titleAccent": "schoolyard rules.",
+      "jump": "Skip to the trading cards",
+      "rules": "Call a stat, and the highest number takes the card. Except upgrade pain and 3 a.m. wake-ups, where the lowest wins.",
+      "hint": "Tap a card: the back says what it really does.",
+      "flip": "Flip",
+      "number": "No. {n}",
+      "weak": "Weak spot",
+      "note": "The stats are made up, with love. Scale: 0 to 100.",
+      "stats": {
+        "reliability": "Reliability",
+        "speed": "Speed",
+        "upgradePain": "Upgrade pain",
+        "logs": "Log appearances",
+        "nightCalls": "3 a.m. wake-ups"
+      },
+      "cards": {
+        "next": {
+          "role": "Web framework",
+          "does": "All six web apps of the platform: server rendering and a CSP nonce on every request.",
+          "weak": "Every major release feels like a new framework: you read the docs all over again."
+        },
+        "typescript": {
+          "role": "Language",
+          "does": "One language for the apps, the services and the contracts between them.",
+          "weak": "Argues with you before anything has even run."
+        },
+        "postgres": {
+          "role": "Database",
+          "does": "A database per service, daily backups and a drilled restore in 81 seconds.",
+          "weak": "Sulks if you forget an index."
+        },
+        "valkey": {
+          "role": "In-memory store",
+          "does": "Rate limits, matchmaking, game rooms and refresh-token rotation.",
+          "weak": "Short memory: keys come with an expiry date."
+        },
+        "rabbitmq": {
+          "role": "Message broker",
+          "does": "A payment grants Premium and sends a receipt; failures retry through delay queues.",
+          "weak": "When nobody listens, the letters pile up in dead-letter."
+        },
+        "k3s": {
+          "role": "Orchestrator",
+          "does": "Single-node Kubernetes running every app, service and database.",
+          "weak": "There is one node, and it knows it."
+        },
+        "playwright": {
+          "role": "End-to-end testing",
+          "does": "Tests every web app in real browsers; this site runs in Chromium, Firefox and WebKit.",
+          "weak": "There is always one test that takes its time in WebKit."
+        },
+        "agents": {
+          "role": "Coding agents",
+          "does": "Work in parallel, each in its own git worktree; nothing ships without review.",
+          "weak": "Very sure of themselves, which is why review never went away."
+        }
+      }
+    },
     "cta": {
-      "title": "Need this for your product?",
-      "body": "The same stack, set up and run for your product — turnkey.",
-      "button": "Get in touch",
+      "kicker": "Compliments of the chef",
+      "title": "Need a kitchen like this for your product?",
+      "body": "The same stack, set up and run for your product, turnkey. The first 30-minute call is on the house.",
       "work": "See the work"
     }
-  },
-  "gallery": {
-    "title": "The material library.",
-    "intro": "Shared foundations for the landing and every future outegro.dev interface.",
-    "buttons": "Actions",
-    "primary": "Primary action",
-    "secondary": "Secondary action",
-    "outline": "Outline",
-    "glassAction": "Glass",
-    "disabled": "Unavailable",
-    "badges": "Labels",
-    "input": "Email address",
-    "inputHelp": "Demonstration only. Nothing is submitted.",
-    "surfaces": "Surfaces",
-    "glass": "Glass",
-    "solid": "Solid",
-    "inverse": "Inverse",
-    "type": "Typography",
-    "states": "Semantic states",
-    "error": "Check this field",
-    "success": "Saved successfully",
-    "targets": "Touch targets",
-    "targetsNote": "Compact sizes keep their look; an invisible area takes each target to 44 px — outlined here.",
-    "small": "Small action",
-    "saving": "Saving…",
-    "settings": "Settings",
-    "tokens": "Status and elevation",
-    "tokensNote": "Soft fills and inks for states, and the shared card shadow, in both tones. Text and icons in a state's ink stay AA-readable on its fill.",
-    "lightTone": "Light tone",
-    "darkTone": "Dark tone",
-    "tokenOk": "Done",
-    "tokenWarn": "Needs attention",
-    "tokenDanger": "Failed",
-    "tokenInfo": "Good to know",
-    "shadowSoft": "A card raised with the soft shadow",
-    "tabs": "Tabs",
-    "tabsLabel": "Ways to see the event loop",
-    "tabAnalogy": "Analogy",
-    "tabCode": "Code",
-    "tabDiagram": "Diagram",
-    "tabInterview": "In an interview",
-    "tabDeep": "Under the hood",
-    "tabAnalogyBody": "A café with one barista: orders wait in a queue, and the next one starts only when the current one is done.",
-    "tabCodeBody": "setTimeout(fn, 0) runs after the call stack is empty and every microtask has finished.",
-    "tabDiagramBody": "Call stack → microtasks → one macrotask → render, and round again.",
-    "tabInterviewBody": "Name the queues and their order, then give one example — that is enough.",
-    "sectionsLabel": "Payments sections",
-    "tabOrders": "Orders",
-    "tabGrants": "Access grants",
-    "tabEvents": "Provider events",
-    "tabOrdersBody": "Every order with its amount, status and buyer.",
-    "tabGrantsBody": "Who has access to what, and until when.",
-    "tabEventsBody": "Webhooks from the payment provider, with their retries.",
-    "manualHint": "Manual activation: arrow keys move the focus, Enter or Space opens the tab.",
-    "toggles": "Toggle groups",
-    "deckModes": "Cards to review",
-    "modeAll": "All",
-    "modeNew": "New",
-    "modeAgain": "Again later",
-    "topics": "Topics",
-    "topicAsync": "Async",
-    "topicMemory": "Memory",
-    "topicNetwork": "Network",
-    "topicArchive": "Archived",
-    "speed": "Simulation speed",
-    "view": "Layout",
-    "viewList": "List",
-    "viewGrid": "Grid",
-    "viewCompact": "Compact",
-    "progress": "Progress",
-    "exercises": "Exercises solved",
-    "exercisesValue": "{solved} of {total}",
-    "cards": "Cards known",
-    "clamped": "Upload: a value of 130 out of 100 is clamped",
-    "chapterRead": "Chapter read",
-    "percent": "{value}%",
-    "copy": "Copy",
-    "copyLabel": "Copy",
-    "copied": "Copied",
-    "copyFailed": "Couldn't copy",
-    "copyLink": "Copy link",
-    "copyRefused": "When the clipboard refuses (an insecure page, a denied permission), the button says so:",
-    "notices": "Notices",
-    "noticeNeutral": "Drafts stay in this browser until you sign in.",
-    "noticeInfoTitle": "New chapter",
-    "noticeInfo": "Chapter 7 adds exercises on the event loop.",
-    "noticeSuccess": "Progress saved to your account.",
-    "noticeWarningTitle": "You are offline",
-    "noticeWarning": "Answers stay on this device and are sent when the connection is back.",
-    "noticeDangerTitle": "The payment did not go through",
-    "noticeDanger": "The bank declined the card. Nothing was charged.",
-    "retry": "Try again",
-    "details": "Details",
-    "statePanels": "Section states",
-    "emptyTitle": "No cards yet",
-    "emptyBody": "Cards you save while reading appear here.",
-    "emptyAction": "Open the library",
-    "offlineTitle": "No connection",
-    "offlineBody": "Check the network: the page reloads by itself when it is back.",
-    "errorTitle": "The library is unavailable",
-    "errorBody": "The service did not answer in time. Your progress is safe.",
-    "back": "Back to portfolio"
   },
   "privacy": {
     "meta": {
@@ -569,7 +614,7 @@
     "eyebrow": "Privacy",
     "title": "Your data,",
     "titleAccent": "kept to the minimum.",
-    "updated": "Last updated: 29 September 2026",
+    "updated": "Last updated: 11 October 2026",
     "intro": "outegro.dev and its apps — the account at id.outegro.dev, payments and future products — are run by Nick Lukashik, an independent engineer. This page explains what data they handle, why, and how you stay in control.",
     "sections": [
       {
@@ -579,15 +624,22 @@
           "Sign-in and security: one-time codes, stored only as a hash and valid for ten minutes. For each session: browser and operating system, IP address, sign-in time and last activity — to protect the account and to show you where you are signed in.",
           "Notifications: messages in your account inbox, their delivery status and the channels you chose.",
           "Payments, once available: orders and subscription status. Card details are entered on the payment provider’s page and never reach this platform.",
-          "This website: no analytics, advertising or tracking. Server logs with IP addresses are kept for a short time for security and troubleshooting."
+          "This website: reader statistics through Google Analytics, only if you say yes. They show how many people visit, where they come from and which pages they open; your name and email never reach them. No advertising or ad tracking. Server logs with IP addresses are kept for a short time for security and troubleshooting."
         ]
       },
       {
         "title": "Cookies",
         "items": [
           "og_locale — your language for all outegro.dev sites, kept for one year.",
-          "og_at and og_rt — your session in an app such as id.outegro.dev. They are HttpOnly, so scripts cannot read them, and live for five minutes and thirty days respectively.",
-          "Cloudflare, which delivers the sites, may set its own security cookies such as __cf_bm to tell people from bots. All of these are needed for the sites to work, so there is no consent banner."
+          "og_at and og_rt — your session in a platform app such as id.outegro.dev, and on outegro.dev itself once you sign in from its header (or automatically, see og_hint). They are HttpOnly, so scripts cannot read them, and live for five minutes and thirty days respectively.",
+          "og_hint — a note that this browser is signed in at id.outegro.dev. It is set for the whole .outegro.dev domain, so the other platform sites can let you in without signing in again. It holds no personal data, just “1”; it lives as long as your session at id.outegro.dev and is removed when you sign out.",
+          "og_silent — each site’s own note about automatic sign-in: “tried” for five minutes after an attempt (a day if the attempt failed for a reason that would repeat); “silent” while a session opened automatically lives, and that session ends together with your session at id.outegro.dev; “out” for a year after you sign out yourself or a session is revoked, so the site never lets you back in without you.",
+          "og_sso — a sign-in in progress: a one-time check and the page to return to. It lives for ten minutes and is deleted as soon as sign-in is complete.",
+          "og_gate — a note that the opening animation has already played; it is gone when you close the browser.",
+          "og_consent — your answer about statistics: granted or denied. Kept for one year, on outegro.dev only.",
+          "_ga and _ga_<number> — Google Analytics cookies: a random browser number that ties visits to one reader. They are set only after you say yes, last up to two years from your last visit and are deleted if you change your mind.",
+          "Cloudflare, which delivers the sites, may set its own security cookies such as __cf_bm to tell people from bots.",
+          "All of these except _ga are needed for the sites to work and need no consent. The site asks about statistics separately, in a note at the bottom of the page."
         ]
       },
       {
@@ -596,7 +648,8 @@
           "The hosting provider of the server the platform runs on.",
           "Cloudflare — every request passes through its network, which protects the sites from attacks and delivers them; it also runs the domain name system and stores encrypted backups.",
           "Resend — email delivery.",
-          "Google — only if you choose to sign in with Google. It shares your email address, name and whether the email is verified.",
+          "Google — sign-in with Google, only if you choose it. It shares your email address, name and whether the email is verified.",
+          "Google — reader statistics for outegro.dev through Google Tag Manager and Google Analytics. The Tag Manager loader comes from Google’s servers on every page but sets no cookies itself; Google Analytics starts only after you say yes. Google Analytics does not store IP addresses, and Google may process the data in the United States and other countries.",
           "Telegram — only if you link it for notifications.",
           "Lava — payment processing, once payments are available."
         ]
@@ -606,6 +659,8 @@
         "items": [
           "Account data stays until you ask to delete the account.",
           "Sign-in codes expire after ten minutes. Ended sessions and security records are kept for a limited time to investigate misuse.",
+          "Google Analytics data tied to a browser number: 14 months, after which only aggregate figures remain.",
+          "Your answer about statistics: one year; when it expires, the site asks again.",
           "Backups are encrypted and replaced on a rolling basis."
         ]
       },
@@ -613,6 +668,7 @@
         "title": "Your choices",
         "items": [
           "Change your name and language, end sessions and choose notification channels in your account at id.outegro.dev.",
+          "Change your mind about statistics at any time in the statistics settings below. Once you say no, Google Analytics no longer starts and its cookies are deleted. You can also block cookies in your browser or use a content blocker: the site works fine without statistics.",
           "To get a copy of your data or to delete your account, write to the address below. Requests are answered within 30 days."
         ]
       },
@@ -623,10 +679,46 @@
         ]
       }
     ],
+    "analytics": {
+      "title": "Statistics settings",
+      "off": "Statistics are switched off for everyone right now, so there is nothing to choose."
+    },
     "contact": "Questions and requests"
   },
+  "consent": {
+    "kicker": "From the editors",
+    "title": "We count our readers. Mind if we count you?",
+    "body": "Google Analytics shows how many people read the issue and which pages they open. No ads. You can change your mind in the <settings>statistics settings</settings>.",
+    "accept": "Count me in",
+    "decline": "No thanks",
+    "saved": {
+      "granted": "Thanks! Statistics are on.",
+      "denied": "Got it, no statistics."
+    },
+    "settings": {
+      "granted": "Count me in",
+      "denied": "No thanks",
+      "state": {
+        "granted": "Statistics are on: Google Analytics counts your visits, without your name or email.",
+        "denied": "Statistics are off: Google Analytics does not run and sets no cookies.",
+        "unset": "You have not answered yet, so statistics are off."
+      }
+    }
+  },
+  "auth": {
+    "errorTitle": "Sign-in didn't finish",
+    "reasons": {
+      "state_mismatch": "The sign-in link expired or was opened in another browser.",
+      "missing_code": "The sign-in page did not send a code back.",
+      "invalid_grant": "The sign-in could not be confirmed. It may have been used already.",
+      "unavailable": "The account service is temporarily unavailable.",
+      "unknown": "Something went wrong while signing in."
+    },
+    "retry": "Try again",
+    "home": "Back to the main page"
+  },
   "zine": {
-    "issue": "Issue #1 · October 2026 · Tbilisi",
+    "issue": "Issue #1 · October 2026 · outegro.dev",
     "price": "Price: let’s talk",
     "mast": "Nick Lukashik",
     "tagline": "the magazine about products built start to finish",
@@ -669,7 +761,7 @@
       "Every database comes back from backup in 81 seconds",
       "A watchdog checks the cluster every 5 minutes and reports to Telegram",
       "The books “Node.js inside out” and “SQL inside out” live on edu.outegro.dev",
-      "English and Russian in every app",
+      "Every app is multilingual",
       "Tests against real PostgreSQL, Valkey and RabbitMQ on every change"
     ],
     "tocTitle": "In this issue",
@@ -700,17 +792,21 @@
         "page": "06"
       },
       {
+        "title": "Letters to the editor: questions and answers",
+        "href": "#faq",
+        "page": "07"
+      },
+      {
         "title": "Coupon: a free call",
         "href": "#contact",
-        "page": "07"
+        "page": "08"
       }
     ],
     "stampLive": "Live",
-    "stampChecked": "Quality checked",
     "stampPaid": "Accepted",
     "adsTitle": "Classifieds",
-    "adsNote": "Tear off a tab — it opens Telegram",
-    "adTear": "tear off",
+    "adsNote": "Click an ad to message me on Telegram. The tabs tear off.",
+    "adWrite": "Message me on Telegram: {title}",
     "tagsTitle": "Price tags",
     "tagsNote": "The price depends on the scope: you get a number after a short call about the task.",
     "tagWas": "$999.99",

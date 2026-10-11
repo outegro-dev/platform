@@ -1,9 +1,13 @@
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
+import { CONSENT_COOKIE, parseConsent } from "@/components/consent/consent";
+import { ConsentSettings } from "@/components/consent/consent-settings";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SiteFooter } from "@/components/site-footer";
 import { contacts } from "@/lib/contact";
+import { env } from "@/lib/env";
 import { openGraph } from "@/lib/metadata";
 
 type Section = { title: string; items: string[] };
@@ -23,11 +27,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-/** Plain-language privacy notice; Google sign-in and payments link here. */
+/**
+ * Plain-language privacy notice; Google sign-in and payments link here, and
+ * the consent note links to its #analytics settings.
+ */
 export default async function Privacy() {
   const t = await getTranslations("privacy");
   const sections = t.raw("sections") as Section[];
   const email = contacts.find((contact) => contact.key === "email");
+  const consent = parseConsent((await cookies()).get(CONSENT_COOKIE)?.value);
   return (
     <>
       <main id="main" className="legal og-container">
@@ -56,6 +64,19 @@ export default async function Privacy() {
             </ul>
           </section>
         ))}
+        <section
+          className="legal-section"
+          id="analytics"
+          aria-labelledby="analytics-title"
+        >
+          <h2 id="analytics-title">{t("analytics.title")}</h2>
+          {/* nothing to choose until the owner turns statistics on */}
+          {env.GTM_ID ? (
+            <ConsentSettings initial={consent} />
+          ) : (
+            <p className="consent-settings-state">{t("analytics.off")}</p>
+          )}
+        </section>
         {email && (
           <section className="legal-section">
             <h2>{t("contact")}</h2>

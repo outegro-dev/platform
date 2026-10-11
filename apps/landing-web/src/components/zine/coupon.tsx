@@ -7,7 +7,8 @@ import scissors from "@/assets/zine/scissors.webp";
 /**
  * "Cut out the coupon": the scissors run along the dashed line, the coupon
  * comes loose and tilts, and the contacts under it are right there. The
- * contacts are always in the markup; cutting is only the show.
+ * coupon's real action (booking the call) and the contacts are always in
+ * the markup; cutting is only the show.
  */
 export function Coupon({
   title,
@@ -15,6 +16,7 @@ export function Coupon({
   fine,
   cut,
   done,
+  action,
   children,
 }: {
   title: string;
@@ -22,6 +24,8 @@ export function Coupon({
   fine: string;
   cut: string;
   done: string;
+  /** The main action, rendered on the server and passed through. */
+  action: ReactNode;
   children: ReactNode;
 }) {
   const [state, setState] = useState<"whole" | "cutting" | "cut">("whole");
@@ -50,15 +54,18 @@ export function Coupon({
         <p className="coupon-title">{title}</p>
         <p className="coupon-offer">{offer}</p>
         <p className="coupon-fine">{fine}</p>
-        <button
-          type="button"
-          className="coupon-cut"
-          onClick={start}
-          disabled={state !== "whole"}
-        >
-          <ScissorsIcon aria-hidden="true" />
-          {cut}
-        </button>
+        <div className="coupon-actions">
+          {action}
+          <button
+            type="button"
+            className="coupon-cut"
+            onClick={start}
+            disabled={state !== "whole"}
+          >
+            <ScissorsIcon aria-hidden="true" />
+            {cut}
+          </button>
+        </div>
       </div>
       <p className="coupon-done" role="status">
         {state === "cut" ? done : ""}

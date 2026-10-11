@@ -29,7 +29,6 @@ const PIECES = [
   ".platform-layer > h3",
   ".ads-note",
   ".ad",
-  ".process-step",
   ".price-tags > li",
   ".tags-note",
   ".engagement-subtitle",

@@ -1,20 +1,13 @@
 /*
- * The playful layer of the landing: the bonk retry with Tung Tung Tung Sahur,
- * price tags and the paper bits. Its own tokens (sign lettering, ink blue,
- * price-tag red, pixel-art colours) are declared once here; the rules below
- * use only tokens.
+ * The playful layer of the landing: the bonk retry with Tung Tung Tung Sahur
+ * and its storyboard. Its own colour tokens (ink blue, price-tag red,
+ * pixel-art colours) are declared once here; the faces come from the kit's
+ * zine.css. The rules below use only tokens.
  */
 
 :root {
-  --font-sign: var(--og-sign-cyrillic), var(--og-sign-latin), var(--font-sans);
-  --font-marker:
-    var(--og-marker-cyrillic), var(--og-marker-latin), var(--font-sans);
-  --font-hand: var(--og-hand-cyrillic), var(--og-hand-latin), var(--font-sans);
   --ink-blue: #2b8fd0;
-  --ink-blue-deep: #1f6fa6;
-  --tag-paper: #fbfaf6;
   --tag-red: #e2453c;
-  --tag-ink: #1d1d1b;
   --pixel-dark: #160e08;
   --pixel-light: #fff8e1;
   --pixel-gold: #ffcf3f;

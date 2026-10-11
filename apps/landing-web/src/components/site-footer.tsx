@@ -45,6 +45,11 @@ export async function SiteFooter() {
               {t("privacy")}
             </a>
           </li>
+          <li>
+            <a href="/privacy#analytics" className="footer-link">
+              {t("analytics")}
+            </a>
+          </li>
         </ul>
       </nav>
       <p className="footer-imprint">{zine("imprint")}</p>

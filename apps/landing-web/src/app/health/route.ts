@@ -1,4 +1,7 @@
-// Liveness/startup probe for K3s. No dependencies: the landing has no backend.
+// Liveness/startup probe for K3s. The landing has no backend; reading its
+// configuration here fails the probe on a bad value, before any page does.
+import "@/lib/sso";
+
 export const dynamic = "force-dynamic";
 
 export function GET() {

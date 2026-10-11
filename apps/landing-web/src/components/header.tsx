@@ -1,5 +1,6 @@
 "use client";
 
+import { AccountMenu, AccountMenuPlaceholder } from "@outegro/ui/account-menu";
 import { Button } from "@outegro/ui/button";
 import {
   Dialog,
@@ -8,11 +9,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@outegro/ui/dialog";
-import { ListIcon } from "@phosphor-icons/react";
-import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
-import { ContactDialog } from "./contact-dialog";
-import { ContactLinks } from "./contact-links";
+import {
+  type AccountMenuUser,
+  productionPlatformUrls,
+} from "@outegro/ui/lib/platform";
+import { cn } from "@outegro/ui/lib/utils";
+import { ArrowUpRightIcon, ListIcon } from "@phosphor-icons/react";
+import { usePathname } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useId, useRef, useState } from "react";
+import { calendly } from "@/lib/contact";
 import { LocaleSwitcher } from "./locale-switcher";
 
 /** Sections of the main page, in page order. */
@@ -21,6 +27,7 @@ export const sections = [
   "platform",
   "services",
   "process",
+  "faq",
   "contact",
 ] as const;
 type Section = (typeof sections)[number];
@@ -32,17 +39,82 @@ const nav: ({ key: Section; section: Section } | { key: "stack" })[] = [
   { key: "services", section: "services" },
   { key: "process", section: "process" },
   { key: "stack" },
+  { key: "faq", section: "faq" },
   { key: "contact", section: "contact" },
 ];
 
 /**
- * Fixed header: transparent over the hero, glass once scrolled, tucked away
- * while reading down and back on the slightest scroll up. It switches tone
- * over dark sections so the glass never turns muddy. On the Stack page the
- * section links lead back to the main page.
+ * Who is signed in, as the site's own /api/account says once the page has
+ * loaded: the HTML is the same for every visitor, so it never carries an
+ * account. Undefined while asking; "off" while the site has no accounts
+ * (SSO off: the page says so up front, or the route answers 404), and then
+ * there is no account control at all; null for nobody, and also when the
+ * account service cannot answer (the site then simply offers to sign in).
  */
-export function Header({ page = "home" }: { page?: "home" | "stack" }) {
+type Visitor =
+  | { user: AccountMenuUser | null; home: string }
+  | "off"
+  | undefined;
+
+function useVisitor(accounts: boolean): Visitor {
+  const [visitor, setVisitor] = useState<Visitor>(accounts ? undefined : "off");
+  useEffect(() => {
+    if (!accounts) return;
+    const controller = new AbortController();
+    const settle = (user: AccountMenuUser | null) =>
+      setVisitor({ user, home: new URL("/", window.location.href).href });
+    fetch("/api/account", { cache: "no-store", signal: controller.signal })
+      .then((response) => {
+        if (response.status === 404) {
+          setVisitor("off");
+          return undefined;
+        }
+        return response.ok
+          ? (response.json() as Promise<unknown>).then((data) =>
+              settle(data && typeof data === "object" ? data : null),
+            )
+          : settle(null);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) settle(null);
+      });
+    return () => controller.abort();
+  }, [accounts]);
+  return visitor;
+}
+
+/** Where the strip is probed for a dark section under it: its middle. */
+const PROBE = 38;
+
+/**
+ * Fixed header: transparent over the cover, a strip of the masthead once
+ * scrolled, tucked away while reading down and back on the slightest scroll
+ * up. It takes the tone of the section under it: over a dark one the strip
+ * turns ink and its lettering paper, so the name and the language switch
+ * stay legible. On the right: the language, the platform account (the same
+ * menu as on every outegro.dev app; none while the site has no accounts)
+ * and the call to book, the page's main action. On the Stack page the
+ * section links lead back to the main page.
+ *
+ * The section strip is centred across the bar, and next to the account and
+ * the call it only fits from 2xl (1536px): below that it folds into the
+ * menu (the `!` utilities win over the layout rules in globals.css). Phones
+ * keep the bar to the avatar: signing in and booking are in the menu there.
+ */
+export function Header({
+  page = "home",
+  accounts = true,
+}: {
+  page?: "home" | "stack";
+  /** Whether the site has accounts (SSO on); without them, no account control. */
+  accounts?: boolean;
+}) {
   const t = useTranslations("nav");
+  const locale = useLocale();
+  const pathname = usePathname();
+  const visitor = useVisitor(accounts);
+  const known = visitor === "off" ? undefined : visitor;
+  const bookHint = useId();
   const home = page === "home";
   const [active, setActive] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -54,6 +126,9 @@ export function Header({ page = "home" }: { page?: "home" | "stack" }) {
   useEffect(() => {
     let last = window.scrollY;
     let frame = 0;
+    const darkSections = [
+      ...document.querySelectorAll<HTMLElement>("main [data-tone='dark']"),
+    ];
     const update = () => {
       frame = 0;
       const y = window.scrollY;
@@ -62,13 +137,10 @@ export function Header({ page = "home" }: { page?: "home" | "stack" }) {
         setHidden(y > last && y > 480);
         last = y;
       }
-      const probe = 38;
       setDark(
-        [
-          ...document.querySelectorAll<HTMLElement>("main [data-tone='dark']"),
-        ].some((el) => {
+        darkSections.some((el) => {
           const rect = el.getBoundingClientRect();
-          return rect.top <= probe && rect.bottom >= probe;
+          return rect.top <= PROBE && rect.bottom >= PROBE;
         }),
       );
     };
@@ -110,6 +182,21 @@ export function Header({ page = "home" }: { page?: "home" | "stack" }) {
     } as const;
   });
 
+  // Signing in is quiet next to the call: the page is there to book one.
+  const account = (className?: string) => (
+    <AccountMenu
+      user={known?.user ?? null}
+      current="site"
+      urls={productionPlatformUrls}
+      locale={locale}
+      signInHref={`/auth/sign-in?returnTo=${encodeURIComponent(pathname || "/")}`}
+      signOut="/auth/sign-out"
+      returnTo={known?.home}
+      compact
+      className={cn(!known?.user && "bg-secondary text-foreground", className)}
+    />
+  );
+
   return (
     <>
       <a className="skip-link" href="#main">
@@ -130,7 +217,10 @@ export function Header({ page = "home" }: { page?: "home" | "stack" }) {
           >
             Nick Lukashik
           </a>
-          <nav className="desktop-nav og-glass" aria-label={t("sections")}>
+          <nav
+            className="desktop-nav og-glass max-2xl:hidden!"
+            aria-label={t("sections")}
+          >
             {links.map((link) => (
               <a
                 key={link.key}
@@ -144,17 +234,41 @@ export function Header({ page = "home" }: { page?: "home" | "stack" }) {
           </nav>
           <div className="header-actions">
             <LocaleSwitcher className="header-locale" />
-            <div className="desktop-contact">
-              <ContactDialog variant="primary" compact>
-                <ContactLinks compact />
-              </ContactDialog>
-            </div>
+            {visitor === "off" ? null : visitor === undefined ? (
+              <AccountMenuPlaceholder
+                compact
+                className="header-account max-md:hidden"
+              />
+            ) : (
+              account(
+                visitor.user
+                  ? "header-account"
+                  : "header-account max-md:hidden",
+              )
+            )}
+            {/* The short label where the bar is narrow or shared with the
+                section strip; the accessible name is the visible one. */}
+            <Button asChild size="sm" className="header-book max-md:hidden">
+              <a
+                href={calendly}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-describedby={bookHint}
+              >
+                <span className="max-lg:hidden 2xl:hidden">{t("book")}</span>
+                <span className="lg:max-2xl:hidden">{t("bookShort")}</span>
+                <ArrowUpRightIcon aria-hidden="true" />
+              </a>
+            </Button>
+            <span id={bookHint} hidden>
+              {t("bookHint")}
+            </span>
             <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="glass"
                   size="icon"
-                  className="mobile-menu-toggle"
+                  className="mobile-menu-toggle max-2xl:inline-flex!"
                   aria-label={t("menu")}
                 >
                   <ListIcon />
@@ -203,6 +317,21 @@ export function Header({ page = "home" }: { page?: "home" | "stack" }) {
                     </a>
                   ))}
                 </nav>
+                <div className="mt-8 flex flex-wrap items-center gap-4 md:hidden">
+                  <Button asChild size="lg">
+                    <a
+                      href={calendly}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-describedby={bookHint}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {t("book")}
+                      <ArrowUpRightIcon aria-hidden="true" />
+                    </a>
+                  </Button>
+                  {known && !known.user ? account() : null}
+                </div>
                 <LocaleSwitcher className="mobile-menu-locale" />
               </DialogContent>
             </Dialog>

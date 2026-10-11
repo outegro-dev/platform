@@ -1,6 +1,9 @@
 import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
-import { ArrowDownIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowDownIcon,
+  ArrowUpRightIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import cover from "@/assets/zine/cover.webp";
@@ -25,11 +28,12 @@ import { Ransom } from "@/components/zine/ransom";
 import { Receipt } from "@/components/zine/receipt";
 import { Stamp } from "@/components/zine/stamp";
 import { TearOffs } from "@/components/zine/tear-offs";
-import { contacts } from "@/lib/contact";
+import { calendly, contacts } from "@/lib/contact";
+import { sso } from "@/lib/sso";
 
 type Layer = {
   name: string;
-  items: { name: string; result: string; tech: string }[];
+  items: { name: string; result: string }[];
 };
 type Service = {
   title: string;
@@ -42,6 +46,7 @@ type Step = { title: string; body: string; see: string };
 type Point = { title: string; body: string };
 type Coverline = { kicker: string; text: string; page: string };
 type TocItem = { title: string; href: string; page: string };
+type Letter = { q: string; a: string };
 
 // Hosts of the running platform, shown as proof in the Platform section.
 const hosts = [
@@ -66,16 +71,31 @@ export default async function Home() {
   const steps = t.raw("process.steps") as Step[];
   const deliverables = t.raw("engagement.deliverables") as Point[];
   const formats = t.raw("engagement.formats") as Point[];
+  const letters = t.raw("faq.items") as Letter[];
   const coverlines = t.raw("zine.coverlines") as Coverline[];
   const toc = t.raw("zine.toc") as TocItem[];
   const ticker = t.raw("zine.ticker") as string[];
   const tags = t.raw("zine.tags") as string[];
   const pageHref = (page: string) =>
     toc.find((item) => item.page === page)?.href ?? "#projects";
+  // The main call to action everywhere on the page: a 30-minute Calendly slot.
+  const bookCall = (describedBy?: string) => (
+    <Button asChild size="lg">
+      <a
+        href={calendly}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-describedby={describedBy}
+      >
+        {t("nav.book")}
+        <ArrowUpRightIcon />
+      </a>
+    </Button>
+  );
 
   return (
     <>
-      <Header />
+      <Header accounts={sso !== null} />
       <main id="main">
         <section
           className="cover og-container"
@@ -99,7 +119,7 @@ export default async function Home() {
               <p className="cover-lead">{t("zine.lead")}</p>
               <ul className="coverlines">
                 {coverlines.map((line) => (
-                  <li key={line.text} style={crooked(line.text, 1.6)}>
+                  <li key={line.text} style={crooked(line.text, 1.2)}>
                     <a href={pageHref(line.page)}>
                       <span className="coverline-kicker">{line.kicker}</span>
                       <span className="coverline-text">{line.text}</span>
@@ -109,7 +129,8 @@ export default async function Home() {
                 ))}
               </ul>
               <div className="cover-actions">
-                <Button asChild size="lg">
+                {bookCall("cover-book-hint")}
+                <Button asChild size="lg" variant="outline">
                   <a href="#projects">
                     {t("zine.read")}
                     <ArrowDownIcon />
@@ -119,6 +140,9 @@ export default async function Home() {
                   <ContactLinks compact />
                 </ContactDialog>
               </div>
+              <p id="cover-book-hint" className="cover-hint">
+                {t("nav.bookHint")}
+              </p>
             </div>
 
             <figure className="cover-art">
@@ -218,7 +242,7 @@ export default async function Home() {
                   <div
                     key={layer.name}
                     className="platform-layer"
-                    style={crooked(layer.name, 1.2)}
+                    style={crooked(layer.name, 0.6)}
                   >
                     <h3 className="og-eyebrow">
                       <span>0{i + 1}</span> {layer.name}
@@ -228,7 +252,6 @@ export default async function Home() {
                         <li key={item.name} className="platform-node">
                           <h4>{item.name}</h4>
                           <p>{item.result}</p>
-                          <p className="platform-node-tech">{item.tech}</p>
                         </li>
                       ))}
                     </ul>
@@ -262,33 +285,47 @@ export default async function Home() {
             {t("services.intro")}
           </p>
           <p className="ads-note">{t("zine.adsNote")}</p>
+          {/* Each ad is one link to Telegram (stretched over the card); the
+              proof links sit above it, so nothing is nested. */}
           <ol className="ads">
             {services.map((item, i) => (
               <li
                 key={item.title}
                 className={`ad is-${i % 3}`}
-                style={crooked(item.title, 2.2)}
+                style={crooked(item.title, 1.2)}
               >
-                <h3 className="ad-title">{item.title}</h3>
-                <p className="ad-body">{item.body}</p>
-                <ul className="badge-list">
-                  {item.stack.map((tech) => (
-                    <li key={tech}>
-                      <Badge>{tech}</Badge>
-                    </li>
-                  ))}
-                </ul>
-                <p className="ad-proof">
-                  {item.href ? (
-                    <a href={item.href}>{item.proof}</a>
-                  ) : (
-                    item.proof
-                  )}
-                </p>
+                <div className="ad-sheet">
+                  <h3 className="ad-title">
+                    <a
+                      className="ad-link"
+                      href={telegram.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={t("zine.adWrite", { title: item.title })}
+                    >
+                      {item.title}
+                    </a>
+                  </h3>
+                  <p className="ad-body">{item.body}</p>
+                  <ul className="badge-list">
+                    {item.stack.map((tech) => (
+                      <li key={tech}>
+                        <Badge>{tech}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="ad-proof">
+                    {item.href ? (
+                      <a href={item.href}>{item.proof}</a>
+                    ) : (
+                      item.proof
+                    )}
+                  </p>
+                </div>
                 <TearOffs
                   href={telegram.href}
                   handle={telegram.handle}
-                  label={t("zine.adTear")}
+                  seedText={item.title}
                 />
               </li>
             ))}
@@ -340,7 +377,7 @@ export default async function Home() {
           <CatPaw>
             <ol className="price-tags">
               {formats.map((item, i) => (
-                <li key={item.title} style={crooked(item.title, 3.5)}>
+                <li key={item.title} style={crooked(item.title, 2)}>
                   <PriceTag price={tags[i] ?? ""} was={t("zine.tagWas")}>
                     <h4 className="price-title">{item.title}</h4>
                     <p className="price-body">{item.body}</p>
@@ -365,9 +402,46 @@ export default async function Home() {
             stamp={t("zine.stampPaid")}
           />
           <div className="engagement-cta">
-            <ContactDialog variant="primary" label={t("engagement.cta")}>
+            {bookCall()}
+            <ContactDialog variant="outline" label={t("engagement.cta")}>
               <ContactLinks compact />
             </ContactDialog>
+          </div>
+        </section>
+
+        <section
+          id="faq"
+          className="faq og-container section-space"
+          aria-labelledby="faq-title"
+        >
+          <SectionHeading
+            id="faq-title"
+            index={t("faq.index")}
+            label={t("faq.label")}
+            title={t("faq.title")}
+            accent={t("faq.titleAccent")}
+          />
+          <p className="section-lead" data-reveal>
+            {t("faq.intro")}
+          </p>
+          {/* letters to the editor: every answer is in the markup, no toggles */}
+          <ol className="letters">
+            {letters.map((letter, i) => (
+              <li key={letter.q} className="letter">
+                <span className="letter-stamp" aria-hidden="true">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 className="letter-q">{letter.q}</h3>
+                <p className="letter-by" aria-hidden="true">
+                  {t("faq.answer")}
+                </p>
+                <p className="letter-a">{letter.a}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="faq-more">
+            <p>{t("faq.more")}</p>
+            {bookCall()}
           </div>
         </section>
 
@@ -390,9 +464,10 @@ export default async function Home() {
             fine={t("zine.couponFine")}
             cut={t("zine.couponCut")}
             done={t("zine.couponCut2")}
+            action={bookCall()}
           >
             <ContactLinks />
-            <p className="og-eyebrow contact-where">{t("contact.location")}</p>
+            <p className="og-eyebrow contact-where">{t("contact.reply")}</p>
           </Coupon>
         </section>
       </main>
