@@ -1305,6 +1305,7 @@
       "noGrants": "По этому заказу доступа нет.",
       "until": "До",
       "forever": "Бессрочно",
+      "starts": "Начнётся",
       "revokeGrant": "Отозвать",
       "revokeGrantTitle": "Отозвать этот доступ?",
       "revokeGrantDescription": "{feature} по этому заказу заканчивается сейчас.",
@@ -1664,6 +1665,7 @@
       "grants": "Premium и косметика",
       "noGrants": "Доступов нет.",
       "forever": "бессрочно",
+      "starts": "Начнётся",
       "matchesTitle": "Последние матчи"
     },
     "audit": {

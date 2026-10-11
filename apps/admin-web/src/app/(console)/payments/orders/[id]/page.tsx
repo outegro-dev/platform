@@ -130,10 +130,14 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
             },
             {
               label: t("access"),
+              // Where it stands now, like the grants below: a grant booked
+              // ahead is recorded active but does not open anything yet.
               value: order.access ? (
-                <Status tone={toneOf("grant", order.access.state)}>
-                  {label("grantState", order.access.state)}
-                </Status>
+                <GrantStatus
+                  status={grantStatus(order.access, f.now)}
+                  label={label}
+                  starts={{ label: t("starts"), at: order.access.validFrom }}
+                />
               ) : (
                 <span className="muted">{t("noAccess")}</span>
               ),
@@ -341,7 +345,11 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
                         </span>
                       </span>
                       <span className="row-gap">
-                        <GrantStatus status={status} label={label} />
+                        <GrantStatus
+                          status={status}
+                          label={label}
+                          starts={{ label: t("starts"), at: grant.validFrom }}
+                        />
                         {granted.has("grants.assign") &&
                           revocable(status.phase) && (
                             <ActionDialog

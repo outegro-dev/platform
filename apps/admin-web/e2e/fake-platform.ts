@@ -1454,7 +1454,8 @@ function addEvent(
   },
 ): ProviderEvent {
   const full: ProviderEvent = {
-    id: uuid(),
+    // A record seeded on its own passes its id: no draw from `random`.
+    id: event.id ?? uuid(),
     source: "webhook",
     rawType:
       event.type === "payment.confirmed"
@@ -1757,6 +1758,112 @@ for (let index = 0; index < 40; index++) {
       createdAt: iso(paidAt + DAY),
     });
   }
+}
+// An order whose access opens later than the payment: Payments records Anna's
+// Silver Fleet active, in a window that starts in four days, so her order
+// and her player page show it scheduled and say when it starts. Seeded on
+// its own (prngFor), so no later record changes.
+{
+  const local = prngFor("scheduled-order");
+  const anna = userByEmail("anna.schmidt@example.de");
+  const product = products[1];
+  const createdAt = NOW - 9 * DAY - 3 * HOUR;
+  const paidAt = createdAt + 95_000;
+  const invoice = `inv_${randomBytes(5).toString("hex")}`;
+  const contractId = contract();
+  const order: Order = {
+    id: uuidFrom(local),
+    userId: anna.id,
+    productKey: product.key,
+    kind: product.kind,
+    status: "paid",
+    currency: "EUR",
+    amount: prices.EUR,
+    createdAt: iso(createdAt),
+    paidAt: iso(paidAt),
+    correlationId: uuidFrom(local),
+    attempt: {
+      id: uuidFrom(local),
+      state: "ready",
+      providerInvoiceId: invoice,
+      failureReason: null,
+      checks: 1,
+      nextCheckAt: null,
+      requestedAt: iso(createdAt + 1200),
+      resolvedAt: iso(createdAt + 4200),
+    },
+    subscriptionId: null,
+  };
+  orders.push(order);
+  const payment: Payment = {
+    id: uuidFrom(local),
+    orderId: order.id,
+    subscriptionId: null,
+    userId: anna.id,
+    kind: "purchase",
+    state: "confirmed",
+    currency: "EUR",
+    amount: order.amount,
+    providerContractId: contractId,
+    paidAt: iso(paidAt),
+    confirmedAt: iso(paidAt + 6000),
+  };
+  payments.push(payment);
+  addEvent({
+    id: uuidFrom(local),
+    type: "invoice.created",
+    status: "processed",
+    contractId: invoice,
+    orderId: order.id,
+    receivedAt: createdAt + 2000,
+    payload: {
+      invoiceId: invoice,
+      buyer: { email: anna.email },
+      amount: Number(order.amount) / 100,
+      currency: "EUR",
+    },
+  });
+  addEvent({
+    id: uuidFrom(local),
+    type: "payment.confirmed",
+    status: "processed",
+    contractId,
+    parentContractId: invoice,
+    orderId: order.id,
+    paymentId: payment.id,
+    receivedAt: paidAt + 4000,
+    payload: {
+      contractId,
+      parentContractId: invoice,
+      status: "success",
+      amount: Number(order.amount) / 100,
+      currency: "EUR",
+      buyer: { email: anna.email },
+    },
+    fact: {
+      kind: "payment",
+      contractId,
+      amountMinor: order.amount.toString(),
+      currency: "EUR",
+    },
+  });
+  payGrants.push({
+    id: uuidFrom(local),
+    userId: anna.id,
+    service: product.service,
+    feature: product.feature,
+    sourceType: "purchase",
+    sourceId: order.id,
+    state: "active",
+    validFrom: iso(NOW + 4 * DAY),
+    validUntil: null,
+    version: 1,
+    reason: null,
+    grantedBy: null,
+    revokedAt: null,
+    revokedBy: null,
+    revokeReason: null,
+  });
 }
 orders.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 // Oleg's order has an extra renewal payment, for a richer timeline.

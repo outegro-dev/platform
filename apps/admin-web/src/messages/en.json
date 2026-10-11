@@ -1305,6 +1305,7 @@
       "noGrants": "No access from this order.",
       "until": "Until",
       "forever": "No end date",
+      "starts": "Starts",
       "revokeGrant": "Revoke",
       "revokeGrantTitle": "Revoke this access?",
       "revokeGrantDescription": "{feature} from this order ends now.",
@@ -1664,6 +1665,7 @@
       "grants": "Premium and cosmetics",
       "noGrants": "No grants.",
       "forever": "no end date",
+      "starts": "Starts",
       "matchesTitle": "Recent matches"
     },
     "audit": {

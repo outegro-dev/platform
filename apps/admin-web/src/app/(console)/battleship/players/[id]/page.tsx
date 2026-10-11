@@ -279,7 +279,11 @@ export default async function PlayerPage({ params }: { params: Params<"id"> }) {
                           )}
                         </span>
                       </span>
-                      <GrantStatus status={status} label={label} />
+                      <GrantStatus
+                        status={status}
+                        label={label}
+                        starts={{ label: t("starts"), at: grant.validFrom }}
+                      />
                     </li>
                   );
                 })}

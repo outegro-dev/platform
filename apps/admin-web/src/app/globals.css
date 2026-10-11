@@ -1015,6 +1015,13 @@
       animation: none;
     }
   }
+  /* A scheduled grant's status with the day it opens under it; the badge
+     keeps its own width. */
+  .grant-status {
+    display: inline-grid;
+    justify-items: start;
+    gap: 4px;
+  }
   /* Typewritten labels, like the kit's badges: outlined, printed in reverse
      (solid) or a dashed box on the deeper paper (muted). */
   .chip {
