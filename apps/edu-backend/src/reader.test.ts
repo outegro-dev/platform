@@ -211,6 +211,8 @@ describe("library", () => {
   it("signed out: published books only, paid ones asking to sign in (TC-EDU-01)", async () => {
     const list = await library();
     expect(accessOf(list)).toEqual({
+      "javascript-basics": "sign_in",
+      "message-brokers": "sign_in",
       "nodejs-internals": "sign_in",
       "sql-internals": "sign_in",
       "sample-free": "open",
@@ -240,6 +242,8 @@ describe("library", () => {
   it("signed in: preview or locked without a grant, granted with one (TC-EDU-01)", async () => {
     const reader = randomUUID();
     expect(accessOf(await library(reader))).toEqual({
+      "javascript-basics": "preview",
+      "message-brokers": "preview",
       "nodejs-internals": "preview",
       "sql-internals": "preview",
       "sample-free": "open",
@@ -259,6 +263,8 @@ describe("library", () => {
     });
     await grantTo(reader, "library");
     expect(accessOf(await library(reader))).toMatchObject({
+      "javascript-basics": "granted",
+      "message-brokers": "granted",
       "nodejs-internals": "granted",
       "sql-internals": "granted",
       "sample-closed": "locked",
@@ -312,7 +318,7 @@ describe("table of contents", () => {
     });
     expect(book.chapters[0]?.sections[0]).toEqual({
       id: expect.any(String),
-      title: "Runtime, а не язык",
+      title: "Среда выполнения, а не язык",
     });
     expect(book.chapters.reduce((sum, c) => sum + c.exercises, 0)).toBe(76);
     expect(book.chapters.reduce((sum, c) => sum + c.cards, 0)).toBe(122);
@@ -320,12 +326,13 @@ describe("table of contents", () => {
       preface: null,
       hasSandbox: false,
       deck: { title: "Карточки по всей книге" },
-      note: [expect.stringContaining("Node.js 22")],
+      note: [expect.stringContaining("Node.js 24")],
       book: { slug: "nodejs-internals", access: "preview" },
     });
     const sqlBook = bookResponseSchema.parse(
       (await get("/v1/books/sql-internals")).body,
     );
+    expect(sqlBook.chapters).toHaveLength(15);
     expect(sqlBook).toMatchObject({
       preface: { id: "db", kicker: "Перед началом", title: "Учебная база" },
       hasSandbox: true,

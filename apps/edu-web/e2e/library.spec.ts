@@ -1,7 +1,7 @@
 import { expect, signIn, test } from "./support/fixtures.ts";
 
 test.describe("library", () => {
-  test("signed out: both books, what is inside and a way in", async ({
+  test("signed out: every book, what is inside and a way in", async ({
     page,
   }) => {
     await page.goto("/");
@@ -19,7 +19,27 @@ test.describe("library", () => {
     await expect(node).toContainText("13 chapters");
     await expect(node).toContainText("76 exercises");
     await expect(node).toContainText("122 flash cards");
-    await expect(sql).toContainText("120 exercises");
+    await expect(sql).toContainText("15 chapters");
+    await expect(sql).toContainText("138 exercises");
+    await expect(sql).toContainText("147 flash cards");
+    const brokers = page.getByTestId("book-message-brokers");
+    await expect(brokers.getByRole("heading", { level: 2 })).toHaveText(
+      "Брокеры сообщений: RabbitMQ и Kafka",
+    );
+    await expect(brokers).toContainText("13 chapters");
+    await expect(brokers).toContainText("76 exercises");
+    await expect(brokers).toContainText("120 flash cards");
+    const basics = page.getByTestId("book-javascript-basics");
+    await expect(basics.getByRole("heading", { level: 2 })).toHaveText(
+      "JavaScript: основы для собеседования",
+    );
+    await expect(basics).toContainText("13 chapters");
+    await expect(basics).toContainText("76 exercises");
+    await expect(basics).toContainText("120 flash cards");
+    for (const book of [brokers, basics])
+      await expect(book.getByTestId("access-badge")).toHaveText(
+        "Access: Sign in to read",
+      );
     await expect(node.getByTestId("access-badge")).toHaveText(
       "Access: Sign in to read",
     );
@@ -87,7 +107,8 @@ test.describe("library", () => {
       /SQL\s+изнутри/,
     );
     const contents = page.locator(".contents-list");
-    await expect(contents.getByRole("link")).toHaveCount(15);
+    // The preface, 15 chapters and the deck.
+    await expect(contents.getByRole("link")).toHaveCount(17);
     await expect(
       contents.getByRole("link", { name: /Учебная база/ }),
     ).toHaveAttribute("href", "/books/sql-internals/intro");

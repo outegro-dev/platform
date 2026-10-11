@@ -1,6 +1,6 @@
 import { exerciseIdsOf } from "@outegro/edu-engine";
 import type { Page } from "@playwright/test";
-import { blocksOf, chapter, text } from "./support/books.ts";
+import { blocksOf, book, chapter, text } from "./support/books.ts";
 import { expect, hydrated, SITE, signIn, test } from "./support/fixtures.ts";
 
 const first = chapter("nodejs-internals", 1);
@@ -106,11 +106,45 @@ test.describe("reading", () => {
   });
 
   test("staff read every chapter of every book", async ({ page }) => {
-    await signIn(page, "staff", "/books/sql-internals/13");
+    await signIn(page, "staff", "/books/sql-internals/15");
+    const title = page
+      .locator("article.book-article")
+      .getByRole("heading", { level: 1 });
     await expect(page.getByTestId("chapter-gate")).toHaveCount(0);
-    await expect(
-      page.locator("article.book-article").getByRole("heading", { level: 1 }),
-    ).toHaveText(chapter("sql-internals", 13).title);
+    await expect(title).toHaveText(chapter("sql-internals", 15).title);
+    // The last chapter of each book, past every preview.
+    for (const slug of [
+      "nodejs-internals",
+      "message-brokers",
+      "javascript-basics",
+    ]) {
+      const last = book(slug).chapters.at(-1);
+      if (!last) throw new Error(`no chapters in ${slug}`);
+      await page.goto(`/books/${slug}/${last.n}`);
+      await expect(page.getByTestId("chapter-gate")).toHaveCount(0);
+      await expect(title).toHaveText(last.title);
+    }
+  });
+
+  test("code in every language of the books is highlighted", async ({
+    page,
+  }) => {
+    // TypeScript and YAML in the brokers book, HTML in the JavaScript one.
+    await signIn(page, "staff", "/books/message-brokers/3");
+    const blocks = page.locator("article.book-article .code-block");
+    const ts = blocks.filter({
+      has: page.locator(".code-title", { hasText: /^send\.ts$/ }),
+    });
+    await expect(ts.locator(".hljs-keyword").first()).toBeVisible();
+    await page.goto("/books/message-brokers/12");
+    const yaml = blocks.filter({ hasText: "scrape_configs:" });
+    await expect(yaml.locator(".hljs-attr").first()).toBeVisible();
+    await expect(yaml.locator(".code-title")).toHaveText(
+      "prometheus.yml (фрагмент)",
+    );
+    await page.goto("/books/javascript-basics/11");
+    const html = blocks.filter({ hasText: "Мои задачи" });
+    await expect(html.locator(".hljs-tag").first()).toBeVisible();
   });
 
   test("a quiz answer is saved: solved after a reload", async ({ page }) => {

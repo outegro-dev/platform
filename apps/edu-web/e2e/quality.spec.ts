@@ -86,6 +86,37 @@ for (const size of [
       await expectAccessible(page, "deck");
       await expectNothingCutOff(page, "deck");
     });
+
+    test("the brokers and JavaScript books: TypeScript, YAML, HTML and the simulator", async ({
+      page,
+    }) => {
+      for (const path of [
+        "/books/message-brokers",
+        "/books/javascript-basics",
+      ]) {
+        await page.goto(path);
+        await settle(page);
+        await expectAccessible(page, path);
+        await expectNothingCutOff(page, path);
+      }
+      await signIn(page, "subscriber", "/books/message-brokers/intro");
+      await settle(page);
+      await expectAccessible(page, "brokers preface");
+      await expectNothingCutOff(page, "brokers preface");
+      for (const [path, where] of [
+        ["/books/message-brokers/9", "brokers chapter 9 (TypeScript)"],
+        ["/books/message-brokers/12", "brokers chapter 12 (YAML)"],
+        [
+          "/books/javascript-basics/11",
+          "javascript chapter 11 (HTML, simulator)",
+        ],
+      ] as const) {
+        await page.goto(path);
+        await settle(page);
+        await expectAccessible(page, where);
+        await expectNothingCutOff(page, where);
+      }
+    });
   });
 }
 
@@ -112,8 +143,10 @@ test.describe("no layout shift after an interaction", () => {
     await page.goto("/books/sql-internals/1");
     const sandbox = page.locator(".sandbox").first();
     await hydrated(sandbox.getByRole("button", { name: "Выполнить" }));
-    // No click: it runs by itself near the screen, into the output box
-    // that was there from the start.
+    // No click: brought near the screen (it sits a few screens into the
+    // chapter), it runs by itself, into the output box that was there from
+    // the start.
+    await sandbox.scrollIntoViewIfNeeded();
     await expect(sandbox.locator(".sql-table")).toBeVisible({
       timeout: 30_000,
     });
