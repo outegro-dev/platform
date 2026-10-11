@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Component, type ReactNode, useEffect, useRef, useState } from "react";
+import type { Caption } from "./diorama";
 import { sprites, stepStickers } from "./sprites";
 import "./paper.css";
 
@@ -69,7 +70,10 @@ export function PaperJourney({
   labels: { youSee: string };
 }) {
   const ref = useRef<HTMLElement>(null);
+  const viewport = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLOListElement>(null);
   const progress = useRef(0);
+  const caption = useRef<Caption>({ right: 0.34, top: 0.75 });
   const [mode, setMode] = useState<"live" | "static">("live");
   const [enabled, setEnabled] = useState(false);
   const [ready, setReady] = useState(false);
@@ -78,7 +82,8 @@ export function PaperJourney({
   const [current, setCurrent] = useState(0);
   const [dpr, setDpr] = useState(1.5);
 
-  // Decide live or static; mount the canvas shortly before the section.
+  // Decide live or static; mount the canvas well before the section, so the
+  // scene has loaded and drawn its first station by the time it scrolls in.
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
@@ -101,7 +106,7 @@ export function PaperJourney({
         setDpr(Math.min(window.devicePixelRatio || 1, small ? 1.75 : 2));
         setEnabled(true);
       },
-      { rootMargin: "150% 0px" },
+      { rootMargin: "300% 0px" },
     );
     approach.observe(element);
     const view = new IntersectionObserver(([entry]) =>
@@ -117,10 +122,13 @@ export function PaperJourney({
     };
   }, []);
 
-  // Scroll progress through the pinned stage drives the scene and captions.
+  // Scroll progress through the pinned stage drives the scene and captions;
+  // the caption card's box tells the camera where the free room is.
   useEffect(() => {
     const element = ref.current;
-    if (!element || mode !== "live") return;
+    const stage = viewport.current;
+    const notes = list.current;
+    if (!element || !stage || !notes || mode !== "live") return;
     const count = steps.length;
     let frame = 0;
     const measure = () => {
@@ -130,6 +138,14 @@ export function PaperJourney({
       const p = span > 0 ? -rect.top / span : 0;
       progress.current = p;
       setCurrent(Math.min(count - 1, Math.max(0, Math.round(p * count - 0.5))));
+      const room = stage.getBoundingClientRect();
+      const card = notes.getBoundingClientRect();
+      if (room.width > 0 && room.height > 0) {
+        caption.current = {
+          right: (card.right - room.left) / room.width,
+          top: (card.top - room.top) / room.height,
+        };
+      }
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure);
@@ -137,8 +153,12 @@ export function PaperJourney({
     measure();
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
+    // Captions re-wrap when the fonts arrive.
+    const rewrap = new ResizeObserver(schedule);
+    rewrap.observe(notes);
     return () => {
       cancelAnimationFrame(frame);
+      rewrap.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
@@ -159,7 +179,7 @@ export function PaperJourney({
       data-mode={mode}
       data-ready={running && ready ? "" : undefined}
     >
-      <div className="pj-viewport">
+      <div ref={viewport} className="pj-viewport">
         {live && (
           <div className="pj-stage" aria-hidden="true">
             {enabled && (
@@ -168,6 +188,7 @@ export function PaperJourney({
                   active={inView && pageVisible}
                   dpr={dpr}
                   progress={progress}
+                  caption={caption}
                   onReady={() => setReady(true)}
                   onLost={fail}
                 />
@@ -175,7 +196,7 @@ export function PaperJourney({
             )}
           </div>
         )}
-        <ol className="pj-steps">
+        <ol ref={list} className="pj-steps">
           {steps.map((step, i) => (
             <li
               key={step.title}

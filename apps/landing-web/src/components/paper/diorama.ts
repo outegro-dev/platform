@@ -51,17 +51,33 @@ import {
 
 export const STATIONS = [0, 9.5, 19, 28.5, 38] as const;
 /** Where a narrow (phone) frame centres on each station. */
-const PHONE_FOCUS = [0.7, 0.3, 0, 0.1, -0.3] as const;
+const PHONE_FOCUS = [0.7, 0.3, 0, 0.1, -0.15] as const;
 const LAST = STATIONS.length - 1;
 const FPS = 12;
+/**
+ * Scroll position (in stations) from which station 1 stands: long before the
+ * section scrolls into view, so it is up when the section arrives.
+ */
+const ENTRY = -99;
 /** A card lying on the page, a hair off flat so it never z-fights the paper. */
 const FLAT = Math.PI / 2 - 0.015;
 const COAST = 23.4;
 const LANE_Z = -0.6;
 const SEA_Y = -0.16;
 const DOCK = { x: STATIONS[2] + 0.05, y: 0.6 };
-const MOOR_X = STATIONS[4] - 2.05;
+// Its stern keeps clear of the caption card, its bow tucks behind the pier.
+const MOOR_X = STATIONS[4] - 1.6;
 const PIER = { x: STATIONS[4] + 1.1, y: -0.38, z: 1.3, width: 4.6 };
+/** The front of a station, where phones stand it on the caption card. */
+const FRONT_Z = 1.4;
+const front = new Vector3();
+
+/**
+ * Where the caption card sits over the stage, in fractions of it: its right
+ * edge (wide screens, card on the left) and its top (phones, card along the
+ * bottom). The camera frames each station in the room the card leaves.
+ */
+export type Caption = { right: number; top: number };
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const smooth = (a: number, b: number, x: number) => {
@@ -196,11 +212,22 @@ class Card {
     return Math.abs(this.angle - this.open) < 0.45;
   }
 
+  /** The angle the scroll asks for, overshoot included. */
+  private target(s: number) {
+    const flat = this.fold * FLAT;
+    return flat + (this.open - flat) * backOut(unfold(this.range, this.lag, s));
+  }
+
+  /** Straight to the angle the scroll asks for, without springing there. */
+  snap(s: number) {
+    this.angle = this.target(s);
+    this.velocity = 0;
+  }
+
   /** One stop-motion frame: follow the scroll, boil the outline. */
   tick(s: number, frame: number) {
     const flat = this.fold * FLAT;
-    const target =
-      flat + (this.open - flat) * backOut(unfold(this.range, this.lag, s));
+    const target = this.target(s);
     const h = 1 / FPS / 4;
     for (let i = 0; i < 4; i++) {
       this.velocity += (300 * (target - this.angle) - 21 * this.velocity) * h;
@@ -246,10 +273,19 @@ class Hanger {
     this.group.position.copy(anchor);
   }
 
+  private target(s: number) {
+    return this.range ? 7 * (1 - backOut(unfold(this.range, 0, s))) : 0;
+  }
+
+  snap(s: number) {
+    this.drop = this.target(s);
+    this.velocity = 0;
+  }
+
   /** Lowered on its thread as the scroll reaches its range. */
   tick(s: number, time: number) {
     if (this.range) {
-      const target = 7 * (1 - backOut(unfold(this.range, 0, s)));
+      const target = this.target(s);
       const h = 1 / FPS / 4;
       for (let i = 0; i < 4; i++) {
         this.velocity += (160 * (target - this.drop) - 12 * this.velocity) * h;
@@ -390,23 +426,22 @@ export class Diorama {
     }
 
     // Shadow catchers over both pages: the only lit materials in the scene.
-    const shadowMaterial = this.own(
-      new ShadowMaterial({
-        color: "#3a2814",
-        opacity: 0.24,
-        depthWrite: false,
-      }),
-    );
+    // The clouds and the sun hang close to the back page, so their shadows
+    // there are crisp and big; a fainter wall keeps them from smudging the sky.
+    const shadowMaterial = (opacity: number) =>
+      this.own(
+        new ShadowMaterial({ color: "#3a2814", opacity, depthWrite: false }),
+      );
     const floorShadow = new Mesh(
       this.own(new PlaneGeometry(100, 26)),
-      shadowMaterial,
+      shadowMaterial(0.24),
     );
     floorShadow.rotation.x = -Math.PI / 2;
     floorShadow.position.set(25, 0.05, 8);
     floorShadow.receiveShadow = true;
     const wallShadow = new Mesh(
       this.own(new PlaneGeometry(100, 26)),
-      shadowMaterial,
+      shadowMaterial(0.1),
     );
     wallShadow.position.set(25, 13, -4.985);
     wallShadow.receiveShadow = true;
@@ -436,44 +471,86 @@ export class Diorama {
       this.root.add(card.rig);
       return card;
     };
+    /**
+     * A long strip standing on its bottom edge from its left end: a body
+     * tiled every `tile` units and, at one end, a tile of its own that cuts
+     * the strip off in a slope. The body's u runs from 0 at the joint, so
+     * the edge carries on across it.
+     */
+    const strip = (
+      maps: { body: Texture; end: Texture; at: "start" | "end" },
+      length: number,
+      height: number,
+      tile: number,
+      options: CardOptions,
+    ) => {
+      const span = length - tile;
+      const first = maps.at === "start";
+      const body = new Mesh(
+        this.own(
+          scaleUv(standing(span, height, 0), span / tile, 1).translate(
+            first ? tile : 0,
+            0,
+            0,
+          ),
+        ),
+        this.own(cardMaterial(this.own(maps.body))),
+      );
+      const end = new Mesh(
+        this.own(standing(tile, height, 0).translate(first ? 0 : span, 0, 0)),
+        this.own(cardMaterial(this.own(maps.end))),
+      );
+      end.castShadow = true;
+      const card = new Card(id++, body, options);
+      card.body.add(end);
+      this.cards.push(card);
+      this.root.add(card.rig);
+      return card;
+    };
 
-    // Hills of grid paper behind the land.
+    // Hills of grid paper behind the land, sloping down to the coast. A tile
+    // is the 512×256 texture unstretched; whole tiles keep the slope's tile
+    // in step with the body.
     const hillTiles = [
       { z: -4.4, h: 2.0, seed: 1.3, lag: 0.08 },
       { z: -3.85, h: 1.4, seed: 4.1, lag: 0.16 },
     ];
+    const gridImage = grid.image as HTMLCanvasElement;
     for (const hill of hillTiles) {
-      const map = this.own(
-        hillStrip(grid.image as HTMLCanvasElement, hill.seed),
+      const tile = hill.h * 2;
+      const end = coastX(hill.z) - 0.1;
+      const length = Math.ceil((end + 20) / tile) * tile;
+      strip(
+        {
+          body: hillStrip(gridImage, hill.seed),
+          end: hillStrip(gridImage, hill.seed, true),
+          at: "end",
+        },
+        length,
+        hill.h,
+        tile,
+        {
+          at: [end - length, 0.02, hill.z],
+          range: [ENTRY, 2.45],
+          lag: hill.lag,
+          boil: 0.4,
+        },
       );
-      const width = 42;
-      const geometry = this.own(
-        scaleUv(standing(width, hill.h, 0), width / (hill.h * 2), 1),
-      );
-      const material = this.own(cardMaterial(map));
-      const card = new Card(id++, new Mesh(geometry, material), {
-        at: [-20, 0.02, hill.z],
-        range: [-0.85, 2.45],
-        lag: hill.lag,
-        boil: 0.4,
-      });
-      this.cards.push(card);
-      this.root.add(card.rig);
     }
 
     // 1 · Research: the workshop, a tree, a treasure map on a stand.
-    add("house", { h: 3 }, { at: [-1.1, 0.02, -1.7], range: [-0.8, 0.45] });
+    add("house", { h: 3 }, { at: [-1.1, 0.02, -1.7], range: [ENTRY, 0.45] });
     this.tree = add(
       "tree",
       { h: 3.3 },
-      { at: [2.75, 0.02, -2.75], range: [-0.8, 0.45], lag: 0.08 },
+      { at: [2.75, 0.02, -2.75], range: [ENTRY, 0.45], lag: 0.08 },
     );
     add(
       "map",
       { h: 1.45 },
       {
         at: [0.95, 0.02, 1.35],
-        range: [-0.8, 0.45],
+        range: [ENTRY, 0.45],
         lag: 0.16,
         open: -0.7,
       },
@@ -537,16 +614,17 @@ export class Diorama {
       { z: -3.2, h: 0.82, color: "#a3d4f2", lag: 0.15 },
     ];
     waveSpecs.forEach((spec, i) => {
-      const map = this.own(waveStrip(spec.color, i * 1.7, 30 + i));
-      const start = coastX(spec.z) - 0.25;
-      const width = 80 - start;
-      const tile = (spec.h * 512) / 150;
-      const geometry = this.own(
-        scaleUv(standing(width, spec.h, 0), width / tile, 1),
-      );
-      const card = new Card(
-        id++,
-        new Mesh(geometry, this.own(cardMaterial(map))),
+      // The rounded tip rests on the beach, just short of the coastline.
+      const start = coastX(spec.z) - 0.35;
+      const card = strip(
+        {
+          body: waveStrip(spec.color, i * 1.7, 30 + i),
+          end: waveStrip(spec.color, i * 1.7, 30 + i, true),
+          at: "start",
+        },
+        80 - start,
+        spec.h,
+        (spec.h * 512) / 150,
         {
           at: [start, 0, spec.z],
           range: [1.9, 99],
@@ -554,9 +632,7 @@ export class Diorama {
           boil: 0.5,
         },
       );
-      this.cards.push(card);
       this.waves.push(card);
-      this.root.add(card.rig);
     });
     this.lighthouse = add(
       "lighthouse",
@@ -725,6 +801,7 @@ export class Diorama {
     height: number,
     progress: number,
     delta: number,
+    caption: Caption,
   ) {
     // The stop-motion clock skips at most a few frames after a stall; the
     // scroll catches up regardless.
@@ -749,20 +826,31 @@ export class Diorama {
     const pan = smooth(0.2, 0.8, sc - segment);
     const cx = MathUtils.lerp(STATIONS[segment], STATIONS[segment + 1], pan);
     this.cameraX = cx;
+    const mobile = width < 768;
     const focus = MathUtils.lerp(
       PHONE_FOCUS[segment],
       PHONE_FOCUS[segment + 1],
       pan,
     );
-    this.frameCamera(camera, width, height, width < 768 ? cx + focus : cx);
+    this.frameCamera(camera, width, height, mobile ? cx + focus : cx, caption);
+    // Phones hang the sky higher, the more so the taller the room above the
+    // caption card is for its width.
+    const room = (caption.top * height) / width;
+    const sky = mobile ? 1.2 + MathUtils.clamp((room - 1.25) * 3, 0, 1.4) : 0;
 
     const frame = Math.floor(this.time * FPS);
     if (frame !== this.frame) {
+      if (this.frame < 0) {
+        // The first frame shows the page as the scroll has left it: nothing
+        // springs up just because the scene has loaded.
+        for (const card of this.cards) card.snap(s);
+        for (const hanger of this.hangers) hanger.snap(s);
+      }
       const behind = this.frame < 0 ? 1 : Math.min(frame - this.frame, 3);
       for (let i = behind - 1; i >= 0; i--) this.tick(s, frame - i);
       this.frame = frame;
     }
-    this.place(s, cx, width < 768);
+    this.place(s, cx, mobile, sky);
   }
 
   private frameCamera(
@@ -770,6 +858,7 @@ export class Diorama {
     width: number,
     height: number,
     cx: number,
+    caption: Caption,
   ) {
     const mobile = width < 768;
     const aspect = width / Math.max(1, height);
@@ -786,9 +875,21 @@ export class Diorama {
     // Lens shift instead of aiming: the station sits right of the caption
     // card on wide screens and above it on phones.
     if (mobile) {
-      camera.setViewOffset(width, height, 0, height * 0.06, width, height);
+      // The front of the station stands on the card's top edge: no empty
+      // strip of grass or sea in between.
+      camera.clearViewOffset();
+      camera.updateMatrixWorld();
+      const y = front.set(cx, 0, FRONT_Z).project(camera).y;
+      const ground = ((1 - y) / 2) * height;
+      const top = MathUtils.clamp(caption.top, 0.5, 1) * height + 2;
+      camera.setViewOffset(width, height, 0, ground - top, width, height);
     } else {
-      camera.setViewOffset(width, height, -width * 0.14, 0, width, height);
+      // In landscape the card stands beside the station: centre the station
+      // in the room right of it (never shifting less than 14%). In portrait
+      // the card sits below the station.
+      const shift =
+        aspect >= 1 ? MathUtils.clamp(caption.right / 2, 0.14, 0.22) : 0.14;
+      camera.setViewOffset(width, height, -width * shift, 0, width, height);
     }
   }
 
@@ -848,7 +949,7 @@ export class Diorama {
   }
 
   /** Scroll-driven placement, every rendered frame (smooth, not stepped). */
-  private place(s: number, cx: number, mobile: boolean) {
+  private place(s: number, cx: number, mobile: boolean, sky: number) {
     // The ship: built plank by plank while you stay at Development,
     const reveal = clamp01((s - 1.55) / 0.6);
     const built = Math.floor(reveal * 8) / 8;
@@ -873,8 +974,10 @@ export class Diorama {
     this.atSea = water;
     this.slide = x > DOCK.x + 0.01 && water < 1 ? -0.09 * (1 - water) : 0;
 
-    // The rocket lifts off past the lighthouse and leaves the frame.
-    const lift = clamp01((s - 2.95) / 0.6);
+    // The rocket lifts off past the lighthouse and leaves the frame. It keeps
+    // climbing out of sight rather than parking where a tall phone frame,
+    // with its sky lifted, would still show it.
+    const lift = MathUtils.clamp((s - 2.95) / 0.6, 0, 3);
     this.flight = lift;
     const climb = lift * lift;
     this.rocket.offset.set(climb * 5.2, climb * 11, 0);
@@ -882,14 +985,14 @@ export class Diorama {
     // The sun keeps to the sky, drifting back as the story goes on.
     const sc = MathUtils.clamp(s, 0, LAST);
     this.sun.group.position.x = cx + (mobile ? 1.7 : 4.4 - sc * 0.3);
-    this.sun.group.position.y = mobile ? 7.4 : 5.1;
+    this.sun.group.position.y = mobile ? 6.2 + sky : 5.1;
     // Clouds trail the camera a little: they read as further away.
     const t = this.frame / FPS;
     for (const hanger of this.hangers) {
       if (hanger === this.sun) continue;
       hanger.group.position.set(
         hanger.anchor.x + Math.sin(t / 3 + hanger.phase) * 0.4 + sc * 0.5,
-        hanger.anchor.y + hanger.drop + (mobile ? 1.2 : 0),
+        hanger.anchor.y + hanger.drop + sky,
         hanger.anchor.z,
       );
     }

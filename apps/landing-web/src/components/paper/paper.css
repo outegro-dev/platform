@@ -300,10 +300,13 @@
       height: 400vh;
     }
 
+    /* Every caption hangs from the same top edge, the line the scene stands
+       on (the camera reads it), so a short one leaves no gap above it. */
     .pj[data-mode="live"] .pj-steps {
       right: 12px;
       bottom: max(14px, env(safe-area-inset-bottom));
       left: 12px;
+      align-items: start;
       width: auto;
     }
 

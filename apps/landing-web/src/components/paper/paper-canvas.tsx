@@ -3,17 +3,19 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import type { PerspectiveCamera } from "three";
-import { createDiorama, type Diorama } from "./diorama";
+import { type Caption, createDiorama, type Diorama } from "./diorama";
 import { PAPER } from "./textures";
 
 const FPS = 12;
 
 function Scene({
   progress,
+  caption,
   active,
   onReady,
 }: {
   progress: RefObject<number>;
+  caption: RefObject<Caption>;
   active: boolean;
   onReady: () => void;
 }) {
@@ -32,7 +34,6 @@ function Scene({
         built = diorama;
         scene.add(diorama.root);
         setWorld(diorama);
-        invalidate();
       },
       () => {
         // Sprites failed to load: stay on the paper backdrop.
@@ -45,7 +46,13 @@ function Scene({
         built.dispose();
       }
     };
-  }, [gl, scene, invalidate]);
+  }, [gl, scene]);
+
+  // The first frames, once useFrame below sees the world (a frame requested
+  // before this commit would find none and end the on-demand loop).
+  useEffect(() => {
+    if (world) invalidate();
+  }, [world, invalidate]);
 
   // Render on demand: every frame while the scroll is catching up, and on
   // each 12 fps tick of the stop-motion clock otherwise.
@@ -74,6 +81,7 @@ function Scene({
       size.height,
       progress.current,
       delta,
+      caption.current,
     );
     if (frames.current < 2) {
       frames.current++;
@@ -84,16 +92,23 @@ function Scene({
   return null;
 }
 
+/**
+ * Renders on demand only. The first frames are drawn as soon as the scene
+ * has loaded, even off screen, so the section arrives with station 1 already
+ * standing; the clock runs only while `active`.
+ */
 export default function PaperCanvas({
   active,
   dpr,
   progress,
+  caption,
   onReady,
   onLost,
 }: {
   active: boolean;
   dpr: number;
   progress: RefObject<number>;
+  caption: RefObject<Caption>;
   onReady: () => void;
   onLost: () => void;
 }) {
@@ -103,7 +118,7 @@ export default function PaperCanvas({
       dpr={dpr}
       flat
       shadows="percentage"
-      frameloop={active ? "demand" : "never"}
+      frameloop="demand"
       camera={{ fov: 32, near: 0.5, far: 120, position: [0, 4.9, 14] }}
       gl={{
         antialias: true,
@@ -119,7 +134,12 @@ export default function PaperCanvas({
       }}
       fallback={null}
     >
-      <Scene progress={progress} active={active} onReady={onReady} />
+      <Scene
+        progress={progress}
+        caption={caption}
+        active={active}
+        onReady={onReady}
+      />
     </Canvas>
   );
 }

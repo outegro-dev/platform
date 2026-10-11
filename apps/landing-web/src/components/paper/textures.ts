@@ -160,26 +160,54 @@ export function seaPaper() {
 export const SEA_TILE = 3.2;
 
 /**
+ * The cut end of a strip, drawn on its own tile: the edge curves down to the
+ * bottom over `length` px (`shape` lifts it from 0 at the tip to 1), so the
+ * strip ends in a slope instead of a straight vertical cut.
+ */
+type Taper = {
+  side: "start" | "end";
+  length: number;
+  shape: (t: number) => number;
+};
+
+/**
  * A long strip with a wavy (or hilly) top edge: white paper border, marker
- * outline, hatched fill. Transparent above the edge; tiles horizontally.
+ * outline, hatched fill. Transparent above the edge; tiles horizontally,
+ * except a tapered end tile.
  */
 function edgeStrip(
   height: number,
   edge: (x: number) => number,
   fill: (ctx: CanvasRenderingContext2D, height: number) => void,
   seed: number,
+  taper?: Taper,
 ) {
   const width = 512;
   const { element, ctx } = canvas(width, height);
   // Near-transparent white, so filtered edges fade to paper, not to black.
   ctx.fillStyle = "rgba(255,255,255,0.01)";
   ctx.fillRect(0, 0, width, height);
+  let from = -24;
+  let to = width + 24;
+  let top = edge;
+  if (taper) {
+    // The tip sits inside the tile, so its paper border is not cut off.
+    const tip = taper.side === "start" ? 16 : width - 16;
+    const ground = height + 12;
+    if (taper.side === "start") from = tip;
+    else to = tip;
+    top = (x) => {
+      const t = Math.min(1, Math.abs(x - tip) / taper.length);
+      return ground + (edge(x) - ground) * taper.shape(t);
+    };
+  }
   const path = new Path2D();
-  path.moveTo(-24, edge(-24));
-  for (let x = -24; x <= width + 24; x += 4) path.lineTo(x, edge(x));
+  path.moveTo(from, top(from));
+  for (let x = from; x < to; x += 4) path.lineTo(x, top(x));
+  path.lineTo(to, top(to));
   const body = new Path2D(path);
-  body.lineTo(width + 24, height + 4);
-  body.lineTo(-24, height + 4);
+  body.lineTo(to, height + 4);
+  body.lineTo(from, height + 4);
   body.closePath();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
@@ -197,11 +225,21 @@ function edgeStrip(
   const map = texture(element);
   // Repeat along the strip only: a vertical repeat bleeds the fill over the edge.
   map.wrapT = ClampToEdgeWrapping;
+  if (taper) map.wrapS = ClampToEdgeWrapping;
   return map;
 }
 
-/** Standing wave strips: TAU-periodic over the tile so they tile seamlessly. */
-export function waveStrip(fillColor: string, phase: number, seed: number) {
+/**
+ * Standing wave strips: TAU-periodic over the tile so they tile seamlessly.
+ * With `end`, the tile is the strip's first one, rounded off at the left
+ * where the sea washes up on the shore.
+ */
+export function waveStrip(
+  fillColor: string,
+  phase: number,
+  seed: number,
+  end = false,
+) {
   const height = 150;
   return edgeStrip(
     height,
@@ -236,11 +274,26 @@ export function waveStrip(fillColor: string, phase: number, seed: number) {
       }
     },
     seed,
+    // A quarter circle: the cut end of a paper strip.
+    end
+      ? {
+          side: "start",
+          length: 120,
+          shape: (t) => Math.sqrt(1 - (1 - t) ** 2),
+        }
+      : undefined,
   );
 }
 
-/** Rolling hills of grid paper behind the land stations. */
-export function hillStrip(grid: HTMLCanvasElement | null, seed: number) {
+/**
+ * Rolling hills of grid paper behind the land stations. With `end`, the
+ * tile is the strip's last one, sloping down to the coast at the right.
+ */
+export function hillStrip(
+  grid: HTMLCanvasElement | null,
+  seed: number,
+  end = false,
+) {
   const height = 256;
   return edgeStrip(
     height,
@@ -266,6 +319,9 @@ export function hillStrip(grid: HTMLCanvasElement | null, seed: number) {
       ctx.fillRect(0, h * 0.62, 512, h);
     },
     seed + 20,
+    end
+      ? { side: "end", length: 340, shape: (t) => 1 - (1 - t) ** 2 }
+      : undefined,
   );
 }
 
