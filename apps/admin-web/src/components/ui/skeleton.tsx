@@ -13,18 +13,16 @@ export function Skeleton({
   width = "100%",
   height = 14,
   className,
-  radius,
 }: {
   width?: number | string;
   height?: number | string;
   className?: string;
-  radius?: number;
 }) {
   return (
     <span
       aria-hidden="true"
       className={cn("skeleton", className)}
-      style={{ width, height, borderRadius: radius }}
+      style={{ width, height }}
     />
   );
 }
@@ -100,7 +98,7 @@ export function TableSkeleton({
           {slots(3, "field").map((key) => (
             <div key={key} className="field">
               <Skeleton width={80} height={12} />
-              <Skeleton height={48} radius={12} />
+              <Skeleton height={48} />
             </div>
           ))}
         </div>
@@ -110,7 +108,7 @@ export function TableSkeleton({
         style={{ padding: "12px var(--panel-pad) 24px" }}
       >
         {slots(rows, "line").map((key) => (
-          <Skeleton key={key} height={46} radius={10} />
+          <Skeleton key={key} height={46} />
         ))}
       </div>
     </section>

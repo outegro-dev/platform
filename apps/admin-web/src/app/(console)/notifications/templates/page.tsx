@@ -170,7 +170,7 @@ export default async function TemplatesPage({
             <div className="stack" aria-busy="true">
               <Skeleton height={44} />
               <Skeleton height={120} />
-              <Skeleton height={560} radius={12} />
+              <Skeleton height={560} />
             </div>
           }
         >

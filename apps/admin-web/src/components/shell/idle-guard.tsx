@@ -104,9 +104,7 @@ export const IdleGuard = observer(function IdleGuard() {
             <span className="state-icon" aria-hidden="true">
               <ClockCountdownIcon />
             </span>
-            <DialogTitle className="text-[26px] tracking-[-0.035em]">
-              {t("title")}
-            </DialogTitle>
+            <DialogTitle>{t("title")}</DialogTitle>
             <DialogDescription>
               {t("body", { time: clock(store.secondsLeft) })}
             </DialogDescription>

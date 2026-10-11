@@ -244,7 +244,7 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
               <p className="small muted">{t("noAttempt")}</p>
             )}
             {detail.attempt?.failureReason && (
-              <p className="small" style={{ color: "var(--destructive)" }}>
+              <p className="small" style={{ color: "var(--danger)" }}>
                 {detail.attempt.failureReason}
               </p>
             )}
