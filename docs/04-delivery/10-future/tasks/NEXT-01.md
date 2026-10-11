@@ -1,6 +1,6 @@
 # NEXT-01. Отдельное ТЗ Battleship
 
-Status: planned
+Status: done
 Scope: future
 Stage: 10-future
 

@@ -50,13 +50,17 @@ export class IdentitiesController {
   link(
     @CurrentUser() user: AuthenticatedUser,
     @Body({ schema: googleCode }) body: z.infer<typeof googleCode>,
+    @Client() client: ClientContext,
   ) {
-    return this.identities.link(user.userId, body);
+    return this.identities.link(user.userId, body, client);
   }
 
   @Delete("me/identities/google")
   @HttpCode(204)
-  async unlink(@CurrentUser() user: AuthenticatedUser) {
-    await this.identities.unlink(user.userId);
+  async unlink(
+    @CurrentUser() user: AuthenticatedUser,
+    @Client() client: ClientContext,
+  ) {
+    await this.identities.unlink(user.userId, client);
   }
 }

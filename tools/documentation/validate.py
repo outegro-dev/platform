@@ -11,22 +11,28 @@ if len(tasks)!=len(by_id): errors.append('Duplicate task IDs')
 all_cases=[]
 required_headers=['Цель и контекст','Обязательное чтение','Зависимости и готовность входа','Область изменений','Пошаговое выполнение','Тест-кейсы','Критерии готовности','Откат и остановка','Команда для передачи модели']
 external_doc=(ROOT/'docs/03-decisions/open-inputs.md').read_text(encoding='utf-8')
+# A card that lives only on the board has the issue URL as its path, no card file and no TC IDs.
+board_issue=re.compile(r'^https://github\.com/outegro-dev/platform/issues/\d+$')
+done_without_report=[]
 for task in tasks:
     id=task['id'];file=ROOT/task['path']
-    if not file.is_file(): errors.append(f'{id}: missing card');continue
-    text=file.read_text(encoding='utf-8')
-    if not text.startswith(f'# {id}.'): errors.append(f'{id}: wrong title ID')
-    status=re.search(r'^Status: (\S+)$',text,re.M)
-    if not status or status.group(1)!=task['status']: errors.append(f'{id}: status mismatch')
     if task['status'] not in ['planned','in_progress','review','done','blocked','deferred']: errors.append(f'{id}: invalid status')
-    for h in required_headers:
-        if f'## {h}' not in text: errors.append(f'{id}: missing section {h}')
-    cases=re.findall(r'^### (TC-[A-Z]+-\d+-\d+):',text,re.M)
-    if cases!=task['test_case_ids'] or len(cases)<3: errors.append(f'{id}: cases mismatch/minimum')
-    for part in re.split(r'^### TC-',text,flags=re.M)[1:]:
-        for label in ['**Дано:**','**Действие:**','**Ожидается:**','**Доказательство:**']:
-            if label not in part: errors.append(f'{id}: incomplete case {label}')
-    all_cases.extend(cases)
+    if board_issue.match(task['path']):
+        if task['test_case_ids']: errors.append(f'{id}: board card lists test cases without a card file')
+    elif not file.is_file(): errors.append(f'{id}: missing card');continue
+    else:
+        text=file.read_text(encoding='utf-8')
+        if not text.startswith(f'# {id}.'): errors.append(f'{id}: wrong title ID')
+        status=re.search(r'^Status: (\S+)$',text,re.M)
+        if not status or status.group(1)!=task['status']: errors.append(f'{id}: status mismatch')
+        for h in required_headers:
+            if f'## {h}' not in text: errors.append(f'{id}: missing section {h}')
+        cases=re.findall(r'^### (TC-[A-Z]+-\d+-\d+):',text,re.M)
+        if cases!=task['test_case_ids'] or len(cases)<3: errors.append(f'{id}: cases mismatch/minimum')
+        for part in re.split(r'^### TC-',text,flags=re.M)[1:]:
+            for label in ['**Дано:**','**Действие:**','**Ожидается:**','**Доказательство:**']:
+                if label not in part: errors.append(f'{id}: incomplete case {label}')
+        all_cases.extend(cases)
     for dep in task['dependencies']:
         if dep not in by_id: errors.append(f'{id}: missing dependency {dep}')
         if dep==id: errors.append(f'{id}: self dependency')
@@ -34,8 +40,9 @@ for task in tasks:
         if not (ROOT/rel).is_file(): errors.append(f'{id}: missing context {rel}')
     for e in task['external']:
         if f'| {e} |' not in external_doc: errors.append(f'{id}: unknown external input {e}')
+    # Done is recorded from the board (closed issue, merged work); a per-task report is listed when missing, not invented.
     if task['status']=='done' and not list((ROOT/'docs/09-evidence'/id).glob('*/report.md')):
-        errors.append(f'{id}: done without report')
+        done_without_report.append(id)
 if len(set(all_cases))!=len(all_cases): errors.append('Duplicate test case IDs')
 done=set();left=set(by_id);layers=[]
 while left:
@@ -61,6 +68,6 @@ for file in owned:
 catalog=(ROOT/'docs/05-quality/test-catalog.md').read_text(encoding='utf-8')
 for tc in all_cases:
     if f'| {tc} |' not in catalog: errors.append('Missing test catalog case '+tc)
-summary={'result':'fail' if errors else 'pass','tasks':len(tasks),'base_release':sum(t['scope']=='base-release' for t in tasks),'optional_wallet':sum(t['scope']=='optional-wallet' for t in tasks),'future':sum(t['scope']=='future' for t in tasks),'test_cases':len(all_cases),'dependency_layers':len(layers),'local_links_checked':checked_links,'ready_by_recorded_status':[t['id'] for t in tasks if t['status']=='planned' and all(by_id[d]['status']=='done' for d in t['dependencies'])],'errors':errors,'claim_boundary':'Documentation structure only; no application, provider, FPS, resource or deployment tests executed.'}
+summary={'result':'fail' if errors else 'pass','tasks':len(tasks),'base_release':sum(t['scope']=='base-release' for t in tasks),'optional_wallet':sum(t['scope']=='optional-wallet' for t in tasks),'future':sum(t['scope']=='future' for t in tasks),'post_release':sum(t['scope']=='post-release' for t in tasks),'board_only':sum(bool(board_issue.match(t['path'])) for t in tasks),'test_cases':len(all_cases),'dependency_layers':len(layers),'local_links_checked':checked_links,'ready_by_recorded_status':[t['id'] for t in tasks if t['status']=='planned' and all(by_id[d]['status']=='done' for d in t['dependencies'])],'done_without_report':done_without_report,'errors':errors,'claim_boundary':'Documentation structure only; no application, provider, FPS, resource or deployment tests executed.'}
 print(json.dumps(summary,ensure_ascii=False,indent=2))
 sys.exit(1 if errors else 0)

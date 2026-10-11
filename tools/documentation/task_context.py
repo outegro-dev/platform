@@ -16,7 +16,9 @@ lines=[f'# Execution context: {task["id"]}',f'Status: {task["status"]}; scope: {
  'Hard dependencies: '+(', '.join(f'{d}={by_id[d]["status"]}' for d in task['dependencies']) or 'none'),
  'External inputs: '+(', '.join(task['external']) or 'none explicit'),
  'This helper is read-only. It does not execute the task, approve deployment or prove dependencies complete.']
-files=(['AGENTS.md']+task['required_docs'] if args.bundle else [])+[task['path']]
+board_only=task['path'].startswith('https://')
+if board_only: lines.append('Card: '+task['path']+' (board only, no card file; read the issue).')
+files=(['AGENTS.md']+task['required_docs'] if args.bundle else [])+([] if board_only else [task['path']])
 for rel in dict.fromkeys(files):
     file=(ROOT/rel).resolve()
     if ROOT not in file.parents: raise SystemExit('Path outside project: '+rel)

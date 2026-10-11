@@ -24,7 +24,7 @@ import {
 export type TechContext = {
   /** The interview the reader prepares for: «готовится к собеседованию …». */
   readonly audience: string;
-  /** The facts must be right for this, e.g. "Node.js 22+". */
+  /** The facts must be right for this, e.g. "Node.js 24+". */
   readonly tech: string;
   /** The language of a code example ("explain with code"). */
   readonly codeLang: string;
@@ -43,8 +43,22 @@ export const BOOK_TECH: Readonly<Record<string, TechContext>> = {
   },
   "nodejs-internals": {
     audience: "на Node.js-разработчика уровня middle",
-    tech: "Node.js 22+",
+    tech: "Node.js 24+",
     codeLang: "JavaScript для Node.js",
+    fences: ["js"],
+  },
+  "message-brokers": {
+    audience:
+      "на backend-разработчика уровня middle (Node.js и NestJS, RabbitMQ и Kafka)",
+    tech: "RabbitMQ 4.3+, Apache Kafka 4.3+, NestJS 12 и Node.js 22.12+",
+    codeLang:
+      "TypeScript для Node.js и NestJS (amqplib, kafkajs или транспорты @nestjs/microservices)",
+    fences: ["ts", "bash"],
+  },
+  "javascript-basics": {
+    audience: "на JavaScript-разработчика (frontend или Node.js)",
+    tech: "современного JavaScript (ES2024+), Node.js 24+ и актуальных браузеров",
+    codeLang: "современный JavaScript",
     fences: ["js"],
   },
 };

@@ -2,7 +2,7 @@
 
 Подробный план реализации личного портфолио и платформы приложений. Версия документации 0.3, 27 сентября 2026.
 
-Реализованы лендинг EN/RU, общие пакеты UI и i18n, backend-фундамент, auth-backend, notifications-backend и кабинет id-web со входом по коду и SSO для приложений платформы. Инфраструктура K3s и остальные сервисы — следующие этапы. Текущее состояние и ограничения: [отчёт реализации](docs/09-evidence/landing-build/report.md).
+Реализованы лендинг EN/RU, общие пакеты UI и i18n, backend-фундамент, auth-backend, notifications-backend и кабинет id-web со входом по коду и SSO для приложений платформы. Payments, админка, Морской бой и Обучение тоже работают в production на K3s. Текущее состояние: [handoff](docs/00-start-here/handoff.md); отчёт по лендингу: [landing-build](docs/09-evidence/landing-build/report.md).
 
 ## Локальный запуск
 
@@ -28,7 +28,7 @@ E2E поднимает отдельную production-сборку на localhost
 ## Подробный план платформы
 
 - **[Handoff: состояние и как продолжить на другой машине](docs/00-start-here/handoff.md)**
-- **[Что дальше: ревью и этапы с чекпоинтами](docs/00-start-here/next-steps.md)**
+- **[Что дальше: порядок работы и контрольные точки](docs/00-start-here/next-steps.md)**
 - **[Что нужно от владельца: аккаунты, доступы, покупки](docs/00-start-here/owner-checklist.md)**
 - [Начать здесь](docs/00-start-here/README.md)
 - [Контекст проекта](docs/00-start-here/project-context.md)

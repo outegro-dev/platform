@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { Body, Controller, Get, Module, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Module,
+  PayloadTooLargeException,
+  Post,
+} from "@nestjs/common";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from "jose";
@@ -55,6 +62,23 @@ class NotesController {
   @Get("boom")
   boom() {
     throw new Error("database password is hunter2");
+  }
+
+  /** An upstream API's error that carries a status of its own. */
+  @Public()
+  @Get("upstream")
+  upstream() {
+    throw Object.assign(new Error("model refused the prompt"), {
+      status: 400,
+      type: "invalid_request_error",
+    });
+  }
+
+  /** A handler's own limit, as an upload interceptor sets it. */
+  @Public()
+  @Post("upload")
+  upload() {
+    throw new PayloadTooLargeException();
   }
 }
 
@@ -196,6 +220,41 @@ describe("validation and errors", () => {
       .expect(500);
     expect(boom.body.error.code).toBe("INTERNAL");
     expect(JSON.stringify(boom.body)).not.toContain("hunter2");
+    // Only the body parser's own errors pass their status on.
+    const upstream = await request(app.getHttpServer())
+      .get("/v1/notes/upstream")
+      .expect(500);
+    expect(upstream.body.error.code).toBe("INTERNAL");
+  });
+
+  it("answers a body over the limit with 413 in the contract shape, before authentication", async () => {
+    const res = await request(app.getHttpServer())
+      .post("/v1/notes")
+      .set("x-request-id", "req-test-00000002")
+      .send({ title: "x".repeat(200_000), tags: [] })
+      .expect(413);
+    expect(res.body).toEqual({
+      error: {
+        code: "VALIDATION_FAILED",
+        messageKey: "errors.validationFailed",
+        fieldErrors: {},
+        requestId: "req-test-00000002",
+        retryable: false,
+      },
+    });
+    const upload = await request(app.getHttpServer())
+      .post("/v1/notes/upload")
+      .expect(413);
+    expect(upload.body.error.code).toBe("VALIDATION_FAILED");
+  });
+
+  it("answers a body the parser cannot read as a validation failure", async () => {
+    const res = await request(app.getHttpServer())
+      .post("/v1/notes")
+      .set("content-type", "application/json; charset=latin1")
+      .send('{"title":"Hello","tags":[]}')
+      .expect(400);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
   });
 });
 
@@ -228,6 +287,16 @@ describe("metrics", () => {
     expect(count("/v1/notes/me", "4xx")).toBeGreaterThanOrEqual(3);
     expect(count("/v1/notes/admin", "4xx")).toBeGreaterThanOrEqual(1);
     expect(count("/v1/notes/boom", "5xx")).toBeGreaterThanOrEqual(1);
+    // A refused body is the client's mistake, counted before any route matched.
+    const posts = (labels: Record<string, string>) =>
+      metricValue(scrape, "http_server_requests_total", {
+        method: "POST",
+        ...labels,
+      });
+    expect(
+      posts({ route: "unmatched", status_class: "4xx" }),
+    ).toBeGreaterThanOrEqual(2);
+    expect(posts({ status_class: "5xx" })).toBe(0);
     expect(scrape).not.toContain('route="/health');
   });
 });

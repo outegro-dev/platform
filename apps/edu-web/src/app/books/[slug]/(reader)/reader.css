@@ -25,6 +25,9 @@
   }
   .reader-main {
     display: grid;
+    /* One column no child can widen (the contents' one-line summary of a
+       long chapter name on a phone): it ellipsizes instead. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 40px;
     min-width: 0;
   }
@@ -438,6 +441,7 @@
      ground, on paper and on paper-white). */
   .hljs-keyword,
   .hljs-selector-tag,
+  .hljs-name,
   .hljs-type {
     color: var(--danger);
   }

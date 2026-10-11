@@ -13,7 +13,11 @@ import { audit } from "../common/audit.js";
 import type { AuthDatabase, AuthDb, AuthTx } from "../common/database.js";
 import { roleBindings, users } from "../db/schema.js";
 
-export type Actor = { userId: string | null; requestId?: string | null };
+/**
+ * Who changes access, and the HTTP request it came in: both go into the
+ * audit row. Null for both only outside a request (the owner CLI).
+ */
+export type Actor = { userId: string | null; requestId: string | null };
 
 const notExpired = (now: Date) =>
   or(isNull(roleBindings.expiresAt), gt(roleBindings.expiresAt, now));

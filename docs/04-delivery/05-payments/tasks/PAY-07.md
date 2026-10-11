@@ -1,6 +1,6 @@
 # PAY-07. Subscription root/renew/period model
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

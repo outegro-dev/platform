@@ -12,7 +12,7 @@ import {
   runWithCorrelation,
 } from "@outegro/db";
 import { startPostgres, type TestPostgres } from "@outegro/db/testing";
-import { connect } from "amqp-connection-manager";
+import { type ChannelWrapper, connect } from "amqp-connection-manager";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { HealthRegistry } from "./health.js";
 import { Messaging, PermanentError } from "./messaging.js";
@@ -205,6 +205,52 @@ describe("Messaging", () => {
       "Event handled",
     );
     logged.mockRestore();
+  });
+
+  it("a channel that fails while it is set up only warns", async () => {
+    const warned = vi.spyOn(Logger.prototype, "warn");
+    const short = new Messaging(
+      { url: rabbit.url, service: "identity" },
+      new HealthRegistry(),
+    );
+    try {
+      // What amqp-connection-manager emits when the connection closes during
+      // channel setup; with no listener, emit() throws and the process exits.
+      const { publisher: channel } = short as unknown as {
+        publisher: ChannelWrapper;
+      };
+      expect(() =>
+        channel.emit(
+          "error",
+          new Error("Channel ended, no reply will be forthcoming"),
+        ),
+      ).not.toThrow();
+      expect(warned).toHaveBeenCalledWith(
+        {
+          err: "Channel ended, no reply will be forthcoming",
+          channel: "publisher",
+        },
+        "RabbitMQ channel error",
+      );
+    } finally {
+      await short.onApplicationShutdown();
+      warned.mockRestore();
+    }
+  });
+
+  it("closing right after start, as a short command does, does not crash", async () => {
+    // The grant-owner flake: close() landed while the channel was being set
+    // up. Sweep the close over the setup window; an unhandled error fails
+    // the run.
+    for (let delay = 0; delay <= 60; delay += 6) {
+      const short = new Messaging(
+        { url: rabbit.url, service: "identity" },
+        new HealthRegistry(),
+      );
+      await new Promise((r) => setTimeout(r, delay));
+      await short.onApplicationShutdown();
+    }
+    await new Promise((r) => setTimeout(r, 200));
   });
 
   it("counts consumed events by queue and outcome", async () => {

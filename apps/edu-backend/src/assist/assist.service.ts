@@ -17,7 +17,7 @@ import { understandingScore } from "../domain/assist/score.js";
 import type { TextRequest } from "../domain/assist/text-model.js";
 import { ProgressService } from "../progress/progress.service.js";
 import { type AssistAnswer, AssistAnswers } from "./answers.js";
-import { AssistCache } from "./cache.js";
+import { AssistCache, type CacheKeyParts } from "./cache.js";
 import { type AssistJob, AssistLedger } from "./ledger.js";
 import { AssistSettings } from "./settings.js";
 
@@ -87,16 +87,16 @@ export class AssistService {
     this.requireEnabled(job);
     const served = () => this.progress.recordActivity(userId, book.id);
     // A question or "another version" is the reader's own: never shared.
-    const cacheKey =
+    const cacheKey: CacheKeyParts | null =
       body.style !== undefined && body.avoid === undefined
-        ? this.cache.keyOf({
+        ? {
+            bookId: book.id,
             slug: book.slug,
             contentVersion: book.contentVersion,
             chapter: chapter.n,
             section: body.section,
             style: body.style,
-            model: this.answers.modelName,
-          })
+          }
         : null;
     if (cacheKey) {
       const cached = await this.cache.take(cacheKey);

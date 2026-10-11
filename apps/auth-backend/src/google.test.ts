@@ -258,6 +258,63 @@ describe("Google sign-in (ID-02)", () => {
     ).toEqual(["security.google-unlinked.v1"]);
   });
 
+  it("audit rows of a Google signup, unlink and link carry the id of their request", async () => {
+    const google = account();
+    const session = (
+      await signIn(h.google.code(google))
+        .set("x-request-id", "req-google-signup-01")
+        .expect(200)
+    ).body;
+    // A verified email stays a way in, so the link may go and come back.
+    const unlinked = await h
+      .http()
+      .delete("/v1/me/identities/google")
+      .set(h.auth(session.accessToken))
+      .expect(204);
+    await h
+      .http()
+      .post("/v1/me/identities/google")
+      .set(h.auth(session.accessToken))
+      .set("x-request-id", "req-google-link-0001")
+      .send(payload(h.google.code(google)))
+      .expect(200);
+
+    const trail = await db
+      .select({
+        action: auditLog.action,
+        data: auditLog.data,
+        requestId: auditLog.requestId,
+      })
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.targetId, session.user.id),
+          eq(auditLog.targetType, "user"),
+        ),
+      );
+    expect(unlinked.headers["x-request-id"]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(trail).toHaveLength(3);
+    expect(trail).toEqual(
+      expect.arrayContaining([
+        {
+          action: "identity.linked",
+          data: { provider: "google", via: "signup" },
+          requestId: "req-google-signup-01",
+        },
+        {
+          action: "identity.unlinked",
+          data: { provider: "google" },
+          requestId: unlinked.headers["x-request-id"],
+        },
+        {
+          action: "identity.linked",
+          data: { provider: "google", via: "link" },
+          requestId: "req-google-link-0001",
+        },
+      ]),
+    );
+  });
+
   it("does not sign in a suspended user", async () => {
     const google = account();
     const session = (await signIn(h.google.code(google)).expect(200)).body;

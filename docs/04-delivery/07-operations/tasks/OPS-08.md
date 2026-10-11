@@ -1,6 +1,6 @@
 # OPS-08. Ресурсный профиль 8 ГБ
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 07-operations
 

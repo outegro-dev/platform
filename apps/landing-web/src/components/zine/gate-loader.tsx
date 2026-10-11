@@ -7,20 +7,21 @@ import "./gate-loader.css";
 type Copy = { pier: string; opening: string };
 
 /**
- * «Ворота Причала №1»: on the first page of a browser session two rusty
- * port gate leaves close the page, a stamp counts 3·2·1, a hinge bolt pops,
- * the left leaf falls at the viewer and the right one slides away. The page
- * is rendered underneath and the show is pure CSS from the server markup,
- * so a visitor without scripting is never stuck. The layout leaves it out
- * for bots and once the session cookie is set; reduced motion hides it in
- * CSS. Decided on the first render: the kit specimen opens straight away,
- * and a later client navigation never shuts the gates over a page in use.
+ * «Ворота Причала №1»: on every page load two rusty port gate leaves close
+ * the page, a stamp counts 3·2·1, a hinge bolt pops, the left leaf falls at
+ * the viewer and the right one slides away. The page is rendered underneath
+ * and the show is pure CSS from the server markup, so a visitor without
+ * scripting is never stuck. A click or Esc skips it and keeps it away for
+ * the rest of the browser session (the cookie the layout checks); bots never
+ * get it and reduced motion hides it in CSS. Decided on the first render:
+ * the kit specimen opens straight away, and a later client navigation never
+ * shuts the gates over a page in use.
  */
 export function GateLoader({
   cookie,
   ...copy
 }: Copy & {
-  /** the session cookie the layout checks */
+  /** the session cookie a skip sets and the layout checks */
   cookie: string;
 }) {
   const pathname = usePathname();
@@ -42,11 +43,13 @@ function Gate({
   useEffect(() => {
     const gate = ref.current;
     if (!gate) return;
-    // seen in this session: the layout leaves the gates out until the browser closes
-    const secure = location.protocol === "https:" ? "; Secure" : "";
-    // biome-ignore lint/suspicious/noDocumentCookie: one plain session flag; the Cookie Store API is not everywhere yet.
-    document.cookie = `${cookie}=1; Path=/; SameSite=Lax${secure}`;
-    const skip = () => setSkipped(true);
+    const skip = () => {
+      // skipped once: the layout leaves the gates out until the browser closes
+      const secure = location.protocol === "https:" ? "; Secure" : "";
+      // biome-ignore lint/suspicious/noDocumentCookie: one plain session flag; the Cookie Store API is not everywhere yet.
+      document.cookie = `${cookie}=1; Path=/; SameSite=Lax${secure}`;
+      setSkipped(true);
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") skip();
     };

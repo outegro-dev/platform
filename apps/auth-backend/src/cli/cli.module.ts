@@ -4,15 +4,19 @@ import {
   ClockModule,
   DatabaseModule,
   HealthModule,
-  MessagingModule,
-  OutboxModule,
 } from "@outegro/nest-common";
 import { RolesService } from "../access/roles.service.js";
-import { dbConfig, rabbitConfig } from "../config/config.js";
+import { dbConfig } from "../config/config.js";
 import { AppConfigModule } from "../config/config.module.js";
 import * as schema from "../db/schema.js";
 
-/** Minimal context for operator commands: database and outbox only. */
+/**
+ * Minimal context for operator commands: the database only. Commands write
+ * their events to the outbox in the same transaction, and the running
+ * service's relay publishes them. No RabbitMQ here: a short command closed
+ * while its channel was still being set up crashed with exit code 1 after
+ * the change had committed ("grant-owner failed" in TC-R-02-01).
+ */
 @Module({
   imports: [
     AppConfigModule,
@@ -27,14 +31,6 @@ import * as schema from "../db/schema.js";
         max: 2,
       }),
     }),
-    MessagingModule.forRootAsync({
-      inject: [rabbitConfig.KEY],
-      useFactory: (rabbit: ConfigType<typeof rabbitConfig>) => ({
-        url: rabbit.url,
-        service: "identity",
-      }),
-    }),
-    OutboxModule.forRoot(),
   ],
   providers: [RolesService],
 })

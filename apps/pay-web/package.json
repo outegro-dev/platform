@@ -18,22 +18,22 @@
     "@phosphor-icons/react": "2.1.10",
     "mobx": "6.16.1",
     "mobx-react-lite": "4.1.1",
-    "next": "16.3.6",
-    "next-intl": "4.14.7",
+    "next": "16.4.0",
+    "next-intl": "4.14.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
-    "@playwright/test": "1.63.0",
+    "@playwright/test": "1.64.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "babel-plugin-react-compiler": "1.0.0",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "tailwindcss": "4.3.3",
-    "vitest": "5.0.2"
+    "vitest": "5.0.3"
   }
 }

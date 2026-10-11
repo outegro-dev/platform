@@ -8,12 +8,12 @@ Plus route, private topics, typed catalog tools, фото и drafts. Full-stack 
 
 | ID | Результат | Hard dependencies | Статус |
 |---|---|---|---|
-| [H-01](tasks/H-01.md) | Подтверждены Plus OAuth, runtime, модель и каталог как workload | [BE-01](../02-backend-foundation/tasks/BE-01.md) | planned |
-| [H-02](tasks/H-02.md) | Воспроизводимый pinned image/PVC/startup | [OPS-01](../07-operations/tasks/OPS-01.md), [H-01](tasks/H-01.md) | planned |
-| [H-03](tasks/H-03.md) | Приватный OAuth, auth persistence и reauth | [H-02](tasks/H-02.md) | planned |
-| [H-04](tasks/H-04.md) | Allowlist канала, tools/egress/resource policy | [H-02](tasks/H-02.md) | planned |
-| [H-05](tasks/H-05.md) | No-spend/auxiliary/quota acceptance | [H-03](tasks/H-03.md), [H-04](tasks/H-04.md) | planned |
-| [H-07](tasks/H-07.md) | Topics routing, owner/chat allowlist, versioned rules | [H-04](tasks/H-04.md) | planned |
+| [H-01](tasks/H-01.md) | Подтверждены Plus OAuth, runtime, модель и каталог как workload | [BE-01](../02-backend-foundation/tasks/BE-01.md) | done |
+| [H-02](tasks/H-02.md) | Воспроизводимый pinned image/PVC/startup | [OPS-01](../07-operations/tasks/OPS-01.md), [H-01](tasks/H-01.md) | done |
+| [H-03](tasks/H-03.md) | Приватный OAuth, auth persistence и reauth | [H-02](tasks/H-02.md) | done |
+| [H-04](tasks/H-04.md) | Allowlist канала, tools/egress/resource policy | [H-02](tasks/H-02.md) | in_progress |
+| [H-05](tasks/H-05.md) | No-spend/auxiliary/quota acceptance | [H-03](tasks/H-03.md), [H-04](tasks/H-04.md) | in_progress |
+| [H-07](tasks/H-07.md) | Topics routing, owner/chat allowlist, versioned rules | [H-04](tasks/H-04.md) | in_progress |
 | [H-06](tasks/H-06.md) | Backup/restore/alerts и full-stack load test | [H-05](tasks/H-05.md), [OPS-05](../07-operations/tasks/OPS-05.md), [OPS-06](../07-operations/tasks/OPS-06.md) | planned |
 | [H-08](tasks/H-08.md) | Assistant-store/Drizzle schema, media ingest, idempotency | [BE-07](../02-backend-foundation/tasks/BE-07.md), [H-07](tasks/H-07.md), [OPS-02](../07-operations/tasks/OPS-02.md) | planned |
 | [H-09](tasks/H-09.md) | Фото → item draft → уточнения → сохранённая карточка | [H-08](tasks/H-08.md), [H-05](tasks/H-05.md) | planned |

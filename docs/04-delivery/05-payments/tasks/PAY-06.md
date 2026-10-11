@@ -1,6 +1,6 @@
 # PAY-06. Source grants и expiry
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 05-payments
 

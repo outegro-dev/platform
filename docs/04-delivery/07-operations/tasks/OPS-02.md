@@ -1,6 +1,6 @@
 # OPS-02. PG/Redis/Rabbit PVC/roles/limits
 
-Status: planned
+Status: done
 Scope: base-release
 Stage: 07-operations
 

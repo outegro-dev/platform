@@ -1,6 +1,6 @@
 # Instructions for implementation agents
 
-Рабочий корень: `C:\Users\working\Desktop\outegro-dev-showcase`. Язык документации — русский. Публичный UI — EN по умолчанию и RU. Реализованы `apps/landing-web`, `packages/ui` и `packages/i18n`; состояние смотреть в `docs/09-evidence/landing-build/report.md`. Backend/infra ещё запланированы. Перед UI-изменениями читать DESIGN.md.
+Рабочий корень: `C:\Users\working\Desktop\outegro-dev-showcase`. Язык документации — русский. Публичный UI — EN по умолчанию и RU. Платформа в production (лендинг, id, pay, admin, Battleship, Education на K3s); состояние смотреть в `docs/00-start-here/handoff.md`, порядок работы — в `docs/00-start-here/next-steps.md`. Перед UI-изменениями читать DESIGN.md.
 
 ## Start every task
 

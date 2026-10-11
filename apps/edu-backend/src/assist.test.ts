@@ -19,9 +19,11 @@ import {
   vi,
 } from "vitest";
 import { THINKING_HEADROOM } from "./assist/assist.service.js";
+import { AssistCache } from "./assist/cache.js";
 import { type AssistJob, AssistLedger } from "./assist/ledger.js";
 import {
   assistCache,
+  assistDays,
   assistUsage,
   books,
   chapters,
@@ -29,7 +31,9 @@ import {
   readerProgress,
   understandingChecks,
 } from "./db/schema.js";
+import { AssistPrompts } from "./domain/assist/prompts.js";
 import { Slots } from "./domain/assist/slots.js";
+import { utcDay } from "./domain/calendar.js";
 import { GrantsConsumer } from "./events/grants.consumer.js";
 import { IdentityConsumer } from "./events/identity.consumer.js";
 import { ProgressService } from "./progress/progress.service.js";
@@ -49,6 +53,8 @@ import { gate } from "./test/scripted-model.js";
 
 let h: Harness;
 let nodeBookId: string;
+/** A draft book no reader can open, seeded beside the real ones. */
+let sampleBookId: string;
 /** Ids of the SQL book's tasks in chapters 1 and 2, and a quiz of chapter 1. */
 let sqlTask1: string;
 let sqlTask2: string;
@@ -78,7 +84,7 @@ beforeAll(async () => {
   sqlTask1 = tasksOf(1)[0] ?? "";
   sqlTask2 = tasksOf(2)[0] ?? "";
   sqlQuiz1 = sqlOutline[0]?.exerciseIds.find((id) => id.includes("-q-")) ?? "";
-  await seedBook(h.db, {
+  sampleBookId = await seedBook(h.db, {
     document: sampleBook("sample-draft"),
     status: "draft",
     rule: { mode: "free" },
@@ -151,20 +157,23 @@ function quietErrors() {
   };
 }
 
-/** Today's uncached answers already spent, as if requested earlier. */
+/**
+ * Today's uncached answers already spent, as if requested earlier: reserved
+ * and settled as a request takes them, so they count for the reader and for
+ * the day of all readers alike.
+ */
 async function spend(userId: string, count: number) {
-  if (count === 0) return;
-  await h.db.insert(assistUsage).values(
-    Array.from({ length: count }, () => ({
-      userId,
-      kind: "explain" as const,
-      bookId: nodeBookId,
-      chapter: 1,
-      cached: false,
-      outcome: "ok" as const,
-      at: h.clock.now(),
-    })),
-  );
+  const ledger = h.get(AssistLedger);
+  for (let i = 0; i < count; i++)
+    await ledger.settle(
+      await ledger.reserve({
+        kind: "explain",
+        userId,
+        bookId: nodeBookId,
+        chapter: 1,
+      }),
+      { outcome: "ok", tokensIn: 0, tokensOut: 0 },
+    );
 }
 
 /** Opens a stream on the real port; the test reads it as it comes. */
@@ -303,8 +312,8 @@ describe("explain it differently (TC-EDU-10)", () => {
     );
     const { request } = h.model.calls[0] ?? {};
     expect(request).toMatchObject({ maxTokens: 1800, thinking: false });
-    expect(request?.system).toContain("Node.js 22+");
-    expect(request?.prompt).toContain("Раздел: «Runtime, а не язык».");
+    expect(request?.system).toContain("Node.js 24+");
+    expect(request?.prompt).toContain("Раздел: «Среда выполнения, а не язык».");
     expect(request?.prompt).toContain(
       "Объясни суть раздела проще, как человеку, который видит это впервые.",
     );
@@ -371,13 +380,19 @@ describe("explain it differently (TC-EDU-10)", () => {
     ]);
     expect(await status(second)).toMatchObject({ usedToday: 0 });
     expect((await requests("explain", "cached")) - cachedBefore).toBe(1);
-    const [entry] = await h.db.select().from(assistCache);
-    expect(entry).toBeDefined();
+    // Stored with what makes it stale later: the book version, the model
+    // and the prompt revision.
     expect(
       (await h.db.select().from(assistCache)).find(
         (row) => row.text === "Ответ для кэша.",
-      )?.hits,
-    ).toBe(1);
+      ),
+    ).toMatchObject({
+      bookId: nodeBookId,
+      contentVersion: 1,
+      model: h.model.name,
+      promptRevision: AssistPrompts.revision,
+      hits: 1,
+    });
 
     // Another style or another section is another answer.
     await explain(second, { style: "deep" });
@@ -703,34 +718,108 @@ describe("the daily cap of all readers", () => {
 
   it("counts what the provider billed: answers, answers in flight, refusals with tokens; not the cache or refusals without", async () => {
     const before = await ledger().spentToday();
-    const row = {
+    const job: AssistJob = {
+      kind: "understanding",
       userId: randomUUID(),
-      kind: "understanding" as const,
       bookId: nodeBookId,
       chapter: 1,
-      at: h.clock.now(),
     };
-    await h.db.insert(assistUsage).values([
-      { ...row, cached: false, outcome: "ok", tokensIn: 900, tokensOut: 200 },
-      // In flight: reserved, not settled yet.
-      { ...row, cached: false, outcome: "failed" },
-      // The reader left while the model was thinking: billed, nothing read.
-      { ...row, cached: false, outcome: "refused", tokensIn: 900 },
-      { ...row, cached: false, outcome: "refused", tokensOut: 300 },
-      // The provider refused outright; an answer from the cache; yesterday.
-      { ...row, cached: false, outcome: "refused" },
-      { ...row, cached: true, outcome: "ok" },
-      {
-        ...row,
-        cached: false,
-        outcome: "ok",
-        tokensIn: 900,
-        at: new Date(h.clock.now().getTime() - 24 * 3600_000),
-      },
-    ]);
+    const settled = async (
+      outcome: "ok" | "refused",
+      tokensIn: number,
+      tokensOut: number,
+    ) =>
+      ledger().settle(await ledger().reserve(job), {
+        outcome,
+        tokensIn,
+        tokensOut,
+      });
+    await settled("ok", 900, 200);
+    // In flight: reserved, not settled yet.
+    await ledger().reserve(job);
+    // The reader left while the model was thinking: billed, nothing read.
+    await settled("refused", 900, 0);
+    await settled("refused", 0, 300);
+    // The provider refused outright; an answer from the cache.
+    await settled("refused", 0, 0);
+    await ledger().recordCached(job);
     expect((await ledger().spentToday()) - before).toBe(4);
     // A refusal with tokens does not count against the reader's own limit.
-    expect(await status(row.userId)).toMatchObject({ usedToday: 2 });
+    expect(await status(job.userId)).toMatchObject({ usedToday: 2 });
+  });
+
+  it("keeps counting the requests of a deleted reader", async () => {
+    const identity = h.get(IdentityConsumer);
+    const before = await ledger().spentToday();
+    const reader = randomUUID();
+    h.model.script([{ text: "Ответ перед удалением аккаунта." }]);
+    expect(
+      (await explain(reader, { question: "Сколько?", style: undefined }))
+        .status,
+    ).toBe(200);
+    // Reserved before the purge, refused outright after it: its place is
+    // given back all the same.
+    const leaving = randomUUID();
+    const reservation = await ledger().reserve({
+      kind: "explain",
+      userId: leaving,
+      bookId: nodeBookId,
+      chapter: 1,
+    });
+    expect(await ledger().spentToday()).toBe(before + 2);
+    await identity.apply(h.statusEvent(reader, "deleted", 1));
+    await identity.apply(h.statusEvent(leaving, "deleted", 1));
+    expect(await usageOf(reader)).toEqual([]);
+    expect(await ledger().spentToday()).toBe(before + 2);
+    await ledger().settle(reservation, {
+      outcome: "refused",
+      tokensIn: 0,
+      tokensOut: 0,
+    });
+    expect(await usageOf(leaving)).toEqual([]);
+    expect(await ledger().spentToday()).toBe(before + 1);
+
+    // The deleted reader's answer still takes the day's last place.
+    h.assistConfig.globalDailyLimit = before + 1;
+    const quiet = quietErrors();
+    const refused = await explain(randomUUID(), {
+      question: "Пауза?",
+      style: undefined,
+    });
+    quiet.restore();
+    expect(refused.status).toBe(503);
+    expect(refused.body.error).toMatchObject(paused);
+  });
+
+  it("counts a request on the UTC day it was reserved, settled after midnight too", async () => {
+    const job: AssistJob = {
+      kind: "sql_hint",
+      userId: randomUUID(),
+      bookId: nodeBookId,
+      chapter: 1,
+    };
+    const evening = utcDay(h.clock.now());
+    h.clock.set(new Date(`${evening}T23:59:59.000Z`));
+    const before = await ledger().spentToday();
+    const refused = await ledger().reserve(job);
+    const answered = await ledger().reserve(job);
+    expect(await ledger().spentToday()).toBe(before + 2);
+    h.clock.advance(2_000);
+    expect(await ledger().spentToday()).toBe(0);
+    await ledger().settle(refused, {
+      outcome: "refused",
+      tokensIn: 0,
+      tokensOut: 0,
+    });
+    await ledger().settle(answered, {
+      outcome: "ok",
+      tokensIn: 900,
+      tokensOut: 200,
+    });
+    expect(await ledger().spentToday()).toBe(0);
+    expect(
+      await h.db.select().from(assistDays).where(eq(assistDays.day, evening)),
+    ).toEqual([{ day: evening, spent: before + 1 }]);
   });
 
   it("is off at 0", async () => {
@@ -1046,6 +1135,51 @@ describe("failures of the model", () => {
       cached: false,
     });
     expect((await h.db.select().from(assistCache)).length).toBe(cached);
+  });
+});
+
+describe("stale answers in the cache", () => {
+  it("are dropped: of a book version an import replaced, of another model, of an earlier prompt revision", async () => {
+    const cache = h.get(AssistCache);
+    // A current answer of a real book, stored as a reader's request stores it.
+    h.model.script([{ text: "Ответ, который остаётся." }]);
+    await explain(randomUUID(), { style: "deep", section: "n01-layers" });
+    const kept = (await h.db.select().from(assistCache)).map((row) => row.key);
+    expect(kept.length).toBeGreaterThan(0);
+    // Nothing is stale yet.
+    expect(await cache.prune()).toBe(0);
+
+    const entry = {
+      bookId: sampleBookId,
+      contentVersion: 1,
+      model: h.model.name,
+      promptRevision: AssistPrompts.revision,
+      text: "Ответ про черновик.",
+      createdAt: h.clock.now(),
+    };
+    await h.db.insert(assistCache).values([
+      { ...entry, key: "sample-before-import" },
+      { ...entry, key: "sample-other-model", model: "MiniMax-M2" },
+      {
+        ...entry,
+        key: "sample-old-prompts",
+        promptRevision: AssistPrompts.revision - 1,
+      },
+    ]);
+    // An import replaced the sample book: version 2; its answers come anew.
+    await h.db
+      .update(books)
+      .set({ contentVersion: 2 })
+      .where(eq(books.id, sampleBookId));
+    await h.db
+      .insert(assistCache)
+      .values({ ...entry, key: "sample-after-import", contentVersion: 2 });
+
+    expect(await cache.prune()).toBe(3);
+    expect(
+      (await h.db.select().from(assistCache)).map((row) => row.key).sort(),
+    ).toEqual([...kept, "sample-after-import"].sort());
+    expect(await cache.prune()).toBe(0);
   });
 });
 
@@ -1370,17 +1504,6 @@ describe("the admin overview", () => {
     }
     expect(textOf(eventsOf(await stream.rest()))).toBe("Наконец ответ.");
 
-    // Yesterday's requests are not today's.
-    await h.db.insert(assistUsage).values({
-      userId: randomUUID(),
-      kind: "explain",
-      bookId: nodeBookId,
-      chapter: 1,
-      cached: false,
-      outcome: "ok",
-      tokensIn: 900,
-      at: new Date(h.clock.now().getTime() - 24 * 3600_000),
-    });
     const used = before.globalUsedToday + 3;
     expect(await overview()).toMatchObject({ globalUsedToday: used });
     expect(await ledger.spentToday()).toBe(used);

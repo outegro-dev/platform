@@ -11,7 +11,7 @@ import {
   type TextModel,
   type TextRequest,
 } from "../domain/assist/text-model.js";
-import { type AssistJob, AssistLedger } from "./ledger.js";
+import { type AssistJob, AssistLedger, type Reservation } from "./ledger.js";
 import {
   ASSIST_TIMING,
   AssistSettings,
@@ -127,7 +127,7 @@ class ModelAnswer implements AssistAnswer {
     },
     private readonly job: AssistJob,
     private readonly request: TextRequest,
-    private readonly reservation: string,
+    private readonly reservation: Reservation,
     private readonly release: () => void,
     private readonly onComplete: OnComplete,
   ) {}
@@ -230,10 +230,6 @@ export class AssistAnswers {
     private readonly settings: AssistSettings,
   ) {}
 
-  get modelName(): string {
-    return this.model.name;
-  }
-
   cached(job: AssistJob, text: string, onServed: OnServed): AssistAnswer {
     return new CachedAnswer(
       job,
@@ -275,7 +271,7 @@ export class AssistAnswers {
         retryable: true,
       });
     }
-    let reservation: string;
+    let reservation: Reservation;
     try {
       reservation = await this.countingRefusals(job, () =>
         this.ledger.reserve(job),

@@ -1,6 +1,6 @@
 # OPS-05. Dashboards/alerts/runbooks
 
-Status: planned
+Status: in_progress
 Scope: base-release
 Stage: 07-operations
 

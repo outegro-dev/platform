@@ -7,6 +7,8 @@
 
 Canonical sources: task Markdown для текста, task-index.json для metadata/dependencies/status; менять связанные поля вместе. Сводный test-catalog — индекс, подробный scenario в карточке. Stage README содержит navigation/status snapshot: при смене статуса обновить строку. Spec chapters — canonical предметный текст, portfolio-plan.md derived.
 
+Статусы сверяются с [доской](https://github.com/orgs/outegro-dev/projects/1): `done` — issue закрыт как выполненный или работа в master. Карточки, которые есть только на доске (этап 11-zine, BS-01…04), записаны в task-index.json с URL issue в `path` и без TC; карточки-файла у них нет. `validate.py` перечисляет done-задачи без отчёта в `docs/09-evidence/<ID>/` в поле `done_without_report` и не считает это ошибкой.
+
 Рабочие команды из корня:
 
 ```text
