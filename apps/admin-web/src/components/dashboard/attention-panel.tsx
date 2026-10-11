@@ -12,7 +12,9 @@ import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { Panel } from "@/components/ui/layout";
 import { RetryButton } from "@/components/ui/retry-button";
+import { assistCap, assistState } from "@/lib/education";
 import {
+  educationOverview,
   notificationsOverview,
   openIssues,
   reviewRefunds,
@@ -47,7 +49,7 @@ export async function AttentionPanel({
 
   const readNotifications = granted.has("notifications.read");
   const readBilling = granted.has("billing.read");
-  const [health, overview, telegram, issues, unmatched, refunds] =
+  const [health, overview, telegram, issues, unmatched, refunds, education] =
     await Promise.all([
       serviceHealth(),
       readNotifications ? notificationsOverview() : null,
@@ -55,6 +57,8 @@ export async function AttentionPanel({
       readBilling ? openIssues() : null,
       readBilling ? unmatchedEvents() : null,
       readBilling ? reviewRefunds() : null,
+      // The same overview the Education panel reads (once per request).
+      granted.has("edu.read") ? educationOverview() : null,
     ]);
 
   for (const service of health) {
@@ -164,6 +168,28 @@ export async function AttentionPanel({
       title: t("refundsReview", { count: refunds.data.items.length }),
       href: "/payments/refunds?state=review_required",
     });
+
+  // Education: an overview that failed leaves this list incomplete (not
+  // connected is not news); the AI assistant stops answering for the day
+  // once the spending cap for all readers is used up (until 00:00 UTC).
+  if (education && !education.ok && education.kind !== "not-connected")
+    unchecked.push(t("services.education"));
+  if (education?.ok) {
+    const { assist } = education.data;
+    const cap = assistCap(assist);
+    if (assistState(assist) === "paused" && cap)
+      items.push({
+        key: "assist-paused",
+        tone: "warn",
+        icon: <PauseCircleIcon />,
+        title: t("assistPaused"),
+        meta: t("assistPausedMeta", {
+          used: f.number(cap.used),
+          limit: cap.limit,
+        }),
+        href: "/education#assist",
+      });
+  }
 
   const order = { bad: 0, warn: 1, neutral: 2, ok: 3 };
   items.sort((a, b) => order[a.tone] - order[b.tone]);

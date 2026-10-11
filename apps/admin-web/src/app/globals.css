@@ -713,8 +713,10 @@
     height: 14px;
   }
   /* The way back (`BackLink`) keeps its place in the head; a "see all"
-     link is pulled out to the card's corner instead. */
-  .panel-link[data-back] {
+     link is pulled out to the card's corner instead. In a row of statuses
+     (a player's account) the link keeps its place too. */
+  .panel-link[data-back],
+  .row-gap > .panel-link {
     margin: 0;
   }
   .panel-body {
@@ -1529,6 +1531,13 @@
   .feed-change-after {
     color: var(--foreground);
   }
+  /* "Request 1a2b3c4d" and its copy button, centred on one line. */
+  .feed-request {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
 
   .timeline {
     position: relative;
@@ -1812,6 +1821,26 @@
   }
   .form-status[data-tone="ok"] {
     color: var(--ok);
+  }
+  .form-status[data-tone="warn"] {
+    color: var(--warn);
+  }
+  .form-status svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-inline-end: 6px;
+    vertical-align: -3px;
+  }
+  /* What became of the command, and a retry when it never got an answer. */
+  .form-outcome {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+  }
+  .form-outcome > .form-status {
+    flex: 1 1 240px;
   }
   .dialog-actions {
     display: flex;

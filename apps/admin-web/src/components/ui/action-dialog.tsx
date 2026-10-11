@@ -10,16 +10,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@outegro/ui/dialog";
-import { CircleNotchIcon, InfoIcon } from "@phosphor-icons/react";
+import {
+  ArrowClockwiseIcon,
+  CircleNotchIcon,
+  InfoIcon,
+  WarningCircleIcon,
+  WifiSlashIcon,
+} from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import {
   type ReactNode,
+  startTransition,
   useActionState,
   useEffect,
   useId,
+  useRef,
   useState,
 } from "react";
 import type { ActionResult } from "@/lib/actions";
+import { useOnline } from "@/lib/online";
+import { isUnsent, sendAction, type Unsent } from "@/lib/send-action";
 import { useStores } from "@/stores/provider";
 
 type ServerAction = (
@@ -56,7 +66,9 @@ type Props = {
  * Preview → confirm with a typed reason → server action. The dialog lists
  * the consequences, the confirm button stays disabled until the reason is
  * long enough, errors land in a reserved line, and success closes the
- * dialog with a toast while the page re-renders with fresh data.
+ * dialog with a toast while the page re-renders with fresh data. Offline,
+ * or without an answer from the server, nothing typed is lost: the line
+ * says what happened and offers to send the same form again.
  */
 export function ActionDialog(props: Props) {
   const t = useTranslations("actions");
@@ -108,13 +120,22 @@ function ActionForm({
   onDone,
 }: Props & { onDone: () => void }) {
   const t = useTranslations("actions");
+  const common = useTranslations("common");
   const id = useId();
   const { toasts } = useStores();
+  const online = useOnline();
+  const form = useRef<HTMLFormElement>(null);
   // The action re-renders the page, which may replace this very dialog (the
   // match is no longer live, the channel is paused): outcomes that must be
   // seen go to the console-wide toasts, which outlive the dialog.
-  const run = async (previous: ActionResult, form: FormData) => {
-    const result = await action(previous, form);
+  const run = async (
+    previous: ActionResult | Unsent,
+    data: FormData,
+  ): Promise<ActionResult | Unsent> => {
+    const result = await sendAction(
+      () => action(isUnsent(previous) ? { status: "idle" } : previous, data),
+      () => navigator.onLine,
+    );
     if (result.status === "success") toasts.push("ok", result.message);
     else if (
       result.status === "error" &&
@@ -125,18 +146,40 @@ function ActionForm({
   };
   const [state, formAction, pending] = useActionState(run, {
     status: "idle",
-  } as ActionResult);
+  } as ActionResult | Unsent);
   const [reason, setReason] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
   const length = reason.trim().length;
   const valid = length >= 3 && length <= 500 && (!acknowledge || acknowledged);
+  const unsent = isUnsent(state) ? state.status : null;
+  const line =
+    state.status === "error"
+      ? state.message
+      : unsent === "failed"
+        ? t("failed")
+        : unsent === "offline"
+          ? online
+            ? t("backOnline")
+            : t("offline")
+          : "";
 
   useEffect(() => {
     if (state.status === "success") onDone();
   }, [state, onDone]);
 
   return (
-    <form action={formAction} className="dialog-form">
+    // Sent by hand, not through `action`: React resets a form after its
+    // action, and a reason (or a chosen role) that did not reach the server
+    // must stay where the operator typed it.
+    <form
+      ref={form}
+      className="dialog-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        startTransition(() => formAction(data));
+      }}
+    >
       {Object.entries(hidden ?? {}).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
@@ -188,14 +231,42 @@ function ActionForm({
           <span>{acknowledge.label}</span>
         </label>
       )}
-      <p
-        className="form-status"
-        role="status"
-        aria-live="polite"
-        data-tone={state.status === "error" ? "bad" : undefined}
-      >
-        {state.status === "error" ? state.message : ""}
-      </p>
+      <div className="form-outcome">
+        <p
+          className="form-status"
+          role="status"
+          aria-live="polite"
+          data-tone={
+            state.status === "error" || unsent === "failed"
+              ? "bad"
+              : unsent === "offline"
+                ? "warn"
+                : undefined
+          }
+        >
+          {unsent === "offline" && !online && (
+            <WifiSlashIcon aria-hidden="true" />
+          )}
+          {unsent === "failed" && <WarningCircleIcon aria-hidden="true" />}
+          {line}
+        </p>
+        {unsent && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!valid || pending}
+            aria-busy={pending || undefined}
+            onClick={() => form.current?.requestSubmit()}
+          >
+            <ArrowClockwiseIcon
+              aria-hidden="true"
+              className={pending ? "spin" : undefined}
+            />
+            {common("retry")}
+          </Button>
+        )}
+      </div>
       <div className="dialog-actions">
         <DialogClose asChild>
           <Button type="button" variant="ghost">

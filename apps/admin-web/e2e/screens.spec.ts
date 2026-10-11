@@ -206,6 +206,12 @@ const screens: Screen[] = [
     path: "/",
     userAgent: withFailure("fake-fail=notifications"),
   },
+  {
+    // Education's AI assistant paused by the spending cap: it needs a look.
+    name: "dashboard-assist-paused",
+    path: "/",
+    userAgent: withFailure("fake-assist=paused"),
+  },
   { name: "forbidden", persona: "support", path: "/payments" },
   { name: "no-access", persona: "nobody", path: "/" },
   {

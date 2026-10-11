@@ -13,6 +13,7 @@ import {
   getRuleWords,
   type RuleWords,
 } from "@/components/education/access-rule";
+import { CopyText } from "@/components/ui/copy-text";
 import { Time } from "@/components/ui/data";
 import { type AccessRule, isEduAuditAction } from "@/lib/adapters/edu";
 import type { AuditSource, TimelineEntry } from "@/lib/audit";
@@ -197,6 +198,17 @@ export async function AuditFeed({
                   t("bySystem")
                 )}
               </span>
+              {/* The request behind it: its id finds the service's log lines. */}
+              {entry.requestId && (
+                <span className="feed-meta feed-request">
+                  {t("request")}{" "}
+                  <CopyText
+                    value={entry.requestId}
+                    display={shortId(entry.requestId)}
+                    label={t("copyRequest")}
+                  />
+                </span>
+              )}
             </span>
             <span className="feed-time">
               <Time iso={entry.createdAt} format="relative" />

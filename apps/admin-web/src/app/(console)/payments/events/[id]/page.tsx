@@ -1,13 +1,10 @@
-import {
-  ArrowLeftIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { WarningCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { CopyText } from "@/components/ui/copy-text";
 import { JsonView, Time } from "@/components/ui/data";
-import { Facts, Panel, Status } from "@/components/ui/layout";
+import { BackLink, Facts, Panel, Status } from "@/components/ui/layout";
 import { FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { shortId } from "@/lib/format";
@@ -32,12 +29,7 @@ export default async function EventPage({ params }: { params: Params<"id"> }) {
   const { id } = await params;
   const t = await getTranslations("payments.event");
   const label = await getLabels();
-  const back = (
-    <Link href="/payments/events" className="panel-link" style={{ margin: 0 }}>
-      <ArrowLeftIcon aria-hidden="true" />
-      {t("back")}
-    </Link>
-  );
+  const back = <BackLink href="/payments/events">{t("back")}</BackLink>;
   const result = await load(() => services().payments.event(id));
   if (!result.ok) {
     return (

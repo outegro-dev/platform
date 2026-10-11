@@ -1,5 +1,4 @@
 import {
-  ArrowLeftIcon,
   ArrowUUpLeftIcon,
   ProhibitIcon,
   XCircleIcon,
@@ -15,11 +14,13 @@ import { revokeAccess } from "@/app/(console)/users/actions";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { CopyText } from "@/components/ui/copy-text";
 import { DataTable, Time } from "@/components/ui/data";
-import { Facts, Panel, Status } from "@/components/ui/layout";
+import { GrantStatus } from "@/components/ui/grant-status";
+import { BackLink, Facts, Panel, Status } from "@/components/ui/layout";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { canStopRenewal } from "@/lib/adapters/payments";
 import { shortId } from "@/lib/format";
+import { grantStatus, revocable } from "@/lib/grants";
 import { getLabels } from "@/lib/labels";
 import { orderTimeline } from "@/lib/order-timeline";
 import type { Params } from "@/lib/params";
@@ -51,12 +52,7 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
   const t = await getTranslations("payments.order");
   const label = await getLabels();
   const f = await getFormatter();
-  const back = (
-    <Link href="/payments/orders" className="panel-link" style={{ margin: 0 }}>
-      <ArrowLeftIcon aria-hidden="true" />
-      {t("back")}
-    </Link>
-  );
+  const back = <BackLink href="/payments/orders">{t("back")}</BackLink>;
   const result = await load(() => services().payments.order(id));
   if (!result.ok) {
     return (
@@ -320,58 +316,60 @@ export default async function OrderPage({ params }: { params: Params<"id"> }) {
               <p className="small muted">{t("noGrants")}</p>
             ) : (
               <ul className="stack-sm">
-                {detail.grants.map((grant) => (
-                  <li
-                    key={grant.id}
-                    className="row-gap"
-                    style={{ justifyContent: "space-between" }}
-                  >
-                    <span className="stack-sm" style={{ gap: 2 }}>
-                      <span className="mono small">
-                        {grant.service}/{grant.feature}
+                {detail.grants.map((grant) => {
+                  // Where it stands now, not only what Payments recorded.
+                  const status = grantStatus(grant, f.now);
+                  return (
+                    <li
+                      key={grant.id}
+                      className="row-gap"
+                      style={{ justifyContent: "space-between" }}
+                    >
+                      <span className="stack-sm" style={{ gap: 2 }}>
+                        <span className="mono small">
+                          {grant.service}/{grant.feature}
+                        </span>
+                        <span className="small muted">
+                          {grant.validUntil ? (
+                            <>
+                              {t("until")}{" "}
+                              <Time iso={grant.validUntil} format="date" />
+                            </>
+                          ) : (
+                            t("forever")
+                          )}
+                        </span>
                       </span>
-                      <span className="small muted">
-                        {grant.validUntil ? (
-                          <>
-                            {t("until")}{" "}
-                            <Time iso={grant.validUntil} format="date" />
-                          </>
-                        ) : (
-                          t("forever")
-                        )}
+                      <span className="row-gap">
+                        <GrantStatus status={status} label={label} />
+                        {granted.has("grants.assign") &&
+                          revocable(status.phase) && (
+                            <ActionDialog
+                              action={revokeAccess}
+                              triggerLabel={t("revokeGrant")}
+                              triggerVariant="ghost"
+                              triggerIcon={<XCircleIcon aria-hidden="true" />}
+                              title={t("revokeGrantTitle")}
+                              description={t("revokeGrantDescription", {
+                                feature: grant.feature,
+                              })}
+                              consequences={[
+                                t("revokeGrantEffect"),
+                                ...(grant.sourceType === "subscription"
+                                  ? [t("revokeGrantRenewal")]
+                                  : []),
+                                t("revokeGrantOthers"),
+                                t("audited"),
+                              ]}
+                              confirmLabel={t("revokeGrantConfirm")}
+                              destructive
+                              hidden={{ grantId: grant.id }}
+                            />
+                          )}
                       </span>
-                    </span>
-                    <span className="row-gap">
-                      <Status tone={toneOf("grant", grant.state)}>
-                        {label("grantState", grant.state)}
-                      </Status>
-                      {granted.has("grants.assign") &&
-                        grant.state === "active" && (
-                          <ActionDialog
-                            action={revokeAccess}
-                            triggerLabel={t("revokeGrant")}
-                            triggerVariant="ghost"
-                            triggerIcon={<XCircleIcon aria-hidden="true" />}
-                            title={t("revokeGrantTitle")}
-                            description={t("revokeGrantDescription", {
-                              feature: grant.feature,
-                            })}
-                            consequences={[
-                              t("revokeGrantEffect"),
-                              ...(grant.sourceType === "subscription"
-                                ? [t("revokeGrantRenewal")]
-                                : []),
-                              t("revokeGrantOthers"),
-                              t("audited"),
-                            ]}
-                            confirmLabel={t("revokeGrantConfirm")}
-                            destructive
-                            hidden={{ grantId: grant.id }}
-                          />
-                        )}
-                    </span>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Panel>

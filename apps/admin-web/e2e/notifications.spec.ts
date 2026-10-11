@@ -147,3 +147,52 @@ test("sends a test message to the operator", async ({ page }) => {
       .getByText("Test message for email queued to your own address."),
   ).toBeVisible();
 });
+
+test.describe("a test message that does not reach the server", () => {
+  // Offline, the console's own keepalive cannot load either.
+  test.use({ allowedConsoleErrors: [/Failed to load resource/] });
+
+  test("says so in a toast, keeps the page, and sends on another click", async ({
+    page,
+    context,
+  }) => {
+    await signIn(page, "owner", "/notifications/channels");
+    const send = page.getByRole("button", { name: "Send a test via Email" });
+    await context.setOffline(true);
+    await send.click();
+    await expect(
+      page
+        .getByRole("status")
+        .getByText(
+          "You are offline, so nothing was sent. Try again once you are back online.",
+        ),
+    ).toBeVisible();
+    // No error page: the panel and its button are still there.
+    await expect(send).toBeEnabled();
+
+    await context.setOffline(false);
+    // The console's server drops it (a restart, a network blip).
+    const drop = (url: URL) => url.origin === "http://localhost:3196";
+    await page.route(drop, (route) =>
+      route.request().method() === "POST" &&
+      route.request().headers()["next-action"]
+        ? route.abort("failed")
+        : route.continue(),
+    );
+    await send.click();
+    await expect(
+      page
+        .getByRole("status")
+        .getByText("The console's server did not answer. Try again."),
+    ).toBeVisible();
+    await expect(send).toBeEnabled();
+
+    await page.unroute(drop);
+    await send.click();
+    await expect(
+      page
+        .getByRole("status")
+        .getByText("Test message for email queued to your own address."),
+    ).toBeVisible();
+  });
+});

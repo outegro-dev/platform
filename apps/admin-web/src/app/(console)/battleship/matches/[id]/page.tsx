@@ -1,6 +1,5 @@
-import { ArrowLeftIcon, StopCircleIcon } from "@phosphor-icons/react/dist/ssr";
+import { StopCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { abortMatch } from "@/app/(console)/battleship/actions";
 import {
@@ -11,7 +10,7 @@ import { Replay } from "@/components/battleship/replay";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { CopyText } from "@/components/ui/copy-text";
 import { Time } from "@/components/ui/data";
-import { Facts, Panel, Status } from "@/components/ui/layout";
+import { BackLink, Facts, Panel, Status } from "@/components/ui/layout";
 import { FailureState } from "@/components/ui/states";
 import { pageAccess } from "@/lib/access";
 import { shortId } from "@/lib/format";
@@ -36,16 +35,7 @@ export default async function MatchPage({ params }: { params: Params<"id"> }) {
   const t = await getTranslations("battleship.match");
   const label = await getLabels();
   const f = await getFormatter();
-  const back = (
-    <Link
-      href="/battleship/matches"
-      className="panel-link"
-      style={{ margin: 0 }}
-    >
-      <ArrowLeftIcon aria-hidden="true" />
-      {t("back")}
-    </Link>
-  );
+  const back = <BackLink href="/battleship/matches">{t("back")}</BackLink>;
   const result = await load(() => services().battleship.match(id));
   if (!result.ok) {
     return (

@@ -10,6 +10,7 @@ import {
 import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 import { issueKinds } from "@/lib/adapters/payments";
+import { auditActions } from "@/lib/audit";
 import { accessModes, assistStates, featurePresets } from "@/lib/education";
 import { formatNumber } from "@/lib/format";
 import { grantPhases } from "@/lib/grants";
@@ -82,6 +83,33 @@ describe("messages", () => {
           at(messages as Tree, `labels.readerAccess.${access}`),
           access,
         ).toBeTruthy();
+    }
+  });
+
+  it("name every action the services write to their audit logs", () => {
+    const unnamed = Object.values(auditActions)
+      .flat()
+      .flatMap((action) =>
+        [
+          ["en", en],
+          ["ru", ru],
+        ]
+          .filter(
+            ([, messages]) =>
+              !at(messages as Tree, `labels.action.${labelKey(action)}`),
+          )
+          .map(([locale]) => `${locale}: ${action}`),
+      );
+    expect(unnamed).toEqual([]);
+    // Two names are never the same: an operator removing a passkey is told
+    // apart from its owner removing it.
+    for (const messages of [en, ru]) {
+      const names = Object.values(auditActions)
+        .flat()
+        .map((action) =>
+          at(messages as Tree, `labels.action.${labelKey(action)}`),
+        );
+      expect(new Set(names).size).toBe(names.length);
     }
   });
 
