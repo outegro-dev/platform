@@ -54,7 +54,9 @@ const authenticationResponse = z.object({
   response: z.object({
     clientDataJSON: b64url(4096),
     authenticatorData: b64url(4096),
-    signature: b64url(2048),
+    // Room for a post-quantum signature (ML-DSA-87: 6170 characters), in
+    // case such a passkey was registered before the algorithms were pinned.
+    signature: b64url(8192),
     userHandle: b64url(128).optional(),
   }),
 });

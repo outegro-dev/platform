@@ -160,6 +160,12 @@ describe("relying party configuration (C2.1)", () => {
         userVerification: "required",
       },
     });
+    // The classic algorithms only: an ML-DSA passkey could not sign in.
+    expect(
+      creation.body.options.pubKeyCredParams.map(
+        (param: { alg: number }) => param.alg,
+      ),
+    ).toEqual([-7, -8, -257]);
     const request = await h.passkeyChallenge();
     expect(request.options).toMatchObject({
       rpId: TEST_RP_ID,
@@ -772,6 +778,30 @@ describe("Passkeys (ID-05)", () => {
       .post("/v1/me/passkeys/options")
       .set(auth(session));
     expect(res.status).toBe(403);
+  });
+
+  it("a long post-quantum signature reaches verification, not a 400", async () => {
+    // ML-DSA-44 signs with 3227 base64url characters; the old 2048 cap
+    // turned such a sign-in into a malformed request.
+    const response = await h
+      .http()
+      .post("/v1/login/passkey/verify")
+      .set({ "x-forwarded-for": randomIp() })
+      .send({
+        challengeId: randomUUIDv4(),
+        response: {
+          id: "AAAA",
+          rawId: "AAAA",
+          type: "public-key",
+          response: {
+            clientDataJSON: "e30",
+            authenticatorData: "AAAA",
+            signature: "A".repeat(3228),
+          },
+          clientExtensionResults: {},
+        },
+      });
+    expect(response.status).toBe(422);
   });
 
   it("the begin and finish endpoints are limited per client address", async () => {
