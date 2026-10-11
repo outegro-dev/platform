@@ -1,10 +1,14 @@
 // Public contact channels shown on the site.
+
+/**
+ * The email in two halves. Cloudflare's Email Address Obfuscation rewrites
+ * any whole address it finds in the HTML and loads a decoder script that our
+ * CSP blocks, which broke the link and React hydration (11.10.2026). The
+ * address is joined only in the browser, see EmailLink.
+ */
+export const email = { user: "coping.barrel", domain: "gmail.com" } as const;
+
 export const contacts = [
-  {
-    key: "email",
-    handle: "coping.barrel@gmail.com",
-    href: "mailto:coping.barrel@gmail.com",
-  },
   {
     key: "telegram",
     handle: "@coping_barrel",
@@ -25,4 +29,4 @@ export const contacts = [
 /** A 30-minute intro call: Calendly with the owner's free slots. */
 export const calendly = "https://calendly.com/nick-lukashik/30min";
 
-export type ContactKey = (typeof contacts)[number]["key"];
+export type ContactKey = "email" | (typeof contacts)[number]["key"];
