@@ -1,6 +1,12 @@
 import type { ConfigType } from "@nestjs/config";
-import { Api } from "grammy";
+import { Api, type ApiClientOptions } from "grammy";
 import { channelsConfig } from "../config/config.js";
+
+/**
+ * Administration calls are small: one that hangs fails after this long, not
+ * after grammY's default 500 s, so a webhook retry is not held up for minutes.
+ */
+export const BOT_ADMIN_TIMEOUT_SECONDS = 30;
 
 export type TelegramStatus =
   | { configured: false }
@@ -28,8 +34,12 @@ export class GrammyTelegramBot implements TelegramBot {
   readonly configured = true;
   private readonly api: Api;
 
-  constructor(token: string) {
-    this.api = new Api(token);
+  /** `options` point tests at a fake Bot API (`apiRoot`). */
+  constructor(token: string, options: ApiClientOptions = {}) {
+    this.api = new Api(token, {
+      timeoutSeconds: BOT_ADMIN_TIMEOUT_SECONDS,
+      ...options,
+    });
   }
 
   async status(): Promise<TelegramStatus> {

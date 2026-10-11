@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   type OnApplicationBootstrap,
+  type OnApplicationShutdown,
 } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import {
@@ -26,6 +27,12 @@ import { IntentsService } from "../intents/intents.service.js";
 import { TELEGRAM_BOT, type TelegramBot } from "./telegram-bot.js";
 
 const LINK_TTL_MS = 10 * 60_000;
+/**
+ * Webhook registration: a failed attempt is retried after 5 s, 15 s, 30 s and
+ * 1 min (about two minutes in all), then every 15 min until Telegram takes it.
+ */
+export const WEBHOOK_RETRY_DELAYS_MS = [5_000, 15_000, 30_000, 60_000];
+export const WEBHOOK_RECHECK_MS = 15 * 60_000;
 
 const chatSchema = z.object({ id: z.number(), type: z.string() });
 /** The part of a Telegram update the bot reacts to; everything else is ignored. */
@@ -78,8 +85,12 @@ const hash = (token: string) =>
  * A chat belongs to at most one account, and /stop or blocking the bot unlinks.
  */
 @Injectable()
-export class TelegramLinkService implements OnApplicationBootstrap {
+export class TelegramLinkService
+  implements OnApplicationBootstrap, OnApplicationShutdown
+{
   private readonly logger = new Logger("TelegramLinks");
+  private webhookTimer: NodeJS.Timeout | undefined;
+  private stopped = false;
 
   constructor(
     @Inject(DATABASE) private readonly database: NotificationsDatabase,
@@ -91,19 +102,53 @@ export class TelegramLinkService implements OnApplicationBootstrap {
     private readonly intents: IntentsService,
   ) {}
 
-  async onApplicationBootstrap() {
+  /** Not awaited: a slow or unreachable Telegram must not hold startup or readiness. */
+  onApplicationBootstrap() {
     if (heldBySafeMode("telegram webhook registration")) return;
     const url = this.config.telegramWebhookUrl;
     const secret = this.config.telegramWebhookSecret;
     if (!this.bot.configured || !url || !secret) return;
+    void this.registerWebhook(url, secret, 1);
+  }
+
+  onApplicationShutdown() {
+    this.stopped = true;
+    clearTimeout(this.webhookTimer);
+  }
+
+  /**
+   * One registration attempt; a failure schedules the next. Until one succeeds
+   * linking is unavailable (Telegram has nowhere to send /start); delivery is
+   * unaffected.
+   */
+  private async registerWebhook(url: string, secret: string, attempt: number) {
     try {
       await this.bot.registerWebhook(url, secret);
-      this.logger.log("Telegram webhook registered");
+      this.logger.log({ attempt }, "Telegram webhook registered");
     } catch (error) {
-      // Linking stays unavailable until the next start; delivery is unaffected.
-      this.logger.error(
-        { err: (error as Error).message },
-        "Telegram webhook registration failed",
+      if (this.stopped) return;
+      const err = (error as Error).message;
+      const backoff = WEBHOOK_RETRY_DELAYS_MS[attempt - 1];
+      if (backoff !== undefined) {
+        this.logger.warn(
+          { err, attempt, retryInMs: backoff },
+          "Telegram webhook registration failed, retrying",
+        );
+      } else if (attempt === WEBHOOK_RETRY_DELAYS_MS.length + 1) {
+        // Said once; the slow retries after it stay at debug until one succeeds.
+        this.logger.error(
+          { err, attempts: attempt, retryEveryMs: WEBHOOK_RECHECK_MS },
+          "Telegram webhook registration keeps failing; linking is unavailable until it succeeds",
+        );
+      } else {
+        this.logger.debug(
+          { err, attempt },
+          "Telegram webhook registration still failing",
+        );
+      }
+      this.webhookTimer = setTimeout(
+        () => void this.registerWebhook(url, secret, attempt + 1),
+        backoff ?? WEBHOOK_RECHECK_MS,
       );
     }
   }
