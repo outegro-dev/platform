@@ -787,8 +787,7 @@ describe("Passkeys (ID-05)", () => {
         ).status,
       );
     }
-    expect(statuses.slice(0, 30).every((s) => s === 200)).toBe(true);
-    expect(statuses[30]).toBe(429);
+    expect(statuses).toEqual([...Array(30).fill(200), 429]);
 
     const other = randomIp();
     const guess = {
@@ -815,8 +814,7 @@ describe("Passkeys (ID-05)", () => {
       );
     }
     // Refused as stale until the limit, then limited.
-    expect(verify.slice(0, 20).every((s) => s === 422)).toBe(true);
-    expect(verify[20]).toBe(429);
+    expect(verify).toEqual([...Array(20).fill(422), 429]);
 
     // Adding passkeys: at most twenty ceremonies an hour per account, from
     // any number of addresses.
@@ -832,8 +830,7 @@ describe("Passkeys (ID-05)", () => {
         ).status,
       );
     }
-    expect(begun.slice(0, 20).every((s) => s === 200)).toBe(true);
-    expect(begun[20]).toBe(429);
+    expect(begun).toEqual([...Array(20).fill(200), 429]);
   });
 
   it("a passkey of another relying party (the old domain) is listed as unusable, signs nobody in and counts as no way in", async () => {
