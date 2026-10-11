@@ -6,7 +6,7 @@ import {
   type SqlResult,
   type SqlTaskBlock,
 } from "@outegro/edu-engine";
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observableRef, runInAction } from "mobx";
 import type { KeyValueStorage } from "@/lib/browser";
 import type { RunFailure, SqlRunner } from "@/lib/sql/engine";
 import type { AttemptStore } from "./attempt-store";
@@ -104,7 +104,7 @@ export class SqlTaskStore {
     this.deps = deps;
     makeAutoObservable<this, "deps">(
       this,
-      { run: observable.ref, task: false, attempt: false, deps: false },
+      { run: observableRef, task: false, attempt: false, deps: false },
       { autoBind: true },
     );
   }

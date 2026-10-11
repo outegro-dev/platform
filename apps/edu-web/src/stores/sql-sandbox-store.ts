@@ -1,5 +1,5 @@
 import { lastResult, type SqlResult } from "@outegro/edu-engine";
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observableRef, runInAction } from "mobx";
 import type { RunFailure, SqlRunner } from "@/lib/sql/engine";
 
 export type SandboxOutput =
@@ -45,7 +45,7 @@ export class SqlSandboxStore {
     this.deps = deps;
     makeAutoObservable<this, "deps" | "queued">(
       this,
-      { output: observable.ref, initial: false, deps: false, queued: false },
+      { output: observableRef, initial: false, deps: false, queued: false },
       { autoBind: true },
     );
   }

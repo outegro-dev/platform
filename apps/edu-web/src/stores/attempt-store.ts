@@ -1,6 +1,6 @@
 import type { ExerciseAttempt } from "@outegro/contracts/edu";
 import { checkAttempt, type ExerciseBlock } from "@outegro/edu-engine";
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observableRef, runInAction } from "mobx";
 import { fitsBody } from "@/lib/body-size";
 import type { ReaderApi } from "@/lib/reader-api";
 import {
@@ -65,7 +65,7 @@ export class AttemptStore {
     this.deps = deps;
     makeAutoObservable<this, "deps">(
       this,
-      { current: observable.ref, exercise: false, deps: false },
+      { current: observableRef, exercise: false, deps: false },
       { autoBind: true },
     );
   }
