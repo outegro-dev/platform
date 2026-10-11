@@ -8,6 +8,7 @@ import { AccountMenuPlaceholder } from "@outegro/ui/account-menu";
 import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
 import { CopyButton } from "@outegro/ui/copy-button";
+import { fontVariables } from "@outegro/ui/fonts";
 import { FormMessage } from "@outegro/ui/form-message";
 import { Input } from "@outegro/ui/input";
 import { Label } from "@outegro/ui/label";
@@ -287,7 +288,7 @@ export function KitSpread() {
             </p>
           </Head>
           <div className={s.clip}>
-            <DialogDemo />
+            <DialogDemo fonts={fontVariables} />
           </div>
         </section>
 

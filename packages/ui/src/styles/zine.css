@@ -12,8 +12,10 @@
  *                           ordinary inputs and easing.
  *
  * Opt in per app: import this file after styles.css, put `zineFontVariables`
- * from @outegro/ui/fonts-zine on <html> next to `fontVariables` and set
- * data-theme there. A calm island may sit inside a loud page (data-theme on
+ * from @outegro/ui/fonts-zine on <html> and set data-theme there. The kit's
+ * own `fontVariables` (Manrope and friends) go where calm text is set: on
+ * <html> for a product app, only on the calm islands of a loud page, so the
+ * landing does not preload faces it never uses. A calm island may sit inside a loud page (data-theme on
  * any element), not the other way round. Dialogs and menus open at <body>,
  * so they take the page's level unless their content carries data-theme.
  * Components keep their API; only tokens and looks change, keyed off their

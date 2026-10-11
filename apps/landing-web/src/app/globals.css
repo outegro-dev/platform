@@ -756,8 +756,13 @@
   line-height: 1;
   letter-spacing: -0.06em;
 }
+/* A measure in em, so the accent breaks into the same two lines at every
+   width in both languages. Sized by the viewport against the 820px column
+   alone, it came within 1% of the column at 1280px, and the tabloid face,
+   ~1.5% wider than its fallback, re-wrapped it on arrival. */
 .legal-head h1 .og-accent {
   display: block;
+  max-width: 7.5em;
   font-size: 1.05em;
   letter-spacing: -0.03em;
 }
