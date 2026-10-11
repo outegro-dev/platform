@@ -12,6 +12,15 @@ describe("highlighting", () => {
     expect(highlight("SELECT 1", "sql")).toContain("hljs-keyword");
     expect(highlight("npm i", "bash")).not.toBeNull();
     expect(highlight('{"a": 1}', "json")).toContain("hljs-");
+    expect(highlight("const a: number = 1;", "ts")).toContain("hljs-keyword");
+    expect(highlight("interface A { b: string }", "typescript")).toContain(
+      "hljs-keyword",
+    );
+    expect(highlight("groups:\n  - name: shop", "yaml")).toContain("hljs-attr");
+    expect(highlight('<ul id="tasks"></ul>', "html")).toContain("hljs-tag");
+    expect(
+      highlight('<script type="module">const a = 1;</script>', "html"),
+    ).toContain("hljs-keyword");
     expect(highlight("plain", "text")).toBeNull();
     expect(highlight("plain", undefined)).toBeNull();
     expect(highlight("fn main() {}", "rust")).toBeNull();

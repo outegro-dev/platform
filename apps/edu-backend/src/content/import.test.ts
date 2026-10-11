@@ -22,7 +22,18 @@ import { contentDir, migrationsFolder } from "../test/harness.js";
 import { ContentError, type ImportLog, importBundledBooks } from "./import.js";
 import { contentProblems } from "./limits.js";
 
-const SLUGS = ["nodejs-internals", "sql-internals"];
+/** The books of content/manifest.json, in its order, with their chapters. */
+const CHAPTERS: Record<string, number> = {
+  "nodejs-internals": 13,
+  "sql-internals": 15,
+  "message-brokers": 13,
+  "javascript-basics": 13,
+};
+const MANIFEST = Object.keys(CHAPTERS);
+/** The same books as the database lists them, by slug. */
+const SLUGS = [...MANIFEST].sort();
+const outcomes = (outcome: string) =>
+  MANIFEST.map((slug) => ({ slug, outcome, contentVersion: 1 }));
 
 let postgres: TestPostgres;
 let database: ReturnType<typeof createDatabase<typeof schema>>;
@@ -119,11 +130,8 @@ afterAll(async () => {
 });
 
 describe("content import (TC-EDU-04)", () => {
-  it("imports both books of the manifest with their status, rule and 13 chapters", async () => {
-    expect(await run()).toEqual([
-      { slug: "nodejs-internals", outcome: "inserted", contentVersion: 1 },
-      { slug: "sql-internals", outcome: "inserted", contentVersion: 1 },
-    ]);
+  it("imports every book of the manifest with its status, rule and chapters", async () => {
+    expect(await run()).toEqual(outcomes("inserted"));
     const rows = await database.db
       .select()
       .from(books)
@@ -156,7 +164,7 @@ describe("content import (TC-EDU-04)", () => {
         .where(eq(chapters.bookId, row.id))
         .orderBy(asc(chapters.n));
       expect(stored.map((chapter) => chapter.n)).toEqual(
-        Array.from({ length: 13 }, (_, i) => i + 1),
+        Array.from({ length: CHAPTERS[row.slug] ?? 0 }, (_, i) => i + 1),
       );
       expect(stored.reduce((sum, c) => sum + c.exerciseIds.length, 0)).toBe(
         document.stats.exercises,
@@ -169,7 +177,8 @@ describe("content import (TC-EDU-04)", () => {
         document.chapters[0]?.blocks.filter((b) => b.t === "h3").length,
       );
     }
-    const [node, sql] = rows;
+    const idOf = (slug: string) =>
+      rows.find((row) => row.slug === slug)?.id ?? "";
     const flags = async (bookId: string) =>
       (
         await database.db
@@ -182,15 +191,21 @@ describe("content import (TC-EDU-04)", () => {
           .where(eq(chapters.bookId, bookId))
           .orderBy(asc(chapters.n))
       ).map((c) => `${c.n}:${c.loop ? "L" : ""}${c.sandbox ? "S" : ""}`);
-    // The simulator is in chapter 4 of the Node book; every SQL chapter runs queries.
-    expect(await flags(node?.id ?? "")).toEqual(
-      Array.from({ length: 13 }, (_, i) => `${i + 1}:${i === 3 ? "L" : ""}`),
-    );
-    expect(await flags(sql?.id ?? "")).toEqual(
-      Array.from({ length: 13 }, (_, i) => `${i + 1}:S`),
+    // The simulator is in chapter 4 of the Node book and chapter 11 of the
+    // JavaScript one; every SQL chapter runs queries; the brokers book has neither.
+    const simulatorIn = (n: number | null) =>
+      Array.from(
+        { length: 13 },
+        (_, i) => `${i + 1}:${i + 1 === n ? "L" : ""}`,
+      );
+    expect(await flags(idOf("nodejs-internals"))).toEqual(simulatorIn(4));
+    expect(await flags(idOf("javascript-basics"))).toEqual(simulatorIn(11));
+    expect(await flags(idOf("message-brokers"))).toEqual(simulatorIn(null));
+    expect(await flags(idOf("sql-internals"))).toEqual(
+      Array.from({ length: 15 }, (_, i) => `${i + 1}:S`),
     );
     const audit = await database.db.select().from(adminAudit);
-    expect(audit).toHaveLength(2);
+    expect(audit).toHaveLength(MANIFEST.length);
     for (const entry of audit)
       expect(entry).toMatchObject({
         actorId: null,
@@ -208,10 +223,7 @@ describe("content import (TC-EDU-04)", () => {
   it("changes nothing when run again", async () => {
     const before = await snapshot();
     clock.advance(60_000);
-    expect(await run()).toEqual([
-      { slug: "nodejs-internals", outcome: "unchanged", contentVersion: 1 },
-      { slug: "sql-internals", outcome: "unchanged", contentVersion: 1 },
-    ]);
+    expect(await run()).toEqual(outcomes("unchanged"));
     expect(await snapshot()).toEqual(before);
   });
 
@@ -324,7 +336,7 @@ describe("content import (TC-EDU-04)", () => {
               initialRule: {
                 mode: "grant",
                 features: ["library"],
-                previewChapters: 14,
+                previewChapters: 16,
               },
             },
           },
@@ -340,7 +352,7 @@ describe("content import (TC-EDU-04)", () => {
               ...sql,
               chapters: [
                 ...sql.chapters,
-                { ...sql.chapters[0], n: 14, id: "s14" },
+                { ...sql.chapters[0], n: 16, id: "s16" },
               ],
             },
           },
@@ -457,16 +469,21 @@ describe("content import (TC-EDU-04)", () => {
         .flat()
         .map((o) => o.outcome)
         .sort(),
-    ).toEqual(["inserted", "inserted", "unchanged", "unchanged"]);
+    ).toEqual([
+      ...MANIFEST.map(() => "inserted"),
+      ...MANIFEST.map(() => "unchanged"),
+    ]);
     const race = createDatabase({ url: url.href, schema });
     try {
       expect(
         (await race.db.select({ slug: books.slug }).from(books)).length,
-      ).toBe(2);
-      expect((await race.db.select().from(adminAudit)).length).toBe(2);
+      ).toBe(MANIFEST.length);
+      expect((await race.db.select().from(adminAudit)).length).toBe(
+        MANIFEST.length,
+      );
       expect(
         (await race.db.select({ value: count() }).from(chapters))[0]?.value,
-      ).toBe(26);
+      ).toBe(13 + 15 + 13 + 13);
     } finally {
       await race.close();
     }

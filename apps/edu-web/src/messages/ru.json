@@ -227,10 +227,14 @@
         "js": "JavaScript",
         "javascript": "JavaScript",
         "ts": "TypeScript",
+        "typescript": "TypeScript",
         "sql": "SQL",
         "bash": "Терминал",
         "sh": "Терминал",
         "json": "JSON",
+        "yaml": "YAML",
+        "yml": "YAML",
+        "html": "HTML",
         "text": "Текст"
       }
     },

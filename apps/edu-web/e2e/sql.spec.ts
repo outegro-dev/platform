@@ -19,7 +19,9 @@ test.describe("SQL book", () => {
     await signIn(page, "reader", "/books/sql-internals/1");
     const sandbox = page.locator(".sandbox").first();
     await expect(sandbox).toContainText("Песочница");
-    // Near the screen it runs by itself, as the book's pages did.
+    // Near the screen it runs by itself, as the book's pages did (the first
+    // one sits a few screens into the chapter).
+    await sandbox.scrollIntoViewIfNeeded();
     const table = sandbox.locator(".sql-table");
     await expect(table).toBeVisible({ timeout: 30_000 });
     // The last statement's result: the customers.
@@ -90,6 +92,7 @@ test.describe("SQL book", () => {
     const sandbox = page.locator(".sandbox").first();
     const editor = sandbox.getByRole("textbox", { name: "SQL-запрос" });
     await hydrated(editor);
+    await sandbox.scrollIntoViewIfNeeded();
     await expect(sandbox.locator(".sql-count")).toHaveText("10 строк", {
       timeout: 30_000,
     });
@@ -126,6 +129,7 @@ test.describe("SQL book", () => {
     const engine = await engineLoadsOffline(context);
     await page.goto("/books/sql-internals/1");
     const sandbox = page.locator(".sandbox").first();
+    await sandbox.scrollIntoViewIfNeeded();
     // The first run started by itself and waits for the engine.
     await expect(sandbox.locator(".sql-message")).toHaveText("Выполняю…");
     await engine.offline();

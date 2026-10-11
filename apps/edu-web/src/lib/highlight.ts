@@ -3,18 +3,26 @@ import bash from "highlight.js/lib/languages/bash";
 import javascript from "highlight.js/lib/languages/javascript";
 import json from "highlight.js/lib/languages/json";
 import sql from "highlight.js/lib/languages/sql";
+import typescript from "highlight.js/lib/languages/typescript";
+import xml from "highlight.js/lib/languages/xml";
+import yaml from "highlight.js/lib/languages/yaml";
 
 /*
  * Code is highlighted on the server, once, with only the languages the
- * books use (js, bash, json, sql; "text" and anything unknown stay plain).
- * The browser gets the markup and no highlighter. highlight.js output is
- * escaped text inside <span class="hljs-…"> elements: the one kind of HTML
- * (besides the importer's sanitized SVG) that the app injects.
+ * books use (js, ts, bash, json, sql, yaml, html; "text" and anything
+ * unknown stay plain). The browser gets the markup and no highlighter.
+ * highlight.js output is escaped text inside <span class="hljs-…">
+ * elements: the one kind of HTML (besides the importer's sanitized SVG)
+ * that the app injects.
  */
 hljs.registerLanguage("javascript", javascript);
 hljs.registerLanguage("bash", bash);
 hljs.registerLanguage("json", json);
 hljs.registerLanguage("sql", sql);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("yaml", yaml);
+// HTML is highlight.js's "xml"; scripts inside it are highlighted as JavaScript.
+hljs.registerLanguage("xml", xml);
 
 const languages: Record<string, string> = {
   js: "javascript",
@@ -26,6 +34,14 @@ const languages: Record<string, string> = {
   shell: "bash",
   json: "json",
   sql: "sql",
+  ts: "typescript",
+  typescript: "typescript",
+  mts: "typescript",
+  cts: "typescript",
+  yaml: "yaml",
+  yml: "yaml",
+  html: "xml",
+  xml: "xml",
 };
 
 /** Highlighted markup, or null for a language the books do not use. */

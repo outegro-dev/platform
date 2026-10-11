@@ -222,6 +222,9 @@ test.describe("anchors and the section in view", () => {
     await page.goto(`/books/nodejs-internals/1#${quiz.id}`);
     const frame = page.locator(`#${quiz.id}`);
     await expect(frame).toHaveClass(/exercise/);
+    // The page goes to the link's target once it is hydrated (ScrollToHash):
+    // a scroll of ours before that would be undone.
+    await hydrated(frame);
     await expect
       .poll(() =>
         frame.evaluate((node) => Math.round(node.getBoundingClientRect().top)),

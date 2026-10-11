@@ -303,8 +303,8 @@ describe("explain it differently (TC-EDU-10)", () => {
     );
     const { request } = h.model.calls[0] ?? {};
     expect(request).toMatchObject({ maxTokens: 1800, thinking: false });
-    expect(request?.system).toContain("Node.js 22+");
-    expect(request?.prompt).toContain("Раздел: «Runtime, а не язык».");
+    expect(request?.system).toContain("Node.js 24+");
+    expect(request?.prompt).toContain("Раздел: «Среда выполнения, а не язык».");
     expect(request?.prompt).toContain(
       "Объясни суть раздела проще, как человеку, который видит это впервые.",
     );

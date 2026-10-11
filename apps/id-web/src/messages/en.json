@@ -96,7 +96,7 @@
     },
     "edu": {
       "name": "Education",
-      "body": "Interactive textbooks on Node.js and SQL with exercises, flash cards and an SQL sandbox."
+      "body": "Interactive textbooks on Node.js, JavaScript, SQL and message brokers with exercises, flash cards and an SQL sandbox."
     },
     "admin": {
       "name": "Admin console",

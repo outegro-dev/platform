@@ -159,10 +159,12 @@ describe("books", () => {
       (await get("/v1/admin/books", randomUUID(), ["support"])).body,
     );
     expect(list.items.map((book) => book.slug)).toEqual([
+      "javascript-basics",
+      "message-brokers",
       "nodejs-internals",
       "sql-internals",
     ]);
-    const node = list.items[0];
+    const [js, brokers, node, sql] = list.items;
     expect(node).toMatchObject({
       title: "Node.js изнутри",
       status: "published",
@@ -175,7 +177,30 @@ describe("books", () => {
       version: 0,
       readers: 2,
     });
-    expect(list.items[1]?.readers).toBe(1);
+    expect(sql).toMatchObject({
+      stats: { chapters: 15, exercises: 138, cards: 147, sandboxes: 172 },
+      readers: 1,
+    });
+    expect(brokers).toMatchObject({
+      title: "Брокеры сообщений: RabbitMQ и Kafka",
+      rule: {
+        mode: "grant",
+        features: ["library", "book.message-brokers"],
+        previewChapters: 1,
+      },
+      stats: { chapters: 13, exercises: 76, cards: 120 },
+      readers: 0,
+    });
+    expect(js).toMatchObject({
+      title: "JavaScript: основы для собеседования",
+      rule: {
+        mode: "grant",
+        features: ["library", "book.javascript-basics"],
+        previewChapters: 1,
+      },
+      stats: { chapters: 13, exercises: 76, cards: 120 },
+      readers: 0,
+    });
 
     const detail = adminBookDetailSchema.parse(
       (await get("/v1/admin/books/nodejs-internals", randomUUID(), ["support"]))
@@ -240,7 +265,7 @@ describe("commands (TC-EDU-06)", () => {
       (await get("/v1/books", reading)).body.books.map(
         (book: { slug: string }) => book.slug,
       ),
-    ).toEqual(["sql-internals"]);
+    ).toEqual(["javascript-basics", "message-brokers", "sql-internals"]);
     expect(
       (await get("/v1/books/nodejs-internals", reading, ["edu_editor"])).status,
     ).toBe(200);
@@ -685,7 +710,7 @@ describe("overview", () => {
     expect(after.readers.active7d - before.readers.active7d).toBe(1);
     expect(after.grants.inForce - before.grants.inForce).toBe(1);
     expect(after.exercisesSolved7d - before.exercisesSolved7d).toBe(1);
-    expect(after.books).toEqual({ published: 2, draft: 0, archived: 0 });
+    expect(after.books).toEqual({ published: 4, draft: 0, archived: 0 });
     expect(fresh).toBeTruthy();
   });
 });

@@ -64,4 +64,37 @@ test.describe("event loop simulator", () => {
     await expect(sim.locator(".sim-code li")).toHaveCount(second.code.length);
     await expect(sim.locator(".sim-queue[data-kind='io'] li")).toHaveCount(1);
   });
+
+  test("the JavaScript book runs its own scenarios (chapter 11)", async ({
+    page,
+  }) => {
+    const own = book("javascript-basics").eventLoop?.scenarios ?? [];
+    const [first, last] = [own[0], own.at(-1)];
+    if (!first || !last || own.length < 2) throw new Error("no scenarios");
+    await signIn(page, "subscriber", "/books/javascript-basics/11");
+    const sim = page.locator(".simulator");
+    await expect(sim).toContainText("Симулятор event loop");
+    await expect(sim.getByRole("radio")).toHaveCount(own.length);
+    await expect(sim.getByRole("radio", { name: first.name })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    const step = sim.locator(".sim-step");
+    const total = first.steps.length;
+    await expect(step).toHaveText(`Шаг 1 из ${total}`);
+    await expect(sim.locator(".sim-code li")).toHaveCount(first.code.length);
+    await expect(
+      sim.locator(".sim-code li[aria-current='step']"),
+    ).toContainText(first.code[0] ?? "");
+    // The code is highlighted on the server like the Node book's.
+    await expect(sim.locator(".sim-code .hljs-string").first()).toBeVisible();
+    const next = sim.getByRole("button", { name: "Дальше" });
+    for (let i = 1; i < total; i++) await next.click();
+    await expect(step).toHaveText(`Шаг ${total} из ${total}`);
+    const printed = first.steps.findLast((s) => s.out)?.out ?? [];
+    await expect(sim.locator(".sim-console")).toContainText(printed.join(""));
+    await sim.getByRole("radio", { name: last.name }).click();
+    await expect(step).toHaveText(`Шаг 1 из ${last.steps.length}`);
+    await expect(sim.locator(".sim-code li")).toHaveCount(last.code.length);
+  });
 });

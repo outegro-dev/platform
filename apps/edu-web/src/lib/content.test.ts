@@ -17,19 +17,25 @@ import { describe, expect, it } from "vitest";
  * reads the seed exactly as SQLite does.
  */
 
-function book(slug: string): BookDocument {
-  return JSON.parse(
+const content = (file: string) =>
+  JSON.parse(
     readFileSync(
       fileURLToPath(
-        new URL(
-          `../../../edu-backend/content/books/${slug}.json`,
-          import.meta.url,
-        ),
+        new URL(`../../../edu-backend/content/${file}`, import.meta.url),
       ),
       "utf8",
     ),
-  ) as BookDocument;
+  );
+
+function book(slug: string): BookDocument {
+  return content(`books/${slug}.json`) as BookDocument;
 }
+
+/** Every book the manifest imports, by slug. */
+const manifest = content("manifest.json") as { books: { file: string }[] };
+const slugs = manifest.books.map((entry) =>
+  entry.file.replace(/^books\/|\.json$/g, ""),
+);
 
 function svgsOf(document: BookDocument): string[] {
   const found = [document.cover];
@@ -74,9 +80,15 @@ async function sqliteSchema(seed: string): Promise<SchemaTable[]> {
 
 describe("the books' SVG", () => {
   it("passes the whitelist: every figure and cover is shown", () => {
-    for (const slug of ["nodejs-internals", "sql-internals"]) {
+    expect(slugs).toEqual([
+      "nodejs-internals",
+      "sql-internals",
+      "message-brokers",
+      "javascript-basics",
+    ]);
+    for (const slug of slugs) {
       const svgs = svgsOf(book(slug));
-      expect(svgs.length).toBeGreaterThan(50);
+      expect(svgs.length, slug).toBeGreaterThan(40);
       const refused = svgs.filter((svg) => !isSafeSvg(svg));
       expect(
         refused.map((svg) => svg.slice(0, 120)),
