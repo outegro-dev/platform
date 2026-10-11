@@ -1,0 +1,11 @@
+# Only the manifest, the lock file and src/ are needed to build the binary.
+target/
+coverage/
+deploy/
+tests/
+*.md
+Makefile
+Dockerfile
+toolchain.Dockerfile
+.dockerignore
+.gitignore

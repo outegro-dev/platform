@@ -1,0 +1,98 @@
+# golangci-lint v2 configuration. Run with `make lint` (official Docker image).
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  # standard = errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  enable:
+    - bodyclose # HTTP response bodies are closed
+    - containedctx # no context.Context stored in structs
+    - contextcheck # functions pass on the context they received
+    - durationcheck # no time.Duration * time.Duration mistakes
+    - errname # sentinel errors are named ErrXxx, error types XxxError
+    - errorlint # errors.Is/As and %w instead of == and %v
+    - exhaustive # switches over enums cover every value
+    - fatcontext # no context growing inside loops
+    - gocritic # many small correctness and style checks
+    - gosec # security: overflows, file modes, TLS, ...
+    - intrange # for i := range n where possible
+    - misspell
+    - nilerr # do not return nil after checking err != nil
+    - noctx # outgoing HTTP requests carry a context
+    - nolintlint # every //nolint names a linter and a reason
+    - perfsprint # no fmt.Sprintf where strconv/concatenation will do
+    - predeclared # no shadowing of len, new, error, ...
+    - revive # golint successor: naming, comments, error strings
+    - sloglint # consistent log/slog usage
+    - testifylint # idiomatic testify assertions
+    - thelper # test helpers call t.Helper()
+    - unconvert # no needless conversions
+    - unparam # no always-the-same parameters or results
+    - usestdlibvars # http.MethodGet, http.StatusOK, ...
+  settings:
+    errcheck:
+      check-type-assertions: true
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # readability of structs over a few saved bytes
+        - shadow # `if err := ...; err != nil` shadowing is idiomatic
+    exhaustive:
+      default-signifies-exhaustive: true
+    gocritic:
+      enabled-tags: [diagnostic, style, performance]
+      disabled-checks:
+        - hugeParam # Config.LogValue must use a value receiver for slog.LogValuer
+        - whyNoLint # covered by nolintlint
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: error-strings
+        - name: error-naming
+        - name: error-return
+        - name: errorf
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: receiver-naming
+        - name: indent-error-flow
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+        - name: time-naming
+        - name: increment-decrement
+        - name: range
+        - name: blank-imports
+        - name: dot-imports
+    sloglint:
+      no-mixed-args: true
+      context: scope # use the *Context variants where a context is in scope
+      static-msg: true
+      key-naming-case: camel
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - std-error-handling
+    rules:
+      # Tests may ignore errors from test servers and use literal URLs.
+      - path: _test\.go
+        linters: [gosec, errcheck, noctx]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/outegro-dev/watchdog-lab/go
