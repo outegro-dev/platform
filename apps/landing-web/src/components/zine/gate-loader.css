@@ -2,8 +2,9 @@
  * «Ворота Причала №1» (GateLoader): two corrugated, rusty port gate leaves
  * over every page load, cut out of the same paper as the magazine. Pure CSS
  * from the server markup: the show ends hidden and click-through with or
- * without scripting. Every time below is multiplied by --gate-pace (2), so
- * the whole show is tuned in one place. Timeline at pace 1, seconds:
+ * without scripting. Every time below is multiplied by --gate-pace
+ * (1.4375, so the show takes 2.3 s) and the whole show is tuned in one
+ * place. Timeline at pace 1, seconds:
  *   0.08 · 0.30 · 0.52   stamps 3, 2, 1
  *   0.62                 the top hinge bolt pops, the padlock opens
  *   0.66 → 1.26          the left leaf sags and falls at the viewer
@@ -22,7 +23,7 @@
   --gate-steel: color-mix(in srgb, var(--ink-soft) 70%, var(--paper));
   --gate-hinge: clamp(72px, 13vw, 170px);
   /* slower or faster without touching the timeline */
-  --gate-pace: 2;
+  --gate-pace: 1.4375;
   position: fixed;
   inset: 0;
   z-index: 1000;

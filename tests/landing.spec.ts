@@ -954,7 +954,7 @@ test("the footer links the platform's sites and this site's pages on every page"
 
 /**
  * Holds the gates shut: their CSS show stays paused until they are skipped,
- * so a check never races the 3.2-second show or a slow hydration.
+ * so a check never races the 2.3-second show or a slow hydration.
  */
 async function holdTheGates(page: Page) {
   await page.addInitScript(() => {
