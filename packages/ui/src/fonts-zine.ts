@@ -7,19 +7,17 @@ import localFont from "next/font/local";
  * a page fetches only the faces and scripts it actually sets.
  * Options must be literals (next/font reads them at build time).
  *
- *   --og-body-*: old-standard-tt — body text, like an old magazine column
- *   --og-mast-*: ruslan-display — masthead
- *   --og-sign-*: unbounded — wide sign lettering for headlines ("Причал №1")
- *   --og-tabloid-*: playfair-display — tabloid italic headlines
- *   --og-kitsch-*: lobster — classified-ad kitsch
- *   --og-loud-*: rubik-mono-one — loud caps
- *   --og-stamp-*: rubik-dirt — rubber stamps
- *   --og-drip-*: rubik-wet-paint — dripping paint for errors
- *   --og-glitch-*: rubik-glitch — glitches
- *   --og-pixel-*: press-start-2p — pixel labels
- *   --og-type-*: pt-mono — typewriter labels
- *   --og-marker-*: pangolin — felt-tip marker for price tags
- *   --og-hand-*: caveat — notes in the margins
+ * Eight faces, each with one job (smallest size it stays legible at):
+ *   --og-body-*: old-standard-tt — loud body text, an old magazine column (17px)
+ *   --og-mast-*: ruslan-display — masthead and big numbers (28px)
+ *   --og-sign-*: unbounded — wide sign lettering for headlines (16px)
+ *   --og-tabloid-*: playfair-display — tabloid italic accents (18px)
+ *   --og-loud-*: rubik-mono-one — loud caps on buttons and kickers (11px)
+ *   --og-stamp-*: rubik-dirt — rubber stamps, a word or two (22px)
+ *   --og-type-*: pt-mono — typewriter labels and code (12px)
+ *   --og-hand-*: caveat — notes in the margins (20px)
+ * The calm level reads in Manrope from fonts.ts. The retired faces (kitsch,
+ * drip, glitch, pixel, marker) keep their --font-* names in zine.css.
  */
 
 const bodyCyrillic = localFont({
@@ -206,47 +204,6 @@ const tabloidLatin = localFont({
   ],
 });
 
-const kitschCyrillic = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/lobster/files/lobster-cyrillic-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-kitsch-cyrillic",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
-    },
-  ],
-});
-
-const kitschLatin = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/lobster/files/lobster-latin-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-kitsch-latin",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value:
-        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
-    },
-  ],
-});
-
 const loudCyrillic = localFont({
   src: [
     {
@@ -329,129 +286,6 @@ const stampLatin = localFont({
   ],
 });
 
-const dripCyrillic = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/rubik-wet-paint/files/rubik-wet-paint-cyrillic-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-drip-cyrillic",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
-    },
-  ],
-});
-
-const dripLatin = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/rubik-wet-paint/files/rubik-wet-paint-latin-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-drip-latin",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value:
-        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
-    },
-  ],
-});
-
-const glitchCyrillic = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/rubik-glitch/files/rubik-glitch-cyrillic-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-glitch-cyrillic",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
-    },
-  ],
-});
-
-const glitchLatin = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/rubik-glitch/files/rubik-glitch-latin-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-glitch-latin",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value:
-        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
-    },
-  ],
-});
-
-const pixelCyrillic = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/press-start-2p/files/press-start-2p-cyrillic-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-pixel-cyrillic",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
-    },
-  ],
-});
-
-const pixelLatin = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-pixel-latin",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value:
-        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
-    },
-  ],
-});
-
 const typeCyrillic = localFont({
   src: [
     {
@@ -484,47 +318,6 @@ const typeLatin = localFont({
   preload: false,
   adjustFontFallback: false,
   variable: "--og-type-latin",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value:
-        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
-    },
-  ],
-});
-
-const markerCyrillic = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/pangolin/files/pangolin-cyrillic-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-marker-cyrillic",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
-    },
-  ],
-});
-
-const markerLatin = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/pangolin/files/pangolin-latin-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-  ],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--og-marker-latin",
   declarations: [
     {
       prop: "unicode-range",
@@ -585,22 +378,12 @@ export const zineFontVariables = [
   signLatin,
   tabloidCyrillic,
   tabloidLatin,
-  kitschCyrillic,
-  kitschLatin,
   loudCyrillic,
   loudLatin,
   stampCyrillic,
   stampLatin,
-  dripCyrillic,
-  dripLatin,
-  glitchCyrillic,
-  glitchLatin,
-  pixelCyrillic,
-  pixelLatin,
   typeCyrillic,
   typeLatin,
-  markerCyrillic,
-  markerLatin,
   handCyrillic,
   handLatin,
 ]

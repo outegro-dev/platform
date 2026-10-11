@@ -7,7 +7,7 @@ import {
   type AccountMenuUser,
   accountMenuMessagesFor,
   accountMenuModel,
-  type PlatformApp,
+  type PlatformSite,
   type PlatformUrls,
 } from "@outegro/ui/lib/platform";
 import { cn } from "@outegro/ui/lib/utils";
@@ -39,8 +39,11 @@ type SignOutAction = string | ((formData: FormData) => void | Promise<void>);
 type AccountMenuProps = {
   /** Who is signed in; null shows a clear "Sign in" instead of the menu. */
   user: AccountMenuUser | null;
-  /** The app showing the menu: its pages open in place, Apps marks it. */
-  current: PlatformApp;
+  /**
+   * The app showing the menu: its pages open in place, Apps marks it. The
+   * portfolio site ("site") marks its own link at the bottom instead.
+   */
+  current: PlatformSite;
   /** Public addresses of the apps, from the host app's configuration. */
   urls: PlatformUrls;
   /** The host app's locale ("en" | "ru"); anything else reads English. */
@@ -96,7 +99,8 @@ function AccountMenu({ user, ...props }: AccountMenuProps) {
         className={props.className}
         data-slot="account-menu-sign-in"
       >
-        <a href={props.signInHref}>
+        {/* nofollow: a sign-in redirect is not a page for crawlers to follow */}
+        <a href={props.signInHref} rel="nofollow">
           <SignInIcon />
           {messages.signIn}
         </a>
@@ -194,7 +198,7 @@ function SignedInMenu({
               const labelId = `${id}-${group.key}`;
               return (
                 <Fragment key={group.key}>
-                  <DropdownMenu.Separator className="mx-2 my-1 h-px bg-border" />
+                  <MenuSeparator />
                   <DropdownMenu.Group
                     aria-labelledby={group.label ? labelId : undefined}
                   >
@@ -217,9 +221,10 @@ function SignedInMenu({
                 </Fragment>
               );
             })}
-            <DropdownMenu.Separator className="mx-2 my-1 h-px bg-border" />
+            <MenuSeparator />
             <DropdownMenu.Item
               className={itemClass}
+              data-slot="account-menu-item"
               data-testid="account-menu-sign-out"
               // The menu closes first; the form outside it stays mounted.
               onSelect={() =>
@@ -292,7 +297,12 @@ function MenuLink({
     .filter(Boolean)
     .join(", ");
   return (
-    <DropdownMenu.Item asChild className={itemClass} textValue={item.label}>
+    <DropdownMenu.Item
+      asChild
+      className={itemClass}
+      data-slot="account-menu-item"
+      textValue={item.label}
+    >
       <a
         href={item.href}
         aria-label={name}
@@ -319,6 +329,15 @@ function MenuLink({
   );
 }
 
+function MenuSeparator() {
+  return (
+    <DropdownMenu.Separator
+      data-slot="account-menu-separator"
+      className="mx-2 my-1 h-px bg-border"
+    />
+  );
+}
+
 function Avatar({
   initials,
   size = "md",
@@ -331,6 +350,7 @@ function Avatar({
   return (
     <span
       aria-hidden="true"
+      data-slot="account-menu-avatar"
       className={cn(
         "relative grid shrink-0 place-items-center rounded-full bg-primary font-bold text-primary-foreground uppercase",
         size === "lg" ? "size-11 text-[15px]" : "size-9 text-[13px]",
@@ -365,9 +385,16 @@ function AccountMenuPlaceholder({
       data-slot="account-menu-placeholder"
       className={cn(triggerClass, "cursor-default", className)}
     >
-      <span className="size-9 shrink-0 rounded-full bg-secondary" />
+      {/* the same slots as the button, so a theme or an app shapes both alike */}
+      <span
+        data-slot="account-menu-avatar"
+        className="size-9 shrink-0 rounded-full bg-secondary"
+      />
       {compact ? null : (
-        <span className="h-3 w-24 rounded-full bg-secondary max-md:hidden" />
+        <span
+          data-slot="account-menu-name"
+          className="h-3 w-24 rounded-full bg-secondary max-md:hidden"
+        />
       )}
       <CaretDownIcon
         weight="bold"

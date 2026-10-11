@@ -20,8 +20,11 @@ export const platformApps = [
 ] as const;
 export type PlatformApp = (typeof platformApps)[number];
 
-/** Public origins of the apps and of the portfolio site (`site`). */
-export type PlatformUrls = Record<PlatformApp | "site", string>;
+/** Any outegro.dev site: one of the apps, or the portfolio itself (`site`). */
+export type PlatformSite = PlatformApp | "site";
+
+/** Public origins of the apps and of the portfolio site. */
+export type PlatformUrls = Record<PlatformSite, string>;
 
 /** Production addresses; every app overrides them from its configuration. */
 export const productionPlatformUrls: PlatformUrls = {
@@ -44,7 +47,7 @@ export const platformPages = {
 export type PlatformPage = keyof typeof platformPages;
 
 /** Where each app starts. */
-const homePaths: Record<PlatformApp | "site", string> = {
+const homePaths: Record<PlatformSite, string> = {
   battleship: "/",
   edu: "/",
   id: "/account",
@@ -60,8 +63,8 @@ const homePaths: Record<PlatformApp | "site", string> = {
 export const RETURN_PARAM = "return";
 
 type LinkOptions = {
-  /** The app the link is rendered in: its own pages stay relative. */
-  from?: PlatformApp;
+  /** The site the link is rendered in: its own pages stay relative. */
+  from?: PlatformSite;
   /** Absolute URL pay.outegro.dev offers as the way back (see RETURN_PARAM). */
   returnTo?: string | null;
 };
@@ -72,7 +75,7 @@ type LinkOptions = {
  */
 export function platformHref(
   urls: PlatformUrls,
-  app: PlatformApp | "site",
+  app: PlatformSite,
   path = homePaths[app],
   { from, returnTo }: LinkOptions = {},
 ): string {
@@ -226,7 +229,7 @@ export type AccountMenuLink = {
   icon: AccountMenuIcon;
   /** Shown under the label: where the link leads. */
   host: string | null;
-  /** The app the menu is shown in. */
+  /** The app (or the site) the menu is shown in. */
   current: boolean;
 };
 
@@ -251,8 +254,8 @@ export type AccountMenuModel = {
 export type AccountMenuInput = {
   user: AccountMenuUser;
   urls: PlatformUrls;
-  /** The app rendering the menu. */
-  current: PlatformApp;
+  /** The app rendering the menu, or the portfolio site. */
+  current: PlatformSite;
   locale: string | null | undefined;
   /** Absolute URL of this app for "Back to …" on pay.outegro.dev. */
   returnTo?: string | null;
@@ -320,10 +323,10 @@ export function accountMenuModel({
           {
             key: "site",
             label: messages.portfolio,
-            href: platformHref(urls, "site"),
+            href: platformHref(urls, "site", undefined, link),
             icon: "site",
             host: hostOf(urls.site),
-            current: false,
+            current: current === "site",
           },
         ],
       },

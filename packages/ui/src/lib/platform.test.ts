@@ -75,8 +75,34 @@ describe("account menu model", () => {
         label: "Portfolio",
         href: "https://outegro.dev/",
         host: "outegro.dev",
+        current: false,
       }),
     ]);
+  });
+
+  it("shown on the portfolio site, marks the site and offers the way back to it", () => {
+    const site = model({ current: "site", returnTo: "https://outegro.dev/" });
+    expect(group(site, "site")).toEqual([
+      expect.objectContaining({
+        href: "/",
+        host: "outegro.dev",
+        current: true,
+      }),
+    ]);
+    expect(group(site, "apps").map((app) => [app.href, app.current])).toEqual([
+      ["https://battleship.outegro.dev/", false],
+      ["https://edu.outegro.dev/", false],
+      ["https://id.outegro.dev/account", false],
+      [
+        "https://pay.outegro.dev/orders?return=https%3A%2F%2Foutegro.dev%2F",
+        false,
+      ],
+    ]);
+    expect(hrefs(site, "account")).toMatchObject({
+      profile: "https://id.outegro.dev/account",
+      purchases:
+        "https://pay.outegro.dev/orders?return=https%3A%2F%2Foutegro.dev%2F",
+    });
   });
 
   it("adds the admin console for every platform role and nothing else", () => {
