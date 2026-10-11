@@ -85,6 +85,7 @@ describe("the books' SVG", () => {
       "sql-internals",
       "message-brokers",
       "javascript-basics",
+      "rust-go-quickstart",
     ]);
     for (const slug of slugs) {
       const svgs = svgsOf(book(slug));

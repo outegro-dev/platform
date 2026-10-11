@@ -28,6 +28,7 @@ const CHAPTERS: Record<string, number> = {
   "sql-internals": 15,
   "message-brokers": 13,
   "javascript-basics": 13,
+  "rust-go-quickstart": 15,
 };
 const MANIFEST = Object.keys(CHAPTERS);
 /** The same books as the database lists them, by slug. */

@@ -117,6 +117,7 @@ test.describe("reading", () => {
       "nodejs-internals",
       "message-brokers",
       "javascript-basics",
+      "rust-go-quickstart",
     ]) {
       const last = book(slug).chapters.at(-1);
       if (!last) throw new Error(`no chapters in ${slug}`);
@@ -145,6 +146,17 @@ test.describe("reading", () => {
     await page.goto("/books/javascript-basics/11");
     const html = blocks.filter({ hasText: "Мои задачи" });
     await expect(html.locator(".hljs-tag").first()).toBeVisible();
+    // Go and Rust in the quick-start book, from the watchdog's own files.
+    await page.goto("/books/rust-go-quickstart/2");
+    const go = blocks.filter({
+      has: page.locator(".code-title", { hasText: /^main\.go$/ }),
+    });
+    await expect(go.first().locator(".hljs-keyword").first()).toBeVisible();
+    await page.goto("/books/rust-go-quickstart/8");
+    const rust = blocks.filter({
+      has: page.locator(".code-title", { hasText: /^rust\/src\/lib\.rs$/ }),
+    });
+    await expect(rust.first().locator(".hljs-keyword").first()).toBeVisible();
   });
 
   test("a quiz answer is saved: solved after a reload", async ({ page }) => {

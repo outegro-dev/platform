@@ -162,9 +162,10 @@ describe("books", () => {
       "javascript-basics",
       "message-brokers",
       "nodejs-internals",
+      "rust-go-quickstart",
       "sql-internals",
     ]);
-    const [js, brokers, node, sql] = list.items;
+    const [js, brokers, node, rustGo, sql] = list.items;
     expect(node).toMatchObject({
       title: "Node.js изнутри",
       status: "published",
@@ -199,6 +200,16 @@ describe("books", () => {
         previewChapters: 1,
       },
       stats: { chapters: 13, exercises: 76, cards: 120 },
+      readers: 0,
+    });
+    expect(rustGo).toMatchObject({
+      title: "Rust и Go: быстрый старт для NestJS-разработчика",
+      rule: {
+        mode: "grant",
+        features: ["library", "book.rust-go-quickstart"],
+        previewChapters: 1,
+      },
+      stats: { chapters: 15, exercises: 86, cards: 134 },
       readers: 0,
     });
 
@@ -265,7 +276,12 @@ describe("commands (TC-EDU-06)", () => {
       (await get("/v1/books", reading)).body.books.map(
         (book: { slug: string }) => book.slug,
       ),
-    ).toEqual(["javascript-basics", "message-brokers", "sql-internals"]);
+    ).toEqual([
+      "javascript-basics",
+      "message-brokers",
+      "rust-go-quickstart",
+      "sql-internals",
+    ]);
     expect(
       (await get("/v1/books/nodejs-internals", reading, ["edu_editor"])).status,
     ).toBe(200);

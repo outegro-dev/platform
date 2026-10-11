@@ -36,6 +36,15 @@
         "features": ["library", "book.javascript-basics"],
         "previewChapters": 1
       }
+    },
+    {
+      "file": "books/rust-go-quickstart.json",
+      "initialStatus": "published",
+      "initialRule": {
+        "mode": "grant",
+        "features": ["library", "book.rust-go-quickstart"],
+        "previewChapters": 1
+      }
     }
   ]
 }
