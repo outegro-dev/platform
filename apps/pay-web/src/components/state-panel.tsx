@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SilverRipple } from "./silver-ripple";
+import { Postmark } from "./postmark";
 
 /**
  * Empty, unavailable or out-of-date: always a heading, an explanation and
@@ -22,7 +22,7 @@ export function StatePanel({
 }) {
   return (
     <section className="card state-panel" data-tone={tone} role={role}>
-      <SilverRipple />
+      <Postmark />
       <span className="state-icon" aria-hidden="true">
         {icon}
       </span>

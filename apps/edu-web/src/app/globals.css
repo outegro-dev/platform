@@ -1,8 +1,13 @@
 /*
- * Books app layout: shell, library, book page. Colours, type, glass and
- * components come from @outegro/ui — no raw palette values here, only
- * tokens. A book's own accent arrives as --book-accent (from its data) and
- * tints diagrams and interactive parts only. Reading styles: book.css.
+ * Books app layout: shell, library, book page. Colours, type and components
+ * come from @outegro/ui in the calm level of its zine theme
+ * (data-theme="zine-calm" on <html>): newsprint and ink, hard offset
+ * shadows, square corners, headlines in the sign face, Manrope for reading.
+ * No raw palette values here, only tokens. A book's own accent arrives as
+ * --book-accent (from its data) and tints diagrams and interactive parts
+ * only; on paper it prints as a halftone and as hard shadows. The theme is
+ * unlayered, so the few rules that must outrank it sit at the end, outside
+ * the layers. Reading styles: reader.css.
  */
 
 :root {
@@ -25,19 +30,11 @@
       scroll-behavior: smooth;
     }
   }
+  /* The paper, its grain and halftone come from the theme. */
   body {
     margin: 0;
     min-height: 100dvh;
     overflow-x: clip;
-    background:
-      radial-gradient(
-        1100px 620px at 88% -12%,
-        var(--secondary),
-        transparent 70%
-      ),
-      radial-gradient(900px 520px at -10% 8%, var(--muted), transparent 65%),
-      var(--background);
-    background-attachment: fixed;
   }
   a {
     color: inherit;
@@ -86,9 +83,11 @@
     background: var(--primary);
     color: var(--primary-foreground);
     padding: 12px 20px;
+    border: 2px solid var(--border);
     border-radius: var(--radius-pill);
+    box-shadow: 3px 3px 0 var(--border);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .skip-link:focus {
     transform: none;
@@ -110,13 +109,14 @@
     padding-block: 8px 72px;
   }
 
-  /* ─── Header ──────────────────────────────────────────── */
+  /* ─── Header: the masthead over a double rule ────────── */
   .app-header {
     height: var(--header-h);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+    border-bottom: 3px double var(--border);
   }
   .brand {
     display: inline-flex;
@@ -127,12 +127,13 @@
     border-radius: var(--radius-sm);
     white-space: nowrap;
   }
+  /* The theme's tabloid italic (--font-display), legible from 18 px. */
   .brand-word {
     font-family: var(--font-display);
     font-size: 30px;
     font-style: italic;
-    font-weight: 500;
-    letter-spacing: -0.02em;
+    font-weight: 900;
+    letter-spacing: -0.01em;
     line-height: 1;
   }
   .brand-mark {
@@ -141,7 +142,7 @@
     width: 26px;
     height: 26px;
     margin-inline-end: -4px;
-    translate: 0 6px;
+    translate: 0 5px;
     color: var(--foreground);
   }
   .brand-mark svg {
@@ -158,21 +159,29 @@
   .page-head {
     display: grid;
     gap: 16px;
-    padding-block: 28px 40px;
-    max-width: 900px;
+    padding-block: 32px 40px;
+    max-width: 960px;
   }
+  /*
+   * Headlines are set in the sign face (the theme's h1 and h2). It is
+   * wide: these sizes keep every word whole on a 360 px phone, and a
+   * longer word breaks rather than widens the page. The accent line is
+   * the theme's tabloid italic in spot red.
+   */
   .page-head h1 {
-    font-size: clamp(44px, 6.4vw, 92px);
-    font-weight: 600;
-    line-height: 0.98;
-    letter-spacing: -0.045em;
+    font-size: clamp(32px, 4.8vw, 70px);
+    font-weight: 900;
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
   }
   .page-head h1 .og-accent,
   .book-title .og-accent {
     display: block;
-    font-size: 1.07em;
-    line-height: 1.02;
-    letter-spacing: -0.03em;
+    margin-top: 0.08em;
+    font-size: 1.14em;
+    line-height: 1.04;
+    letter-spacing: -0.01em;
   }
   .page-head > p:not(.og-eyebrow) {
     max-width: 620px;
@@ -186,10 +195,10 @@
     margin-bottom: 20px;
   }
   .section-title {
-    font-size: clamp(24px, 2.2vw, 30px);
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    line-height: 1.15;
+    font-size: clamp(22px, 2vw, 28px);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
   }
   .back-link {
     display: inline-flex;
@@ -201,10 +210,14 @@
     border-radius: var(--radius-sm);
     color: var(--muted-foreground);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .back-link:hover {
     color: var(--foreground);
+    text-decoration: underline;
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
   }
   .back-link svg {
     width: 16px;
@@ -221,40 +234,49 @@
   .book-page,
   .reader {
     --bk: var(--book-accent, var(--foreground));
-    --bk-text: color-mix(in srgb, var(--bk) 78%, var(--foreground));
+    /* Text in the accent, taken towards the ink: AA on paper and its fills. */
+    --bk-text: color-mix(in srgb, var(--bk) 74%, var(--foreground));
     --bk-soft: color-mix(in srgb, var(--bk) 9%, var(--surface));
     --bk-line: color-mix(in srgb, var(--bk) 42%, var(--border));
-    /* Status inks and soft fills (--ok, --ok-soft, --danger…) and
-       --shadow-soft come from the kit (@outegro/ui). */
+    /* The accent printed as a halftone screen (covers). */
+    --bk-dots: radial-gradient(
+      color-mix(in srgb, var(--bk) 24%, transparent) 0.9px,
+      transparent 1.25px
+    );
+    /* Status inks and soft fills (--ok, --ok-soft, --danger…) and the
+       hard shadows (--shadow-soft, --shadow-hard) come from the kit. */
     --code-bg: color-mix(in srgb, var(--secondary) 45%, var(--surface));
+    /* Inner rules (table rows, queues): the ink, faded. Frames keep it full. */
+    --rule: color-mix(in srgb, var(--border) 28%, transparent);
   }
 
   /* ─── Library ────────────────────────────────────────── */
   .book-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
+    gap: 28px;
   }
   .book-grid > li {
     display: flex;
   }
-  /* A Surface (kit): its border, fill and radius are not re-declared here. */
+  /* A Surface (kit): its frame, fill, radius and hard shadow come from the
+     theme and are not re-declared here. */
   .book-card {
     display: grid;
     grid-template-rows: auto 1fr;
     width: 100%;
     overflow: hidden;
-    box-shadow: var(--shadow-soft);
   }
+  /* The cover, printed on the book's colour as a halftone. */
   .book-card-cover {
     display: grid;
     place-items: center;
     height: clamp(220px, 22vw, 300px);
     padding: clamp(14px, 1.6vw, 22px) clamp(16px, 3vw, 40px);
-    border-bottom: 1px solid var(--border);
-    background:
-      radial-gradient(120% 90% at 50% 0%, var(--bk-soft), transparent 70%),
-      color-mix(in srgb, var(--secondary) 30%, var(--surface));
+    border-bottom: 2px solid var(--border);
+    background-color: var(--bk-soft);
+    background-image: var(--bk-dots);
+    background-size: 5px 5px;
   }
   .book-card-body {
     display: flex;
@@ -263,18 +285,20 @@
     padding: clamp(20px, 2.4vw, 30px);
   }
   .book-card-title {
-    font-size: clamp(28px, 2.6vw, 36px);
-    font-weight: 600;
-    line-height: 1.05;
-    letter-spacing: -0.035em;
+    font-size: clamp(22px, 2.1vw, 30px);
+    font-weight: 900;
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
   }
   .book-card-title a {
     border-radius: var(--radius-sm);
   }
   .book-card-title a:hover {
     text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 5px;
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 3px;
+    text-underline-offset: 6px;
   }
   .book-card-lead {
     color: var(--muted-foreground);
@@ -412,7 +436,7 @@
   :is(.figure-art, .book-cover) svg .t-m {
     font-family: var(--font-mono);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 400;
   }
   :is(.figure-art, .book-cover) svg .t-acc {
     fill: var(--bk-text);
@@ -427,11 +451,12 @@
     fill: var(--ok);
   }
 
-  /* Progress of a signed-in reader. */
+  /* Progress of a signed-in reader: a clipping cut along a dashed line. */
   .progress-meters {
     display: grid;
-    gap: 10px;
-    padding: 14px 16px;
+    gap: 12px;
+    padding: 14px 16px 16px;
+    border: 1.5px dashed var(--border);
     border-radius: var(--radius-md);
     background: var(--secondary);
   }
@@ -444,7 +469,7 @@
   }
   .progress-row {
     display: grid;
-    gap: 6px;
+    gap: 8px;
   }
   .progress-label {
     font-size: 14px;
@@ -467,10 +492,11 @@
     gap: 18px;
   }
   .book-title {
-    font-size: clamp(44px, 6vw, 88px);
-    font-weight: 600;
-    line-height: 0.98;
-    letter-spacing: -0.045em;
+    font-size: clamp(34px, 5vw, 72px);
+    font-weight: 900;
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
   }
   .book-lead {
     max-width: 640px;
@@ -482,38 +508,40 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px 18px;
+    gap: 14px 18px;
   }
   .continue-note {
     color: var(--muted-foreground);
     font-size: 14px;
   }
-  /* The reading assistant, said once on the book page (in the book's language). */
+  /* The reading assistant, said once on the book page (in the book's
+     language): a note with the book's colour down its edge. */
   .book-assist-note {
     max-width: 640px;
     padding: 12px 16px;
-    border-inline-start: 3px solid var(--border-strong);
+    border-inline-start: 4px solid var(--bk);
     border-radius: var(--radius-sm);
-    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    background: var(--surface);
     color: var(--muted-foreground);
     font-size: 15px;
     line-height: 1.6;
   }
   .book-assist-note strong {
     color: var(--foreground);
-    font-weight: 600;
+    font-weight: 700;
   }
   .continue-label {
-    font-weight: 600;
+    font-weight: 700;
   }
+  /* The cover pasted in: the book's halftone in an inked frame. */
   .book-hero-cover {
     padding: clamp(12px, 2vw, 24px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    background:
-      radial-gradient(120% 90% at 50% 0%, var(--bk-soft), transparent 70%),
-      var(--surface);
-    box-shadow: var(--shadow-soft);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--bk-soft);
+    background-image: var(--bk-dots);
+    background-size: 5px 5px;
+    box-shadow: var(--shadow-hard);
   }
   .book-access {
     max-width: 880px;
@@ -527,13 +555,13 @@
     line-height: 1.6;
   }
 
-  /* Contents. */
+  /* Contents: an index under a heavy rule, the rows cut by dashed lines. */
   .contents {
     max-width: 980px;
   }
   .contents-list {
     display: grid;
-    border-top: 1px solid var(--border);
+    border-top: 2px solid var(--border);
   }
   .contents-row {
     display: grid;
@@ -542,19 +570,21 @@
     gap: 16px;
     min-height: 72px;
     padding: 14px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px dashed var(--border);
     border-radius: var(--radius-sm);
     transition: background-color var(--duration-fast) var(--ease-out);
   }
   .contents-row:hover {
-    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    background: var(--surface);
   }
+  /* Chapter numbers in the sign face, at a size it stays legible at. */
   .contents-n {
     display: inline-grid;
     place-items: center start;
     color: var(--muted-foreground);
-    font-family: var(--font-mono);
-    font-size: 15px;
+    font-family: var(--font-sign);
+    font-size: 17px;
+    font-weight: 900;
     font-variant-numeric: tabular-nums;
   }
   .contents-n svg {
@@ -574,8 +604,8 @@
   }
   .contents-title {
     font-size: 18px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     line-height: 1.3;
   }
   .contents-meta {
@@ -597,17 +627,20 @@
   }
 
   /* ─── Access ─────────────────────────────────────────── */
+  /* A Surface (kit): frame and hard shadow from the theme. */
   .access-panel {
     display: grid;
     gap: 12px;
     padding: clamp(20px, 2.6vw, 30px);
-    box-shadow: var(--shadow-soft);
   }
+  /* A headline in the sign face, whether it is an h2 or an h3. */
   .access-title {
-    font-size: clamp(22px, 2.2vw, 28px);
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    line-height: 1.15;
+    font-family: var(--font-sign);
+    font-size: clamp(20px, 2vw, 26px);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
   }
   .access-panel p {
     max-width: 640px;
@@ -632,9 +665,9 @@
     align-items: center;
     gap: 10px;
     min-height: 44px;
-    color: var(--success);
+    color: var(--ok);
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .access-note svg {
     width: 20px;
@@ -684,6 +717,7 @@
     padding-inline: 16px;
     pointer-events: none;
   }
+  /* A slip of paper with a hard shadow. */
   .action-status-card {
     display: flex;
     align-items: center;
@@ -691,8 +725,8 @@
     width: min(100%, 480px);
     min-height: 56px;
     padding: 6px 6px 6px 18px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--surface);
     box-shadow: var(--shadow-soft);
     opacity: 0;
@@ -712,11 +746,11 @@
     flex-shrink: 0;
   }
   .action-status[data-tone="success"] .action-status-icon {
-    color: var(--success);
+    color: var(--ok);
   }
   .action-status:is([data-tone="error"], [data-tone="offline"])
     .action-status-icon {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .action-status-text {
     flex: 1;
@@ -725,26 +759,28 @@
     line-height: 1.45;
   }
 
-  /* ─── Footer ─────────────────────────────────────────── */
+  /* ─── Footer: the imprint under a dashed cut ─────────── */
   .app-footer {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 24px;
-    padding-block: 24px 32px;
+    padding-block: 16px 32px;
+    border-top: 1.5px dashed var(--border);
     color: var(--muted-foreground);
-    font-size: 13px;
+    font-size: 14px;
   }
   .app-footer a {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
     text-decoration: underline;
-    text-decoration-color: var(--border-strong);
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 4px;
   }
   .app-footer a:hover {
     color: var(--foreground);
-    text-decoration-color: currentColor;
+    text-decoration-thickness: 2.5px;
   }
 
   /* The kit's eyebrow, on a line of its own height inside these heads. */
@@ -765,7 +801,7 @@
       height: auto;
       padding: clamp(16px, 2.4vw, 28px);
       border-bottom: 0;
-      border-inline-end: 1px solid var(--border);
+      border-inline-end: 2px solid var(--border);
     }
     .book-card-cover svg {
       width: 100%;
@@ -792,7 +828,11 @@
       gap: 6px;
     }
     .page-head {
-      padding-block: 16px 28px;
+      padding-block: 20px 28px;
+    }
+    /* "Интерактивные" whole from a 320 px phone up. */
+    .page-head h1 {
+      font-size: min(8.4vw, 44px);
     }
     .book-card {
       grid-template-columns: minmax(0, 1fr);
@@ -800,7 +840,7 @@
     .book-card-cover {
       height: 220px;
       border-inline-end: 0;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 2px solid var(--border);
       padding: 14px 20px;
     }
     .book-card-cover svg {

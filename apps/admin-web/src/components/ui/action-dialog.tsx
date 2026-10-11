@@ -81,9 +81,7 @@ export function ActionDialog(props: Props) {
       </DialogTrigger>
       <DialogContent className="dialog" closeLabel={t("close")}>
         <DialogHeader>
-          <DialogTitle className="text-[26px] tracking-[-0.035em]">
-            {props.title}
-          </DialogTitle>
+          <DialogTitle>{props.title}</DialogTitle>
           {props.description ? (
             <DialogDescription>{props.description}</DialogDescription>
           ) : (

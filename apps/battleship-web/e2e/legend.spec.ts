@@ -99,13 +99,16 @@ test.describe("board key", () => {
       "Water around a sunk ship: no ship can be there",
       "Latest shot",
     ]);
-    // Same pieces as the boards, in this player's classic skin and flames.
+    // Same pieces as the boards, in this player's classic skin and hit
+    // effect ("flame": a red marker cross).
     await expect(item(legend, "ship").locator(".ship")).toHaveAttribute(
       "data-skin",
       "classic",
     );
     await expect(
-      item(legend, "ship-hit").locator('.mark[data-kind="hit"] .flame'),
+      item(legend, "ship-hit").locator(
+        '.mark[data-kind="hit"][data-effect="flame"] .mark-cross',
+      ),
     ).toHaveCount(1);
     await expect(
       item(legend, "miss").locator('.mark[data-kind="miss"] .mark-dot'),
@@ -177,7 +180,10 @@ test.describe("board key", () => {
       "data-skin",
       "silver",
     );
-    await expect(item(key(page), "hit").locator(".shards")).toHaveCount(1);
+    // "shards": a rubber stamp.
+    await expect(
+      item(key(page), "hit").locator('.mark[data-effect="shards"] .mark-stamp'),
+    ).toHaveCount(1);
   });
 
   test("replays explain the same marks", async ({ page, game }) => {

@@ -1,53 +1,172 @@
 /*
- * Boards, ships, shot marks and effects. Every animation moves only
- * transform and opacity; prefers-reduced-motion keeps short fades.
- * Colours are tokens from @outegro/ui (game palette at its end).
+ * Boards, ships, shot marks and effects on paper. Every animation moves only
+ * transform and opacity (and the pen of a marker stroke); prefers-reduced-
+ * motion keeps short fades. Game animations run on the app's own easing
+ * (--game-ease), never the theme's.
  */
+
+/*
+ * ─── Paper game palette ───
+ * The kit's game tokens (--sea, --ship-*, --mark-*, --flame-*, --spark-*, in
+ * @outegro/ui index.css) describe a gallery sea. Under the calm zine theme
+ * the board is a sheet of squared notebook paper: your waters a white page
+ * ruled in blue, enemy waters a manila chart ruled in pencil; ships are
+ * card cut-outs with ink outlines; a miss is a pencil dot, a hit a red
+ * felt-tip cross or a rubber stamp. The night sea is the same on dark
+ * paper, ruled in chalk. Every value is mixed from the theme's inks, so the
+ * app keeps no raw colours.
+ *
+ * Unlayered, like the kit's tokens: html[…] outranks its :root, and the
+ * night rules outrank its [data-sea="night"].
+ */
+html[data-theme="zine-calm"] {
+  --game-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* your waters: a white page of a squared notebook (the sheet around it
+     is the surface of the tone it sits in, see .board) */
+  --sea: var(--paper-white);
+  --sea-line: color-mix(in srgb, var(--spot-blue) 38%, var(--paper-white));
+  --sea-line-soft: color-mix(in srgb, var(--spot-blue) 13%, var(--paper-white));
+  --sea-edge: color-mix(in srgb, var(--spot-blue) 60%, var(--ink));
+  --sea-deep: var(--paper-deep);
+  --sea-glint: var(--paper-white);
+
+  /* ships: navy card, paper-white superstructure, an ink edge */
+  --ship-hull: color-mix(in srgb, var(--spot-blue) 62%, var(--ink));
+  --ship-deck: color-mix(in srgb, var(--spot-blue) 80%, var(--paper-white));
+  --ship-detail: var(--paper-white);
+  --ship-shine: var(--paper-white);
+  --ship-outline: var(--ink);
+  --ship-fold: color-mix(in srgb, var(--paper-white) 70%, transparent);
+  --ship-cast: color-mix(in srgb, var(--ink) 38%, transparent);
+  /* the silver fleet: foil card, engraved */
+  --ship-silver-dark: var(--ink-soft);
+  --ship-silver-mid: color-mix(
+    in srgb,
+    var(--spot-blue) 14%,
+    color-mix(in srgb, var(--ink) 34%, var(--paper-white))
+  );
+  --ship-silver-light: color-mix(
+    in srgb,
+    var(--paper-white) 58%,
+    var(--ship-silver-mid)
+  );
+  --ship-engrave: color-mix(in srgb, var(--ink) 36%, transparent);
+  /* a sunk ship: burnt card, scribbled over */
+  --ship-wreck: color-mix(in srgb, var(--ink) 22%, var(--paper-deep));
+  --ship-wreck-deck: color-mix(in srgb, var(--ink) 10%, var(--paper-deep));
+  --ship-scribble: color-mix(in srgb, var(--ink) 62%, transparent);
+
+  /* marks */
+  --mark-miss: var(--ink-soft);
+  --mark-hit: var(--spot-red);
+  --mark-hit-deep: var(--spot-red-deep);
+  --mark-hit-soft: color-mix(in srgb, var(--spot-yellow) 80%, transparent);
+  --mark-halo: var(--paper-white);
+  --mark-stamp: var(--spot-red-deep);
+  --aim: var(--ink);
+  --aim-band: color-mix(in srgb, var(--spot-yellow) 30%, transparent);
+  --placement-ok: var(--ok);
+  --placement-bad: var(--danger);
+
+  /* effects: a cut-paper bang, confetti and paper shards */
+  --flame-core: var(--spot-yellow);
+  --flame-mid: var(--spot-red);
+  --flame-edge: var(--spot-red-deep);
+  --shard-light: var(--paper-white);
+  --shard-mid: color-mix(in srgb, var(--ink) 22%, var(--paper-white));
+  --shard-dark: var(--ink-soft);
+  --spark-gold: var(--spot-yellow);
+  --spark-ember: var(--spot-red);
+  --spark-ice: var(--spot-blue);
+  --spark-white: var(--ink);
+}
+
+/* enemy waters: a manila chart ruled in pencil */
+html[data-theme="zine-calm"] [data-waters="enemy"] {
+  --sea-sheet: var(--paper-deep);
+  --sea: color-mix(in srgb, var(--paper-deep) 55%, var(--paper-white));
+  --sea-line: color-mix(in srgb, var(--ink) 30%, var(--sea));
+  --sea-line-soft: color-mix(in srgb, var(--ink) 9%, var(--sea));
+  --sea-edge: var(--ink-soft);
+}
+
+/* the night sea: dark paper ruled in chalk; ships cut from light card */
+html[data-theme="zine-calm"] [data-sea="night"] {
+  --sea: color-mix(in srgb, var(--ink) 84%, var(--paper));
+  --sea-line: color-mix(in srgb, var(--paper) 30%, var(--sea));
+  --sea-line-soft: color-mix(in srgb, var(--paper) 10%, var(--sea));
+  --sea-edge: color-mix(in srgb, var(--paper) 55%, var(--sea));
+  --sea-deep: var(--ink);
+  --sea-glint: var(--paper);
+  --ship-hull: color-mix(in srgb, var(--spot-blue) 50%, var(--paper));
+  --ship-deck: color-mix(in srgb, var(--spot-blue) 22%, var(--paper));
+  --ship-outline: var(--ink);
+  --ship-fold: color-mix(in srgb, var(--ink) 35%, transparent);
+  --ship-cast: color-mix(in srgb, var(--ink) 70%, transparent);
+  --ship-silver-mid: color-mix(in srgb, var(--paper-white) 72%, var(--ink));
+  --ship-wreck: color-mix(in srgb, var(--paper) 45%, var(--ink));
+  --ship-wreck-deck: color-mix(in srgb, var(--paper) 55%, var(--ink));
+  --mark-miss: var(--paper);
+  --mark-hit-soft: color-mix(in srgb, var(--spot-yellow) 72%, transparent);
+  --aim: var(--paper);
+  --aim-band: color-mix(in srgb, var(--spot-yellow) 16%, transparent);
+  --placement-ok: color-mix(in srgb, var(--spot-green) 50%, var(--paper));
+  --placement-bad: color-mix(in srgb, var(--spot-red) 55%, var(--paper));
+}
+html[data-theme="zine-calm"] [data-sea="night"][data-waters="enemy"] {
+  --sea-sheet: color-mix(in srgb, var(--spot-blue) 16%, var(--surface));
+  --sea: color-mix(in srgb, var(--spot-blue) 30%, var(--ink));
+}
+
+/* The theme draws focus outside the element; a cell keeps it inside, so a
+   ring never hides under its neighbour or past the water's edge. */
+html[data-theme="zine-calm"] .board .cell:focus-visible {
+  outline-offset: -3px;
+}
 
 @layer components {
   /* ─── Board frame ───────────────────────────────────── */
   .board {
-    --label: 24px;
-    --radius-water: 12px;
+    --label: 26px;
+    --radius-water: var(--radius-sm);
     position: relative;
     container-type: inline-size;
     width: 100%;
     padding: 12px 16px 16px 10px;
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    background: var(--surface);
-    box-shadow: var(--shadow-lift);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--sea-sheet, var(--surface));
+    box-shadow: var(--shadow-hard);
     color: var(--foreground);
+    line-height: 1.35;
     isolation: isolate;
   }
   .board[data-size="sm"] {
     --label: 18px;
     padding: 8px 10px 10px 6px;
-    border-radius: 18px;
   }
   .board[data-size="xs"] {
     --label: 0px;
     padding: 6px;
-    border-radius: 16px;
     box-shadow: none;
   }
   .board[data-size="xs"] .board-table thead,
   .board[data-size="xs"] .board-table tbody th {
     display: none;
   }
-  /* Glow for the board you act on; it fades in (opacity only). */
+  /* The board you act on: a second, blue frame offset behind it. */
   .board::before {
     content: "";
     position: absolute;
-    inset: -1px;
+    inset: -2px;
     z-index: -1;
     border-radius: inherit;
     box-shadow:
-      0 0 0 1.5px var(--ring),
-      0 0 0 6px color-mix(in srgb, var(--ring) 10%, transparent),
-      0 30px 70px -34px color-mix(in srgb, var(--ring) 45%, transparent);
+      0 0 0 3px var(--ring),
+      8px 8px 0 3px var(--ring);
     opacity: 0;
-    transition: opacity var(--duration-base) var(--ease-out);
+    transition: opacity var(--duration-base) var(--game-ease);
     pointer-events: none;
   }
   .board[data-active]::before {
@@ -73,10 +192,11 @@
   .board-table thead th,
   .board-table .board-corner {
     height: var(--label);
-    padding: 0 0 4px;
+    padding: 0 0 5px;
     font-family: var(--font-mono);
-    font-size: clamp(10px, calc(var(--cell) * 0.28), 12px);
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
     color: var(--muted-foreground);
     text-align: center;
     vertical-align: bottom;
@@ -84,8 +204,9 @@
   .board-table tbody th {
     padding: 0 6px 0 0;
     font-family: var(--font-mono);
-    font-size: clamp(10px, calc(var(--cell) * 0.28), 12px);
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
     color: var(--muted-foreground);
     text-align: end;
   }
@@ -103,7 +224,7 @@
     height: var(--cell);
     padding: 0;
     border: 0;
-    border-radius: 6px;
+    border-radius: 0;
     background: transparent;
     cursor: default;
     -webkit-tap-highlight-color: transparent;
@@ -115,15 +236,13 @@
     cursor: default;
   }
   .cell:focus-visible {
-    outline: 2px solid var(--aim);
-    outline-offset: -3px;
     z-index: 1;
   }
   .board[data-interactive] button.cell:not([aria-disabled="true"]):hover {
-    background: color-mix(in srgb, var(--aim) 7%, transparent);
+    background: color-mix(in srgb, var(--aim) 9%, transparent);
   }
 
-  /* Water with its grid lines and a slow light band. */
+  /* The water: squared paper, a rule every cell and a fainter one between. */
   .board-water {
     position: absolute;
     z-index: 0;
@@ -132,56 +251,19 @@
     width: calc(var(--cell) * 10);
     height: calc(var(--cell) * 10);
     border-radius: var(--radius-water);
-    --sea-top: var(--sea-glint);
-    background: linear-gradient(
-      160deg,
-      var(--sea-top) 0%,
-      var(--sea) 34%,
-      var(--sea-deep) 100%
-    );
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--sea-line) 70%, transparent);
-  }
-  .board-water::before {
-    content: "";
-    position: absolute;
-    inset: 0;
+    background-color: var(--sea);
     background-image:
       linear-gradient(to right, var(--sea-line) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--sea-line) 1px, transparent 1px);
-    background-size: var(--cell) var(--cell);
+      linear-gradient(to bottom, var(--sea-line) 1px, transparent 1px),
+      linear-gradient(to right, var(--sea-line-soft) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--sea-line-soft) 1px, transparent 1px);
+    background-size:
+      var(--cell) var(--cell),
+      var(--cell) var(--cell),
+      calc(var(--cell) / 2) calc(var(--cell) / 2),
+      calc(var(--cell) / 2) calc(var(--cell) / 2);
     background-position: -1px -1px;
-    opacity: 0.9;
-  }
-  .board-water::after {
-    content: "";
-    position: absolute;
-    inset: -30% -60%;
-    background: linear-gradient(
-      105deg,
-      transparent 38%,
-      color-mix(in srgb, var(--sea-glint) 60%, transparent) 50%,
-      transparent 62%
-    );
-    transform: translateX(-35%);
-    animation: sea-shimmer 11s ease-in-out infinite;
-    opacity: 0.7;
-  }
-  @keyframes sea-shimmer {
-    0%,
-    100% {
-      transform: translateX(-35%);
-    }
-    50% {
-      transform: translateX(35%);
-    }
-  }
-  .board[data-sea="night"] .board-water {
-    --sea-top: color-mix(in srgb, var(--sea-glint) 16%, var(--sea));
-  }
-  .board[data-sea="night"] .board-water::after {
-    opacity: 0.18;
+    box-shadow: inset 0 0 0 1.5px var(--sea-edge);
   }
 
   /* Layers over the water: ships and marks (clipped), effects (free). */
@@ -202,16 +284,17 @@
     z-index: 3;
   }
 
-  /* Crosshair on the target board, following hover and focus. */
+  /* The sight on the target board: a highlighter band along the row and
+     the column, a pencil ring on the cell; it follows hover and focus. */
   .aim-line {
     position: absolute;
     left: 0;
     top: 0;
-    background: color-mix(in srgb, var(--aim) 6%, transparent);
+    background: var(--aim-band);
     opacity: 0;
     transition:
-      opacity var(--duration-fast) var(--ease-out),
-      transform 140ms var(--ease-out);
+      opacity var(--duration-fast) var(--game-ease),
+      transform 140ms var(--game-ease);
   }
   .aim-line[data-axis="x"] {
     width: var(--cell);
@@ -235,14 +318,14 @@
       calc(var(--aim-y, 0) * var(--cell))
     );
     transition:
-      opacity var(--duration-fast) var(--ease-out),
-      transform 140ms var(--ease-out);
+      opacity var(--duration-fast) var(--game-ease),
+      transform 140ms var(--game-ease);
   }
   .aim-reticle::before,
   .aim-reticle::after {
     content: "";
     position: absolute;
-    inset: 18%;
+    inset: 16%;
     border-radius: 50%;
     border: 2px solid var(--aim);
   }
@@ -256,8 +339,9 @@
     opacity: 1;
   }
 
-  /* ─── Ships ─────────────────────────────────────────── */
+  /* ─── Ships: card cut-outs glued on with a hard shadow ─ */
   .ship {
+    --ship-lift: calc(var(--cell) * 0.06);
     position: absolute;
     left: calc(var(--x) * var(--cell));
     top: calc(var(--y) * var(--cell));
@@ -273,60 +357,72 @@
     width: 100%;
     height: 100%;
     overflow: visible;
-    filter: drop-shadow(
-      0 calc(var(--cell) * 0.07) calc(var(--cell) * 0.06)
-        color-mix(in srgb, var(--ship-outline) 38%, transparent)
-    );
   }
+  /* Ink keeps its width whatever the cell size. */
+  .ship-art :is(path, circle, rect) {
+    vector-effect: non-scaling-stroke;
+  }
+  .ship .ship-art {
+    filter: drop-shadow(var(--ship-lift) var(--ship-lift) 0 var(--ship-cast));
+  }
+  /* The art turns with a vertical ship: the shadow still falls down-right. */
   .ship[data-orientation="vertical"] .ship-art {
     filter: drop-shadow(
-      calc(var(--cell) * 0.07) 0 calc(var(--cell) * 0.06)
-        color-mix(in srgb, var(--ship-outline) 38%, transparent)
+      var(--ship-lift) calc(var(--ship-lift) * -1) 0 var(--ship-cast)
     );
   }
-  .ship-outline {
-    opacity: 0;
+  .ship-scribble {
+    display: none;
   }
-  .ship[data-skin="silver"] .ship-outline {
-    opacity: 0.3;
+  /* Not glued yet (a preview, a ship still afloat when the match ends):
+     no shadow, and the outline is the dotted line to cut along. */
+  .ship:is([data-state="ghost"], [data-state="invalid"]) .ship-art {
+    filter: none;
   }
-  .board[data-sea="night"] .ship-outline {
-    opacity: 0.55;
+  .ship:is([data-state="ghost"], [data-state="invalid"]) .ship-outline {
+    stroke-dasharray: 4 3;
   }
   .ship[data-state="ghost"] {
-    opacity: 0.55;
+    opacity: 0.6;
   }
   .ship[data-state="invalid"] {
-    opacity: 0.35;
+    opacity: 0.4;
   }
   .ship[data-state="lifted"] {
     opacity: 0.3;
   }
-  .ship[data-state="wreck"] {
-    opacity: 0.62;
+  /* Sunk: the cut-out goes to burnt card and is scribbled out. */
+  .ship[data-state="wreck"] .ship-hull {
+    fill: var(--ship-wreck);
   }
-  .ship[data-state="wreck"] .ship-art {
-    filter: grayscale(0.6) brightness(0.85);
+  .ship[data-state="wreck"] .ship-deck {
+    fill: var(--ship-wreck-deck);
+  }
+  .ship[data-state="wreck"] .ship-engrave {
+    display: none;
+  }
+  .ship[data-state="wreck"] .ship-scribble {
+    display: inline;
   }
   .ship[data-sinking] {
-    animation: ship-sink var(--sink-ms, 950ms) var(--ease-out) both;
+    animation: ship-sink var(--sink-ms, 950ms) var(--game-ease) both;
   }
   @keyframes ship-sink {
     0% {
-      transform: translateY(0) scale(1.04);
+      transform: translateY(0) scale(1.06) rotate(-2deg);
       opacity: 1;
     }
     35% {
-      transform: translateY(-4%) scale(1.02) rotate(-1deg);
+      transform: translateY(-4%) scale(1.03) rotate(1deg);
       opacity: 1;
     }
     100% {
-      transform: translateY(5%) scale(0.97) rotate(1.5deg);
-      opacity: 0.62;
+      transform: none;
+      opacity: 1;
     }
   }
   .ship-enter {
-    animation: ship-enter 380ms var(--ease-out) both;
+    animation: ship-enter 380ms var(--game-ease) both;
   }
   @keyframes ship-enter {
     from {
@@ -335,7 +431,8 @@
     }
   }
 
-  /* Placement preview cells. */
+  /* Placement preview cells: green where it fits, red hatching where not
+     (shape, not only hue). */
   .preview-cell {
     position: absolute;
     left: calc(var(--x) * var(--cell));
@@ -349,32 +446,31 @@
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: 7px;
+    border-radius: var(--radius-sm);
     background: color-mix(in srgb, var(--placement-ok) 18%, transparent);
-    box-shadow: inset 0 0 0 2px var(--placement-ok);
+    box-shadow: inset 0 0 0 2.5px var(--placement-ok);
   }
-  /* Not allowed: hatched and dashed, so it differs by shape, not only hue. */
   .preview-cell[data-bad]::before {
     background:
       repeating-linear-gradient(
         -45deg,
-        color-mix(in srgb, var(--placement-bad) 34%, transparent) 0 2px,
+        color-mix(in srgb, var(--placement-bad) 45%, transparent) 0 2px,
         transparent 2px 6px
       ),
       color-mix(in srgb, var(--placement-bad) 10%, transparent);
     box-shadow: none;
-    outline: 2px dashed var(--placement-bad);
-    outline-offset: -2px;
+    outline: 2.5px dashed var(--placement-bad);
+    outline-offset: -2.5px;
   }
-  /* The ship picked on the board: a second tap turns it. */
+  /* The ship picked on the board: a cut line around it; a second tap turns it. */
   .ship-selected {
     position: absolute;
     left: calc(var(--x) * var(--cell));
     top: calc(var(--y) * var(--cell));
     width: calc(var(--len) * var(--cell));
     height: var(--cell);
-    border-radius: 10px;
-    outline: 2px dashed var(--aim);
+    border-radius: var(--radius-sm);
+    outline: 2.5px dashed var(--aim);
     outline-offset: -2px;
   }
   .ship-selected[data-orientation="vertical"] {
@@ -387,8 +483,8 @@
     top: calc(var(--y) * var(--cell));
     width: var(--cell);
     height: var(--cell);
-    border-radius: 7px;
-    box-shadow: inset 0 0 0 2px var(--aim);
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 0 3px var(--aim);
   }
 
   /* ─── Marks left by shots ───────────────────────────── */
@@ -401,55 +497,80 @@
     display: grid;
     place-items: center;
   }
+  /* A miss: a pencil dot, pressed a little unevenly. */
   .mark-dot {
     width: 24%;
     aspect-ratio: 1;
-    border-radius: 50%;
+    border-radius: 47% 53% 44% 56% / 55% 46% 54% 45%;
     background: var(--mark-miss);
-    box-shadow: 0 0 0 calc(var(--cell) * 0.09)
-      color-mix(in srgb, var(--mark-miss) 16%, transparent);
-    animation: mark-in 320ms var(--ease-out) both;
+    box-shadow: 0 0 0 calc(var(--cell) * 0.05)
+      color-mix(in srgb, var(--mark-miss) 14%, transparent);
+    animation: mark-in 260ms var(--game-ease) both;
   }
-  .mark[data-kind="hit"]::before,
-  .mark[data-kind="sunk"]::before {
+  /* A hit on a ship still afloat: a swipe of yellow highlighter under it. */
+  .mark[data-kind="hit"]::before {
     content: "";
     position: absolute;
-    inset: 12%;
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      color-mix(in srgb, var(--flame-mid) 45%, transparent),
-      transparent
-    );
-    animation: ember-glow 2.4s ease-in-out infinite;
+    inset: 13%;
+    border-radius: 42% 58% 46% 54% / 57% 43% 57% 43%;
+    background: var(--mark-hit-soft);
+    rotate: -10deg;
+    animation: mark-in 260ms var(--game-ease) both;
   }
-  .mark[data-kind="sunk"]::before {
-    opacity: 0.5;
-    animation: none;
+  /* A stamp covers more of the cell: the swipe reaches past its edges. */
+  .mark[data-kind="hit"][data-effect="shards"]::before {
+    inset: 2%;
   }
-  .mark .flame,
-  .mark .shards {
+  .mark :is(.mark-cross, .mark-stamp) {
     position: relative;
-    width: 66%;
-    height: 66%;
+    width: 76%;
+    height: 76%;
     overflow: visible;
-    transform-origin: 50% 90%;
   }
-  .mark[data-kind="hit"] .flame {
-    animation: flame-flicker 1.25s ease-in-out infinite;
+  .mark-cross path {
+    fill: none;
+    stroke-linecap: round;
   }
-  .mark[data-kind="hit"] .flame-inner {
-    animation: flame-core 0.9s ease-in-out infinite;
-    transform-origin: 50% 90%;
+  .mark-cross-halo {
+    stroke: var(--mark-halo);
+    stroke-width: 10;
+    animation: fade-soft 120ms ease-out both;
   }
-  .mark[data-kind="sunk"] .flame,
-  .mark[data-kind="sunk"] .shards {
-    width: 44%;
-    height: 44%;
-    opacity: 0.85;
+  /* Felt-tip strokes drawn in, the second after the first. */
+  .mark-cross-ink {
+    stroke: var(--mark-hit);
+    stroke-width: 5.5;
+    stroke-dasharray: 1;
+    animation: marker-draw 170ms var(--game-ease) both;
   }
-  .mark[data-kind="hit"] .shards {
-    animation: shard-glint 2.6s ease-in-out infinite;
+  .mark-cross-ink:last-child {
+    animation-delay: 120ms;
+  }
+  .mark[data-kind="sunk"] .mark-cross-ink {
+    stroke: var(--mark-hit-deep);
+  }
+  @keyframes marker-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+  /* The rubber stamp: pressed on a little crooked. */
+  .mark-stamp {
+    rotate: -9deg;
+    animation: stamp-in 240ms var(--game-ease) both;
+  }
+  .mark-stamp-pad {
+    fill: var(--mark-halo);
+    fill-opacity: 0.94;
+    stroke: var(--mark-stamp);
+    stroke-width: 3;
+    rx: 2px;
+  }
+  .mark-stamp-ink {
+    fill: var(--mark-stamp);
+  }
+  .mark[data-kind="sunk"] .mark-stamp {
+    rotate: 7deg;
   }
   @keyframes mark-in {
     from {
@@ -457,49 +578,13 @@
       opacity: 0;
     }
   }
-  @keyframes ember-glow {
-    0%,
-    100% {
-      opacity: 0.7;
-      transform: scale(0.94);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.06);
-    }
-  }
-  @keyframes flame-flicker {
-    0%,
-    100% {
-      transform: scale(1, 1) rotate(-1deg);
-    }
-    30% {
-      transform: scale(1.05, 0.96) rotate(1.5deg);
+  @keyframes stamp-in {
+    from {
+      transform: scale(1.5);
+      opacity: 0;
     }
     60% {
-      transform: scale(0.96, 1.06) rotate(-2deg);
-    }
-  }
-  @keyframes flame-core {
-    0%,
-    100% {
-      transform: scale(1);
       opacity: 1;
-    }
-    50% {
-      transform: scale(0.88, 1.08);
-      opacity: 0.85;
-    }
-  }
-  @keyframes shard-glint {
-    0%,
-    100% {
-      transform: rotate(0deg) scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: rotate(4deg) scale(1.04);
-      opacity: 0.85;
     }
   }
 
@@ -511,7 +596,7 @@
     width: var(--cell);
     height: var(--cell);
     padding: 1px;
-    animation: shot-lock 320ms var(--ease-out) both;
+    animation: shot-lock 320ms var(--game-ease) both;
   }
   .shot-marker svg {
     display: block;
@@ -522,9 +607,9 @@
   .shot-marker path {
     fill: none;
     stroke: var(--aim);
-    stroke-width: 2.25px;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke-width: 2.5px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
     vector-effect: non-scaling-stroke;
   }
   @keyframes shot-lock {
@@ -544,7 +629,7 @@
     pointer-events: none;
   }
 
-  /* Tracer: a glowing shell with a short trail, flying in from --dx/--dy. */
+  /* Tracer: a pencil point with a short streak, flying in from --dx/--dy. */
   .fx-tracer-body {
     position: absolute;
     inset: 0;
@@ -554,28 +639,23 @@
       both;
   }
   .fx-tracer-dot {
-    width: 30%;
+    width: 22%;
     aspect-ratio: 1;
     border-radius: 50%;
-    background: radial-gradient(
-      circle,
-      var(--spark-white) 0%,
-      var(--flame-core) 45%,
-      transparent 72%
-    );
+    background: var(--aim);
+    box-shadow: 0 0 0 2px var(--mark-halo);
   }
   .fx-tracer-trail {
     position: absolute;
     left: 50%;
     top: 50%;
     width: calc(var(--cell) * 2.4);
-    height: 3px;
-    margin-top: -1.5px;
-    border-radius: 2px;
+    height: 2px;
+    margin-top: -1px;
     background: linear-gradient(
       90deg,
       transparent,
-      color-mix(in srgb, var(--flame-core) 85%, transparent)
+      color-mix(in srgb, var(--aim) 60%, transparent)
     );
     transform-origin: 100% 50%;
     transform: translateX(-100%) rotate(var(--angle));
@@ -598,14 +678,13 @@
     }
   }
 
-  /* Miss: rings spreading on the water and a droplet. */
+  /* Miss: pencil rings spreading on the paper and a drop. */
   .fx-splash i {
     position: absolute;
     inset: 8%;
     border-radius: 50%;
-    border: 2px solid var(--sea-glint);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mark-miss) 40%, transparent);
-    animation: ripple 900ms var(--ease-out) both;
+    border: 1.5px solid var(--mark-miss);
+    animation: ripple 900ms var(--game-ease) both;
   }
   .fx-splash i:nth-child(2) {
     animation-delay: 120ms;
@@ -620,8 +699,8 @@
     width: 16%;
     height: 16%;
     border-radius: 50%;
-    background: var(--sea-glint);
-    animation: droplet 520ms var(--ease-out) both;
+    background: var(--mark-miss);
+    animation: droplet 520ms var(--game-ease) both;
   }
   @keyframes ripple {
     from {
@@ -648,13 +727,24 @@
     }
   }
 
-  /* Hit and sunk: a flash, a shock ring and particles. */
+  /* Hit and sunk: a cut-paper "bang", a ring and confetti (or shards). */
   .fx-flash {
     position: absolute;
     inset: -60%;
     width: 220%;
     height: 220%;
-    animation: flash 460ms var(--ease-out) both;
+    overflow: visible;
+    animation: flash 460ms var(--game-ease) both;
+  }
+  .fx-flash path {
+    fill: var(--flame-core);
+    stroke: var(--ink);
+    stroke-width: 1.5px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .fx-hit[data-effect="shards"] .fx-flash path {
+    fill: var(--shard-light);
   }
   .fx-hit[data-kind="sunk"] .fx-flash {
     inset: -110%;
@@ -666,20 +756,20 @@
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    border: 2px solid var(--flame-core);
-    animation: shock 520ms var(--ease-out) both;
+    border: 2px solid var(--flame-mid);
+    animation: shock 520ms var(--game-ease) both;
   }
   .fx-hit[data-effect="shards"] .fx-ring {
-    border-color: var(--shard-light);
+    border-color: var(--ink);
   }
   .fx-particle {
     position: absolute;
     left: 50%;
     top: 50%;
     width: 16%;
-    height: 16%;
-    margin: -8% 0 0 -8%;
-    border-radius: 50%;
+    height: 12%;
+    margin: -6% 0 0 -8%;
+    border-radius: 1px;
     background: var(--flame-mid);
     --turn: calc(var(--i) / var(--n) * 360deg);
     animation: particle 620ms cubic-bezier(0.15, 0.7, 0.3, 1) both;
@@ -698,17 +788,27 @@
     width: 100%;
     height: 100%;
     display: block;
+    overflow: visible;
+  }
+  .fx-particle path {
+    fill: var(--shard-mid);
+    stroke: var(--ink);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
   }
   .fx-hit[data-kind="sunk"] .fx-particle {
     animation-duration: 900ms;
   }
   @keyframes flash {
     from {
-      transform: scale(0.25);
+      transform: scale(0.25) rotate(-12deg);
+      opacity: 1;
+    }
+    60% {
       opacity: 1;
     }
     to {
-      transform: scale(1);
+      transform: scale(1) rotate(0deg);
       opacity: 0;
     }
   }
@@ -739,8 +839,8 @@
     width: 14%;
     height: 14%;
     border-radius: 50%;
-    border: 1.5px solid var(--sea-glint);
-    animation: bubble 1100ms var(--ease-out) both;
+    border: 1.5px solid var(--mark-miss);
+    animation: bubble 1100ms var(--game-ease) both;
   }
   .fx-bubbles i:nth-child(1) {
     left: 18%;
@@ -776,7 +876,7 @@
   .demo-live .board {
     overflow: hidden;
   }
-  /* Ships wait under water; the fleet surfaces at the end of a round. */
+  /* Ships wait under the paper; the fleet shows at the end of a round. */
   .demo-piece {
     position: absolute;
     inset: 0;
@@ -787,8 +887,8 @@
   }
   .demo-live .demo-piece {
     transition:
-      opacity 800ms var(--ease-out),
-      transform 800ms var(--ease-out);
+      opacity 800ms var(--game-ease),
+      transform 800ms var(--game-ease);
   }
   .demo-live[data-phase="reset"] .demo-piece {
     transition-duration: 450ms;
@@ -802,16 +902,16 @@
   }
   @keyframes demo-sink {
     0% {
-      transform: translateY(-8%) scale(1.08);
+      transform: translateY(-8%) scale(1.08) rotate(-2deg);
       opacity: 1;
     }
     35% {
-      transform: translateY(-3%) scale(1.03) rotate(-1deg);
+      transform: translateY(-3%) scale(1.03) rotate(1deg);
       opacity: 1;
     }
     100% {
       transform: none;
-      opacity: 0.62;
+      opacity: 1;
     }
   }
   .demo-marks {
@@ -827,20 +927,20 @@
   }
   .demo-live[data-phase="reset"] .demo-marks {
     opacity: 0;
-    transition: opacity 450ms var(--ease-out);
+    transition: opacity 450ms var(--game-ease);
   }
   /* The sight glides from shot to shot. */
   .demo-live .aim-line,
   .demo-live .aim-reticle {
     transition:
-      opacity 220ms var(--ease-out),
+      opacity 220ms var(--game-ease),
       transform 440ms cubic-bezier(0.45, 0, 0.2, 1);
   }
   .demo-live[data-aim] .aim-line,
   .demo-live[data-aim] .aim-reticle {
     opacity: 1;
   }
-  /* Sonar: two pings spread over the empty water before each round. */
+  /* Sonar: two pencil rings spread over the empty paper before each round. */
   .demo-sonar {
     position: absolute;
     left: 50%;
@@ -855,13 +955,7 @@
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    border: 2px solid color-mix(in srgb, var(--mark-miss) 60%, transparent);
-    background: radial-gradient(
-      closest-side,
-      transparent 82%,
-      color-mix(in srgb, var(--sea-glint) 70%, transparent) 97%,
-      transparent
-    );
+    border: 2px solid color-mix(in srgb, var(--mark-miss) 55%, transparent);
     animation: demo-ping 1300ms cubic-bezier(0.2, 0.6, 0.35, 1) both;
   }
   .demo-sonar::after {
@@ -877,19 +971,13 @@
       opacity: 0;
     }
   }
-  /* Splash and shock ring read on the pale day sea too. */
-  .demo-live .fx-splash i {
-    border-color: color-mix(in srgb, var(--mark-miss) 45%, var(--sea-glint));
-  }
-  .demo-live .fx-hit[data-effect="flame"] .fx-ring {
-    border-color: var(--flame-mid);
-  }
 
   /* ─── Match screens ─────────────────────────────────── */
   .match {
     display: grid;
     gap: 14px;
     padding-top: 8px;
+    line-height: 1.4;
   }
   .match-bar {
     display: grid;
@@ -933,7 +1021,7 @@
     align-items: center;
     gap: 8px;
     color: var(--muted-foreground);
-    font-size: 13px;
+    font-size: 14px;
     font-variant-numeric: tabular-nums;
   }
   .side-chip[data-side="opponent"] .side-chip-meta {
@@ -941,22 +1029,22 @@
   }
   .presence {
     display: inline-flex;
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    background: var(--live);
+    background: var(--ok);
   }
   .presence[data-away] {
-    background: var(--flame-mid);
+    background: var(--warn);
   }
   .presence-away {
-    color: var(--warning);
+    color: var(--warn);
     font-weight: 600;
     white-space: nowrap;
   }
 
-  /* Turn indicator: a glass pill with the countdown ring, whose turn,
-     what to do now and the clock's rule (three lines, a fixed height). */
+  /* Turn indicator: a paper tag with the countdown ring, whose turn, what
+     to do now and the clock's rule (three lines, a fixed height). */
   .turn {
     display: flex;
     align-items: center;
@@ -987,17 +1075,19 @@
     opacity: 0;
     transform: translateY(8px);
     transition:
-      opacity var(--duration-base) var(--ease-out),
-      transform var(--duration-base) var(--ease-out);
+      opacity var(--duration-base) var(--game-ease),
+      transform var(--duration-base) var(--game-ease);
   }
   .turn-line[data-on] {
     opacity: 1;
     transform: none;
   }
   .turn-line strong {
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: -0.015em;
+    font-family: var(--font-sign);
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
   }
   .turn-line span {
     color: var(--muted-foreground);
@@ -1016,14 +1106,14 @@
     border-radius: 50%;
   }
   .ring[data-urgent] {
-    --ring-color: var(--destructive);
+    --ring-color: var(--danger);
   }
   .ring-track {
     position: absolute;
     inset: 0;
     border-radius: 50%;
     border: var(--ring-width) solid
-      color-mix(in srgb, var(--foreground) 10%, transparent);
+      color-mix(in srgb, var(--foreground) 14%, transparent);
   }
   .ring-half {
     position: absolute;
@@ -1077,14 +1167,14 @@
     place-content: center;
     justify-items: center;
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
   }
   .ring-value small {
     margin-top: 2px;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--muted-foreground);
@@ -1093,7 +1183,7 @@
     color: inherit;
   }
   .ring[data-urgent] .ring-value {
-    color: var(--destructive);
+    color: var(--danger);
     animation: urgent 1s ease-in-out infinite;
   }
   @keyframes urgent {
@@ -1107,6 +1197,7 @@
     flex-shrink: 0;
     width: 52px;
     height: 52px;
+    border: 2px solid var(--border);
     border-radius: 50%;
     background: var(--secondary);
   }
@@ -1127,11 +1218,13 @@
     gap: 12px;
     min-height: 52px;
     padding: 10px 16px;
-    border-radius: 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
     font-size: 14px;
     font-weight: 600;
     line-height: 1.4;
-    animation: banner-in var(--duration-base) var(--ease-out) both;
+    animation: banner-in var(--duration-base) var(--game-ease) both;
   }
   .banner svg {
     width: 20px;
@@ -1139,14 +1232,15 @@
     flex-shrink: 0;
   }
   .banner[data-tone="warn"] {
-    background: color-mix(in srgb, var(--flame-mid) 16%, var(--surface));
+    background: var(--warn-soft);
   }
   .banner[data-tone="info"] {
     background: var(--secondary);
   }
   .banner[data-tone="error"] {
-    background: color-mix(in srgb, var(--destructive) 10%, var(--surface));
-    color: var(--destructive);
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
   }
   .banner .spinner {
     flex-shrink: 0;
@@ -1169,24 +1263,27 @@
   }
   .board-column {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
     min-width: 0;
     max-width: 560px;
     width: 100%;
     justify-self: center;
   }
+  /* The name and the fleet's pips; on a narrow phone the pips go under. */
   .board-caption {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 4px 12px;
     min-height: 32px;
     padding-inline: 4px;
   }
   .board-caption h2 {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 16px;
     letter-spacing: -0.01em;
+    line-height: 1.2;
   }
   .fleet-pips {
     display: flex;
@@ -1198,13 +1295,14 @@
     gap: 2px;
   }
   .fleet-pip i {
-    width: 7px;
-    height: 7px;
-    border-radius: 2px;
+    width: 8px;
+    height: 8px;
     background: var(--foreground);
   }
+  /* A sunk ship's pips are left hollow. */
   .fleet-pip[data-gone] i {
-    background: var(--border);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--muted-foreground);
   }
   .match-foot {
     display: flex;
@@ -1226,12 +1324,15 @@
     align-items: flex-start;
     gap: 10px 24px;
     padding: 12px 18px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
   }
   .legend-heading {
+    font-family: var(--font-sans);
     font-size: inherit;
+    font-weight: 600;
+    letter-spacing: 0;
     line-height: 26px;
   }
   /* Under both boards the title leads the row; beside one board it tops it. */
@@ -1241,8 +1342,8 @@
   }
   .legend-title {
     font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 400;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -1261,7 +1362,7 @@
     align-items: center;
     gap: 10px;
     min-height: 26px;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.35;
   }
   .legend-item .kbd {
@@ -1273,23 +1374,15 @@
     flex-shrink: 0;
     width: calc(var(--w) * var(--cell));
     height: calc(var(--h) * var(--cell));
-    border-radius: 7px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
-    background:
-      linear-gradient(to right, var(--sea-line) 1px, transparent 1px) -1px -1px
-      / var(--cell) var(--cell),
-      linear-gradient(to bottom, var(--sea-line) 1px, transparent 1px) -1px -1px
-      / var(--cell) var(--cell),
-      linear-gradient(
-        160deg,
-        color-mix(in srgb, var(--sea-glint) 55%, var(--sea)),
-        var(--sea-deep)
-      );
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--sea-line) 80%, transparent);
-  }
-  .legend-swatch[data-sea="night"] .ship-outline {
-    opacity: 0.55;
+    background-color: var(--sea);
+    background-image:
+      linear-gradient(to right, var(--sea-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--sea-line) 1px, transparent 1px);
+    background-size: var(--cell) var(--cell);
+    background-position: -1px -1px;
+    box-shadow: inset 0 0 0 1.5px var(--sea-edge);
   }
 
   /* Placement layout. */
@@ -1321,44 +1414,43 @@
     width: calc(var(--len) * var(--tray-cell) + 12px);
     height: calc(var(--tray-cell) + 12px);
     padding: 6px;
-    border: 1px solid transparent;
-    border-radius: 14px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
     background: transparent;
     cursor: grab;
     touch-action: none;
     transition:
-      transform var(--duration-fast) var(--ease-out),
-      opacity var(--duration-fast) var(--ease-out);
+      transform var(--duration-fast) var(--game-ease),
+      opacity var(--duration-fast) var(--game-ease);
   }
   .tray-ship:hover:not(:disabled) {
     transform: translateY(-2px);
   }
+  /* The ship in hand: a cut line around it on a highlighter swipe. */
   .tray-ship[aria-pressed="true"] {
     border-color: var(--foreground);
-    background: var(--secondary);
+    border-style: dashed;
+    background: var(--warn-soft);
   }
   .tray-ship[data-placed] {
-    opacity: 0.28;
+    opacity: 0.3;
   }
   .tray-ship:disabled {
     cursor: default;
-  }
-  .tray-ship .ship-art {
-    filter: none;
   }
   .tray-done {
     min-height: 48px;
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--success);
+    color: var(--ok);
     font-weight: 600;
     font-size: 14px;
   }
   .tool-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
   }
   .tool-row > button {
     flex: 1 1 auto;
@@ -1366,16 +1458,18 @@
   .kbd {
     display: inline-grid;
     place-items: center;
-    min-width: 22px;
-    height: 22px;
+    min-width: 24px;
+    height: 24px;
     padding-inline: 6px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
     background: var(--surface);
+    box-shadow: 0 2px 0 var(--border);
     font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--muted-foreground);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--foreground);
   }
   .ready-note {
     display: flex;
@@ -1391,7 +1485,8 @@
     gap: 10px;
     min-height: 44px;
     padding: 8px 14px;
-    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--secondary);
     font-size: 14px;
     font-weight: 600;
@@ -1401,8 +1496,9 @@
     height: 18px;
   }
   .opponent-status[data-ready] {
-    background: color-mix(in srgb, var(--success) 12%, var(--surface));
-    color: var(--success);
+    border-color: var(--ok);
+    background: var(--ok-soft);
+    color: var(--ok);
   }
 
   .placement-head {
@@ -1411,10 +1507,9 @@
     padding-bottom: 4px;
   }
   .placement-head h1 {
-    font-size: clamp(30px, 3.4vw, 44px);
-    font-weight: 600;
-    letter-spacing: -0.035em;
-    line-height: 1.05;
+    font-size: clamp(26px, 2.6vw, 36px);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
   }
   .placement-side .side-chip[data-side="opponent"] {
     justify-self: start;
@@ -1440,7 +1535,7 @@
   }
   .placement-side h2 {
     font-size: 16px;
-    font-weight: 700;
+    line-height: 1.25;
   }
   .board[data-interactive] button.cell[data-draggable] {
     cursor: grab;
@@ -1450,7 +1545,8 @@
     min-height: 58px;
   }
 
-  /* Drag ghost follows the pointer (translate only, no layout). */
+  /* Drag ghost follows the pointer (translate only, no layout); lifted off
+     the paper, so its shadow falls further. */
   .drag-ghost {
     position: fixed;
     z-index: 60;
@@ -1461,13 +1557,16 @@
     height: var(--ghost-cell);
     transform-origin: calc(var(--ghost-cell) / 2) 50%;
     will-change: transform;
-    opacity: 0.92;
+    opacity: 0.94;
     filter: drop-shadow(
-      0 12px 18px color-mix(in srgb, var(--foreground) 28%, transparent)
+      6px 6px 0 color-mix(in srgb, var(--ink) 35%, transparent)
     );
   }
   .drag-ghost[data-orientation="vertical"] {
     rotate: 90deg;
+    filter: drop-shadow(
+      6px -6px 0 color-mix(in srgb, var(--ink) 35%, transparent)
+    );
   }
 
   /* ─── Result ────────────────────────────────────────── */
@@ -1484,14 +1583,13 @@
     max-width: 760px;
   }
   .result-head h1 {
-    font-size: clamp(64px, 10vw, 150px);
-    font-weight: 700;
-    letter-spacing: -0.06em;
-    line-height: 0.9;
+    font-size: clamp(48px, 7vw, 104px);
+    letter-spacing: -0.035em;
+    line-height: 0.95;
   }
   .result-head h1 .og-accent {
-    font-weight: 500;
-    font-size: 1.05em;
+    font-size: 1.1em;
+    letter-spacing: -0.02em;
   }
   .result-head p {
     font-size: 18px;
@@ -1504,18 +1602,21 @@
     gap: 10px;
     min-height: 40px;
     padding-inline: 16px;
-    border-radius: var(--radius-pill);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
     background: var(--secondary);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
   .rating-delta[data-sign="up"] {
-    background: color-mix(in srgb, var(--success) 14%, var(--surface));
-    color: var(--success);
+    border-color: var(--ok);
+    background: var(--ok-soft);
+    color: var(--ok);
   }
   .rating-delta[data-sign="down"] {
-    background: color-mix(in srgb, var(--destructive) 10%, var(--surface));
-    color: var(--destructive);
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
   }
   .result-stats {
     display: flex;
@@ -1545,13 +1646,14 @@
     width: 0;
     height: 0;
   }
+  /* Confetti cut from the spot colours. */
   .spark {
     position: absolute;
-    left: -3px;
+    left: -4px;
     top: -3px;
-    width: 6px;
+    width: 8px;
     height: 6px;
-    border-radius: 50%;
+    border-radius: 1px;
     background: var(--spark-color);
     --turn: calc(var(--i) / var(--n) * 360deg);
     animation: spark 1300ms cubic-bezier(0.12, 0.7, 0.3, 1) both;
@@ -1566,7 +1668,8 @@
       opacity: 1;
     }
     100% {
-      transform: rotate(var(--turn)) translateY(var(--reach)) scale(0.2);
+      transform: rotate(var(--turn)) translateY(var(--reach)) rotate(200deg)
+        scale(0.4);
       opacity: 0;
     }
   }
@@ -1578,16 +1681,16 @@
     flex-wrap: wrap;
     gap: 10px 16px;
     padding: 12px;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-md);
   }
   .replay-buttons {
     display: flex;
-    gap: 4px;
+    gap: 6px;
   }
   .replay-slider {
     flex: 1;
     min-width: 160px;
-    accent-color: var(--primary);
+    accent-color: var(--foreground);
     height: 44px;
   }
   .replay-step {
@@ -1642,8 +1745,29 @@
     }
     .board {
       --label: 16px;
-      padding: 6px 6px 8px 4px;
-      border-radius: 16px;
+      padding: 6px 5px 8px 2px;
+    }
+    .board-table thead th {
+      padding-bottom: 4px;
+    }
+    .board-table tbody th {
+      padding-right: 2px;
+    }
+    .board-caption h2 {
+      white-space: nowrap;
+    }
+    .fleet-pips {
+      gap: 3px;
+    }
+    .fleet-pip i {
+      width: 6px;
+      height: 6px;
+    }
+    /* The second frame stays inside the phone's narrow margin. */
+    .board::before {
+      box-shadow:
+        0 0 0 3px var(--ring),
+        5px 5px 0 3px var(--ring);
     }
     /* Banners float over the top of the screen instead of taking a slot:
        a two-line message can never push the boards, and it stays in view
@@ -1658,7 +1782,7 @@
     .banner {
       position: absolute;
       inset: 0 0 auto;
-      box-shadow: var(--shadow-lift);
+      box-shadow: var(--shadow-hard);
     }
     .turn {
       min-width: 0;
@@ -1685,7 +1809,6 @@
     .legend {
       display: block;
       padding: 0;
-      border-radius: 16px;
     }
     .legend-title {
       display: none;
@@ -1700,7 +1823,7 @@
       border: 0;
       border-radius: inherit;
       background: none;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       text-align: start;
       cursor: pointer;
@@ -1712,7 +1835,7 @@
     }
     .legend-caret {
       margin-inline-start: auto;
-      transition: transform var(--duration-fast) var(--ease-out);
+      transition: transform var(--duration-fast) var(--game-ease);
     }
     .legend[data-open] .legend-caret {
       transform: rotate(180deg);
@@ -1731,11 +1854,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .board-water::after,
-    .mark[data-kind="hit"]::before,
-    .mark[data-kind="hit"] .flame,
-    .mark[data-kind="hit"] .flame-inner,
-    .mark[data-kind="hit"] .shards,
     .ring[data-urgent] .ring-value {
       animation: none;
     }
@@ -1750,6 +1868,9 @@
     .ship[data-sinking],
     .ship-enter,
     .mark-dot,
+    .mark[data-kind="hit"]::before,
+    .mark-cross-ink,
+    .mark-stamp,
     .shot-marker,
     .banner,
     .spark {

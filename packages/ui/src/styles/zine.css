@@ -24,25 +24,258 @@
  * type only (3.9:1 on paper); small red text takes --danger.
  */
 
+/* ─── Fallback faces: the zine faces' metrics on local fonts ───
+ * Until a zine face arrives (or for good, when an optional one misses its
+ * moment) its text is set in a local font sized to it: size-adjust matches
+ * the face's average advance over a letter-frequency sample (English with
+ * spaces, Russian), and the ascent, descent and line-gap overrides are the
+ * face's own (hhea, divided by size-adjust). So lines keep their height,
+ * baselines stay put and lines break where the face will break them, and
+ * the swap moves next to nothing. Courier New is exact for the two
+ * monospaced faces; Ruslan Display draws lower case as capitals and has
+ * narrow figures, so its fallback scales capitals, lower case and the rest
+ * (figures, punctuation) apart.
+ *
+ * The first face of a family has no unicode-range and covers Latin and
+ * everything else; the later ones narrow it (the face defined last is
+ * checked first for a character). Weights and styles mirror fonts-zine.ts,
+ * so a run picks the same weight in the fallback as in the face. Where the
+ * local font is missing (most phones), the next family in the token stack
+ * stands in. Recompute the numbers when a face changes in fonts-zine.ts.
+ */
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT");
+  font-weight: 400;
+  size-adjust: 106.5%;
+  ascent-override: 71.55%;
+  descent-override: 22.35%;
+  line-gap-override: 22.16%;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT");
+  font-weight: 400;
+  size-adjust: 101.59%;
+  ascent-override: 75.01%;
+  descent-override: 23.43%;
+  line-gap-override: 23.23%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Times New Roman Italic"), local("TimesNewRomanPS-ItalicMT");
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 107.98%;
+  ascent-override: 70.57%;
+  descent-override: 22.04%;
+  line-gap-override: 21.86%;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Times New Roman Italic"), local("TimesNewRomanPS-ItalicMT");
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 105.23%;
+  ascent-override: 72.41%;
+  descent-override: 22.62%;
+  line-gap-override: 22.43%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT");
+  font-weight: 700;
+  size-adjust: 103.46%;
+  ascent-override: 73.65%;
+  descent-override: 23%;
+  line-gap-override: 22.81%;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT");
+  font-weight: 700;
+  size-adjust: 98.08%;
+  ascent-override: 77.7%;
+  descent-override: 24.27%;
+  line-gap-override: 24.06%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-mast-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 400;
+  size-adjust: 76.74%;
+  ascent-override: 89.66%;
+  descent-override: 51.73%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-mast-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 400;
+  size-adjust: 111.72%;
+  ascent-override: 61.58%;
+  descent-override: 35.53%;
+  line-gap-override: 0%;
+  unicode-range: U+0020, U+0061-007A;
+}
+@font-face {
+  font-family: "og-mast-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 400;
+  size-adjust: 90.05%;
+  ascent-override: 76.41%;
+  descent-override: 44.09%;
+  line-gap-override: 0%;
+  unicode-range: U+0041-005A;
+}
+@font-face {
+  font-family: "og-mast-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 400;
+  size-adjust: 107.75%;
+  ascent-override: 63.85%;
+  descent-override: 36.85%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0430-045F, U+0491, U+04B1;
+}
+@font-face {
+  font-family: "og-mast-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 400;
+  size-adjust: 91.21%;
+  ascent-override: 75.43%;
+  descent-override: 43.53%;
+  line-gap-override: 0%;
+  unicode-range: U+0400-042F, U+0490, U+04B0;
+}
+@font-face {
+  font-family: "og-sign-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 900;
+  size-adjust: 119.98%;
+  ascent-override: 82.93%;
+  descent-override: 20.42%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-sign-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 900;
+  size-adjust: 122.49%;
+  ascent-override: 81.23%;
+  descent-override: 20%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-tabloid-fallback";
+  src: local("Georgia Bold Italic"), local("Georgia-BoldItalic");
+  font-weight: 900;
+  font-style: italic;
+  size-adjust: 88.83%;
+  ascent-override: 121.8%;
+  descent-override: 28.26%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-tabloid-fallback";
+  src: local("Georgia Bold Italic"), local("Georgia-BoldItalic");
+  font-weight: 900;
+  font-style: italic;
+  size-adjust: 90.76%;
+  ascent-override: 119.21%;
+  descent-override: 27.65%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-loud-fallback";
+  src: local("Courier New Bold"), local("CourierNewPS-BoldMT");
+  font-weight: 400;
+  size-adjust: 141.64%;
+  ascent-override: 65.8%;
+  descent-override: 21.6%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-stamp-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 400;
+  size-adjust: 95.86%;
+  ascent-override: 97.54%;
+  descent-override: 26.08%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-stamp-fallback";
+  src: local("Arial Black"), local("Arial-Black");
+  font-weight: 400;
+  size-adjust: 96.94%;
+  ascent-override: 96.45%;
+  descent-override: 25.79%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-type-fallback";
+  src: local("Courier New"), local("CourierNewPSMT");
+  font-weight: 400;
+  size-adjust: 99.98%;
+  ascent-override: 88.51%;
+  descent-override: 23.5%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-hand-fallback";
+  src: local("Comic Sans MS"), local("ComicSansMS");
+  font-weight: 600;
+  size-adjust: 71.53%;
+  ascent-override: 134.21%;
+  descent-override: 41.94%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-hand-fallback";
+  src: local("Comic Sans MS"), local("ComicSansMS");
+  font-weight: 600;
+  size-adjust: 69.37%;
+  ascent-override: 138.39%;
+  descent-override: 43.25%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
 /* ─── Tokens: one block for both levels ─── */
 [data-theme^="zine"] {
   color-scheme: light;
 
-  /* the eight faces of fonts-zine.ts */
+  /* the eight faces of fonts-zine.ts, each with its fallback face above */
   --font-body:
-    var(--og-body-cyrillic), var(--og-body-latin), "Times New Roman", serif;
-  --font-mast: var(--og-mast-cyrillic), var(--og-mast-latin), Impact, serif;
+    var(--og-body-cyrillic), var(--og-body-latin), "og-body-fallback",
+    "Times New Roman", serif;
+  --font-mast:
+    var(--og-mast-cyrillic), var(--og-mast-latin), "og-mast-fallback", Impact,
+    serif;
   --font-sign:
-    var(--og-sign-cyrillic), var(--og-sign-latin), "Arial Black", sans-serif;
+    var(--og-sign-cyrillic), var(--og-sign-latin), "og-sign-fallback",
+    "Arial Black", sans-serif;
   --font-tabloid:
-    var(--og-tabloid-cyrillic), var(--og-tabloid-latin), Georgia, serif;
+    var(--og-tabloid-cyrillic), var(--og-tabloid-latin), "og-tabloid-fallback",
+    Georgia, serif;
   --font-loud:
-    var(--og-loud-cyrillic), var(--og-loud-latin), "Arial Black", sans-serif;
+    var(--og-loud-cyrillic), var(--og-loud-latin), "og-loud-fallback",
+    "Arial Black", sans-serif;
   --font-stamp:
-    var(--og-stamp-cyrillic), var(--og-stamp-latin), "Arial Black", sans-serif;
+    var(--og-stamp-cyrillic), var(--og-stamp-latin), "og-stamp-fallback",
+    "Arial Black", sans-serif;
   --font-type:
-    var(--og-type-cyrillic), var(--og-type-latin), "Courier New", monospace;
-  --font-hand: var(--og-hand-cyrillic), var(--og-hand-latin), cursive;
+    var(--og-type-cyrillic), var(--og-type-latin), "og-type-fallback",
+    "Courier New", monospace;
+  --font-hand:
+    var(--og-hand-cyrillic), var(--og-hand-latin), "og-hand-fallback", cursive;
   /* retired faces: the names stay, set in the closest face that is left */
   --font-kitsch: var(--font-tabloid);
   --font-drip: var(--font-stamp);

@@ -118,7 +118,12 @@ export function TelegramCard({ initial }: { initial: TelegramStatus }) {
           {mode.kind === "waiting" && (
             <>
               {" "}
-              <a href={mode.url} target="_blank" rel="noopener noreferrer">
+              <a
+                className="text-link"
+                href={mode.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {t("openAgain")}
               </a>
             </>

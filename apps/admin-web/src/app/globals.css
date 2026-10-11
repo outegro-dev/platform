@@ -1,30 +1,23 @@
 /*
- * Operator console layout. Colours, type, glass and components come from
- * @outegro/ui: tokens only, no raw palette values here.
+ * Operator console layout. Colours, type and components come from
+ * @outegro/ui in the calm level of its zine theme (data-theme="zine-calm" on
+ * <html>): paper and ink, hard offset shadows, square corners, headlines in
+ * the sign face, Manrope for reading and tables, PT Mono (--font-mono) for
+ * typewritten labels and ids. Tokens only, no raw palette values here; the
+ * fonts and shadows are the kit's (an unlayered :root copy here would
+ * silently cancel the theme). The few rules that must outrank the theme
+ * (it is unlayered) are at the end.
  */
 
 :root {
-  /*
-   * Families come from next/font (`fontVariables` in src/app/fonts.ts on
-   * <html>): Cyrillic first, then Latin with its metric-matched fallback.
-   */
-  --font-sans:
-    var(--og-manrope-cyrillic, "Manrope"), var(--og-manrope-latin, "Manrope"),
-    ui-sans-serif, system-ui, sans-serif;
-  --font-display:
-    var(--og-cormorant-cyrillic, "Cormorant Garamond"),
-    var(--og-cormorant-latin, "Cormorant Garamond"), ui-serif, Georgia, serif;
-  --font-mono:
-    var(--og-mono-cyrillic, "JetBrains Mono"),
-    var(--og-mono-latin, "JetBrains Mono"), ui-monospace, SFMono-Regular,
-    monospace;
-
-  --line: color-mix(in oklab, var(--border) 72%, transparent);
-  --line-soft: color-mix(in oklab, var(--border) 45%, transparent);
-  --hover: color-mix(in oklab, var(--secondary) 55%, transparent);
-  --shadow-soft:
-    0 1px 2px color-mix(in oklab, var(--foreground) 5%, transparent),
-    0 14px 36px color-mix(in oklab, var(--foreground) 5%, transparent);
+  /* Rules inside a card: --line frames, --line-soft runs between rows. The
+     theme's border is ink, so both are ink thinned on the paper. */
+  --line: color-mix(in oklab, var(--border) 60%, transparent);
+  --line-soft: color-mix(in oklab, var(--border) 24%, transparent);
+  --hover: color-mix(in oklab, var(--secondary) 65%, transparent);
+  /* The second series of a chart and neutral bars: the third spot colour
+     of the print (ink, red, blue), so it never reads as an error. */
+  --series-muted: var(--spot-blue);
   --sidebar-width: 268px;
   --content-max: 1360px;
   /* Inset of a card's content: its padding, or the edge cells, head,
@@ -33,37 +26,16 @@
 }
 
 @layer base {
-  /* Two soft glows on the canvas. Both fade out inside the first screen and
-     well before the right edge: the reserved scrollbar gutter (which keeps
-     streamed content from shifting) only ever shows the base color, so it
-     never reads as a seam. Eased stops keep the rim of each glow invisible. */
+  /* The reserved scrollbar gutter keeps streamed content from shifting; it
+     shows the plain paper, the body above it the paper with its grain and
+     halftone (from the theme, as are the body's 16/1.6 Manrope). */
   html {
     scrollbar-gutter: stable;
     background-color: var(--background);
-    background-image:
-      radial-gradient(
-        900px 460px at 55% -12%,
-        color-mix(in oklab, var(--secondary) 90%, transparent) 0%,
-        color-mix(in oklab, var(--secondary) 55%, transparent) 30%,
-        color-mix(in oklab, var(--secondary) 22%, transparent) 50%,
-        color-mix(in oklab, var(--secondary) 6%, transparent) 64%,
-        transparent 74%
-      ),
-      radial-gradient(
-        900px 480px at -10% 50%,
-        color-mix(in oklab, var(--muted) 70%, transparent) 0%,
-        color-mix(in oklab, var(--muted) 40%, transparent) 30%,
-        color-mix(in oklab, var(--muted) 14%, transparent) 52%,
-        transparent 72%
-      );
-    background-repeat: no-repeat;
   }
   body {
     margin: 0;
     min-height: 100dvh;
-    background: transparent;
-    font-size: 15px;
-    line-height: 1.5;
   }
   a {
     color: inherit;
@@ -121,10 +93,10 @@
     font-size: 13px;
     line-height: 1.5;
   }
+  /* Ids and codes in the typewriter face, never under its 12 px. */
   .mono {
     font-family: var(--font-mono);
-    font-size: 0.9em;
-    letter-spacing: -0.01em;
+    font-size: max(12px, 0.9em);
   }
   .nowrap {
     white-space: nowrap;
@@ -143,18 +115,22 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* A thin ink underline; under the pointer it turns into the red one of
+     the theme's links. */
   .link {
     text-decoration: underline;
     text-decoration-color: color-mix(
       in oklab,
-      var(--foreground) 30%,
+      var(--foreground) 40%,
       transparent
     );
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 3px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
   .link:hover {
-    text-decoration-color: currentColor;
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 2px;
   }
   .stack {
     display: grid;
@@ -181,11 +157,13 @@
     left: 12px;
     z-index: 100;
     padding: 10px 16px;
-    border-radius: var(--radius-pill);
-    background: var(--primary);
-    color: var(--primary-foreground);
+    border: 2px solid var(--foreground);
+    border-radius: var(--radius-md);
+    background: var(--foreground);
+    color: var(--background);
+    box-shadow: 3px 3px 0 var(--primary);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     transform: translateY(-160%);
     transition: transform var(--duration-fast) var(--ease-out);
   }
@@ -199,12 +177,10 @@
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
     min-height: 100dvh;
   }
-  /* The column spans the whole page; its content stays in view. */
+  /* The column spans the whole page; its content stays in view. It is the
+     page's own paper, set off by a double rule like a magazine's index. */
   .sidebar {
-    border-right: 1px solid var(--line-soft);
-    background: color-mix(in oklab, var(--surface) 62%, transparent);
-    /* unprefixed only: the CSS build adds -webkit- and, given both, drops this */
-    backdrop-filter: blur(24px) saturate(1.3);
+    border-right: 3px double var(--border);
   }
   .sidebar-inner {
     position: sticky;
@@ -216,18 +192,12 @@
     padding: 22px 16px 18px;
     overflow-y: auto;
   }
-  @media (prefers-reduced-transparency: reduce) {
-    .sidebar {
-      background: var(--surface);
-      backdrop-filter: none;
-    }
-  }
   .brand {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding-inline: 10px;
+    padding-inline: 6px;
   }
   .brand-home {
     display: inline-flex;
@@ -235,46 +205,70 @@
     gap: 10px;
     border-radius: var(--radius-sm);
   }
-  .brand-word {
-    font-family: var(--font-display);
-    font-size: 30px;
-    font-style: italic;
-    font-weight: 500;
-    line-height: 1;
-    letter-spacing: -0.02em;
+  /* In the column the masthead is too wide for its label and the
+     environment beside it: the label goes under it, like a section line,
+     and the environment shares that line at the right (both in one grid
+     cell, so the masthead's width never adds to the badge's). */
+  .sidebar .brand {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
   }
+  .sidebar .brand-home-wrap {
+    grid-row: 1;
+    grid-column: 1 / -1;
+  }
+  .sidebar .brand .env-badge {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .sidebar .brand-home {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  /* The masthead face, at its smallest legible size (28 px). */
+  .brand-word {
+    font-family: var(--font-mast);
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+  /* A typewritten label in a box; production is boxed in red. */
   .env-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 24px;
-    padding-inline: 9px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
+    height: 26px;
+    padding-inline: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
+    font-size: 12px;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     white-space: nowrap;
   }
   .env-badge::before {
     content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--border-strong);
+    width: 7px;
+    height: 7px;
+    border: 1.5px solid currentColor;
   }
   .env-badge[data-env="production"] {
-    border-color: color-mix(in oklab, var(--destructive) 40%, transparent);
-    color: var(--destructive);
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
   }
   .env-badge[data-env="production"]::before {
-    background: var(--destructive);
+    background: var(--danger);
   }
   .env-badge[data-env="local"]::before {
-    background: var(--live);
+    border-color: var(--ok);
+    background: var(--ok);
   }
 
   .nav {
@@ -289,23 +283,27 @@
     padding: 0 12px 6px;
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
+    font-size: 12px;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
   }
+  /* Index tabs; the open one is printed in reverse on a red shadow. The
+     border is always there (transparent), so nothing moves. */
   .nav-link {
     display: flex;
     align-items: center;
     gap: 12px;
     min-height: 44px;
-    padding-inline: 12px;
+    padding-inline: 10px;
+    border: 2px solid transparent;
     border-radius: var(--radius-pill);
     color: var(--muted-foreground);
-    font-size: 14.5px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
     transition:
       background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
       color var(--duration-fast) var(--ease-out);
   }
   .nav-link svg {
@@ -322,17 +320,14 @@
   }
   .nav-link:hover {
     color: var(--foreground);
-    background: var(--hover);
+    border-color: var(--border);
+    background: var(--surface);
   }
   .nav-link[aria-current="page"] {
-    color: var(--primary-foreground);
-    background: var(--primary);
-    box-shadow: 0 6px 18px
-      color-mix(in oklab, var(--foreground) 16%, transparent);
-  }
-  .nav-link:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
+    color: var(--background);
+    border-color: var(--foreground);
+    background: var(--foreground);
+    box-shadow: 3px 3px 0 var(--primary);
   }
 
   .sidebar-foot {
@@ -340,7 +335,7 @@
     gap: 12px;
     margin-top: auto;
     padding-top: 16px;
-    border-top: 1px solid var(--line-soft);
+    border-top: 1.5px dashed var(--border);
   }
   .operator {
     display: flex;
@@ -349,21 +344,22 @@
     min-width: 0;
     padding-inline: 6px;
   }
+  /* Initials on a red square in the sign face, like the kit's account
+     avatar. */
   .avatar {
     display: inline-grid;
     place-items: center;
     flex-shrink: 0;
     width: 38px;
     height: 38px;
-    border-radius: 50%;
-    background: var(--silver);
-    background-size: 180% 100%;
-    color: var(--foreground);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-family: var(--font-sign);
     font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    box-shadow: inset 0 0 0 1px
-      color-mix(in oklab, var(--foreground) 10%, transparent);
+    font-weight: 900;
+    line-height: 1;
   }
   .operator-text {
     display: grid;
@@ -373,7 +369,8 @@
   .operator-name {
     overflow: hidden;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    line-height: 1.4;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -381,7 +378,8 @@
     overflow: hidden;
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
+    line-height: 1.4;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -421,12 +419,8 @@
       gap: 12px;
       height: 60px;
       padding-inline: 12px 16px;
-      border-bottom: 1px solid var(--line-soft);
-      background: color-mix(in oklab, var(--background) 78%, transparent);
-      backdrop-filter: blur(20px) saturate(1.3);
-    }
-    .mobile-bar .brand-word {
-      font-size: 26px;
+      border-bottom: 3px double var(--border);
+      background: var(--background);
     }
     .content {
       padding-top: 24px;
@@ -444,19 +438,26 @@
     width: min(320px, calc(100vw - 48px));
     padding: 18px 16px;
     overflow-y: auto;
+    border-right: 2px solid var(--border);
     background: var(--surface);
-    box-shadow: 24px 0 60px
-      color-mix(in oklab, var(--foreground) 18%, transparent);
+    box-shadow: 6px 0 0 var(--foreground);
     outline: none;
   }
   .nav-sheet[data-state="open"] {
     animation: sheet-in var(--duration-base) var(--ease-out);
   }
+  /* The page behind: dimmed under a halftone screen, like the kit's
+     dialogs. */
   .nav-sheet-overlay {
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: color-mix(in oklab, var(--foreground) 32%, transparent);
+    background-color: color-mix(in srgb, var(--foreground) 35%, transparent);
+    background-image: radial-gradient(
+      color-mix(in srgb, var(--foreground) 30%, transparent) 1px,
+      transparent 1.4px
+    );
+    background-size: 4px 4px;
   }
   @keyframes sheet-in {
     from {
@@ -487,17 +488,13 @@
     gap: 10px;
     min-width: 0;
   }
+  /* The sign face (from the theme) is wide: sized so the longest word of a
+     title ("Reconciliation", "Пользователи") stays whole on a 360 px
+     phone. */
   .page-title {
-    font-size: clamp(32px, 3.4vw, 44px);
-    font-weight: 500;
-    line-height: 1.04;
-    letter-spacing: -0.035em;
-    overflow-wrap: anywhere;
-  }
-  .page-title .og-accent {
-    padding-bottom: 0.06em;
-    font-size: 1.08em;
-    line-height: 1.1;
+    font-size: clamp(25px, 1.6vw + 16px, 38px);
+    line-height: 1.12;
+    overflow-wrap: break-word;
   }
   .page-lead {
     max-width: 68ch;
@@ -518,23 +515,37 @@
     color: var(--muted-foreground);
     font-size: 13px;
   }
+  /* 32 px tall; an invisible frame takes the tap to 44 px. */
   .crumbs a {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     min-height: 32px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .crumbs a::after {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
   }
   .crumbs a:hover {
     color: var(--foreground);
+    text-decoration-color: var(--primary);
   }
 
-  /* Section tabs (links). */
+  /* Section tabs (links): boxed index tabs, the open one printed in
+     reverse, like the kit's pill tabs. The row scrolls, so it keeps room
+     for the focus ring (3 px at a 2 px offset). */
   .tabs {
     display: flex;
-    gap: 4px;
-    margin-inline: -4px;
-    padding: 4px;
+    gap: 6px;
+    margin-inline: -6px;
+    padding: 6px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -546,33 +557,30 @@
     flex-shrink: 0;
     align-items: center;
     gap: 8px;
-    min-height: 40px;
+    min-height: 44px;
     padding-inline: 16px;
-    border: 1px solid var(--line);
+    border: 2px solid var(--border);
     border-radius: var(--radius-pill);
-    background: color-mix(in oklab, var(--surface) 70%, transparent);
+    background: var(--surface);
     color: var(--muted-foreground);
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     transition:
       background-color var(--duration-fast) var(--ease-out),
-      color var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+      color var(--duration-fast) var(--ease-out);
   }
   .tab:hover {
     color: var(--foreground);
-    border-color: var(--border-strong);
+    background: var(--secondary);
   }
   .tab[aria-current="page"] {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: var(--primary-foreground);
+    background: var(--foreground);
+    color: var(--background);
   }
   .tab-count {
     font-family: var(--font-mono);
-    font-size: 11px;
-    opacity: 0.75;
+    font-size: 12px;
   }
 
   /* ── Grids ───────────────────────────────────────────────── */
@@ -620,16 +628,18 @@
   }
 
   /* ── Panels ──────────────────────────────────────────────── */
+  /* A card pasted onto the page: an inked edge and the theme's hard
+     shadow, like the kit's Surface. */
   .panel {
     display: flex;
     flex-direction: column;
     gap: 20px;
     min-width: 0;
     padding: var(--panel-pad);
-    border: 1px solid var(--line);
+    border: 2px solid var(--border);
     border-radius: var(--radius-lg);
     background: var(--surface);
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-hard);
   }
   .panel[data-flush] {
     padding: 0;
@@ -653,20 +663,22 @@
   .panel-kicker {
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
   }
+  /* The sign face (from the theme) at its smallest size: a section head
+     that stays quiet beside the tables. */
   .panel-title {
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: -0.015em;
+    font-size: 16px;
+    line-height: 1.35;
+    overflow-wrap: break-word;
   }
   .panel-note {
     color: var(--muted-foreground);
     font-size: 13px;
+    line-height: 1.5;
   }
   .panel-link {
     position: relative;
@@ -676,10 +688,11 @@
     min-height: 32px;
     padding-inline: 10px;
     margin: -6px -10px 0 0;
+    border: 1.5px solid transparent;
     border-radius: var(--radius-pill);
     color: var(--muted-foreground);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
   }
   /* The pill stays 32 px; an invisible frame takes the tap target to at
@@ -692,7 +705,8 @@
   }
   .panel-link:hover {
     color: var(--foreground);
-    background: var(--hover);
+    border-color: var(--border);
+    background: var(--surface);
   }
   .panel-link svg {
     width: 14px;
@@ -708,11 +722,12 @@
     gap: 18px;
     min-width: 0;
   }
+  /* A dashed cut, like the kit's menu separator. */
   .divider {
-    height: 1px;
+    height: 0;
     border: 0;
+    border-top: 1.5px dashed var(--line);
     margin: 0;
-    background: var(--line-soft);
   }
 
   /* ── Stats ───────────────────────────────────────────────── */
@@ -735,11 +750,12 @@
     font-size: 12.5px;
     line-height: 1.35;
   }
+  /* Figures stay in Manrope: tabular, and legible in any unit. */
   .stat-value {
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.1;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -750,13 +766,13 @@
     font-size: 20px;
   }
   .stat-value[data-tone="bad"] {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .stat-value[data-tone="warn"] {
-    color: var(--warning);
+    color: var(--warn);
   }
   .stat-value[data-tone="ok"] {
-    color: var(--success);
+    color: var(--ok);
   }
   .stat-hint {
     color: var(--muted-foreground);
@@ -784,28 +800,29 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* An inked frame around the track, like the kit's Progress. */
   .bar-track {
     position: relative;
-    height: 8px;
+    height: 10px;
     overflow: hidden;
-    border-radius: var(--radius-pill);
-    background: var(--muted);
+    border: 1.5px solid var(--border);
+    border-radius: 0;
+    background: var(--surface);
   }
   .bar-fill {
     position: absolute;
     inset: 0;
-    border-radius: inherit;
     background: var(--foreground);
     transform-origin: left center;
   }
   .bar-fill[data-tone="bad"] {
-    background: var(--destructive);
+    background: var(--danger);
   }
   .bar-fill[data-tone="ok"] {
-    background: var(--success);
+    background: var(--ok);
   }
   .bar-fill[data-tone="muted"] {
-    background: var(--border-strong);
+    background: var(--series-muted);
   }
   .bar-value {
     min-width: 24px;
@@ -837,11 +854,11 @@
     flex-direction: column;
     justify-content: space-between;
     min-width: 24px;
-    margin-block: -6px;
+    margin-block: -7px;
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10.5px;
-    line-height: 12px;
+    font-size: 12px;
+    line-height: 14px;
     text-align: end;
     font-variant-numeric: tabular-nums;
   }
@@ -850,7 +867,8 @@
     grid-column: 2;
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: 12px;
+    line-height: 1.4;
   }
   .chart-xaxis span {
     flex: 1 1 0;
@@ -867,29 +885,30 @@
   .chart-axis {
     fill: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
   }
+  /* Three inks of the print: ink, blue (the second series), red. */
   .chart-bar {
-    fill: color-mix(in oklab, var(--foreground) 88%, var(--surface));
+    fill: var(--foreground);
   }
   .chart-bar[data-series="bad"] {
-    fill: var(--destructive);
+    fill: var(--danger);
   }
   .chart-bar[data-series="muted"] {
-    fill: var(--border-strong);
+    fill: var(--series-muted);
   }
   .chart-bar[data-series="ok"] {
-    fill: var(--success);
+    fill: var(--ok);
   }
   .chart-line {
     fill: none;
     stroke: var(--foreground);
-    stroke-width: 2;
+    stroke-width: 2.5;
     stroke-linejoin: round;
-    stroke-linecap: round;
+    stroke-linecap: square;
   }
   .chart-area {
-    fill: color-mix(in oklab, var(--foreground) 7%, transparent);
+    fill: color-mix(in oklab, var(--foreground) 9%, transparent);
   }
   .chart-dot {
     fill: var(--surface);
@@ -901,7 +920,7 @@
     flex-wrap: wrap;
     gap: 6px 16px;
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
   }
   .legend-item {
     display: inline-flex;
@@ -909,32 +928,36 @@
     gap: 7px;
   }
   .swatch {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid var(--border);
     background: var(--foreground);
   }
   .swatch[data-series="bad"] {
-    background: var(--destructive);
+    background: var(--danger);
   }
   .swatch[data-series="muted"] {
-    background: var(--border-strong);
+    background: var(--series-muted);
   }
   .swatch[data-series="ok"] {
-    background: var(--success);
+    background: var(--ok);
   }
 
   /* ── Status badges and chips ─────────────────────────────── */
+  /* A square label boxed in its state's ink on its soft fill (the kit's
+     status tokens, AA on that fill); a square bullet, so the state never
+     rests on colour alone (the word says it too). */
   .status {
     display: inline-flex;
     align-items: center;
     gap: 7px;
     height: 26px;
-    padding-inline: 10px;
-    border-radius: var(--radius-pill);
-    background: var(--secondary);
+    padding-inline: 8px;
+    border: 1.5px solid currentColor;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
     color: var(--foreground);
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: normal;
@@ -942,32 +965,40 @@
   }
   .status::before {
     content: "";
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     flex-shrink: 0;
-    border-radius: 50%;
     background: currentColor;
-    opacity: 0.85;
   }
   .status[data-tone="ok"] {
-    background: color-mix(in oklab, var(--success) 13%, transparent);
-    color: var(--success);
+    background: var(--ok-soft);
+    color: var(--ok);
   }
   .status[data-tone="warn"] {
-    background: color-mix(in oklab, var(--warning) 14%, transparent);
-    color: var(--warning);
+    background: var(--warn-soft);
+    color: var(--warn);
   }
   .status[data-tone="bad"] {
-    background: color-mix(in oklab, var(--destructive) 11%, transparent);
-    color: var(--destructive);
+    background: var(--danger-soft);
+    color: var(--danger);
   }
+  .status[data-tone="info"] {
+    background: var(--info-soft);
+    color: var(--info);
+  }
+  /* Nothing to act on: a dashed box and a hollow bullet. */
   .status[data-tone="neutral"] {
+    border-style: dashed;
     background: var(--secondary);
     color: var(--muted-foreground);
   }
+  .status[data-tone="neutral"]::before {
+    border: 1.5px solid currentColor;
+    background: transparent;
+  }
   .status[data-tone="live"] {
-    background: color-mix(in oklab, var(--live) 13%, transparent);
-    color: var(--success);
+    background: var(--ok-soft);
+    color: var(--ok);
   }
   .status[data-tone="live"]::before {
     animation: pulse 1.8s var(--ease-out) infinite;
@@ -982,26 +1013,29 @@
       animation: none;
     }
   }
+  /* Typewritten labels, like the kit's badges: outlined, printed in reverse
+     (solid) or a dashed box on the deeper paper (muted). */
   .chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     height: 26px;
-    padding-inline: 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
+    padding-inline: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
     font-family: var(--font-mono);
-    font-size: 11.5px;
-    font-weight: 500;
+    font-size: 12px;
     white-space: nowrap;
   }
   .chip[data-tone="solid"] {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: var(--primary-foreground);
+    border-color: var(--foreground);
+    background: var(--foreground);
+    color: var(--background);
   }
   .chip[data-tone="muted"] {
-    border-color: transparent;
+    border-style: dashed;
+    border-color: var(--muted-foreground);
     background: var(--secondary);
     color: var(--muted-foreground);
   }
@@ -1010,67 +1044,73 @@
     align-items: center;
     gap: 6px;
     height: 24px;
-    padding-inline: 9px;
-    border-radius: 7px;
+    padding-inline: 7px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
     background: var(--secondary);
     color: var(--foreground);
     font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
+    font-size: 12px;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     white-space: nowrap;
   }
   .source-badge svg {
-    width: 13px;
-    height: 13px;
+    width: 14px;
+    height: 14px;
   }
+  /* A square bullet: hollow when there is nothing to report. */
   .dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border-strong);
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid var(--muted-foreground);
   }
   .dot[data-tone="ok"] {
-    background: var(--live);
+    border-color: var(--ok);
+    background: var(--ok);
   }
   .dot[data-tone="bad"] {
-    background: var(--destructive);
+    border-color: var(--danger);
+    background: var(--danger);
   }
   .dot[data-tone="warn"] {
-    background: var(--warning);
+    border-color: var(--warn);
+    background: var(--warn);
   }
 
   /* ── Tables ──────────────────────────────────────────────── */
+  /* A ledger: typewritten heads between two ink rules on the deeper paper,
+     hairlines between the rows, Manrope 14 px with tabular figures. */
+  /* Positioned, so what is absolute inside (a visually hidden header
+     label) scrolls with the table instead of widening the page. */
   .table-wrap {
+    position: relative;
     width: 100%;
     overflow-x: auto;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  }
-  .table-wrap:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -2px;
   }
   .table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 14px;
+    line-height: 1.5;
   }
   .table caption {
     padding: 0;
   }
   .table th {
-    padding: 11px 16px;
-    border-top: 1px solid var(--line-soft);
-    border-bottom: 1px solid var(--line-soft);
-    background: color-mix(in oklab, var(--background) 55%, transparent);
+    padding: 10px 16px;
+    border-top: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    background: var(--secondary);
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.07em;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
     text-align: start;
     text-transform: uppercase;
     white-space: nowrap;
@@ -1128,20 +1168,19 @@
     text-align: end;
   }
   .row-link {
-    font-weight: 600;
-    border-radius: 4px;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
   }
   .row-link::after {
     content: "";
     position: absolute;
     inset: 0;
   }
-  .row-link:focus-visible {
-    outline: none;
-  }
+  /* The whole row takes the ring of its link (the link's own ring is
+     switched off at the end: the theme's ring is unlayered). */
   .table tbody tr:has(.row-link:focus-visible) {
-    outline: 2px solid var(--ring);
-    outline-offset: -2px;
+    outline: 3px solid var(--ring);
+    outline-offset: -3px;
   }
   /* Other controls in a linked row stay clickable above the row link. */
   .table .above {
@@ -1158,7 +1197,7 @@
     display: block;
     margin-top: 2px;
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.35;
     overflow-wrap: break-word;
   }
@@ -1166,8 +1205,8 @@
     display: block;
     max-width: 280px;
     overflow: hidden;
-    color: var(--destructive);
-    font-size: 12.5px;
+    color: var(--danger);
+    font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -1232,7 +1271,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 14px var(--panel-pad);
-    border-top: 1px solid var(--line-soft);
+    border-top: 1.5px dashed var(--line);
     color: var(--muted-foreground);
     font-size: 13px;
   }
@@ -1265,89 +1304,79 @@
   }
   .field-label {
     color: var(--foreground);
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
   }
   .field-hint {
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.45;
   }
+  /* Boxed fields with a pressed-in edge, like the kit's Input; focus is the
+     theme's ring around the box (the border keeps its width and ink). */
   .select {
     width: 100%;
     height: 48px;
     padding: 0 40px 0 14px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background-color: var(--surface);
     background-image:
-      linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
-      linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+      linear-gradient(45deg, transparent 50%, var(--foreground) 50%),
+      linear-gradient(135deg, var(--foreground) 50%, transparent 50%);
     background-position:
-      calc(100% - 20px) 21px,
-      calc(100% - 15px) 21px;
+      calc(100% - 20px) 20px,
+      calc(100% - 14px) 20px;
     background-size:
-      5px 5px,
-      5px 5px;
+      6px 6px,
+      6px 6px;
     background-repeat: no-repeat;
+    box-shadow: inset 2px 2px 0 var(--halftone);
     color: var(--foreground);
     font: inherit;
     font-size: 15px;
     appearance: none;
-    transition:
-      border-color var(--duration-fast) var(--ease-out),
-      box-shadow var(--duration-fast) var(--ease-out);
-  }
-  .select:hover {
-    border-color: var(--border-strong);
-  }
-  .select:focus-visible,
-  .textarea:focus-visible {
-    border-color: var(--ring);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 15%, transparent);
-    outline: none;
   }
   .textarea {
     width: 100%;
     min-height: 104px;
     padding: 12px 14px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
+    box-shadow: inset 2px 2px 0 var(--halftone);
     color: var(--foreground);
     font: inherit;
     font-size: 15px;
     line-height: 1.5;
     resize: vertical;
-    transition:
-      border-color var(--duration-fast) var(--ease-out),
-      box-shadow var(--duration-fast) var(--ease-out);
-  }
-  .textarea:hover {
-    border-color: var(--border-strong);
   }
   .textarea[aria-invalid="true"],
   .select[aria-invalid="true"] {
-    border-color: var(--destructive);
+    border-color: var(--danger);
+    box-shadow: inset 2px 2px 0 var(--danger-soft);
   }
+  /* A box to tick before a risky action: the theme's highlighter. */
   .check-field {
     display: flex;
     align-items: flex-start;
     gap: 12px;
     padding: 12px 14px;
-    border: 1px solid var(--line);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
-    background: color-mix(in oklab, var(--warning) 7%, transparent);
+    background: var(--warn-soft);
     font-size: 14px;
     line-height: 1.5;
     cursor: pointer;
   }
+  /* Native controls in ink: red would read as an error on this paper. */
   .check-field input {
     width: 20px;
     height: 20px;
     margin: 1px 0 0;
     flex-shrink: 0;
-    accent-color: var(--primary);
+    accent-color: var(--foreground);
   }
   .search-form {
     display: flex;
@@ -1367,15 +1396,18 @@
   .facts[data-cols="2"] {
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   }
+  /* One column that never grows past the card: a long id truncates. */
   .fact {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: 5px;
     min-width: 0;
   }
   .fact dt {
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
+    line-height: 1.4;
   }
   .fact dd {
     display: flex;
@@ -1389,8 +1421,8 @@
   /* A value that needs a look (a spending cap reached): the warning colour
      and its icon, so it never rests on colour alone. */
   .fact-value[data-tone="warn"] {
-    color: var(--warning);
-    font-weight: 600;
+    color: var(--warn);
+    font-weight: 700;
   }
   /* In the line of text (the base layer makes icons blocks): it starts the
      first line, however the value wraps. */
@@ -1446,12 +1478,11 @@
   .template-link[aria-current="true"]::before {
     content: "";
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     margin-inline-end: 8px;
-    border-radius: 50%;
-    background: var(--foreground);
-    vertical-align: 2px;
+    background: var(--primary);
+    vertical-align: 1px;
   }
   .feed-padded {
     padding: 0 var(--panel-pad) 14px;
@@ -1475,12 +1506,12 @@
   }
   .feed-meta {
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
     overflow-wrap: anywhere;
   }
   .feed-time {
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
     white-space: nowrap;
   }
   /* Before → after of a change; long values wrap as whole pieces. */
@@ -1505,13 +1536,15 @@
     gap: 0;
     margin-left: 6px;
   }
+  /* A ruled spine with square stops: filled in the state's ink, hollow
+     when the step is only information. */
   .timeline::before {
     content: "";
     position: absolute;
     top: 8px;
     bottom: 8px;
     left: 5px;
-    width: 1px;
+    width: 2px;
     background: var(--line);
   }
   .timeline-item {
@@ -1524,22 +1557,23 @@
   .timeline-dot {
     position: relative;
     z-index: 1;
-    width: 11px;
-    height: 11px;
+    width: 12px;
+    height: 12px;
     margin-top: 5px;
-    border: 2px solid var(--surface);
-    border-radius: 50%;
-    background: var(--border-strong);
-    box-shadow: 0 0 0 1px var(--line);
+    border: 2px solid var(--border);
+    background: var(--surface);
   }
   .timeline-dot[data-tone="ok"] {
-    background: var(--success);
+    border-color: var(--ok);
+    background: var(--ok);
   }
   .timeline-dot[data-tone="bad"] {
-    background: var(--destructive);
+    border-color: var(--danger);
+    background: var(--danger);
   }
   .timeline-dot[data-tone="warn"] {
-    background: var(--warning);
+    border-color: var(--warn);
+    background: var(--warn);
   }
   .timeline-dot[data-tone="info"] {
     background: var(--foreground);
@@ -1559,7 +1593,7 @@
   }
   .timeline-meta {
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
     overflow-wrap: anywhere;
   }
 
@@ -1600,14 +1634,17 @@
   .panel[data-flush] > .state[data-size="sm"] {
     padding-block: 24px calc(var(--panel-pad) + 4px);
   }
+  /* A rubber-stamped icon in the state's ink, like the kit's StatePanel. */
   .state-icon {
     display: inline-grid;
     place-items: center;
     width: 44px;
     height: 44px;
-    margin-bottom: 4px;
-    border-radius: 14px;
-    background: var(--secondary);
+    margin-bottom: 6px;
+    border: 2px solid currentColor;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    box-shadow: 3px 3px 0 currentColor;
     color: var(--muted-foreground);
   }
   .state-icon svg {
@@ -1615,24 +1652,25 @@
     height: 22px;
   }
   .state[data-kind="error"] .state-icon {
-    background: color-mix(in oklab, var(--destructive) 11%, transparent);
-    color: var(--destructive);
+    background: var(--danger-soft);
+    color: var(--danger);
   }
   .state[data-kind="forbidden"] .state-icon,
   .state[data-kind="warning"] .state-icon {
-    background: color-mix(in oklab, var(--warning) 13%, transparent);
-    color: var(--warning);
+    background: var(--warn-soft);
+    color: var(--warn);
   }
   .state-title {
     font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    line-height: 1.4;
   }
+  /* A page's state is its h1, in the sign face (from the theme). */
   .state[data-size="page"] .state-title {
-    font-size: clamp(28px, 3.5vw, 40px);
-    font-weight: 500;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
+    font-size: clamp(25px, 1.6vw + 16px, 36px);
+    font-weight: 900;
+    line-height: 1.12;
+    overflow-wrap: break-word;
   }
   .state-body {
     max-width: 58ch;
@@ -1649,25 +1687,28 @@
     gap: 10px;
     margin-top: 6px;
   }
+  /* A service not wired in: a dashed outline left on the page. */
   .panel[data-kind="not-connected"] {
     border-style: dashed;
-    border-color: var(--border-strong);
-    background: color-mix(in oklab, var(--surface) 60%, transparent);
+    background: transparent;
     box-shadow: none;
   }
   .request-id {
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: 12px;
   }
+  /* A boxed note on its soft fill with a shadow in its own ink, like the
+     kit's Notice. */
   .notice {
     display: flex;
     align-items: flex-start;
     gap: 12px;
     padding: 14px 16px;
-    border: 1px solid var(--line);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
-    background: color-mix(in oklab, var(--surface) 80%, transparent);
+    background: var(--surface);
+    box-shadow: 4px 4px 0 var(--border);
     font-size: 14px;
     line-height: 1.55;
   }
@@ -1678,28 +1719,35 @@
     margin-top: 1px;
   }
   .notice[data-tone="warn"] {
-    border-color: color-mix(in oklab, var(--warning) 35%, transparent);
-    background: color-mix(in oklab, var(--warning) 8%, transparent);
+    background: var(--warn-soft);
+    box-shadow: 4px 4px 0 var(--warn);
   }
   .notice[data-tone="warn"] svg {
-    color: var(--warning);
+    color: var(--warn);
   }
   .notice[data-tone="bad"] {
-    border-color: color-mix(in oklab, var(--destructive) 30%, transparent);
-    background: color-mix(in oklab, var(--destructive) 6%, transparent);
+    background: var(--danger-soft);
+    box-shadow: 4px 4px 0 var(--danger);
   }
   .notice[data-tone="bad"] svg {
-    color: var(--destructive);
+    color: var(--danger);
+  }
+  .notice[data-tone="ok"] {
+    background: var(--ok-soft);
+    box-shadow: 4px 4px 0 var(--ok);
   }
   .notice[data-tone="ok"] svg {
-    color: var(--success);
+    color: var(--ok);
   }
 
   /* ── Skeletons ───────────────────────────────────────────── */
+  /* A halftone block, like the kit's Skeleton in this theme. */
   .skeleton {
     display: block;
-    border-radius: 8px;
-    background: var(--muted);
+    border-radius: var(--radius-sm);
+    background-color: var(--secondary);
+    background-image: var(--dots);
+    background-size: 5px 5px;
     animation: shimmer 1.6s ease-in-out infinite;
   }
   @keyframes shimmer {
@@ -1722,10 +1770,12 @@
     display: grid;
     gap: 18px;
   }
+  /* What will happen: a clipping in a dashed frame on the deeper paper. */
   .consequences {
     display: grid;
     gap: 8px;
     padding: 14px 16px;
+    border: 1.5px dashed var(--border);
     border-radius: var(--radius-md);
     background: var(--secondary);
     font-size: 14px;
@@ -1747,10 +1797,10 @@
     justify-content: space-between;
     gap: 12px;
     min-height: 18px;
-    font-size: 12.5px;
+    font-size: 13px;
   }
   .field-error {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .form-status {
     min-height: 22px;
@@ -1758,10 +1808,10 @@
     line-height: 1.5;
   }
   .form-status[data-tone="bad"] {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .form-status[data-tone="ok"] {
-    color: var(--success);
+    color: var(--ok);
   }
   .dialog-actions {
     display: flex;
@@ -1802,11 +1852,10 @@
     align-items: flex-start;
     gap: 12px;
     padding: 14px 16px;
-    border: 1px solid var(--glass-border);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
-    background: color-mix(in oklab, var(--surface) 92%, transparent);
-    box-shadow: 0 18px 40px
-      color-mix(in oklab, var(--foreground) 16%, transparent);
+    background: var(--surface);
+    box-shadow: 4px 4px 0 var(--border);
     font-size: 14px;
     line-height: 1.5;
     pointer-events: auto;
@@ -1818,11 +1867,18 @@
     flex-shrink: 0;
     margin-top: 1px;
   }
+  /* A slip pasted over the page, its shadow in the outcome's ink. */
+  .toast[data-tone="ok"] {
+    box-shadow: 4px 4px 0 var(--ok);
+  }
   .toast[data-tone="ok"] svg {
-    color: var(--success);
+    color: var(--ok);
+  }
+  .toast[data-tone="bad"] {
+    box-shadow: 4px 4px 0 var(--danger);
   }
   .toast[data-tone="bad"] svg {
-    color: var(--destructive);
+    color: var(--danger);
   }
   @keyframes toast-in {
     from {
@@ -1842,23 +1898,20 @@
     margin: 0;
     padding: 16px 18px;
     overflow: auto;
+    border: 1.5px solid var(--line);
     border-radius: var(--radius-md);
-    background: color-mix(in oklab, var(--background) 70%, var(--secondary));
+    background: var(--background);
     color: var(--foreground);
   }
   .code pre {
     margin: 0;
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.6;
     white-space: pre;
     tab-size: 2;
   }
   .code pre.wrap {
     white-space: pre-wrap;
-  }
-  .code:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
   }
   .copy {
     display: inline-flex;
@@ -1867,20 +1920,30 @@
     min-width: 0;
     max-width: 100%;
   }
+  /* 32 px square; an invisible frame takes the tap to 44 px, reaching up,
+     down and back over the value it copies, never past the end of the
+     line (where it would widen a phone's page). */
   .copy-button {
+    position: relative;
     display: inline-grid;
     place-items: center;
     flex-shrink: 0;
     width: 32px;
     height: 32px;
-    border: 0;
-    border-radius: 8px;
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--muted-foreground);
     cursor: pointer;
   }
+  .copy-button::after {
+    content: "";
+    position: absolute;
+    inset: -7.5px 0 -7.5px -15px;
+  }
   .copy-button:hover {
-    background: var(--hover);
+    border-color: var(--border);
+    background: var(--surface);
     color: var(--foreground);
   }
   .copy-button svg {
@@ -1893,37 +1956,47 @@
     display: block;
     width: 100%;
     height: 560px;
-    border: 1px solid var(--line);
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--background);
   }
+  /* One switch on a hard shadow, the chosen part printed in reverse, like
+     the kit's segmented toggle. Each part is 38 px tall; an invisible frame
+     reaches over the switch's padding and edge to 44 px. */
   .segmented {
     display: inline-flex;
     gap: 2px;
-    padding: 3px;
-    border: 1px solid var(--line);
+    padding: 1px;
+    border: 2px solid var(--border);
     border-radius: var(--radius-pill);
     background: var(--surface);
+    box-shadow: 3px 3px 0 var(--border);
   }
   .segmented a {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 52px;
     min-height: 38px;
     padding-inline: 14px;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-sm);
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+  }
+  .segmented a::after {
+    content: "";
+    position: absolute;
+    inset: -3px 0;
   }
   .segmented a:hover {
     color: var(--foreground);
+    background: var(--secondary);
   }
   .segmented a[aria-current="true"] {
-    background: var(--primary);
-    color: var(--primary-foreground);
+    background: var(--foreground);
+    color: var(--background);
   }
 
   /* ── Health strip ────────────────────────────────────────── */
@@ -1949,9 +2022,9 @@
     gap: 10px;
     min-height: 118px;
     padding: 16px 18px;
-    border: 1px solid var(--line);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius-md);
-    background: color-mix(in oklab, var(--surface) 86%, transparent);
+    background: var(--background);
   }
   .health-head {
     display: flex;
@@ -1967,12 +2040,14 @@
     }
   }
   .health-name {
-    font-size: 14.5px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
   }
   .health-meta {
     color: var(--muted-foreground);
-    font-size: 12.5px;
+    font-size: 13px;
+    line-height: 1.4;
   }
   .health-deps {
     display: flex;
@@ -1983,17 +2058,21 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 22px;
-    padding-inline: 8px;
-    border-radius: 6px;
-    background: var(--secondary);
+    height: 24px;
+    padding-inline: 7px;
+    border: 1.5px dashed var(--muted-foreground);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
     color: var(--muted-foreground);
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: 12px;
   }
+  /* A dependency that is down: boxed solid in red on its soft fill. */
   .dep[data-up="false"] {
-    background: color-mix(in oklab, var(--destructive) 11%, transparent);
-    color: var(--destructive);
+    border-style: solid;
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
   }
 
   /* ── Dashboard ───────────────────────────────────────────── */
@@ -2004,16 +2083,19 @@
     justify-content: space-between;
     gap: 20px 32px;
   }
+  /* The greeting in the sign face (from the theme), the name in the
+     theme's tabloid accent (large type, so its spot red reads). */
   .hero-title {
-    font-size: clamp(34px, 4vw, 54px);
-    font-weight: 500;
-    line-height: 1.02;
-    letter-spacing: -0.04em;
+    font-size: clamp(28px, 2vw + 16px, 44px);
+    line-height: 1.12;
+    overflow-wrap: break-word;
   }
+  /* The italic leans back over the comma: a little room before it. */
   .hero-title .og-accent {
     display: inline-block;
+    margin-inline-start: 0.12em;
     padding-bottom: 0.08em;
-    font-size: 1.1em;
+    font-size: 1.12em;
     line-height: 1.1;
   }
   .attention {
@@ -2032,13 +2114,15 @@
   .attention-item:last-child {
     border-bottom: 0;
   }
+  /* A small stamp in the item's ink, like the states' icons. */
   .attention-icon {
     display: inline-grid;
     place-items: center;
     width: 34px;
     height: 34px;
-    border-radius: 10px;
-    background: var(--secondary);
+    border: 2px solid currentColor;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
     color: var(--muted-foreground);
   }
   .attention-icon svg {
@@ -2046,16 +2130,16 @@
     height: 18px;
   }
   .attention-item[data-tone="bad"] .attention-icon {
-    background: color-mix(in oklab, var(--destructive) 11%, transparent);
-    color: var(--destructive);
+    background: var(--danger-soft);
+    color: var(--danger);
   }
   .attention-item[data-tone="warn"] .attention-icon {
-    background: color-mix(in oklab, var(--warning) 13%, transparent);
-    color: var(--warning);
+    background: var(--warn-soft);
+    color: var(--warn);
   }
   .attention-item[data-tone="ok"] .attention-icon {
-    background: color-mix(in oklab, var(--success) 12%, transparent);
-    color: var(--success);
+    background: var(--ok-soft);
+    color: var(--ok);
   }
 
   /* Reserved heights so streamed panels replace skeletons in place. */
@@ -2105,6 +2189,7 @@
     width: 56px;
     height: 56px;
     font-size: 18px;
+    box-shadow: 3px 3px 0 var(--border);
   }
   .identity-text {
     display: grid;
@@ -2118,12 +2203,14 @@
     flex-direction: column;
     min-height: 100dvh;
   }
+  /* A masthead over a double rule, like the account app's. */
   .auth-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding-block: 28px;
+    padding-block: 24px;
+    border-bottom: 3px double var(--border);
   }
   .auth-main {
     flex: 1;
@@ -2131,18 +2218,19 @@
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     align-items: center;
     gap: clamp(32px, 6vw, 96px);
-    padding-block: 24px 80px;
+    padding-block: 40px 80px;
   }
   .auth-intro {
     display: grid;
     gap: 20px;
     max-width: 640px;
   }
+  /* The sign face (from the theme) is wide: every word of the title stays
+     whole on a 360 px phone. */
   .auth-intro h1 {
-    font-size: clamp(44px, 6vw, 84px);
-    font-weight: 500;
-    line-height: 0.98;
-    letter-spacing: -0.04em;
+    font-size: clamp(30px, 3.4vw + 14px, 64px);
+    line-height: 1.06;
+    overflow-wrap: break-word;
   }
   .auth-intro h1 .og-accent {
     display: block;
@@ -2155,16 +2243,17 @@
     font-size: 17px;
     line-height: 1.6;
   }
+  /* The kit's glass Surface, which the theme prints as a pasted-in card. */
   .auth-card {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     padding: clamp(24px, 4vw, 40px);
     border-radius: var(--radius-xl);
   }
   .auth-card h2 {
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.03em;
+    font-size: 22px;
+    line-height: 1.2;
   }
   .auth-points {
     display: grid;
@@ -2223,7 +2312,7 @@
     grid-auto-rows: var(--cell);
     gap: 2px;
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
   }
   .board-label {
     display: grid;
@@ -2234,11 +2323,12 @@
     align-items: end;
     padding-bottom: 2px;
   }
+  /* Squares of the deeper paper; ships in ink, hits in red. */
   .cell {
     display: grid;
     place-items: center;
-    border-radius: 5px;
-    background: color-mix(in oklab, var(--muted) 85%, transparent);
+    border-radius: 0;
+    background: var(--secondary);
   }
   .cell[data-ship] {
     background: color-mix(in oklab, var(--foreground) 72%, var(--surface));
@@ -2247,24 +2337,21 @@
     content: "";
     width: 6px;
     height: 6px;
-    border-radius: 50%;
     background: var(--muted-foreground);
   }
   .cell[data-shot="hit"] {
-    background: color-mix(in oklab, var(--destructive) 75%, var(--foreground));
+    background: color-mix(in oklab, var(--danger) 75%, var(--foreground));
   }
   .cell[data-shot="hit"]::after,
   .cell[data-shot="sunk"]::after {
     content: "";
     width: 55%;
     height: 2px;
-    border-radius: 2px;
     background: var(--primary-foreground);
     transform: rotate(45deg);
-    box-shadow: 0 0 0 0 transparent;
   }
   .cell[data-shot="sunk"] {
-    background: var(--destructive);
+    background: var(--danger);
   }
   .cell[data-last] {
     outline: 2px solid var(--ring);
@@ -2281,9 +2368,10 @@
     justify-content: center;
     gap: 8px;
   }
+  /* Native controls in ink: red would read as an error on this paper. */
   .replay-range {
     width: min(100%, 420px);
-    accent-color: var(--primary);
+    accent-color: var(--foreground);
   }
   .replay-status {
     min-height: 22px;
@@ -2297,29 +2385,38 @@
     gap: 6px;
     max-height: 320px;
     overflow-y: auto;
-    padding: 2px;
+    /* room for the focus ring (3 px at a 2 px offset) inside the scroll box */
+    padding: 5px;
   }
   .moves > li {
     min-width: 0;
   }
-  /* One line per move, in fixed columns: number, shooter, cell, outcome. */
+  /* One line per move, in fixed columns: number, shooter, cell, outcome.
+     38 px tall; an invisible frame takes the tap over the gaps to 44 px. */
   .move {
+    position: relative;
     display: grid;
-    grid-template-columns: 2.2em minmax(0, 1fr) 2.8em 4.8em;
+    grid-template-columns: 2.4em minmax(0, 1fr) 2.8em 4.8em;
     align-items: center;
     gap: 8px;
     width: 100%;
-    min-height: 36px;
+    min-height: 38px;
     padding-inline: 10px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: color-mix(in oklab, var(--secondary) 60%, transparent);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--secondary);
     color: var(--foreground);
     font: inherit;
-    font-size: 12.5px;
+    font-size: 13px;
+    line-height: 1.3;
     text-align: start;
     white-space: nowrap;
     cursor: pointer;
+  }
+  .move::after {
+    content: "";
+    position: absolute;
+    inset: -4.5px -1.5px;
   }
   .move-name {
     overflow: hidden;
@@ -2330,23 +2427,22 @@
     text-align: end;
   }
   .move-outcome:is([data-outcome="hit"], [data-outcome="sunk"]) {
-    color: var(--destructive);
+    color: var(--danger);
   }
   .move[aria-current="step"] .move-outcome {
     color: inherit;
   }
   .move:hover {
-    border-color: var(--border-strong);
+    border-color: var(--border);
   }
   .move[aria-current="step"] {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: var(--primary-foreground);
+    border-color: var(--foreground);
+    background: var(--foreground);
+    color: var(--background);
   }
   .move-n {
     font-family: var(--font-mono);
-    font-size: 11px;
-    opacity: 0.7;
+    font-size: 12px;
   }
 }
 
@@ -2359,4 +2455,38 @@
     display: grid;
     align-content: center;
   }
+}
+
+/*
+ * ─── Over the theme ───
+ * The zine theme is unlayered, so it outranks the layers above whatever
+ * their specificity. Its focus ring (3 px solid at a 2 px offset) is right
+ * almost everywhere; these few places draw it differently. The
+ * [data-theme] prefix keeps them ahead of the theme's own selector even if
+ * the stylesheets were ever bundled in another order.
+ */
+
+/* A row link hands its ring to the whole row (see .table). */
+[data-theme] .row-link:focus-visible {
+  outline: none;
+}
+/* A scrolling table and the navigation sheet keep their ring inside: the
+   table's would cover the card's edge, the sheet takes focus only as a
+   whole when it opens. */
+[data-theme] .table-wrap:focus-visible {
+  outline-offset: -3px;
+}
+[data-theme] .nav-sheet:focus-visible {
+  outline: none;
+}
+
+/* The kit's large button never wraps and has a fixed height (utilities,
+   which outrank the layers above): on a phone the Russian sign-in label is
+   wider than the card, so here it may take two lines. */
+.auth-card [data-slot="button"] {
+  height: auto;
+  min-height: 58px;
+  padding-block: 10px;
+  white-space: normal;
+  text-align: center;
 }

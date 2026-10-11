@@ -25,7 +25,7 @@ export function OrderListSkeleton({ label }: { label: string }) {
   return (
     <div className="order-list" aria-busy="true">
       {[0, 1, 2, 3].map((row) => (
-        <div key={row} className="card order-row">
+        <div key={row} className="order-row">
           <span className="service-mark" aria-hidden="true" />
           <div className="order-main">
             {row === 0 ? <LoadingNote text={label} /> : block("56%", 16)}

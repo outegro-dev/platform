@@ -38,7 +38,12 @@ function MatchSkeleton({ text }: { text: string }) {
       </div>
       <div className="banner-slot" />
       <div className="boards">
-        {[t("yourWaters"), t("enemyWaters")].map((label) => (
+        {(
+          [
+            ["own", t("yourWaters")],
+            ["enemy", t("enemyWaters")],
+          ] as const
+        ).map(([waters, label]) => (
           <div key={label} className="board-column">
             <div className="board-caption">
               <h2>{label}</h2>
@@ -46,6 +51,7 @@ function MatchSkeleton({ text }: { text: string }) {
             <BoardFrame
               label={label}
               theme="day"
+              waters={waters}
               cells={gridOf(() => <span className="cell" />)}
             />
           </div>

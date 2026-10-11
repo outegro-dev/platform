@@ -14,7 +14,12 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { CellState, OwnShip } from "@/game/stores/match-store";
 import type { MatchReplay, ReplayCursor } from "@/game/stores/stats-store";
-import { BoardFrame, cellName, gridOf } from "../board/board-frame";
+import {
+  BoardFrame,
+  cellName,
+  gridOf,
+  type Waters,
+} from "../board/board-frame";
 import { BoardLegend } from "../board/board-legend";
 import { CellMark, ShotMarker } from "../board/marks";
 import { BoardShip } from "../board/ship";
@@ -22,10 +27,12 @@ import { useRoot } from "../providers";
 
 const ReplayBoard = observer(function ReplayBoard({
   label,
+  waters,
   view,
   highlight,
 }: {
   label: string;
+  waters: Waters;
   view: { ships: OwnShip[]; cells: CellState[][] };
   highlight: { x: number; y: number } | null;
 }) {
@@ -36,6 +43,7 @@ const ReplayBoard = observer(function ReplayBoard({
     <BoardFrame
       label={label}
       theme={theme}
+      waters={waters}
       cells={gridOf((x, y) => (
         <span className="cell">
           <span className="sr-only">
@@ -230,6 +238,7 @@ export const ReplayViewer = observer(function ReplayViewer({
           </div>
           <ReplayBoard
             label={t("yours")}
+            waters="own"
             view={cursor.yours}
             highlight={current?.by === "opponent" ? current : null}
           />
@@ -240,6 +249,7 @@ export const ReplayViewer = observer(function ReplayViewer({
           </div>
           <ReplayBoard
             label={t("theirs")}
+            waters="enemy"
             view={cursor.theirs}
             highlight={current?.by === "you" ? current : null}
           />

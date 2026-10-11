@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** `01 ── PURCHASES`, then the grotesque + silver italic title. */
+/** `01 ── PURCHASES`, then the sign-face title with its tabloid accent. */
 export function PageHead({
   index,
   eyebrow,

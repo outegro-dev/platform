@@ -127,7 +127,7 @@ export default async function OrdersPage({
   return (
     <>
       {head}
-      <section aria-label={t("listLabel")} className="order-list">
+      <section aria-label={t("listLabel")} className="order-ledger">
         <div className="list-head og-eyebrow" aria-hidden="true">
           <span />
           <span>{t("product")}</span>
@@ -183,7 +183,7 @@ async function OrderRow({
   const app = serviceLink(service, platformUrls);
   return (
     <li>
-      <article className="card order-row">
+      <article className="order-row">
         <ServiceMark service={service} />
         <div className="order-main">
           <h2 className="order-title">

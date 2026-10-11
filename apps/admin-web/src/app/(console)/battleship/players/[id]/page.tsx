@@ -222,9 +222,7 @@ export default async function PlayerPage({ params }: { params: Params<"id"> }) {
                         className="num"
                         style={{
                           color:
-                            entry.delta >= 0
-                              ? "var(--success)"
-                              : "var(--destructive)",
+                            entry.delta >= 0 ? "var(--ok)" : "var(--danger)",
                         }}
                       >
                         {entry.delta >= 0 ? `+${entry.delta}` : entry.delta}

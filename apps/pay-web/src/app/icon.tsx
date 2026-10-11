@@ -3,7 +3,10 @@ import { ImageResponse } from "next/og";
 export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
-/** Same tile as the other platform icons, with the platform's initial. */
+/**
+ * The platform's initial inked on a square of the zine theme's newsprint
+ * (--paper and --ink: an image takes literal colours).
+ */
 export default function Icon() {
   return new ImageResponse(
     <div
@@ -13,11 +16,12 @@ export default function Icon() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#171817",
-        color: "#f2f2ef",
+        background: "#efe4c6",
+        border: "4px solid #1b1915",
+        borderRadius: 6,
+        color: "#1b1915",
         fontSize: 40,
         fontWeight: 700,
-        borderRadius: 16,
         paddingBottom: 6,
       }}
     >
