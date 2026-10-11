@@ -41,7 +41,7 @@
     "@testcontainers/valkey": "12.2.0",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
-    "@types/supertest": "^6.0.0",
+    "@types/supertest": "^7.2.1",
     "drizzle-kit": "0.31.11",
     "pino-pretty": "13.2.0",
     "supertest": "^7.3.1",
