@@ -19,6 +19,7 @@ import {
   type StartedTestContainer,
   Wait,
 } from "testcontainers";
+import { explain, finished, untilDone } from "./cli.js";
 import { FakeLava } from "./fake-lava.js";
 import { TcpProxy } from "./proxy.js";
 
@@ -185,11 +186,12 @@ export async function startStack() {
 
   for (const service of Object.keys(dirs) as Service[]) {
     envs[service] = await envOf(service);
-    const migrate = run(service, "db/migrate.js", envs[service]);
-    const code = await new Promise<number | null>((resolve) =>
-      migrate.on("exit", resolve),
+    const migrated = await finished(
+      run(service, "db/migrate.js", envs[service]),
+      120_000,
     );
-    if (code !== 0) throw new Error(`${service} migrations failed`);
+    if (migrated.code !== 0)
+      throw new Error(explain(`${service} migrations`, migrated));
   }
 
   const startService = async (
@@ -225,6 +227,22 @@ export async function startStack() {
   await startService("battleship");
   await startService("edu");
 
+  /** SQL as a service's own role, read-only use in assertions. */
+  const query = async (service: Service, sql: string) => {
+    const db = service === "auth" ? "auth" : service;
+    const result = await postgres.exec([
+      "psql",
+      "-U",
+      db,
+      "-d",
+      db,
+      "-tAc",
+      sql,
+    ]);
+    if (result.exitCode !== 0) throw new Error(result.output);
+    return result.output.trim();
+  };
+
   return {
     url,
     lava,
@@ -246,34 +264,42 @@ export async function startStack() {
     postgres: postgres as StartedPostgreSqlContainer,
     rabbit: rabbit as StartedRabbitMQContainer,
     mail: mail as StartedTestContainer,
-    /** The operator CLI: makes an existing account an owner. */
+    /**
+     * The operator CLI: makes an existing account an owner. Done means an
+     * active owner binding in Identity's database, not exit code 0: the CLI
+     * commits the grant and only then closes its RabbitMQ connection, and
+     * closing while the publisher channel is still being set up crashes it
+     * ("Channel ended, no reply will be forthcoming" as an unhandled
+     * ChannelWrapper 'error'). A run that granted nothing is repeated.
+     */
     async grantOwner(email: string) {
-      const cli = run("auth", "cli/grant-owner.js", envs.auth, [
-        "--email",
-        email,
-        "--reason",
-        "system test operator",
-      ]);
-      const code = await new Promise<number | null>((resolve) =>
-        cli.on("exit", resolve),
+      const address = email.trim().toLowerCase();
+      // signIn returns after the account is committed; say so if it is not.
+      const userId = await query(
+        "auth",
+        `select id from users where email = '${address}'`,
       );
-      if (code !== 0) throw new Error("grant-owner failed");
+      if (!userId)
+        throw new Error(
+          `grant-owner: no account for ${address}, sign in first`,
+        );
+      await untilDone(
+        `grant-owner --email ${address}`,
+        () =>
+          run("auth", "cli/grant-owner.js", envs.auth, [
+            "--email",
+            address,
+            "--reason",
+            "system test operator",
+          ]),
+        async () =>
+          (await query(
+            "auth",
+            `select count(*) from role_bindings where user_id = '${userId}' and role = 'owner' and state = 'active'`,
+          )) !== "0",
+      );
     },
-    /** SQL as a service's own role, read-only use in assertions. */
-    async query(service: Service, sql: string) {
-      const db = service === "auth" ? "auth" : service;
-      const result = await postgres.exec([
-        "psql",
-        "-U",
-        db,
-        "-d",
-        db,
-        "-tAc",
-        sql,
-      ]);
-      if (result.exitCode !== 0) throw new Error(result.output);
-      return result.output.trim();
-    },
+    query,
     async stop() {
       for (const child of processes.values()) child.kill("SIGTERM");
       await lava.stop();
