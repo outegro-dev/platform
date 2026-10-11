@@ -73,6 +73,39 @@ await check("landing: home and /stack render, unknown path is 404", async () => 
   expect(missing.status === 404, `unknown path: ${missing.status}`);
   return "200, 200, 404";
 });
+await check("landing: a visitor's account is nobody, never cached", async () => {
+  const res = await get(`${site("")}/api/account`);
+  expect(res.status === 200, `status ${res.status}`);
+  const cache = res.headers.get("cache-control") ?? "";
+  expect(cache.includes("no-store"), `Cache-Control: ${cache}`);
+  const body = await res.json();
+  expect(body === null, JSON.stringify(body));
+  return "200, null, no-store";
+});
+// The account check above passes even with SSO switched off or the site
+// missing from auth-backend's OAUTH_CLIENTS; this one follows sign-in.
+await check("landing: sign-in goes through id, which knows the site", async () => {
+  const res = await get(`${site("")}/auth/sign-in?returnTo=/`);
+  const header = res.headers.get("location");
+  expect(res.status === 303 && header, `expected 303, got ${res.status}`);
+  const authorize = new URL(header, site(""));
+  expect(
+    `${authorize.origin}${authorize.pathname}` === `${site("id")}/authorize`,
+    `redirects to ${authorize.origin}${authorize.pathname}`,
+  );
+  const callback = authorize.searchParams.get("redirect_uri");
+  expect(callback === `${site("")}/auth/callback`, `redirect_uri ${callback}`);
+  // A client or address the registry refuses renders id's "link is not
+  // valid" page (200); a registered one goes on to sign-in.
+  const answer = await get(authorize.href);
+  const next = answer.headers.get("location");
+  const login = next ? new URL(next, authorize).pathname : "";
+  expect(
+    [302, 303, 307].includes(answer.status) && login === "/login",
+    `/authorize answered ${answer.status}${login ? ` → ${login}` : ", not a redirect to sign-in"}`,
+  );
+  return "303 → id /authorize → /login";
+});
 await check("id: sign-in page allows passkeys", async () => {
   const res = await get(`${site("id")}/login`);
   expect(res.status === 200, `status ${res.status}`);

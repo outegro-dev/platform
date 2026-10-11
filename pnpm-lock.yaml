@@ -746,6 +746,9 @@ importers:
 
   apps/landing-web:
     dependencies:
+      '@outegro/bff':
+        specifier: workspace:*
+        version: link:../../packages/bff
       '@outegro/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -773,6 +776,9 @@ importers:
       three:
         specifier: 0.186.1
         version: 0.186.1
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
     devDependencies:
       '@tailwindcss/postcss':
         specifier: 4.3.3
@@ -1357,22 +1363,13 @@ importers:
       '@fontsource/jetbrains-mono':
         specifier: 5.3.0
         version: 5.3.0
-      '@fontsource/lobster':
-        specifier: 5.3.0
-        version: 5.3.0
       '@fontsource/manrope':
         specifier: 5.3.0
         version: 5.3.0
       '@fontsource/old-standard-tt':
         specifier: 5.3.0
         version: 5.3.0
-      '@fontsource/pangolin':
-        specifier: 5.3.0
-        version: 5.3.0
       '@fontsource/playfair-display':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/press-start-2p':
         specifier: 5.3.0
         version: 5.3.0
       '@fontsource/pt-mono':
@@ -1381,13 +1378,7 @@ importers:
       '@fontsource/rubik-dirt':
         specifier: 5.3.0
         version: 5.3.0
-      '@fontsource/rubik-glitch':
-        specifier: 5.3.0
-        version: 5.3.0
       '@fontsource/rubik-mono-one':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/rubik-wet-paint':
         specifier: 5.3.0
         version: 5.3.0
       '@fontsource/ruslan-display':
@@ -2062,23 +2053,14 @@ packages:
   '@fontsource/jetbrains-mono@5.3.0':
     resolution: {integrity: sha512-fqDfB5I9f1p1TV486aUgB9t8zP84P0O1FtQR5Ol9vjwPy+S+EIGlVYm1cvj2W5shcZMTg2nZFdVMoH5wFu8a1A==}
 
-  '@fontsource/lobster@5.3.0':
-    resolution: {integrity: sha512-jt+RDk/8Sstl1Omhox62gTbvRSLbh06kn5BNfDFgf4rNuDPHF+19eWYFxzq5FsdkalbRJNtc5p5C3qE0+leNVg==}
-
   '@fontsource/manrope@5.3.0':
     resolution: {integrity: sha512-obJ1Dv3+uCA6HlHgW8u4BGYxJR9In2HW7gjJhlflEvkrj1X1iSEwu0fToL+JYGC/FEKFfIz1sBuPduvcL2gIAA==}
 
   '@fontsource/old-standard-tt@5.3.0':
     resolution: {integrity: sha512-9cXU8XWqw4Pz9/9Lf6Otf1GPc0y17d96/nP9tzs4PLlq1IFMIxXszL3OLldaoyAn5YGr1r+tIXr0rlbgIeCYrg==}
 
-  '@fontsource/pangolin@5.3.0':
-    resolution: {integrity: sha512-3avtyqWX2QiQXKxVChWeVtF3FpB/wcojYXP13oO30WG44Ox9bCUHuHEtMd6NVgqpXSUqNLFaLm8K+29xVzkDZQ==}
-
   '@fontsource/playfair-display@5.3.0':
     resolution: {integrity: sha512-uJSABalvdWc10fEPppQjQocamT21LEyRfzzWfRfqbkPz+sRv+kKpYDKyluBUskvJREkJTos9epj1WjQROGu99Q==}
-
-  '@fontsource/press-start-2p@5.3.0':
-    resolution: {integrity: sha512-gxWFxdeDglPhEYSwEeooomcaFK8kSQYLQwVxfnOJeYRj2sPEHXjpVtFgEaYfqzOjuAJGrIcJOipu2KY5YkbyuQ==}
 
   '@fontsource/pt-mono@5.3.0':
     resolution: {integrity: sha512-AKXUTYCdv53jAJyzk3AEns6PdOvL3u+AD9Y4Ms6BFFRC7WCqYOvywujYT3gs00sMBIPs/J8iY7SQljk3wRfovw==}
@@ -2086,14 +2068,8 @@ packages:
   '@fontsource/rubik-dirt@5.3.0':
     resolution: {integrity: sha512-EinXO2ePd/Bcn4k+qwr6q6MC/XGoCRsWJGllkth8SU3GUtJbVLoEF1Y7bpKku1EpcBhR9LDdhW2kJCQb5CcD9Q==}
 
-  '@fontsource/rubik-glitch@5.3.0':
-    resolution: {integrity: sha512-TUe1qXVF+5IeMWU73HvfDdao9IssUK06hOHOdF8QKmPJj36pWGLVtdFWUgHGQQjytxpWitSHgmcJ7DkiWmTXQA==}
-
   '@fontsource/rubik-mono-one@5.3.0':
     resolution: {integrity: sha512-ReaCXaIKJAFdJAUaw8Gq3qXC9od7JotgqZFsVnwp06KqnBFtrX9qdeUvBdL+7avyUTic20gmzSH0NtEC6xAbDQ==}
-
-  '@fontsource/rubik-wet-paint@5.3.0':
-    resolution: {integrity: sha512-nPEMWjlPzZgXd8E1N5zXJuIYfjjuKEa209rhEaTLlVZJAklmtGOPIauUuTT0U0m4nDPR8BOFd0WZoaru8plTMg==}
 
   '@fontsource/ruslan-display@5.3.0':
     resolution: {integrity: sha512-D9h3y6zytztVCiqwpepI0rWL7rNvT9uCIfMj9YTKgSslTHc9uwy0B4M6jwf/2077Rancdvd5RADxDzywMeUq8g==}
@@ -6900,27 +6876,17 @@ snapshots:
 
   '@fontsource/jetbrains-mono@5.3.0': {}
 
-  '@fontsource/lobster@5.3.0': {}
-
   '@fontsource/manrope@5.3.0': {}
 
   '@fontsource/old-standard-tt@5.3.0': {}
 
-  '@fontsource/pangolin@5.3.0': {}
-
   '@fontsource/playfair-display@5.3.0': {}
-
-  '@fontsource/press-start-2p@5.3.0': {}
 
   '@fontsource/pt-mono@5.3.0': {}
 
   '@fontsource/rubik-dirt@5.3.0': {}
 
-  '@fontsource/rubik-glitch@5.3.0': {}
-
   '@fontsource/rubik-mono-one@5.3.0': {}
-
-  '@fontsource/rubik-wet-paint@5.3.0': {}
 
   '@fontsource/ruslan-display@5.3.0': {}
 
