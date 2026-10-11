@@ -1,4 +1,4 @@
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observableRef, runInAction } from "mobx";
 import type { CancelOutcome, Subscription } from "@/lib/payments/model";
 import { canCancel } from "@/lib/payments/status";
 import { browserIsOnline } from "./scheduler";
@@ -35,7 +35,7 @@ export class SubscriptionStore {
     this.isOnline = deps.isOnline ?? browserIsOnline;
     makeAutoObservable<this, "cancel" | "isOnline">(
       this,
-      { subscription: observable.ref, cancel: false, isOnline: false },
+      { subscription: observableRef, cancel: false, isOnline: false },
       { autoBind: true },
     );
   }
