@@ -39,7 +39,7 @@
   "devDependencies": {
     "@nestjs/cli": "12.0.8",
     "@nestjs/testing": "12.1.2",
-    "@swc/core": "1.16.13",
+    "@swc/core": "1.16.2",
     "@testcontainers/postgresql": "12.2.0",
     "@testcontainers/rabbitmq": "12.2.0",
     "@testcontainers/valkey": "12.2.0",
