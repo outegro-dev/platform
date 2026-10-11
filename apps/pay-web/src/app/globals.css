@@ -5,8 +5,9 @@
  * in the sign face, Manrope for reading and forms. No raw palette values
  * here, only tokens; status colours are the kit's inks (--ok, --warn,
  * --danger, --info) on their soft fills, AA on paper. Motion uses transform
- * and opacity only. The few rules that must outrank the theme (it is
- * unlayered) are at the end.
+ * and opacity only. Every rule sits in a layer: the theme's focus ring is
+ * layered too, so the rules below draw it differently without outranking
+ * the theme.
  */
 
 @layer base {
@@ -680,6 +681,10 @@
     z-index: 1;
     outline: 3px solid var(--ring);
     outline-offset: -3px;
+  }
+  /* The ring goes around the whole row (above), not the name inside it. */
+  .order-title a:focus-visible {
+    outline: none;
   }
   .order-meta {
     overflow: hidden;
@@ -1468,6 +1473,10 @@
     outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
+  /* The ring goes around the currency's box (above), not the hidden radio. */
+  .currency-switch input:focus-visible {
+    outline: none;
+  }
   .currency-switch label:has(input:disabled) {
     cursor: default;
     opacity: 0.6;
@@ -1759,48 +1768,4 @@
     transform: scale(1);
     opacity: 1;
   }
-}
-
-/*
- * The theme's own rules are unlayered and outrank everything above; these
- * few outrank them in turn (higher specificity).
- */
-
-/* The ring goes around the whole order row (above), not the name inside. */
-[data-theme="zine-calm"] .order-title a:focus-visible {
-  outline: none;
-}
-/* The ring goes around the currency's box (above), not the hidden radio. */
-[data-theme="zine-calm"] .currency-switch input:focus-visible {
-  outline: none;
-}
-/* With reduced motion the kit's own buttons keep still on hover and press
-   (motion-safe); the theme's lift and sink do not ask yet, so they are held
-   here. Drop this once zine.css guards them itself. */
-@media (prefers-reduced-motion: reduce) {
-  html[data-theme="zine-calm"]
-    :is(
-      [data-slot="button"],
-      [data-slot="dialog-trigger"],
-      [data-slot="dialog-close"],
-      [data-slot="copy-button"],
-      [data-slot="account-menu-sign-in"]
-    ):is(:hover, :active) {
-    translate: none;
-  }
-}
-/* A button that cannot be used yet (sales not open): plain paper with a
-   dashed edge and no shadow, its words still legible, instead of the
-   faded red slab the kit's opacity would leave. */
-[data-theme="zine-calm"]
-[data-slot="button"]:disabled:not(
-  [data-variant="ghost"],
-  [data-variant="link"]
-) {
-  border-style: dashed;
-  border-color: var(--muted-foreground);
-  background: var(--secondary);
-  box-shadow: none;
-  color: var(--muted-foreground);
-  opacity: 1;
 }

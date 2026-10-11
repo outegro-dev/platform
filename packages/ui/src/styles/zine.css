@@ -17,7 +17,9 @@
  * any element), not the other way round. Dialogs and menus open at <body>,
  * so they take the page's level unless their content carries data-theme.
  * Components keep their API; only tokens and looks change, keyed off their
- * data-slot attributes. Unlayered, so it wins over the kit's utilities.
+ * data-slot attributes. Unlayered, so it wins over the kit's utilities;
+ * the calm focus ring and the surfaces' hard shadow sit in the base and
+ * components layers instead, so an app restyles them from its own layers.
  *
  * Inks pass WCAG AA as text (4.5:1) on --paper, --paper-white, --paper-deep
  * and their own soft fill, in both tones. --spot-red as text is for large
@@ -251,6 +253,9 @@
 /* ─── Tokens: one block for both levels ─── */
 [data-theme^="zine"] {
   color-scheme: light;
+  /* native checkboxes, radios and ranges in ink, not the browser's blue or
+     the primary red (an error on this paper); paper in the dark tone */
+  accent-color: var(--foreground);
 
   /* the eight faces of fonts-zine.ts, each with its fallback face above */
   --font-body:
@@ -348,6 +353,8 @@
 [data-theme^="zine"] [data-tone="dark"],
 [data-theme^="zine"][data-tone="dark"] {
   color-scheme: dark;
+  /* inherited as a colour, so the tone sets it again */
+  accent-color: var(--foreground);
   --background: var(--ink);
   --surface: #26231d;
   --foreground: var(--paper);
@@ -455,7 +462,19 @@
   outline: 3px dashed var(--ring);
   outline-offset: 4px;
 }
-[data-theme="zine-calm"] :focus-visible {
+/* Calm: a solid ring. It sits in the base layer (and outranks the kit's own
+   base ring there), so an app draws it differently from its own layers
+   (around a whole row or box, inside a scroller) with no unlayered rule. */
+@layer base {
+  [data-theme="zine-calm"] :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+/* The kit's parts that switch the browser ring off with utilities (outline-
+   none, which outranks the base layer) take the calm ring back here. */
+[data-theme="zine-calm"]
+:is([data-slot="input"], [data-slot="account-menu-item"]):focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
@@ -653,13 +672,21 @@ input:where(:not([type="checkbox"], [type="radio"])):where(
   [data-tone="dark"] & {
     --press-ink: var(--spot-red);
   }
+  /* lifted under the pointer, pressed in on a click; with reduced motion
+     only the shadow answers and the button keeps its place */
   &:hover {
-    translate: -1px -1px;
     box-shadow: 4px 4px 0 var(--press-ink);
   }
   &:active {
-    translate: 2px 2px;
     box-shadow: 1px 1px 0 var(--press-ink);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover {
+      translate: -1px -1px;
+    }
+    &:active {
+      translate: 2px 2px;
+    }
   }
   &:is([data-variant="outline"], [data-variant="glass"]) {
     background: var(--surface);
@@ -669,6 +696,17 @@ input:where(:not([type="checkbox"], [type="radio"])):where(
     border-color: transparent;
     box-shadow: none;
     translate: none;
+  }
+  /* one that cannot be used (yet): plain paper with a dashed edge and no
+     shadow, its words still legible, instead of the faded red slab the
+     kit's opacity would leave */
+  &:disabled:not([data-variant="ghost"], [data-variant="link"]) {
+    border-style: dashed;
+    border-color: var(--muted-foreground);
+    background: var(--secondary);
+    box-shadow: none;
+    color: var(--muted-foreground);
+    opacity: 1;
   }
   /* a link reads as one before the pointer reaches it */
   &[data-variant="link"] {
@@ -944,10 +982,21 @@ input:where(:not([type="checkbox"], [type="radio"])):where(
   backdrop-filter: none;
 }
 
-/* surfaces: pasted-in cards; inverse is a page printed in reverse */
+/* surfaces: pasted-in cards; inverse is a page printed in reverse. The
+   frame outranks the Surface's border utility. The hard shadow sits in the
+   components layer at the weight of one class, so an app's own components
+   rule or utility for a card (an unread row on red ink, a card inside a
+   card without one) wins with no unlayered override. */
 [data-theme^="zine"] [data-slot="surface"]:is(.bg-surface, [data-tone="dark"]) {
   border: 2px solid var(--border);
-  box-shadow: var(--shadow-hard);
+}
+@layer components {
+  :where([data-theme^="zine"] [data-slot="surface"]):is(
+    .bg-surface,
+    [data-tone="dark"]
+  ) {
+    box-shadow: var(--shadow-hard);
+  }
 }
 [data-theme^="zine"] [data-slot="surface"][data-tone="dark"] {
   background-color: var(--background);

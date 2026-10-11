@@ -2,8 +2,9 @@
  * Account app layout only. Colours, type and components come from
  * @outegro/ui in the calm level of its zine theme (data-theme="zine-calm" on
  * <html>): paper and ink, hard offset shadows, square corners, headlines in
- * the sign face. No raw palette values here, only tokens; the few rules that
- * must outrank the theme (it is unlayered) are at the end.
+ * the sign face. No raw palette values here, only tokens. Every rule sits in
+ * a layer: the theme's focus ring and card shadow are layered too, so the
+ * rules below draw them differently without outranking the theme.
  */
 
 @layer base {
@@ -148,13 +149,12 @@
   .choice input:focus-visible {
     outline: none;
   }
-  /* Native controls in ink: red would read as an error on this paper. */
+  /* Native controls, inked by the theme (accent-color). */
   .choice input,
   .check input {
     width: 18px;
     height: 18px;
     margin: 0;
-    accent-color: var(--foreground);
   }
   /* Button and result share a row when there is room for both; otherwise the
      result always takes the next line. Either way its two lines are reserved,
@@ -615,6 +615,11 @@
     padding: 20px 24px;
     transition: border-color var(--duration-fast) var(--ease-out);
   }
+  /* An unread message is pasted in on red ink; read, it keeps the theme's
+     ink shadow. */
+  .row[data-unread] {
+    box-shadow: 4px 4px 0 var(--primary);
+  }
   /* A read message keeps the note in the button's place and size (the
      theme's buttons are bold, with a 2 px border even when ghost). */
   .row-done {
@@ -663,7 +668,7 @@
     overflow-wrap: anywhere;
   }
   /* In the row's left gutter, level with the title: it can disappear without
-     moving any text. Red ink, like the unread row's shadow (at the end). */
+     moving any text. Red ink, like the unread row's shadow. */
   .unread-dot {
     position: absolute;
     top: 28px;
@@ -975,34 +980,5 @@
     .brand-actions {
       gap: 2px;
     }
-  }
-}
-
-/*
- * The theme's own rules are unlayered and outrank everything above; these
- * few outrank them in turn (higher specificity).
- */
-
-/* An unread message is pasted in on red ink; read, it keeps the ink shadow. */
-[data-theme="zine-calm"] [data-slot="surface"].row[data-unread] {
-  box-shadow: 4px 4px 0 var(--primary);
-}
-/* The ring goes around the option box (above), not the radio inside it. */
-[data-theme="zine-calm"] .choice input:focus-visible {
-  outline: none;
-}
-/* With reduced motion the kit's own buttons keep still on hover and press
-   (motion-safe); the theme's lift and sink do not ask yet, so they are held
-   here. Drop this once zine.css guards them itself. */
-@media (prefers-reduced-motion: reduce) {
-  html[data-theme="zine-calm"]
-    :is(
-      [data-slot="button"],
-      [data-slot="dialog-trigger"],
-      [data-slot="dialog-close"],
-      [data-slot="copy-button"],
-      [data-slot="account-menu-sign-in"]
-    ):is(:hover, :active) {
-    translate: none;
   }
 }
