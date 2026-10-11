@@ -1,0 +1,206 @@
+/*
+ * The reader-statistics note (ConsentBanner): a clipping torn out of the
+ * paper and taped over the bottom corner, clear of the cover's main call.
+ * The torn edge is a clip-path, so the hard shadow is a drop-shadow on the
+ * layer above it, and the tape sits outside both. Tokens only.
+ */
+.consent {
+  position: fixed;
+  /* over the boat bar (30) and the header (40), under dialogs and the gates */
+  z-index: 45;
+  right: 20px;
+  bottom: 20px;
+  width: min(370px, calc(100vw - 32px));
+  rotate: -0.8deg;
+  animation: consent-in 460ms var(--ease-out) 500ms both;
+}
+/* a strip of tape over the torn edge */
+.consent::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -12px;
+  left: 50%;
+  width: 96px;
+  height: 26px;
+  translate: -50% 0;
+  rotate: 3deg;
+  background: var(--tape);
+  box-shadow: 0 1px 2px var(--halftone);
+  clip-path: polygon(
+    3% 10%,
+    12% 0,
+    24% 9%,
+    38% 1%,
+    52% 8%,
+    66% 0,
+    80% 9%,
+    92% 2%,
+    100% 12%,
+    97% 90%,
+    86% 100%,
+    72% 92%,
+    58% 100%,
+    44% 91%,
+    30% 99%,
+    16% 92%,
+    0 96%
+  );
+  pointer-events: none;
+}
+.consent-paper {
+  filter: drop-shadow(5px 6px 0 var(--ink));
+}
+.consent-note {
+  display: grid;
+  gap: 10px;
+  padding: 26px 22px 20px;
+  background:
+    var(--grain) 0 0 / 220px 220px,
+    var(--paper-white);
+  color: var(--ink);
+  /* torn along the top, cut straight with scissors below */
+  clip-path: polygon(
+    0 7px,
+    5% 2px,
+    11% 8px,
+    17% 1px,
+    24% 6px,
+    30% 0,
+    37% 7px,
+    44% 2px,
+    51% 8px,
+    58% 1px,
+    64% 6px,
+    71% 0,
+    78% 7px,
+    84% 2px,
+    91% 8px,
+    96% 3px,
+    100% 6px,
+    100% 100%,
+    0 100%
+  );
+}
+.consent-kicker {
+  justify-self: start;
+  padding: 3px 8px 2px;
+  background: var(--ink);
+  color: var(--paper-white);
+  font-family: var(--font-type);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.consent-title {
+  font-family: var(--font-tabloid);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+/* the thin newsprint serif needs 16px to read comfortably */
+.consent-body {
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.consent-link {
+  color: var(--ink);
+  text-decoration: underline 1.5px var(--spot-red);
+  text-underline-offset: 3px;
+}
+.consent-link:hover {
+  text-decoration-color: currentColor;
+}
+.consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+@keyframes consent-in {
+  from {
+    opacity: 0;
+    translate: 0 48px;
+    rotate: 5deg;
+  }
+}
+
+/* phones: as low as it gets, both answers on one row */
+@media (max-width: 559px) {
+  .consent {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    rotate: -0.5deg;
+  }
+  .consent-note {
+    gap: 8px;
+    padding: 20px 16px 16px;
+  }
+  .consent-kicker {
+    display: none;
+  }
+  .consent-title {
+    font-size: 19px;
+  }
+  .consent-body {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .consent-actions {
+    gap: 12px;
+  }
+  .consent-actions > * {
+    flex: 1 1 auto;
+    padding-inline: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .consent {
+    animation: none;
+  }
+}
+/* without scripting there is nothing to answer with, and nothing counts */
+@media (scripting: none) {
+  .consent {
+    display: none;
+  }
+}
+@media print {
+  .consent {
+    display: none;
+  }
+}
+/* system colours drop the paper and the shadow: keep a plain framed box */
+@media (forced-colors: active) {
+  .consent-paper {
+    filter: none;
+  }
+  .consent-note {
+    clip-path: none;
+    border: 2px solid CanvasText;
+  }
+}
+
+/* «Настройки статистики» on the privacy page */
+.consent-settings {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+}
+.consent-settings-label {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.consent-settings-state {
+  max-width: 68ch;
+  color: var(--muted-foreground);
+  font-size: 16px;
+  line-height: 1.65;
+}

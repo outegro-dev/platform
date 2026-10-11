@@ -1,34 +1,22 @@
-import { clientHeaders } from "@outegro/bff/client";
-import { isSecureRequest, writeSession } from "@outegro/bff/session";
-import { completeSignIn, SSO_COOKIE } from "@outegro/bff/sso";
-import { type NextRequest, NextResponse } from "next/server";
+import { finishSignIn } from "@outegro/bff/sign-in";
+import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
-import { appUrl, ssoClient } from "@/lib/sso";
+import { ssoClient } from "@/lib/sso";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Back from id.outegro.dev: check the state, swap the code for this app's
- * own session (server to server), then return where sign-in started. The
- * pending-sign-in cookie is deleted whatever happens.
+ * own session (server to server), then return where sign-in started. A
+ * failed silent attempt lands there signed out, any other failure on the
+ * error page (see `finishSignIn`).
  */
-export async function GET(request: NextRequest) {
-  const result = await completeSignIn(
-    ssoClient,
-    request.nextUrl.searchParams,
-    request.cookies.get(SSO_COOKIE)?.value,
-    clientHeaders(request.headers, env.CLIENT_IP_SOURCE),
-  );
-  const response = result.ok
-    ? NextResponse.redirect(appUrl(result.returnTo), 303)
-    : NextResponse.redirect(appUrl(`/auth/error?reason=${result.reason}`), 303);
-  if (result.ok) {
-    writeSession(
-      response.cookies,
-      result.tokens,
-      isSecureRequest(request.headers, request.url),
-    );
-  }
-  response.cookies.delete(SSO_COOKIE);
-  return response;
+export function GET(request: NextRequest) {
+  return finishSignIn(request, {
+    client: ssoClient,
+    appUrl: env.APP_URL,
+    fallback: "/",
+    errorPath: (reason) => `/auth/error?reason=${reason}`,
+    clientIpSource: env.CLIENT_IP_SOURCE,
+  });
 }

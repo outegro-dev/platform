@@ -82,5 +82,7 @@
 - Админка видна при любой роли из `platformRoles` (`hasPlatformRole` в `@outegro/contracts/access`); это только подсказка навигации, права проверяют консоль и сервисы.
 - Ссылки на pay. получают `?return=<returnTo>`; pay-web принимает его только для origin из своего списка приложений платформы.
 - `compact` оставляет аватар без имени (когда имя в шапке уже есть); `onSignOutSubmit` может отменить выход (например, офлайн).
+- Ссылка «Войти» — с `rel="nofollow"`: это переадресация на вход, поисковику там нечего индексировать.
+- Темы и приложения стилизуют части меню по `data-slot`, а не по утилитам и ролям: `account-menu-trigger`, `-avatar`, `-name`, `-content`, `-item`, `-separator`, `-sign-in`. У заглушки (`account-menu-placeholder`) те же `-avatar` и `-name`, поэтому она меняется вместе с кнопкой.
 
 Проверка: `pnpm --filter @outegro/ui typecheck`, `pnpm --filter @outegro/ui test`; визуально — `/design-system` в landing-web.

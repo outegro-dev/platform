@@ -209,3 +209,86 @@ test.describe("sign-in through id.outegro.dev", () => {
     await expect(page).toHaveURL(`${APP}/profile`);
   });
 });
+
+test.describe("silent sign-in for a visitor signed in at id.outegro.dev", () => {
+  /** What id.outegro.dev leaves on the parent domain while its session lives. */
+  const hint = { name: "og_hint", value: "1", domain: "localhost", path: "/" };
+  const persona = {
+    name: "e2e_persona",
+    value: "free",
+    domain: "localhost",
+    path: "/",
+  };
+  const silentCookie = async (page: Page) =>
+    (await page.context().cookies(APP)).find((c) => c.name === "og_silent")
+      ?.value;
+
+  test("the first visit signs in without a click and stays on the page", async ({
+    page,
+    context,
+    game,
+  }) => {
+    await context.addCookies([hint, persona]);
+    const authorize = page.waitForRequest((request) =>
+      request.url().startsWith(`${PLATFORM}/authorize`),
+    );
+    await page.goto("/");
+    expect(new URL((await authorize).url()).searchParams.get("prompt")).toBe(
+      "none",
+    );
+    await expect(page).toHaveURL(`${APP}/`);
+    await expect(page.getByTestId("player-chip")).toContainText("Sailor 4821");
+    await game.current();
+    expect(await silentCookie(page)).toBe("silent");
+  });
+
+  test("without a session there the page opens signed out, and only one attempt is made", async ({
+    page,
+    context,
+  }) => {
+    await context.addCookies([hint]);
+    let asked = 0;
+    page.on("request", (request) => {
+      if (request.url().startsWith(`${PLATFORM}/authorize`)) asked += 1;
+    });
+    await page.goto("/leaderboard");
+    await expect(page).toHaveURL(`${APP}/leaderboard`);
+    await expect(page.getByTestId("your-place")).toContainText(
+      "Sign in to see your rank",
+    );
+    expect(await silentCookie(page)).toBe("tried");
+    await page.reload();
+    await expect(page.getByTestId("your-place")).toBeVisible();
+    expect(asked).toBe(1);
+  });
+
+  test("signing out here is not undone by the session at id.outegro.dev", async ({
+    page,
+    context,
+    game,
+  }) => {
+    await context.addCookies([hint, persona]);
+    await page.goto("/");
+    await expect(page.getByTestId("player-chip")).toContainText("Sailor 4821");
+    await game.current();
+    await page.getByRole("button", { name: /account and apps$/ }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
+    await expect(page.getByTestId("sign-in-cta")).toBeVisible();
+    expect(await silentCookie(page)).toBe("out");
+    await page.reload();
+    await expect(page.getByTestId("sign-in-cta")).toBeVisible();
+  });
+
+  test("crawlers are never sent anywhere", async ({ page, context }) => {
+    await context.addCookies([hint]);
+    const response = await page.request.get("/", {
+      maxRedirects: 0,
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        accept: "text/html",
+      },
+    });
+    expect(response.status()).toBe(200);
+  });
+});

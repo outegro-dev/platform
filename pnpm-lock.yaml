@@ -746,6 +746,9 @@ importers:
 
   apps/landing-web:
     dependencies:
+      '@outegro/bff':
+        specifier: workspace:*
+        version: link:../../packages/bff
       '@outegro/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -773,6 +776,9 @@ importers:
       three:
         specifier: 0.186.1
         version: 0.186.1
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
     devDependencies:
       '@tailwindcss/postcss':
         specifier: 4.3.3
@@ -1348,6 +1354,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@fontsource/caveat':
+        specifier: 5.3.0
+        version: 5.3.0
       '@fontsource/cormorant-garamond':
         specifier: 5.3.0
         version: 5.3.0
@@ -1355,6 +1364,27 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@fontsource/manrope':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/old-standard-tt':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/playfair-display':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/pt-mono':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/rubik-dirt':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/rubik-mono-one':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/ruslan-display':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/unbounded':
         specifier: 5.3.0
         version: 5.3.0
       '@outegro/contracts':
@@ -2014,6 +2044,9 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
+  '@fontsource/caveat@5.3.0':
+    resolution: {integrity: sha512-eHTfzQxFSW9ABERRLNruHoNJmKed2J7pqTUc5lp4a4POMgXGKpxmWj3d9Hz10kmAg6iuTTLe6UagbA4bnsmfQw==}
+
   '@fontsource/cormorant-garamond@5.3.0':
     resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
 
@@ -2022,6 +2055,27 @@ packages:
 
   '@fontsource/manrope@5.3.0':
     resolution: {integrity: sha512-obJ1Dv3+uCA6HlHgW8u4BGYxJR9In2HW7gjJhlflEvkrj1X1iSEwu0fToL+JYGC/FEKFfIz1sBuPduvcL2gIAA==}
+
+  '@fontsource/old-standard-tt@5.3.0':
+    resolution: {integrity: sha512-9cXU8XWqw4Pz9/9Lf6Otf1GPc0y17d96/nP9tzs4PLlq1IFMIxXszL3OLldaoyAn5YGr1r+tIXr0rlbgIeCYrg==}
+
+  '@fontsource/playfair-display@5.3.0':
+    resolution: {integrity: sha512-uJSABalvdWc10fEPppQjQocamT21LEyRfzzWfRfqbkPz+sRv+kKpYDKyluBUskvJREkJTos9epj1WjQROGu99Q==}
+
+  '@fontsource/pt-mono@5.3.0':
+    resolution: {integrity: sha512-AKXUTYCdv53jAJyzk3AEns6PdOvL3u+AD9Y4Ms6BFFRC7WCqYOvywujYT3gs00sMBIPs/J8iY7SQljk3wRfovw==}
+
+  '@fontsource/rubik-dirt@5.3.0':
+    resolution: {integrity: sha512-EinXO2ePd/Bcn4k+qwr6q6MC/XGoCRsWJGllkth8SU3GUtJbVLoEF1Y7bpKku1EpcBhR9LDdhW2kJCQb5CcD9Q==}
+
+  '@fontsource/rubik-mono-one@5.3.0':
+    resolution: {integrity: sha512-ReaCXaIKJAFdJAUaw8Gq3qXC9od7JotgqZFsVnwp06KqnBFtrX9qdeUvBdL+7avyUTic20gmzSH0NtEC6xAbDQ==}
+
+  '@fontsource/ruslan-display@5.3.0':
+    resolution: {integrity: sha512-D9h3y6zytztVCiqwpepI0rWL7rNvT9uCIfMj9YTKgSslTHc9uwy0B4M6jwf/2077Rancdvd5RADxDzywMeUq8g==}
+
+  '@fontsource/unbounded@5.3.0':
+    resolution: {integrity: sha512-pPD6hsTnjoQRr6pCsqMHbHBfauB4LZygCNQEUJHu+CO2wzDFHqELEFSG7sTwo5Z5Gr4q3OK0fIILOXBJDv6lcw==}
 
   '@formatjs/fast-memoize@3.1.7':
     resolution: {integrity: sha512-zXfhLpvA6T7+efdt9JLbBwZ00tT7NsBMDVnDu8rpHeNNv8KfRZAMo2gkG0k9lK/Nzc//3kJ9pImsfuJxk3KhUA==}
@@ -6816,11 +6870,27 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
+  '@fontsource/caveat@5.3.0': {}
+
   '@fontsource/cormorant-garamond@5.3.0': {}
 
   '@fontsource/jetbrains-mono@5.3.0': {}
 
   '@fontsource/manrope@5.3.0': {}
+
+  '@fontsource/old-standard-tt@5.3.0': {}
+
+  '@fontsource/playfair-display@5.3.0': {}
+
+  '@fontsource/pt-mono@5.3.0': {}
+
+  '@fontsource/rubik-dirt@5.3.0': {}
+
+  '@fontsource/rubik-mono-one@5.3.0': {}
+
+  '@fontsource/ruslan-display@5.3.0': {}
+
+  '@fontsource/unbounded@5.3.0': {}
 
   '@formatjs/fast-memoize@3.1.7': {}
 

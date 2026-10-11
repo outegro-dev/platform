@@ -43,7 +43,6 @@ export function ContactDialog({
         <DialogTitle>{t("dialogTitle")}</DialogTitle>
         <DialogDescription>{t("dialogDescription")}</DialogDescription>
         {children}
-        <p className="contact-location">{t("location")}</p>
       </DialogContent>
     </Dialog>
   );

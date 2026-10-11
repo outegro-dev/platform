@@ -1,8 +1,24 @@
+import { silentSignIn } from "@outegro/bff/proxy";
+import { ACCESS_COOKIE, REFRESH_COOKIE } from "@outegro/bff/session";
 import { type NextRequest, NextResponse } from "next/server";
+import { env } from "@/lib/env";
+import { sso } from "@/lib/sso";
 
-// Strict CSP: scripts only with this request's nonce (Next.js applies it to its own tags).
-// Inline style attributes are unavoidable with React/Radix, so styles allow 'unsafe-inline'.
+/**
+ * Every page: sign in silently a visitor already signed in at
+ * id.outegro.dev (unless SSO is off), and set a strict CSP. Pages never
+ * read the session (the header asks /api/account, which also refreshes
+ * it), so the proxy calls no service and the HTML is the same for
+ * everyone; only a browser without any session here can be sent to sign in.
+ */
 export function proxy(request: NextRequest) {
+  const sessionless =
+    !request.cookies.has(ACCESS_COOKIE) && !request.cookies.has(REFRESH_COOKIE);
+  const silent =
+    sso && sessionless ? silentSignIn(request, "anonymous", sso.appUrl) : null;
+  if (silent) return silent;
+  // Strict CSP: scripts only with this request's nonce (Next.js applies it to its own tags).
+  // Inline style attributes are unavoidable with React/Radix, so styles allow 'unsafe-inline'.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const dev = process.env.NODE_ENV === "development";
   // Only upgrade when served over TLS (Traefik sets x-forwarded-proto);
@@ -10,13 +26,20 @@ export function proxy(request: NextRequest) {
   const https =
     request.headers.get("x-forwarded-proto") === "https" ||
     request.nextUrl.protocol === "https:";
+  // Google hosts only once GTM_ID is set. The nonced bootstrap loads GTM and
+  // 'strict-dynamic' trusts what it injects; the script host is for browsers
+  // without 'strict-dynamic', the rest is where GA4 sends its hits.
+  const gtmScript = env.GTM_ID ? " https://www.googletagmanager.com" : "";
+  const gtmHits = env.GTM_ID
+    ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com"
+    : "";
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${gtmScript}${dev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob:${gtmHits}`,
     "font-src 'self'",
-    `connect-src 'self'${dev ? " ws: wss:" : ""}`,
+    `connect-src 'self'${gtmHits}${dev ? " ws: wss:" : ""}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",

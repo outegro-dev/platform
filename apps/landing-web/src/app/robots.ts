@@ -5,7 +5,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/design-system", "/health"],
+      // The sign-in round trip and the account API are for people, and
+      // lead crawlers off to id.outegro.dev's sign-in pages.
+      disallow: ["/design-system", "/health", "/auth/", "/api/"],
     },
     sitemap: "https://outegro.dev/sitemap.xml",
   };

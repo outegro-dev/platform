@@ -22,7 +22,8 @@
       "battleship": "Back to Battleship",
       "edu": "Back to Education",
       "id": "Back to your account",
-      "admin": "Back to the admin console"
+      "admin": "Back to the admin console",
+      "site": "Back to outegro.dev"
     }
   },
   "footer": {

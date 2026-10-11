@@ -39,5 +39,14 @@ export default defineConfig({
     url: "http://localhost:3100/health",
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
+    // The suite checks the site as it runs without accounts and statistics:
+    // blank, these turn SSO and GTM off whatever the shell has set.
+    env: {
+      ...process.env,
+      APP_URL: "",
+      ID_URL: "",
+      AUTH_API_URL: "",
+      GTM_ID: "",
+    } as Record<string, string>,
   },
 });

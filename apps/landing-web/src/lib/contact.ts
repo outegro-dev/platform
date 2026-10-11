@@ -22,4 +22,7 @@ export const contacts = [
   },
 ] as const;
 
+/** A 30-minute intro call: Calendly with the owner's free slots. */
+export const calendly = "https://calendly.com/nick-lukashik/30min";
+
 export type ContactKey = (typeof contacts)[number]["key"];

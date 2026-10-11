@@ -1,7 +1,7 @@
 "use server";
 
 import { BackendError, BackendUnavailable } from "@outegro/bff/backend";
-import { clearSession, REFRESH_COOKIE } from "@outegro/bff/session";
+import { REFRESH_COOKIE } from "@outegro/bff/session";
 import { setLocale } from "@outegro/i18n/actions";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { authApi, type Me, notificationsApi, withSession } from "@/lib/api";
 import { type UserDetails, userDetailsSignal } from "@/lib/passkeys";
+import { forgetSession } from "@/lib/session";
 
 export type FormState = {
   status: "idle" | "saved" | "conflict" | "error" | "invalid";
@@ -164,7 +165,11 @@ export async function savePreferences(
   return { status: "saved" };
 }
 
-/** Ends this browser's session on the server, then forgets the cookies. */
+/**
+ * Ends this browser's session on the server, then forgets the cookies and
+ * the platform's sign-in hint: the other apps stop signing in silently.
+ * Their own sessions stay until they end there.
+ */
 export async function signOut() {
   const jar = await cookies();
   const refreshToken = jar.get(REFRESH_COOKIE)?.value;
@@ -174,6 +179,6 @@ export async function signOut() {
       body: { refreshToken },
     }).catch(() => undefined);
   }
-  clearSession(jar);
+  await forgetSession();
   redirect("/login");
 }

@@ -27,14 +27,14 @@ const config: NextConfig = {
   outputFileTracingRoot: root,
   turbopack: { root },
   reactCompiler: true,
-  transpilePackages: ["@outegro/ui", "@outegro/i18n"],
+  transpilePackages: ["@outegro/ui", "@outegro/i18n", "@outegro/bff"],
   poweredByHeader: false,
   devIndicators: false,
-  // Posters are 2x renders of the 3D scenes; 90 keeps the metal crisp.
-  // WebP only: encoding AVIF from these posters pushed the server past its
-  // memory limit in production (OOM kills) for a few percent in size.
-  images: { formats: ["image/webp"], qualities: [75, 90] },
-  // A fresh pod optimises every poster variant on first request: one libvips
+  // One quality for every picture (the cover, screenshots, paper cut-outs).
+  // WebP only: encoding AVIF pushed the server past its memory limit in
+  // production (OOM kills) for a few percent in size.
+  images: { formats: ["image/webp"], qualities: [75] },
+  // A fresh pod optimises every image variant on first request: one libvips
   // thread per image, no operation cache, streamed decoding. The pod peaked
   // at 504 of its 512 MiB in production with the defaults (01.10.2026).
   experimental: {
@@ -43,7 +43,15 @@ const config: NextConfig = {
     imgOptSequentialRead: true,
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Pages stay public; the SSO round trip carries per-visitor cookies
+      // and state, so no shared cache may keep any of it.
+      {
+        source: "/auth/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+    ];
   },
 };
 export default createNextIntlPlugin()(config);

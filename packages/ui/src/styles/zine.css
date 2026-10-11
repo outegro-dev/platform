@@ -1,0 +1,734 @@
+/*
+ * "Zine" theme for @outegro/ui: an old cheap magazine instead of a gallery.
+ * Yellowed newsprint with grain, ink-black outlines and hard offset shadows,
+ * spot red / blue / yellow and a handful of odd typefaces. Two levels:
+ *
+ *   data-theme="zine"       loud, the portfolio landing: crooked caps
+ *                           buttons, tilted stamps and dialogs, typewriter
+ *                           inputs, springy easing.
+ *   data-theme="zine-calm"  calm, for product apps: the same paper, palette
+ *                           and headline faces, a readable body face, square
+ *                           controls with hard shadows that stay straight,
+ *                           ordinary inputs and easing.
+ *
+ * Opt in per app: import this file after styles.css, put `zineFontVariables`
+ * from @outegro/ui/fonts-zine on <html> next to `fontVariables` and set
+ * data-theme there. A calm island may sit inside a loud page (data-theme on
+ * any element), not the other way round. Dialogs and menus open at <body>,
+ * so they take the page's level unless their content carries data-theme.
+ * Components keep their API; only tokens and looks change, keyed off their
+ * data-slot attributes. Unlayered, so it wins over the kit's utilities.
+ *
+ * Inks pass WCAG AA as text (4.5:1) on --paper, --paper-white, --paper-deep
+ * and their own soft fill, in both tones. --spot-red as text is for large
+ * type only (3.9:1 on paper); small red text takes --danger.
+ */
+
+/* ─── Tokens: one block for both levels ─── */
+[data-theme^="zine"] {
+  color-scheme: light;
+
+  /* the eight faces of fonts-zine.ts */
+  --font-body:
+    var(--og-body-cyrillic), var(--og-body-latin), "Times New Roman", serif;
+  --font-mast: var(--og-mast-cyrillic), var(--og-mast-latin), Impact, serif;
+  --font-sign:
+    var(--og-sign-cyrillic), var(--og-sign-latin), "Arial Black", sans-serif;
+  --font-tabloid:
+    var(--og-tabloid-cyrillic), var(--og-tabloid-latin), Georgia, serif;
+  --font-loud:
+    var(--og-loud-cyrillic), var(--og-loud-latin), "Arial Black", sans-serif;
+  --font-stamp:
+    var(--og-stamp-cyrillic), var(--og-stamp-latin), "Arial Black", sans-serif;
+  --font-type:
+    var(--og-type-cyrillic), var(--og-type-latin), "Courier New", monospace;
+  --font-hand: var(--og-hand-cyrillic), var(--og-hand-latin), cursive;
+  /* retired faces: the names stay, set in the closest face that is left */
+  --font-kitsch: var(--font-tabloid);
+  --font-drip: var(--font-stamp);
+  --font-glitch: var(--font-stamp);
+  --font-pixel: var(--font-loud);
+  --font-marker: var(--font-hand);
+
+  /* the kit's three roles, re-cast */
+  --font-sans: var(--font-body);
+  --font-display: var(--font-tabloid);
+  --font-mono: var(--font-type);
+
+  --paper: #efe4c6;
+  --paper-deep: #e3d3a8;
+  --paper-white: #fbf6e8;
+  --ink: #1b1915;
+  --ink-soft: #4b4334;
+  /* just deep enough for paper-white text on it (4.6:1) */
+  --spot-red: #cf3528;
+  --spot-red-deep: #a92619;
+  --spot-blue: #2360b5;
+  --spot-yellow: #f5c518;
+  --spot-green: #2d8a4a;
+  --spot-pink: #f28fb1;
+  --tape: #f3e7a9b3;
+  --halftone: #1b191524;
+
+  --background: var(--paper);
+  --surface: var(--paper-white);
+  --foreground: var(--ink);
+  --primary: var(--spot-red);
+  --primary-hover: var(--spot-red-deep);
+  --primary-foreground: var(--paper-white);
+  --secondary: var(--paper-deep);
+  --muted: var(--paper-deep);
+  --muted-foreground: var(--ink-soft);
+  --border: var(--ink);
+  --border-strong: var(--ink);
+  --ring: var(--spot-blue);
+  --selection: var(--spot-yellow);
+  --destructive: var(--spot-red-deep);
+  /* status inks: the spot colours taken down to AA as small text */
+  --ok: #226838;
+  --warn: #7e5315;
+  --danger: var(--spot-red-deep);
+  --info: #215aaa;
+  --success: var(--ok);
+  --warning: var(--warn);
+  --live: var(--ok);
+  /* soft fills: the spot colour over paper-white; warn is a highlighter */
+  --ok-soft: #dee7d2;
+  --warn-soft: #f9e59f;
+  --danger-soft: #f6dfd1;
+  --info-soft: #dde1e1;
+
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-pill: 2px;
+  --shadow-soft: 5px 5px 0 var(--ink);
+  --shadow-hard: 4px 4px 0 var(--ink);
+  --ease-out: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* grain + a faint halftone screen, drawn once and tiled */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .26 0 0 0 0 .14 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --dots: radial-gradient(var(--halftone) 0.9px, transparent 1.2px);
+}
+
+[data-theme^="zine"] [data-tone="dark"],
+[data-theme^="zine"][data-tone="dark"] {
+  color-scheme: dark;
+  --background: var(--ink);
+  --surface: #26231d;
+  --foreground: var(--paper);
+  --primary: var(--spot-yellow);
+  --primary-hover: #ffd84a;
+  --primary-foreground: var(--ink);
+  --secondary: #2e2a22;
+  --muted: #2e2a22;
+  --muted-foreground: #c9bb98;
+  --border: var(--paper);
+  --border-strong: var(--paper);
+  /* spot blue is 2.9:1 on ink: the ring turns yellow at night */
+  --ring: var(--spot-yellow);
+  --ok: #8fd694;
+  --warn: var(--spot-yellow);
+  --danger: #f2877a;
+  --info: #9cc3dd;
+  --success: var(--ok);
+  --warning: var(--warn);
+  --live: var(--ok);
+  --ok-soft: #353c2e;
+  --warn-soft: #433a1c;
+  --danger-soft: #43312a;
+  --info-soft: #373938;
+  --shadow-soft: 5px 5px 0 var(--spot-red);
+  --shadow-hard: 4px 4px 0 var(--spot-red);
+  --halftone: #efe4c61f;
+}
+
+/* calm: a sans body that reads for an hour, squared corners, no bounce */
+[data-theme="zine-calm"] {
+  --font-body:
+    var(--og-manrope-cyrillic, "Manrope"), var(--og-manrope-latin, "Manrope"),
+    ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-pill: 3px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ─── Page ─── */
+[data-theme^="zine"] body {
+  background-color: var(--background);
+  background-image: var(--grain), var(--dots);
+  background-size:
+    220px 220px,
+    5px 5px;
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: 17px;
+}
+/* 16/1.6 sans: comfortable for long reading at a 60–75 character measure */
+[data-theme="zine-calm"] body,
+[data-theme="zine-calm"]:not(html) {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+[data-theme^="zine"] ::selection {
+  background: var(--spot-yellow);
+  color: var(--ink);
+}
+
+/* the kit's editorial accent: tabloid italic in spot red, no silver */
+[data-theme^="zine"] .og-accent {
+  font-family: var(--font-tabloid);
+  font-style: italic;
+  font-weight: 900;
+  background: none;
+  color: var(--spot-red);
+  -webkit-text-fill-color: currentColor;
+  text-shadow: 3px 2px 0 color-mix(in srgb, var(--spot-blue) 55%, transparent);
+}
+[data-theme^="zine"] .og-eyebrow {
+  font-family: var(--font-type);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+[data-theme^="zine"] [data-tone="dark"] .og-eyebrow {
+  color: var(--muted-foreground);
+}
+[data-theme^="zine"] .og-glass {
+  background: var(--paper-white);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-hard);
+  /* unprefixed only: the CSS build adds -webkit- (see .og-glass in index.css) */
+  backdrop-filter: none;
+}
+/* over a dark section the glass goes dark too, so its light text stays legible */
+[data-theme^="zine"] [data-tone="dark"] .og-glass,
+[data-theme^="zine"] [data-tone="dark"].og-glass,
+[data-theme^="zine"][data-tone="dark"] .og-glass {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="zine"]
+  :focus-visible:where(
+    :not([data-theme="zine-calm"], [data-theme="zine-calm"] *)
+  ) {
+  outline: 3px dashed var(--ring);
+  outline-offset: 4px;
+}
+[data-theme="zine-calm"] :focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/*
+ * ─── Loud level ───
+ * Every rule skips calm islands, so a zine-calm block on a loud page is not
+ * tilted from above. The skip is in :where(), so it adds no specificity.
+ */
+
+/*
+ * buttons: cut out of cardboard, glued on crooked. Every kit Button, whatever
+ * slot its wrapper gives it (a dialog trigger, a copy button, sign-in).
+ */
+[data-theme="zine"]
+:is(
+  [data-slot="button"],
+  [data-slot="dialog-trigger"],
+  [data-slot="dialog-close"],
+  [data-slot="copy-button"],
+  [data-slot="account-menu-sign-in"]
+):where(:not([data-theme="zine-calm"] *)) {
+  --tilt: -1.4deg;
+  border-radius: 0;
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow-hard);
+  font-family: var(--font-loud);
+  font-weight: 400;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  rotate: var(--tilt);
+  transition:
+    rotate 220ms var(--ease-out),
+    translate 140ms var(--ease-out),
+    box-shadow 140ms var(--ease-out),
+    background-color 140ms;
+
+  &:nth-of-type(2n) {
+    --tilt: 1.2deg;
+  }
+  &:hover {
+    rotate: calc(var(--tilt) * -1.6);
+    translate: -2px -2px;
+    box-shadow: 7px 7px 0 var(--ink);
+  }
+  &:active {
+    translate: 3px 3px;
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+  &:where(.bg-secondary, .border) {
+    background: var(--paper-white);
+    color: var(--ink);
+  }
+  [data-tone="dark"] & {
+    border-color: var(--paper);
+    box-shadow: 4px 4px 0 var(--spot-red);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* badges: stamped labels */
+[data-theme="zine"]
+[data-slot="badge"]:where(:not([data-theme="zine-calm"] *)) {
+  border-radius: 0;
+  border: 1.5px solid currentColor;
+  background: var(--paper-white);
+  color: var(--ink);
+  font-family: var(--font-type);
+  font-size: 12px;
+  rotate: -1.5deg;
+}
+[data-theme="zine"]
+  li:nth-child(3n + 1)
+  > [data-slot="badge"]:where(:not([data-theme="zine-calm"] *)) {
+  rotate: 2deg;
+  background: var(--spot-yellow);
+}
+[data-theme="zine"]
+  li:nth-child(3n + 2)
+  > [data-slot="badge"]:where(:not([data-theme="zine-calm"] *)) {
+  rotate: -3deg;
+}
+/* the li form outranks the yellow of every third badge in a list, which
+   would leave paper lettering on yellow (1.3:1) */
+[data-theme="zine"]
+  [data-tone="dark"]
+  [data-slot="badge"]:where(:not([data-theme="zine-calm"] *)),
+[data-theme="zine"]
+  [data-tone="dark"]
+  li
+  > [data-slot="badge"]:where(:not([data-theme="zine-calm"] *)) {
+  background: transparent;
+  color: var(--paper);
+}
+
+/* dialogs: a torn-out page */
+[data-theme="zine"]
+[role="dialog"]:where(
+  :not([data-theme="zine-calm"], [data-theme="zine-calm"] *)
+) {
+  border-radius: 0;
+  border: 2.5px solid var(--ink);
+  background: var(--paper-white);
+  box-shadow: 10px 10px 0 var(--ink);
+  rotate: -0.8deg;
+  font-family: var(--font-body);
+}
+
+/* inputs: typewriter on a ruled line */
+[data-theme="zine"]
+input:where(:not([type="checkbox"], [type="radio"])):where(
+  :not([data-theme="zine-calm"] *)
+) {
+  border-radius: 0;
+  border: 0;
+  border-bottom: 2px dashed var(--border);
+  background: transparent;
+  font-family: var(--font-type);
+}
+
+/* typewritten captions on tabs and labels, the sign face on small headings */
+[data-theme="zine"]
+:is([data-slot="tabs-trigger"], [data-slot="label"]):where(
+  :not([data-theme="zine-calm"] *)
+) {
+  font-family: var(--font-type);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+[data-theme="zine"]
+  :is([data-slot="notice-title"], [data-slot="accordion-trigger"]):where(
+    :not([data-theme="zine-calm"] *)
+  ) {
+  font-family: var(--font-sign);
+  font-weight: 900;
+}
+/* notes pasted in a little crooked, state icons stamped at an angle */
+[data-theme="zine"]
+[data-slot="notice"]:where(:not([data-theme="zine-calm"] *)) {
+  rotate: -0.6deg;
+}
+[data-theme="zine"]
+  [data-slot="state-panel-icon"]:where(:not([data-theme="zine-calm"] *)) {
+  rotate: -5deg;
+}
+/* a flip-book spinner */
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme="zine"]
+    [data-slot="spinner"]:where(:not([data-theme="zine-calm"] *)) {
+    animation-timing-function: steps(8, end);
+  }
+}
+
+/* Both levels: the kit's invisible 44 px touch extension (an absolute
+   ::after on compact controls) starts at the padding box and assumes a 1 px
+   border; the cardboard borders are 2 to 2.5 px, so it reaches out by the
+   difference too. */
+[data-theme^="zine"]
+:is(
+  [data-slot="button"],
+  [data-slot="dialog-trigger"],
+  [data-slot="dialog-close"],
+  [data-slot="copy-button"],
+  [data-slot="account-menu-sign-in"],
+  [data-slot="toggle-group-item"]
+)::after {
+  margin: -1.5px;
+}
+
+/* ─── Calm level ─── */
+
+/* buttons: the same cardboard, glued on straight, in sentence case */
+[data-theme="zine-calm"]
+:is(
+  [data-slot="button"],
+  [data-slot="dialog-trigger"],
+  [data-slot="dialog-close"],
+  [data-slot="copy-button"],
+  [data-slot="account-menu-sign-in"]
+) {
+  --press-ink: var(--ink);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border);
+  box-shadow: 3px 3px 0 var(--press-ink);
+  font-weight: 700;
+  transition:
+    translate var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast);
+
+  [data-tone="dark"] & {
+    --press-ink: var(--spot-red);
+  }
+  &:hover {
+    translate: -1px -1px;
+    box-shadow: 4px 4px 0 var(--press-ink);
+  }
+  &:active {
+    translate: 2px 2px;
+    box-shadow: 1px 1px 0 var(--press-ink);
+  }
+  &:is([data-variant="outline"], [data-variant="glass"]) {
+    background: var(--surface);
+    color: var(--foreground);
+  }
+  &:is([data-variant="ghost"], [data-variant="link"]) {
+    border-color: transparent;
+    box-shadow: none;
+    translate: none;
+  }
+  /* a link reads as one before the pointer reaches it */
+  &[data-variant="link"] {
+    text-decoration-line: underline;
+    text-decoration-color: var(--spot-red);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* badges: square labels that keep their variant */
+[data-theme="zine-calm"] [data-slot="badge"] {
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-family: var(--font-type);
+  font-weight: 400;
+}
+[data-theme="zine-calm"] [data-slot="badge"].border {
+  background: var(--surface);
+}
+[data-theme="zine-calm"] [data-slot="badge"].bg-primary {
+  border-color: var(--primary);
+}
+[data-theme="zine-calm"] [data-slot="badge"].bg-secondary {
+  border-style: dashed;
+  border-color: var(--muted-foreground);
+}
+
+/* dialogs: a straight page with a hard shadow */
+[data-theme="zine-calm"] [data-slot="dialog-content"],
+[data-slot="dialog-content"][data-theme="zine-calm"] {
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--ink);
+  background: var(--paper-white);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+[data-theme="zine-calm"] [data-slot="dialog-title"] {
+  font-family: var(--font-sign);
+  font-weight: 900;
+  font-size: clamp(22px, 4vw, 28px);
+  letter-spacing: -0.02em;
+}
+
+/* inputs: a boxed field with a pressed-in edge */
+[data-theme="zine-calm"] [data-slot="input"] {
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  box-shadow: inset 2px 2px 0 var(--halftone);
+}
+[data-theme="zine-calm"] [data-slot="input"][aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: inset 2px 2px 0 var(--danger-soft);
+}
+
+/* the language switch: a heavier mark under the chosen language */
+[data-theme="zine-calm"]
+  [data-slot="language-switch"]
+  [aria-pressed="true"]
+  > span {
+  border-bottom-width: 2px;
+  border-color: var(--spot-red);
+}
+
+/* headlines in the sign face; base layer, so a font utility still wins */
+@layer base {
+  [data-theme="zine-calm"] :is(h1, h2) {
+    font-family: var(--font-sign);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ─── Both levels: the rest of the kit ─── */
+
+/* account menu: a press pass and a card from the index box */
+[data-theme^="zine"]
+:is(
+  [data-slot="account-menu-trigger"],
+  [data-slot="account-menu-placeholder"]
+) {
+  border-radius: var(--radius-sm);
+}
+/* the avatar is a square in the sign face, and so is its place in waiting */
+[data-theme^="zine"]
+:is(
+  [data-slot="account-menu-avatar"],
+  [data-slot="account-menu-placeholder"] [data-slot="account-menu-name"]
+) {
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sign);
+  font-weight: 900;
+}
+[data-theme^="zine"] [data-slot="account-menu-content"] {
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--ink);
+  background: var(--paper-white);
+  box-shadow: var(--shadow-soft);
+  font-family: var(--font-sans);
+}
+[data-theme^="zine"] [data-slot="account-menu-item"] {
+  border-radius: 0;
+}
+[data-theme^="zine"] [data-slot="account-menu-item"][data-highlighted] {
+  background: var(--spot-yellow);
+  color: var(--ink);
+}
+[data-theme^="zine"] [data-slot="account-menu-separator"] {
+  height: 0;
+  background: none;
+  border-top: 1.5px dashed var(--ink);
+}
+
+/* language switch: square, so its focus ring is too */
+[data-theme^="zine"] [data-slot="language-switch"] button {
+  border-radius: 0;
+}
+
+/* tabs: a red rule under the open one; a chosen pill is printed in reverse */
+[data-theme^="zine"] [data-slot="tabs-trigger"] {
+  border-radius: 0;
+}
+[data-theme^="zine"] [data-slot="tabs-list"][data-variant="line"] {
+  box-shadow: inset 0 -2px 0 var(--border);
+}
+[data-theme^="zine"]
+  [data-slot="tabs-list"][data-variant="line"]
+  [data-slot="tabs-trigger"] {
+  border-bottom-width: 4px;
+}
+[data-theme^="zine"]
+  [data-slot="tabs-list"][data-variant="line"]
+  [data-slot="tabs-trigger"]:is([data-state="active"], [aria-current="page"]) {
+  border-bottom-color: var(--spot-red);
+  color: var(--foreground);
+}
+[data-theme^="zine"]
+  [data-slot="tabs-list"][data-variant="pill"]
+  [data-slot="tabs-trigger"] {
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+[data-theme^="zine"]
+  [data-slot="tabs-list"][data-variant="pill"]
+  [data-slot="tabs-trigger"]:is([data-state="active"], [aria-current="page"]) {
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* toggles: outlined chips; the chosen one is printed in reverse */
+[data-theme^="zine"] [data-slot="toggle-group-item"] {
+  border-radius: 0;
+}
+[data-theme^="zine"]
+  [data-slot="toggle-group"][data-variant="chip"]
+  > [data-slot="toggle-group-item"] {
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+}
+[data-theme^="zine"] [data-slot="toggle-group"][data-variant="segmented"] {
+  border-radius: 0;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--border);
+}
+[data-theme^="zine"]
+  [data-slot="toggle-group"]
+  > [data-slot="toggle-group-item"][data-state="on"] {
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* the kit draws these rings inside lists that scroll or clip: keep them there */
+[data-theme^="zine"]
+:is(
+  [data-slot="tabs-list"][data-variant="line"] [data-slot="tabs-trigger"],
+  [data-slot="account-menu-item"]
+):focus-visible {
+  outline-offset: -5px;
+}
+[data-theme^="zine"]
+  :is(
+    [data-slot="tabs-list"][data-variant="pill"] [data-slot="tabs-trigger"],
+    [data-slot="toggle-group"][data-variant="segmented"]
+      [data-slot="toggle-group-item"]
+  ):focus-visible {
+  outline-offset: 1px;
+}
+
+/* progress: an inked frame and a hatched fill */
+[data-theme^="zine"] [data-slot="progress"] {
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 2px var(--border),
+    3px 3px 0 2px var(--border);
+}
+[data-theme^="zine"] [data-slot="progress-indicator"] {
+  border-radius: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 4px,
+    color-mix(in srgb, var(--ink) 22%, transparent) 4px 6px
+  );
+}
+
+/* notices: a boxed note with a shadow in its own ink */
+[data-theme^="zine"] [data-slot="notice"] {
+  border-radius: 0;
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border);
+}
+[data-theme^="zine"] [data-slot="notice"][data-tone="info"] {
+  box-shadow: 4px 4px 0 var(--info);
+}
+[data-theme^="zine"] [data-slot="notice"][data-tone="success"] {
+  box-shadow: 4px 4px 0 var(--ok);
+}
+[data-theme^="zine"] [data-slot="notice"][data-tone="warning"] {
+  box-shadow: 4px 4px 0 var(--warn);
+}
+[data-theme^="zine"] [data-slot="notice"][data-tone="danger"] {
+  box-shadow: 4px 4px 0 var(--danger);
+}
+[data-theme^="zine"] [data-slot="notice-title"] {
+  font-weight: 700;
+}
+
+/* state panels: a rubber-stamped icon and a headline */
+[data-theme^="zine"] [data-slot="state-panel-icon"] {
+  border-radius: 0;
+  border: 2px solid currentColor;
+  box-shadow: 3px 3px 0 currentColor;
+}
+[data-theme^="zine"] [data-slot="state-panel-title"] {
+  font-family: var(--font-sign);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* copy: a highlighter swipe when it worked, a red note when it did not */
+[data-theme^="zine"] [data-slot="copy-button"][data-state="copied"] {
+  background: var(--spot-yellow);
+  color: var(--ink);
+}
+[data-theme^="zine"] [data-slot="copy-button"][data-state="failed"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* loading: a halftone block instead of a grey one */
+[data-theme^="zine"] [data-slot="skeleton"] {
+  border-radius: 0;
+  background-color: var(--secondary);
+  background-image: var(--dots);
+  background-size: 5px 5px;
+}
+
+/* the page behind a dialog: dimmed under a halftone screen, never blurred */
+[data-theme^="zine"] [data-slot="dialog-overlay"] {
+  background-color: color-mix(in srgb, var(--ink) 35%, transparent);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ink) 30%, transparent) 1px,
+    transparent 1.4px
+  );
+  background-size: 4px 4px;
+  backdrop-filter: none;
+}
+
+/* surfaces: pasted-in cards; inverse is a page printed in reverse */
+[data-theme^="zine"] [data-slot="surface"]:is(.bg-surface, [data-tone="dark"]) {
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-hard);
+}
+[data-theme^="zine"] [data-slot="surface"][data-tone="dark"] {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* error text keeps the deep red by day; at night it needs the light ink */
+[data-theme^="zine"]
+  [data-tone="dark"]
+  [data-slot="form-message"][data-tone="error"] {
+  color: var(--danger);
+}
+
+/* accordion: dashed cuts between the clippings */
+[data-theme^="zine"] [data-slot="accordion-item"] {
+  border-bottom: 2px dashed var(--border);
+}

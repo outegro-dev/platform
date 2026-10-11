@@ -1,6 +1,8 @@
 import { productionPlatformUrls } from "@outegro/ui/lib/platform";
 import { describe, expect, it } from "vitest";
-import { returnTarget } from "./return-to";
+import en from "@/messages/en.json";
+import ru from "@/messages/ru.json";
+import { returnApps, returnTarget } from "./return-to";
 import { serviceLink } from "./services";
 
 // With no configuration the apps have their production addresses; ID_URL
@@ -26,11 +28,25 @@ describe("returnTarget", () => {
     });
   });
 
+  it("accepts the portfolio site, the account menu's home there", () => {
+    expect(returnTarget("https://outegro.dev/")).toEqual({
+      href: "https://outegro.dev/",
+      app: "site",
+    });
+    expect(returnTarget("https://outegro.dev/stack#ai")).toEqual({
+      href: "https://outegro.dev/stack",
+      app: "site",
+    });
+  });
+
   it.each([
     "https://evil.test/",
     "https://battleship.outegro.dev.evil.test/shop",
     "https://battleship.outegro.dev@evil.test/",
     "https://edu.outegro.dev.evil.test/",
+    "https://outegro.dev.evil.test/",
+    "https://www.outegro.dev/",
+    "http://outegro.dev/",
     "http://battleship.outegro.dev/shop",
     "//battleship.outegro.dev/shop",
     "/orders",
@@ -43,6 +59,16 @@ describe("returnTarget", () => {
     undefined,
   ])("refuses %s", (value) => {
     expect(returnTarget(value)).toBeNull();
+  });
+});
+
+describe("the way back", () => {
+  it.each(returnApps)("is named for %s in every language", (app) => {
+    // ReturnBar shows `return.to.<app>`; a missing one shows the raw key.
+    for (const messages of [en, ru])
+      expect((messages.return.to as Record<string, string>)[app]).toEqual(
+        expect.any(String),
+      );
   });
 });
 

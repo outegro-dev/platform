@@ -9,6 +9,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@outegro/bff": "workspace:*",
     "@outegro/i18n": "workspace:*",
     "@outegro/ui": "workspace:*",
     "@phosphor-icons/react": "2.1.10",
@@ -17,7 +18,8 @@
     "next-intl": "4.14.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "three": "0.186.1"
+    "three": "0.186.1",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

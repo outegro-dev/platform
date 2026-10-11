@@ -20,6 +20,7 @@ const apps = [
   { dir: "apps/battleship-web", file: ".env.local" },
   { dir: "apps/edu-web", file: ".env.local" },
   { dir: "apps/admin-web", file: ".env.local" },
+  { dir: "apps/landing-web", file: ".env.local" },
 ];
 const secret = () => randomBytes(32).toString("base64url");
 const { privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });

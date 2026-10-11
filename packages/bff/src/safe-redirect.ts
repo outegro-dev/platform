@@ -1,6 +1,14 @@
 /**
+ * Longest return path kept whole. It travels in the pending sign-in cookie,
+ * and a cookie past the browser's 4 KB limit is silently dropped.
+ */
+const MAX_RETURN_PATH = 1024;
+
+/**
  * Only same-origin paths are allowed as post-login destinations; anything
  * else (absolute URLs, protocol-relative `//evil`, backslashes) falls back.
+ * An overlong path loses its query, or falls back when even the path is
+ * too long.
  */
 export function safeRedirectPath(
   value: string | null | undefined,
@@ -12,7 +20,9 @@ export function safeRedirectPath(
   try {
     const url = new URL(value, "https://placeholder.invalid");
     if (url.origin !== "https://placeholder.invalid") return fallback;
-    return `${url.pathname}${url.search}`;
+    const path = `${url.pathname}${url.search}`;
+    if (path.length <= MAX_RETURN_PATH) return path;
+    return url.pathname.length <= MAX_RETURN_PATH ? url.pathname : fallback;
   } catch {
     return fallback;
   }

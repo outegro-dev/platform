@@ -1,487 +1,398 @@
 import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
-import { CopyButton } from "@outegro/ui/copy-button";
 import { Input } from "@outegro/ui/input";
 import { Label } from "@outegro/ui/label";
-import { Notice, StatePanel } from "@outegro/ui/notice";
-import { Progress } from "@outegro/ui/progress";
-import { Surface } from "@outegro/ui/surface";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@outegro/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@outegro/ui/toggle-group";
-import {
-  ArrowClockwiseIcon,
-  ArrowUpRightIcon,
-  CloudSlashIcon,
-  GearSixIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { Notice } from "@outegro/ui/notice";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
-import { ContactDialog } from "@/components/contact-dialog";
-import { ContactLinks } from "@/components/contact-links";
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { PendingButton, ProgressDemo, RefusedCopy } from "./demos";
+import { type ContrastPair, ContrastPairs } from "./demos";
+import { FurnitureSpread } from "./furniture";
+import { Head } from "./head";
+import { KitSpread } from "./kit";
+import s from "./specimen.module.css";
 
 export const metadata: Metadata = {
-  title: "Material library — Nick Lukashik",
+  title: "Kit specimen — Nick Lukashik",
   robots: { index: false, follow: false },
 };
 
-// Outlines the invisible ::after that takes compact controls to 44 px.
-const showTargets =
-  "[&_[data-slot=button]]:after:outline-1 [&_[data-slot=button]]:after:outline-dashed [&_[data-slot=button]]:after:outline-ring/60 [&_[data-slot=toggle-group-item]]:after:outline-1 [&_[data-slot=toggle-group-item]]:after:outline-dashed [&_[data-slot=toggle-group-item]]:after:outline-ring/60";
+/* An internal page in English: literal strings, no messages. */
 
-const softTokens = [
-  { name: "--ok-soft", fill: "bg-ok-soft text-ok", text: "tokenOk" },
-  { name: "--warn-soft", fill: "bg-warn-soft text-warn", text: "tokenWarn" },
+const contents = [
+  { href: "#levels", title: "Two levels", page: "2" },
+  { href: "#faces", title: "Eight faces", page: "4" },
+  { href: "#inks", title: "Inks and contrast", page: "6" },
+  { href: "#kit", title: "The kit, part by part", page: "8" },
+  { href: "#furniture", title: "Magazine furniture", page: "14" },
+];
+
+const faces = [
   {
-    name: "--danger-soft",
-    fill: "bg-danger-soft text-danger",
-    text: "tokenDanger",
+    variable: "--font-body",
+    face: "Old Standard TT",
+    job: "Loud body text, an old magazine column",
+    min: "17 px, line height 1.55",
+    sample: "Сделано от и до — built start to finish.",
   },
-  { name: "--info-soft", fill: "bg-info-soft text-info", text: "tokenInfo" },
-] as const;
+  {
+    variable: "--font-mast",
+    face: "Ruslan Display",
+    job: "Masthead, drop caps, big numbers",
+    min: "28 px and up",
+    sample: "Выпуск № 2",
+  },
+  {
+    variable: "--font-sign",
+    face: "Unbounded Black",
+    job: "Headlines and signs; calm-level headings",
+    min: "16 px; −0.02 em when large",
+    sample: "Причал № 1",
+  },
+  {
+    variable: "--font-tabloid",
+    face: "Playfair Display Black Italic",
+    job: "Accents and tabloid kickers",
+    min: "18 px",
+    sample: "Сенсация! Hot news!",
+  },
+  {
+    variable: "--font-loud",
+    face: "Rubik Mono One",
+    job: "Loud caps: buttons and kickers",
+    min: "11 px, caps, two or three words",
+    sample: "Записаться · book",
+  },
+  {
+    variable: "--font-stamp",
+    face: "Rubik Dirt",
+    job: "Rubber stamps, a word or two",
+    min: "22 px, caps",
+    sample: "Оплачено",
+  },
+  {
+    variable: "--font-type",
+    face: "PT Mono",
+    job: "Typewriter labels, captions, code",
+    min: "12 px",
+    sample: "стр. 4 · p. 4 · 0O 1lI",
+  },
+  {
+    variable: "--font-hand",
+    face: "Caveat",
+    job: "Notes in the margins",
+    min: "20 px",
+    sample: "загляни на стр. 12 →",
+  },
+];
 
-export default async function Gallery() {
-  const t = await getTranslations("gallery");
-  const copyLabels = {
-    label: t("copyLabel"),
-    copiedLabel: t("copied"),
-    failedLabel: t("copyFailed"),
-  };
+const retired = [
+  { variable: "--font-kitsch", was: "Lobster", now: "--font-tabloid" },
+  { variable: "--font-drip", was: "Rubik Wet Paint", now: "--font-stamp" },
+  { variable: "--font-glitch", was: "Rubik Glitch", now: "--font-stamp" },
+  { variable: "--font-pixel", was: "Press Start 2P", now: "--font-loud" },
+  { variable: "--font-marker", was: "Pangolin", now: "--font-hand" },
+];
+
+const swatches = [
+  "--paper",
+  "--paper-white",
+  "--paper-deep",
+  "--ink",
+  "--ink-soft",
+  "--spot-red",
+  "--spot-red-deep",
+  "--spot-blue",
+  "--spot-yellow",
+  "--spot-green",
+  "--spot-pink",
+];
+
+const dayPairs: ContrastPair[] = [
+  { fg: "--foreground", bg: "--background", use: "body text", min: 4.5 },
+  { fg: "--muted-foreground", bg: "--secondary", use: "quiet text", min: 4.5 },
+  { fg: "--primary-foreground", bg: "--primary", use: "button", min: 4.5 },
+  {
+    fg: "--primary-foreground",
+    bg: "--destructive",
+    use: "danger button",
+    min: 4.5,
+  },
+  { fg: "--danger", bg: "--background", use: "error text", min: 4.5 },
+  { fg: "--danger", bg: "--danger-soft", use: "error note", min: 4.5 },
+  { fg: "--ok", bg: "--surface", use: "success text", min: 4.5 },
+  { fg: "--ok", bg: "--ok-soft", use: "success note", min: 4.5 },
+  { fg: "--warn", bg: "--background", use: "warning text", min: 4.5 },
+  { fg: "--warn", bg: "--warn-soft", use: "warning note", min: 4.5 },
+  { fg: "--info", bg: "--secondary", use: "info text", min: 4.5 },
+  { fg: "--info", bg: "--info-soft", use: "info note", min: 4.5 },
+  { fg: "--spot-blue", bg: "--background", use: "margin notes", min: 4.5 },
+  { fg: "--ink", bg: "--spot-yellow", use: "highlighter", min: 4.5 },
+  { fg: "--spot-red", bg: "--background", use: "large accents", min: 3 },
+];
+
+const nightPairs: ContrastPair[] = [
+  { fg: "--foreground", bg: "--background", use: "body text", min: 4.5 },
+  { fg: "--muted-foreground", bg: "--surface", use: "quiet text", min: 4.5 },
+  { fg: "--primary-foreground", bg: "--primary", use: "button", min: 4.5 },
+  { fg: "--ok", bg: "--surface", use: "success text", min: 4.5 },
+  { fg: "--warn", bg: "--surface", use: "warning text", min: 4.5 },
+  { fg: "--danger", bg: "--surface", use: "error text", min: 4.5 },
+  { fg: "--danger", bg: "--danger-soft", use: "error note", min: 4.5 },
+  { fg: "--info", bg: "--surface", use: "info text", min: 4.5 },
+  { fg: "--ring", bg: "--background", use: "focus ring", min: 3 },
+];
+
+function LevelSample({
+  theme,
+  name,
+  children,
+}: {
+  theme: "zine" | "zine-calm";
+  name: string;
+  children: React.ReactNode;
+}) {
   return (
-    <main className="gallery og-container">
-      <div className="gallery-top">
-        <a href="/" className="gallery-back">
-          {t("back")} <ArrowUpRightIcon />
-        </a>
-        <LocaleSwitcher />
+    <div data-theme={theme} className={s.level}>
+      <div className={s.levelHead}>
+        <span className={s.levelName}>{name}</span>
+        <code className={s.code}>data-theme="{theme}"</code>
       </div>
-      <h1>
-        {t("title").split(" ").slice(0, -1).join(" ")}{" "}
-        <span className="og-accent">{t("title").split(" ").at(-1)}</span>
-      </h1>
-      <p>{t("intro")}</p>
-
-      <section>
-        <h2 className="og-eyebrow">{t("type")}</h2>
-        <p className="gallery-display">
-          Aa <span className="og-accent">Aa</span>
-        </p>
-        <p className="og-eyebrow">
-          Manrope · Cormorant Garamond Italic · JetBrains Mono
-        </p>
-      </section>
-
-      <section>
-        <h2 className="og-eyebrow">{t("buttons")}</h2>
-        <div className="gallery-row">
-          <Button asChild size="lg">
-            <a href="#surfaces">{t("primary")}</a>
-          </Button>
-          <Button variant="secondary" size="lg">
-            {t("secondary")}
-          </Button>
-          <Button variant="outline" size="lg">
-            {t("outline")}
-          </Button>
-          <Button variant="glass" size="lg">
-            {t("glassAction")}
-          </Button>
-          <Button size="lg" disabled>
-            {t("disabled")}
-          </Button>
-          <ContactDialog variant="primary" compact>
-            <ContactLinks compact />
-          </ContactDialog>
-        </div>
-      </section>
-
-      <section id="targets">
-        <h2 className="og-eyebrow">{t("targets")}</h2>
-        <p className="mb-5 max-w-[62ch] text-muted-foreground">
-          {t("targetsNote")}
-        </p>
-        <div className={`gallery-row ${showTargets}`}>
-          <Button size="sm">{t("small")}</Button>
-          <PendingButton label={t("small")} pendingLabel={t("saving")} />
-          <Button size="icon-sm" variant="outline" aria-label={t("settings")}>
-            <GearSixIcon />
-          </Button>
-          <ToggleGroup
-            type="single"
-            variant="segmented"
-            size="sm"
-            defaultValue="1"
-            aria-label={t("speed")}
-          >
-            <ToggleGroupItem value="0.5">0.5×</ToggleGroupItem>
-            <ToggleGroupItem value="1">1×</ToggleGroupItem>
-            <ToggleGroupItem value="2">2×</ToggleGroupItem>
-          </ToggleGroup>
-          <ToggleGroup
-            type="multiple"
-            size="sm"
-            defaultValue={["async"]}
-            aria-label={t("topics")}
-          >
-            <ToggleGroupItem value="async">{t("topicAsync")}</ToggleGroupItem>
-            <ToggleGroupItem value="memory">{t("topicMemory")}</ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-      </section>
-
-      <section>
-        <h2 className="og-eyebrow">{t("badges")}</h2>
-        <div className="gallery-row">
-          <Badge>TypeScript</Badge>
-          <Badge variant="solid">NestJS 12</Badge>
-          <Badge variant="muted">K3s</Badge>
-          <Badge variant="glass">Beta</Badge>
-        </div>
-      </section>
-
-      <section id="surfaces">
-        <h2 className="og-eyebrow">{t("surfaces")}</h2>
-        <div className="gallery-surfaces">
-          <Surface variant="glass">{t("glass")}</Surface>
-          <Surface>{t("solid")}</Surface>
-          <Surface variant="inverse">{t("inverse")}</Surface>
-        </div>
-      </section>
-
-      <section id="tokens">
-        <h2 className="og-eyebrow">{t("tokens")}</h2>
-        <p className="mb-5 max-w-[62ch] text-muted-foreground">
-          {t("tokensNote")}
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          {(["light", "dark"] as const).map((tone) => (
-            <div
-              key={tone}
-              data-tone={tone === "dark" ? "dark" : undefined}
-              className="grid min-w-0 content-start gap-4 rounded-lg border border-border bg-background p-4 text-foreground sm:p-6"
-            >
-              <p className="og-eyebrow">
-                {t(tone === "dark" ? "darkTone" : "lightTone")}
-              </p>
-              <ul className="grid gap-2 sm:grid-cols-2">
-                {softTokens.map((token) => (
-                  <li
-                    key={token.name}
-                    className={`grid gap-0.5 rounded-md px-3 py-2.5 ${token.fill}`}
-                  >
-                    <code className="font-mono text-[12px]">{token.name}</code>
-                    <span className="text-sm font-semibold">
-                      {t(token.text)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="rounded-lg border border-border bg-surface p-5 text-sm shadow-soft">
-                <code className="font-mono text-[12px] text-muted-foreground">
-                  --shadow-soft
-                </code>
-                <p>{t("shadowSoft")}</p>
-              </div>
-              <Notice tone="danger" title={t("noticeDangerTitle")}>
-                {t("noticeDanger")}
-              </Notice>
-              <Progress
-                label={t("cards")}
-                value={7}
-                max={12}
-                tone="ok"
-                valueText={t("exercisesValue", { solved: 7, total: 12 })}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="tabs">
-        <h2 className="og-eyebrow">{t("tabs")}</h2>
-        <div className="grid max-w-3xl gap-10">
-          <Tabs defaultValue="analogy">
-            <TabsList aria-label={t("tabsLabel")}>
-              <TabsTrigger value="analogy">{t("tabAnalogy")}</TabsTrigger>
-              <TabsTrigger value="code">{t("tabCode")}</TabsTrigger>
-              <TabsTrigger value="diagram">{t("tabDiagram")}</TabsTrigger>
-              <TabsTrigger value="interview">{t("tabInterview")}</TabsTrigger>
-              <TabsTrigger value="deep" disabled>
-                {t("tabDeep")}
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="analogy">{t("tabAnalogyBody")}</TabsContent>
-            <TabsContent value="code">
-              <code className="font-mono text-sm">{t("tabCodeBody")}</code>
-            </TabsContent>
-            <TabsContent value="diagram">{t("tabDiagramBody")}</TabsContent>
-            <TabsContent value="interview">{t("tabInterviewBody")}</TabsContent>
-          </Tabs>
-          <Tabs variant="pill" defaultValue="orders" activationMode="manual">
-            <TabsList aria-label={t("sectionsLabel")}>
-              <TabsTrigger value="orders">{t("tabOrders")}</TabsTrigger>
-              <TabsTrigger value="grants">{t("tabGrants")}</TabsTrigger>
-              <TabsTrigger value="events">{t("tabEvents")}</TabsTrigger>
-            </TabsList>
-            <p className="text-sm text-muted-foreground">{t("manualHint")}</p>
-            <TabsContent value="orders">{t("tabOrdersBody")}</TabsContent>
-            <TabsContent value="grants">{t("tabGrantsBody")}</TabsContent>
-            <TabsContent value="events">{t("tabEventsBody")}</TabsContent>
-          </Tabs>
-        </div>
-      </section>
-
-      <section id="toggles">
-        <h2 className="og-eyebrow">{t("toggles")}</h2>
-        <div className="grid gap-7">
-          <div className="grid gap-3">
-            <p id="toggle-modes" className="text-sm font-medium">
-              {t("deckModes")}
-            </p>
-            <ToggleGroup
-              type="single"
-              defaultValue="all"
-              aria-labelledby="toggle-modes"
-            >
-              <ToggleGroupItem value="all">{t("modeAll")}</ToggleGroupItem>
-              <ToggleGroupItem value="new">{t("modeNew")}</ToggleGroupItem>
-              <ToggleGroupItem value="again">{t("modeAgain")}</ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          <div className="grid gap-3">
-            <p id="toggle-topics" className="text-sm font-medium">
-              {t("topics")}
-            </p>
-            <ToggleGroup
-              type="multiple"
-              size="sm"
-              defaultValue={["async", "network"]}
-              aria-labelledby="toggle-topics"
-            >
-              <ToggleGroupItem value="async">{t("topicAsync")}</ToggleGroupItem>
-              <ToggleGroupItem value="memory">
-                {t("topicMemory")}
-              </ToggleGroupItem>
-              <ToggleGroupItem value="network">
-                {t("topicNetwork")}
-              </ToggleGroupItem>
-              <ToggleGroupItem value="sql">SQL</ToggleGroupItem>
-              <ToggleGroupItem value="archive" disabled>
-                {t("topicArchive")}
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          <div className="flex flex-wrap items-end gap-x-10 gap-y-7">
-            <div className="grid gap-3">
-              <p id="toggle-speed" className="text-sm font-medium">
-                {t("speed")}
-              </p>
-              <ToggleGroup
-                type="single"
-                variant="segmented"
-                size="sm"
-                defaultValue="1"
-                aria-labelledby="toggle-speed"
-              >
-                <ToggleGroupItem value="0.5">0.5×</ToggleGroupItem>
-                <ToggleGroupItem value="1">1×</ToggleGroupItem>
-                <ToggleGroupItem value="2">2×</ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-            <div className="grid gap-3">
-              <p id="toggle-view" className="text-sm font-medium">
-                {t("view")}
-              </p>
-              <ToggleGroup
-                type="single"
-                variant="segmented"
-                defaultValue="list"
-                aria-labelledby="toggle-view"
-              >
-                <ToggleGroupItem value="list">{t("viewList")}</ToggleGroupItem>
-                <ToggleGroupItem value="grid">{t("viewGrid")}</ToggleGroupItem>
-                <ToggleGroupItem value="compact">
-                  {t("viewCompact")}
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="progress">
-        <h2 className="og-eyebrow">{t("progress")}</h2>
-        <div className="grid max-w-xl gap-7">
-          <div className="grid gap-2">
-            <div className="flex justify-between gap-4 text-sm">
-              <span id="progress-exercises" className="font-medium">
-                {t("exercises")}
-              </span>
-              <span className="text-muted-foreground tabular-nums">
-                {t("exercisesValue", { solved: 3, total: 10 })}
-              </span>
-            </div>
-            <Progress
-              aria-labelledby="progress-exercises"
-              value={3}
-              max={10}
-              size="sm"
-              valueText={t("exercisesValue", { solved: 3, total: 10 })}
-            />
-          </div>
-          <div className="grid gap-2">
-            <span id="progress-upload" className="text-sm font-medium">
-              {t("clamped")}
-            </span>
-            <Progress
-              aria-labelledby="progress-upload"
-              value={130}
-              max={100}
-              size="lg"
-              tone="ok"
-            />
-          </div>
-          <ProgressDemo
-            label={t("chapterRead")}
-            options={[0, 40, 75, 100].map((value) => ({
-              value,
-              text: t("percent", { value }),
-            }))}
-          />
-        </div>
-      </section>
-
-      <section id="copy">
-        <h2 className="og-eyebrow">{t("copy")}</h2>
-        <div className="grid gap-5">
-          <div className="gallery-row">
-            <code className="min-w-0 rounded-md bg-secondary px-3 py-2.5 font-mono text-sm break-all">
-              pnpm --filter @outegro/ui test
-            </code>
-            <CopyButton
-              value="pnpm --filter @outegro/ui test"
-              {...copyLabels}
-            />
-            <CopyButton
-              variant="outline"
-              size="md"
-              value="https://outegro.dev/design-system"
-              {...copyLabels}
-              label={t("copyLink")}
-            />
-            <CopyButton
-              variant="outline"
-              size="icon-sm"
-              value="https://outegro.dev/design-system"
-              {...copyLabels}
-              label={t("copyLink")}
-            />
-          </div>
-          <div className="gallery-row">
-            <p className="max-w-[52ch] text-sm text-muted-foreground">
-              {t("copyRefused")}
-            </p>
-            <RefusedCopy {...copyLabels} />
-          </div>
-        </div>
-      </section>
-
-      <section id="notices">
-        <h2 className="og-eyebrow">{t("notices")}</h2>
-        <div className="grid max-w-3xl gap-3">
-          <Notice>{t("noticeNeutral")}</Notice>
-          <Notice tone="info" title={t("noticeInfoTitle")}>
-            {t("noticeInfo")}
-          </Notice>
-          <Notice tone="success">{t("noticeSuccess")}</Notice>
-          <Notice tone="warning" title={t("noticeWarningTitle")}>
-            {t("noticeWarning")}
-          </Notice>
-          <Notice
-            tone="danger"
-            title={t("noticeDangerTitle")}
-            actions={
-              <>
-                <Button size="sm">
-                  <ArrowClockwiseIcon />
-                  {t("retry")}
-                </Button>
-                <Button size="sm" variant="ghost">
-                  {t("details")}
-                </Button>
-              </>
-            }
-          >
-            {t("noticeDanger")}
-          </Notice>
-        </div>
-      </section>
-
-      <section id="states">
-        <h2 className="og-eyebrow">{t("statePanels")}</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Surface>
-            <StatePanel
-              as="div"
-              size="sm"
-              headingLevel={3}
-              title={t("emptyTitle")}
-              description={t("emptyBody")}
-              actions={
-                <Button size="sm" variant="outline">
-                  {t("emptyAction")}
-                </Button>
-              }
-            />
-          </Surface>
-          <Surface>
-            <StatePanel
-              as="div"
-              size="sm"
-              headingLevel={3}
-              tone="warning"
-              icon={<CloudSlashIcon />}
-              title={t("offlineTitle")}
-              description={t("offlineBody")}
-            />
-          </Surface>
-          <Surface className="md:col-span-2">
-            <StatePanel
-              as="div"
-              headingLevel={3}
-              tone="danger"
-              title={t("errorTitle")}
-              description={t("errorBody")}
-              actions={
-                <Button size="lg" variant="outline">
-                  <ArrowClockwiseIcon />
-                  {t("retry")}
-                </Button>
-              }
-            />
-          </Surface>
-        </div>
-      </section>
-
-      <section id="field">
-        <Label htmlFor="demo-email">{t("input")}</Label>
+      <p className="og-eyebrow">Battleship · night sea</p>
+      <h3 className={s.sub}>
+        Your move, <span className="og-accent">captain</span>
+      </h3>
+      <p className={s.levelBody}>{children}</p>
+      <div className={s.row}>
+        <Button>Fire</Button>
+        <Button variant="outline">Pass</Button>
+        <Button variant="ghost">Rules</Button>
+      </div>
+      <div className={s.field}>
+        <Label htmlFor={`${theme}-board`}>Board name</Label>
         <Input
-          id="demo-email"
-          name="demo-email"
-          type="email"
-          spellCheck={false}
-          autoComplete="email"
-          aria-describedby="email-help"
+          id={`${theme}-board`}
+          name={`${theme}-board`}
+          defaultValue="Night sea"
+          autoComplete="off"
         />
-        <p id="email-help">{t("inputHelp")}</p>
+      </div>
+      <ul className={s.row}>
+        <li>
+          <Badge>Ranked</Badge>
+        </li>
+        <li>
+          <Badge>Bot: hard</Badge>
+        </li>
+        <li>
+          <Badge>14 games</Badge>
+        </li>
+      </ul>
+      <Notice tone="warning" title="Your opponent went offline">
+        The board waits for them for 24 hours.
+      </Notice>
+    </div>
+  );
+}
+
+export default function Specimen() {
+  return (
+    <main className={`${s.page} og-container`} lang="en">
+      <div className={s.top}>
+        <a href="/" className={s.back}>
+          <ArrowLeftIcon aria-hidden="true" /> outegro.dev
+        </a>
+        <span className="og-eyebrow">Not indexed · for the workshop</span>
+      </div>
+      <p className={s.strip}>
+        <span>@outegro/ui · the zine theme</span>
+        <span>Issue 2 · two levels · eight faces · AA inks</span>
+      </p>
+      <h1 className={s.mast}>Kit specimen</h1>
+      <p className={s.tagline}>every part of the kit, loud and calm</p>
+
+      <div className={s.intro}>
+        <p className={`${s.lead} ${s.dropcap}`}>
+          The shared kit in its zine theme, laid out like a type foundry's
+          specimen. The landing wears it loud: crooked caps buttons, stamps and
+          typewriter fields. Product apps wear it calm: the same paper, inks and
+          headline faces, a sans body that reads for an hour, and controls that
+          stay straight.
+        </p>
+        <nav className={s.contents} aria-labelledby="contents-title">
+          <h2 id="contents-title" className={s.contentsTitle}>
+            In this issue
+          </h2>
+          <ol>
+            {contents.map((item) => (
+              <li key={item.href}>
+                <a href={item.href}>
+                  <span className={s.contentsName}>{item.title}</span>
+                  <span className={s.dots} aria-hidden="true" />
+                  <span className={s.pageNo}>
+                    <span className="sr-only">page </span>
+                    {item.page}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </div>
+
+      <section id="levels" className={s.spread} aria-labelledby="levels-title">
+        <Head kicker="p. 2 · levels" id="levels-title" title="Two levels">
+          <p className={s.note}>
+            One token block, two looks. Put{" "}
+            <code className={s.code}>data-theme</code> on{" "}
+            <code className={s.code}>&lt;html&gt;</code>; a calm island can sit
+            inside a loud page, not the other way round.
+          </p>
+        </Head>
+        <div className={s.grid2}>
+          <LevelSample theme="zine" name="Loud">
+            For the landing: cut-out buttons glued on crooked, labels typed on a
+            typewriter, fields on a ruled line, a little bounce.
+          </LevelSample>
+          <LevelSample theme="zine-calm" name="Calm">
+            For the apps people work in: the same paper and inks, headlines in
+            the sign face, a sans body at 16/1.6 and controls that stay put.
+          </LevelSample>
+        </div>
       </section>
 
-      <section>
-        <h2 className="og-eyebrow">{t("states")}</h2>
-        <p className="text-destructive">{t("error")}</p>
-        <p className="text-success">{t("success")}</p>
+      <section id="faces" className={s.spread} aria-labelledby="faces-title">
+        <Head kicker="p. 4 · type" id="faces-title" title="Eight faces">
+          <p className={s.note}>
+            Thirteen faces were too many to read. Eight are left, each with one
+            job and a smallest size it still reads at. Both scripts come from
+            the same family.
+          </p>
+        </Head>
+        <div className={s.faces}>
+          {faces.map((face) => (
+            <article key={face.variable} className={s.face}>
+              <p
+                className={s.glyphs}
+                style={{ fontFamily: `var(${face.variable})` }}
+                aria-hidden="true"
+              >
+                Аа Rr
+              </p>
+              <p
+                className={s.faceLine}
+                style={{ fontFamily: `var(${face.variable})` }}
+              >
+                {face.sample}
+              </p>
+              <div className={s.meta}>
+                <span>
+                  {face.face} · <code>{face.variable}</code>
+                </span>
+                <span>{face.job}</span>
+                <span>From {face.min}</span>
+              </div>
+            </article>
+          ))}
+          <article data-theme="zine-calm" className={s.face}>
+            <p className={s.glyphs} aria-hidden="true">
+              Аа Rr
+            </p>
+            <p className={s.faceLine}>
+              Сделано от и до — built start to finish.
+            </p>
+            <div className={s.meta}>
+              <span>
+                Manrope · <code>--font-body</code> at the calm level
+              </span>
+              <span>Body text and controls in the apps</span>
+              <span>From 14 px; 16 px with line height 1.6 to read</span>
+            </div>
+          </article>
+        </div>
+
+        <div className={`${s.grid2} mt-12`}>
+          <div className={s.clip}>
+            <h3 className={s.sub}>Retired, names kept</h3>
+            <table className={s.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Variable</th>
+                  <th scope="col">Was</th>
+                  <th scope="col">Now set in</th>
+                </tr>
+              </thead>
+              <tbody>
+                {retired.map((row) => (
+                  <tr key={row.variable}>
+                    <td>
+                      <code>{row.variable}</code>
+                    </td>
+                    <td>{row.was}</td>
+                    <td style={{ fontFamily: `var(${row.now})` }}>{row.now}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className={s.clip}>
+            <h3 className={s.sub}>Reading at both levels</h3>
+            <p className={s.caption}>Loud · Old Standard 17/1.55</p>
+            <div className={`${s.reading} ${s.readLoud}`}>
+              <p>
+                Battleship is a real product: sign-in, rated games against
+                friends and a bot, payments and an admin.
+              </p>
+            </div>
+            <p className={s.caption}>Calm · Manrope 16/1.6</p>
+            <div data-theme="zine-calm" className={s.reading}>
+              <p>
+                Battleship is a real product: sign-in, rated games against
+                friends and a bot, payments and an admin.
+              </p>
+              <p lang="ru">
+                Морской бой — настоящий продукт: вход, рейтинговые партии с
+                друзьями и ботом, оплата и админка.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
+
+      <section id="inks" className={s.spread} aria-labelledby="inks-title">
+        <Head kicker="p. 6 · colour" id="inks-title" title="Inks and contrast">
+          <p className={s.note}>
+            Spot colours print the look; the status inks are the same hues taken
+            down until they read as small text. Every ratio below is measured in
+            your browser from the live stylesheet.
+          </p>
+        </Head>
+        <ul className={s.swatches}>
+          {swatches.map((token) => (
+            <li key={token} className={s.swatch}>
+              <span
+                className={s.chip}
+                style={{ background: `var(${token})` }}
+                aria-hidden="true"
+              />
+              <code>{token}</code>
+            </li>
+          ))}
+        </ul>
+        <div className={`${s.grid2} mt-12`}>
+          <div className={s.clip}>
+            <h3 className={s.sub}>By day</h3>
+            <ContrastPairs pairs={dayPairs} />
+          </div>
+          <div data-tone="dark" className={s.night}>
+            <h3 className={s.sub}>At night</h3>
+            <ContrastPairs pairs={nightPairs} />
+          </div>
+        </div>
+      </section>
+
+      <KitSpread />
+
+      <FurnitureSpread />
     </main>
   );
 }

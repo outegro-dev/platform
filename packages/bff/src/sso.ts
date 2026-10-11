@@ -28,20 +28,37 @@ export type PendingSignIn = {
   state: string;
   verifier: string;
   returnTo: string;
+  /** Asked with `prompt=none`: the visitor did not ask to sign in. */
+  silent: boolean;
 };
 
 export type SignInFailure =
   | "state_mismatch"
   | "missing_code"
   | "invalid_grant"
-  | "unavailable";
+  | "unavailable"
+  | "login_required";
 
+/**
+ * A failed silent sign-in carries its return path: the visitor never asked
+ * to sign in, so they land there signed out instead of on an error page.
+ */
 export type SignInResult =
-  | { ok: true; tokens: SessionTokens; returnTo: string }
-  | { ok: false; reason: SignInFailure };
+  | { ok: true; tokens: SessionTokens; returnTo: string; silent: boolean }
+  | { ok: false; reason: SignInFailure; silent: false }
+  | { ok: false; reason: SignInFailure; silent: true; returnTo: string };
 
-/** The /authorize URL to send the browser to, and the cookie to set meanwhile. */
-export function beginSignIn(client: SsoClient, returnTo?: string | null) {
+/**
+ * The /authorize URL to send the browser to, and the cookie to set
+ * meanwhile. `silent` asks Identity not to show its sign-in page
+ * (`prompt=none`): with its session it issues the code as usual, without
+ * one it answers `error=login_required`.
+ */
+export function beginSignIn(
+  client: SsoClient,
+  returnTo?: string | null,
+  { silent = false }: { silent?: boolean } = {},
+) {
   const state = randomBytes(24).toString("base64url");
   const verifier = randomBytes(48).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
@@ -53,11 +70,13 @@ export function beginSignIn(client: SsoClient, returnTo?: string | null) {
     state,
     code_challenge: challenge,
     code_challenge_method: "S256",
+    ...(silent ? { prompt: "none" } : {}),
   }).toString();
   const pending: PendingSignIn = {
     state,
     verifier,
     returnTo: safeRedirectPath(returnTo),
+    silent,
   };
   return { url: url.toString(), cookie: encodePending(pending) };
 }
@@ -86,9 +105,19 @@ export async function completeSignIn(
   const pending = decodePending(pendingCookie);
   const state = params.get("state");
   if (!pending || !state || !sameString(state, pending.state))
-    return { ok: false, reason: "state_mismatch" };
+    return { ok: false, reason: "state_mismatch", silent: false };
+  const fail = (reason: SignInFailure): SignInResult =>
+    pending.silent
+      ? { ok: false, reason, silent: true, returnTo: pending.returnTo }
+      : { ok: false, reason, silent: false };
   const code = params.get("code");
-  if (!code) return { ok: false, reason: "missing_code" };
+  if (!code) {
+    const error = params.get("error");
+    if (error === "login_required") return fail("login_required");
+    return fail(
+      error === "temporarily_unavailable" ? "unavailable" : "missing_code",
+    );
+  }
   try {
     const tokens = await createBackend(client.authApiUrl, {
       headers: () => headers,
@@ -102,12 +131,15 @@ export async function completeSignIn(
         codeVerifier: pending.verifier,
       },
     });
-    return { ok: true, tokens, returnTo: pending.returnTo };
+    return {
+      ok: true,
+      tokens,
+      returnTo: pending.returnTo,
+      silent: pending.silent,
+    };
   } catch (error) {
-    if (error instanceof BackendUnavailable)
-      return { ok: false, reason: "unavailable" };
-    if (error instanceof BackendError)
-      return { ok: false, reason: "invalid_grant" };
+    if (error instanceof BackendUnavailable) return fail("unavailable");
+    if (error instanceof BackendError) return fail("invalid_grant");
     throw error;
   }
 }
@@ -144,6 +176,7 @@ export function decodePending(
         state: data.state,
         verifier: data.verifier,
         returnTo: safeRedirectPath(data.returnTo),
+        silent: data.silent === true,
       };
     }
   } catch {

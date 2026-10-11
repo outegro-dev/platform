@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
  * Starts sign-in through id.outegro.dev, back to `returnTo` (home by
  * default). With an unexpired access cookie Identity decides first: an
  * accepted session goes back, a refused one is dropped and signs in again
- * once (see `startSignIn`).
+ * once. `silent=1` comes from the proxy's silent sign-in: no sign-in page at
+ * id.outegro.dev, at most one attempt in a while (see `startSignIn`).
  */
 export function GET(request: NextRequest) {
   return startSignIn(request, {

@@ -14,7 +14,7 @@ pnpm dev
 ```
 
 Лендинг: http://localhost:3000/. Язык (EN по умолчанию / RU) хранится в cookie `og_locale`, URL не меняется.
-Галерея UI: http://localhost:3000/design-system. Кадры 3D-сцен: http://localhost:3000/design-system/scenes.
+Галерея UI (образцы кита в темах zine и zine-calm): http://localhost:3000/design-system. Раскадровка Сахура и лаборатория бумажного мультика: `/design-system/sahur`, `/design-system/paper`.
 Пробы: http://localhost:3000/health и `/health/deep`.
 
 Production preview: `pnpm build`, затем `pnpm start`. Запускается standalone `server.js`, как в контейнере.
@@ -22,7 +22,6 @@ Production preview: `pnpm build`, затем `pnpm start`. Запускаетс�
 Локальная инфраструктура (Postgres 18, Valkey 9, RabbitMQ 4, Mailpit): `pnpm infra:up` / `pnpm infra:down` / `pnpm infra:reset`. Почта — http://localhost:8025, RabbitMQ — http://localhost:15672 (outegro / outegro).
 Перед первым E2E: `pnpm exec playwright install chromium firefox webkit`.
 E2E поднимает отдельную production-сборку на localhost:3100; backend и внешние ключи не нужны.
-Постеры 3D после изменения сцен (нужен запущенный :3000): `node tools/quality/render-posters.mjs`.
 
 Решения по дизайну, анимации, языку и CSP: [DESIGN.md](DESIGN.md). Дизайн-система: [packages/ui/README.md](packages/ui/README.md).
 
