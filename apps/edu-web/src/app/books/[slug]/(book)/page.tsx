@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { accentStyle } from "@/components/book/accent";
 import { InlineText } from "@/components/book/inline";
+import { WarmFonts } from "@/components/islands/warm-fonts";
 import { bookCta } from "@/components/library/book-card";
 import {
   AccessBadge,
@@ -106,6 +107,8 @@ export default async function BookPage({ params }: PageProps<"/books/[slug]">) {
         <ArrowLeftIcon aria-hidden="true" />
         {t("breadcrumb")}
       </Link>
+      {/* Its chapters open in their own type (bold words included). */}
+      <WarmFonts />
       <section className="book-hero">
         <div className="book-hero-text">
           <p className="og-eyebrow" lang={book.locale}>

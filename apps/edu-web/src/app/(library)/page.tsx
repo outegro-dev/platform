@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { WarmFonts } from "@/components/islands/warm-fonts";
 import { BookCard } from "@/components/library/book-card";
 import { Unavailable } from "@/components/reader/unavailable";
 import { loadLibrary } from "@/lib/api";
@@ -21,6 +22,8 @@ export default async function LibraryPage() {
           <h2 id="books-title" className="sr-only">
             {t("booksTitle")}
           </h2>
+          {/* The books' chapters open in their own type (bold words included). */}
+          <WarmFonts />
           {library.data.books.length ? (
             <ul className="book-grid">
               {library.data.books.map((book) => (

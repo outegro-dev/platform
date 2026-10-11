@@ -23,10 +23,12 @@ export function ScrollRegion({
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
+    // Even a pixel of overflow scrolls (a code line just wider than a
+    // phone), and axe asks such a box to be reachable from the keyboard.
     const measure = () =>
       setOverflowing(
-        node.scrollWidth > node.clientWidth + 1 ||
-          node.scrollHeight > node.clientHeight + 1,
+        node.scrollWidth > node.clientWidth ||
+          node.scrollHeight > node.clientHeight,
       );
     measure();
     const observer = new ResizeObserver(measure);
