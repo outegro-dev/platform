@@ -91,6 +91,7 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
       setup: (channel: ConfirmChannel) =>
         assertExchanges(channel, [eventsExchange(options.service)]),
     });
+    this.watch(this.publisher, "publisher");
     this.consumed = metrics?.counter({
       name: "messaging_events_consumed_total",
       help: "Consumed events by queue and outcome: processed, retried or dead_lettered.",
@@ -114,6 +115,21 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
     await Promise.allSettled(this.consumers.map((channel) => channel.close()));
     await this.publisher.close().catch(() => undefined);
     await this.connection.close().catch(() => undefined);
+  }
+
+  /**
+   * A channel whose setup fails because the connection closed or dropped
+   * meanwhile ("Channel ended, no reply will be forthcoming") emits 'error';
+   * with no listener that ends the process. The manager reconnects and
+   * re-runs the setup, so it is only worth a warning.
+   */
+  private watch(channel: ChannelWrapper, name: string) {
+    channel.on("error", (err: Error) =>
+      this.logger.warn(
+        { err: err.message, channel: name },
+        "RabbitMQ channel error",
+      ),
+    );
   }
 
   /** Publishes an event envelope; resolves after the broker confirm. */
@@ -170,6 +186,7 @@ export class Messaging implements OnModuleInit, OnApplicationShutdown {
         });
       },
     });
+    this.watch(channel, spec.name);
     this.consumers.push(channel);
     await channel.waitForConnect();
     await channel.consume(
