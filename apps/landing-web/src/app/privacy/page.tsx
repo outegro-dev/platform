@@ -4,9 +4,9 @@ import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { CONSENT_COOKIE, parseConsent } from "@/components/consent/consent";
 import { ConsentSettings } from "@/components/consent/consent-settings";
+import { EmailAddress, EmailLink } from "@/components/email-link";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SiteFooter } from "@/components/site-footer";
-import { contacts } from "@/lib/contact";
 import { env } from "@/lib/env";
 import { openGraph } from "@/lib/metadata";
 
@@ -34,7 +34,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Privacy() {
   const t = await getTranslations("privacy");
   const sections = t.raw("sections") as Section[];
-  const email = contacts.find((contact) => contact.key === "email");
   const consent = parseConsent((await cookies()).get(CONSENT_COOKIE)?.value);
   return (
     <>
@@ -77,16 +76,14 @@ export default async function Privacy() {
             <p className="consent-settings-state">{t("analytics.off")}</p>
           )}
         </section>
-        {email && (
-          <section className="legal-section">
-            <h2>{t("contact")}</h2>
-            <p>
-              <a href={email.href} className="legal-mail">
-                {email.handle}
-              </a>
-            </p>
-          </section>
-        )}
+        <section className="legal-section">
+          <h2>{t("contact")}</h2>
+          <p>
+            <EmailLink className="legal-mail">
+              <EmailAddress />
+            </EmailLink>
+          </p>
+        </section>
       </main>
       <SiteFooter />
     </>
