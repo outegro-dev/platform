@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   type AuditSource,
+  auditActions,
+  auditSources,
   decodeMergeCursor,
   encodeMergeCursor,
   type Fetcher,
+  knownAuditActions,
   type MergeCursor,
   mergePage,
   type TimelineEntry,
@@ -194,5 +197,25 @@ describe("merged audit timeline", () => {
         ).toString("base64url"),
       ),
     ).toEqual({});
+  });
+});
+
+describe("the action filter's suggestions", () => {
+  it("offer every known action once, with the feed that writes it", () => {
+    const codes = knownAuditActions.map((item) => item.action);
+    expect(new Set(codes).size).toBe(codes.length);
+    for (const source of auditSources)
+      expect(
+        knownAuditActions
+          .filter((item) => item.source === source)
+          .map((item) => item.action),
+        source,
+      ).toEqual([...auditActions[source]]);
+  });
+
+  it("go feed by feed, in the order of the source filter", () => {
+    expect(knownAuditActions.map((item) => item.source)).toEqual(
+      auditSources.flatMap((source) => auditActions[source].map(() => source)),
+    );
   });
 });

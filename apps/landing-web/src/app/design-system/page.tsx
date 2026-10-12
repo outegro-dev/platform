@@ -1,5 +1,6 @@
 import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
+import { fontVariables } from "@outegro/ui/fonts";
 import { Input } from "@outegro/ui/input";
 import { Label } from "@outegro/ui/label";
 import { Notice } from "@outegro/ui/notice";
@@ -195,8 +196,11 @@ function LevelSample({
 }
 
 export default function Specimen() {
+  // The calm islands read in the kit's Manrope (zine.css sets --font-body to
+  // it at the calm level). The landing leaves the kit's faces off <html>, so
+  // the page that shows them brings them, and only it preloads them.
   return (
-    <main className={`${s.page} og-container`} lang="en">
+    <main className={`${s.page} og-container ${fontVariables}`} lang="en">
       <div className={s.top}>
         <a href="/" className={s.back}>
           <ArrowLeftIcon aria-hidden="true" /> outegro.dev

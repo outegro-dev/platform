@@ -197,20 +197,28 @@ export function SelectField({
   );
 }
 
+/**
+ * A free-text filter. `suggestions` offers known values in the browser's own
+ * list (a native datalist: the field becomes a combobox, opened by typing or
+ * Alt+Down), each named by its label; any other text still goes.
+ */
 export function TextField({
   name,
   label,
   value,
   placeholder,
   type = "search",
+  suggestions,
 }: {
   name: string;
   label: string;
   value: string | undefined;
   placeholder?: string;
   type?: "search" | "text" | "date";
+  suggestions?: readonly { value: string; label: string }[];
 }) {
   const id = `filter-${name}`;
+  const listId = suggestions?.length ? `${id}-suggestions` : undefined;
   return (
     <div className="field">
       <label className="field-label" htmlFor={id}>
@@ -224,7 +232,19 @@ export function TextField({
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
+        list={listId}
       />
+      {listId && (
+        <datalist id={listId}>
+          {suggestions?.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              label={option.label}
+            />
+          ))}
+        </datalist>
+      )}
     </div>
   );
 }

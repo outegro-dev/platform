@@ -29,6 +29,15 @@ import { passkeys, sessions, users } from "../db/schema.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import { SignInMethods } from "../users/sign-in-methods.js";
 import { UsersService } from "../users/users.service.js";
+
+/**
+ * ES256, EdDSA and RS256, the algorithms every authenticator speaks. Left to
+ * its default, SimpleWebAuthn offers ML-DSA-44 first wherever Node supports
+ * it (Node 24 does); an authenticator that picks it signs with ~3.2 KB
+ * signatures, far above what sign-in accepted (11.10.2026).
+ */
+export const PASSKEY_ALGORITHMS = [-7, -8, -257];
+
 import { ChallengeStore } from "./challenge-store.js";
 
 type Passkey = typeof passkeys.$inferSelect;
@@ -136,6 +145,7 @@ export class PasskeysService {
         residentKey: "required",
         userVerification: "required",
       },
+      supportedAlgorithmIDs: PASSKEY_ALGORITHMS,
     });
     const challengeId = await this.challenges.put(
       "registration",

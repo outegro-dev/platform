@@ -1,4 +1,4 @@
-import { expect, signIn, test, visit } from "./fixtures";
+import { expect, openFirstRow, signIn, test, visit } from "./fixtures";
 
 const sidebarLinks = async (page: import("@playwright/test").Page) =>
   page
@@ -73,4 +73,32 @@ test("billing lands on payments without people tools", async ({ page }) => {
   expect(await sidebarLinks(page)).toEqual(["Dashboard", "Payments"]);
   await visit(page, "/users");
   await expect(page.getByText("Needs permission: users.read")).toBeVisible();
+});
+
+test("every detail page leads back to its list the same way", async ({
+  page,
+}) => {
+  await signIn(page, "owner", "/");
+  for (const [list, back] of [
+    ["/payments/orders?status=paid", "Orders"],
+    ["/payments/events?status=unmatched", "Provider events"],
+    ["/notifications/deliveries", "Deliveries"],
+    ["/battleship/matches?status=finished", "Matches"],
+    ["/battleship/players", "Players"],
+    ["/education/books", "Books"],
+  ] as const) {
+    await visit(page, list);
+    await openFirstRow(page);
+    // One `BackLink` in the card's head: the kit's pill, in its place.
+    const link = page.locator("a[data-back]");
+    await expect(link, list).toHaveCount(1);
+    await expect(link, list).toHaveAccessibleName(back);
+    await expect(link, list).toHaveAttribute("href", list.split("?")[0] ?? "");
+    await expect(link, list).not.toHaveAttribute("style");
+    await expect(link, list).toHaveCSS("margin-top", "0px");
+    await expect(link.locator("svg"), list).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+  }
 });

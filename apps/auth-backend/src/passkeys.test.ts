@@ -160,6 +160,12 @@ describe("relying party configuration (C2.1)", () => {
         userVerification: "required",
       },
     });
+    // The classic algorithms only: an ML-DSA passkey could not sign in.
+    expect(
+      creation.body.options.pubKeyCredParams.map(
+        (param: { alg: number }) => param.alg,
+      ),
+    ).toEqual([-7, -8, -257]);
     const request = await h.passkeyChallenge();
     expect(request.options).toMatchObject({
       rpId: TEST_RP_ID,
@@ -774,6 +780,30 @@ describe("Passkeys (ID-05)", () => {
     expect(res.status).toBe(403);
   });
 
+  it("a long post-quantum signature reaches verification, not a 400", async () => {
+    // ML-DSA-44 signs with 3227 base64url characters; the old 2048 cap
+    // turned such a sign-in into a malformed request.
+    const response = await h
+      .http()
+      .post("/v1/login/passkey/verify")
+      .set({ "x-forwarded-for": randomIp() })
+      .send({
+        challengeId: randomUUIDv4(),
+        response: {
+          id: "AAAA",
+          rawId: "AAAA",
+          type: "public-key",
+          response: {
+            clientDataJSON: "e30",
+            authenticatorData: "AAAA",
+            signature: "A".repeat(3228),
+          },
+          clientExtensionResults: {},
+        },
+      });
+    expect(response.status).toBe(422);
+  });
+
   it("the begin and finish endpoints are limited per client address", async () => {
     const ip = randomIp();
     const statuses: number[] = [];
@@ -787,8 +817,7 @@ describe("Passkeys (ID-05)", () => {
         ).status,
       );
     }
-    expect(statuses.slice(0, 30).every((s) => s === 200)).toBe(true);
-    expect(statuses[30]).toBe(429);
+    expect(statuses).toEqual([...Array(30).fill(200), 429]);
 
     const other = randomIp();
     const guess = {
@@ -815,8 +844,7 @@ describe("Passkeys (ID-05)", () => {
       );
     }
     // Refused as stale until the limit, then limited.
-    expect(verify.slice(0, 20).every((s) => s === 422)).toBe(true);
-    expect(verify[20]).toBe(429);
+    expect(verify).toEqual([...Array(20).fill(422), 429]);
 
     // Adding passkeys: at most twenty ceremonies an hour per account, from
     // any number of addresses.
@@ -832,8 +860,7 @@ describe("Passkeys (ID-05)", () => {
         ).status,
       );
     }
-    expect(begun.slice(0, 20).every((s) => s === 200)).toBe(true);
-    expect(begun[20]).toBe(429);
+    expect(begun).toEqual([...Array(20).fill(200), 429]);
   });
 
   it("a passkey of another relying party (the old domain) is listed as unusable, signs nobody in and counts as no way in", async () => {

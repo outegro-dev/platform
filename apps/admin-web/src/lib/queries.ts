@@ -128,6 +128,7 @@ export function auditFetchers(
             targetId: entry.targetId,
             reason: entry.reason,
             data: entry.data ?? {},
+            requestId: entry.requestId ?? null,
             createdAt: entry.createdAt,
           }),
         ),

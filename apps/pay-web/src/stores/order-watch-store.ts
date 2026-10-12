@@ -1,4 +1,4 @@
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observableRef, runInAction } from "mobx";
 import type { Order } from "@/lib/payments/model";
 import { isSettled, orderPhase } from "@/lib/payments/status";
 import { browserScheduler, type Scheduler } from "./scheduler";
@@ -81,7 +81,7 @@ export class OrderWatchStore {
     >(
       this,
       {
-        order: observable.ref,
+        order: observableRef,
         load: false,
         scheduler: false,
         intervalMs: false,

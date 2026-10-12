@@ -2594,9 +2594,8 @@ html[data-waking] main {
   right: 3%;
   top: 25%;
 }
+/* placed per capture in project-showcase.tsx (sunkMarks) */
 .mark-note.is-sunk {
-  right: 19%;
-  bottom: 9%;
   rotate: 6deg;
 }
 .mark-note.is-elo {

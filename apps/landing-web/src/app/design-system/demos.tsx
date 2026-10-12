@@ -58,8 +58,12 @@ export function LevelSwitch({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** A confirmation and a plain message, both at the level of the spread. */
-export function DialogDemo() {
+/**
+ * A confirmation and a plain message, both at the level of the spread. They
+ * open at <body>, outside the page's font variables, so they carry the kit's
+ * faces (`fonts`, from @outegro/ui/fonts) for the calm level's Manrope.
+ */
+export function DialogDemo({ fonts }: { fonts: string }) {
   const level = use(LevelContext);
   return (
     <div className={s.row}>
@@ -67,7 +71,7 @@ export function DialogDemo() {
         <DialogTrigger asChild>
           <Button variant="destructive">Delete the board</Button>
         </DialogTrigger>
-        <DialogContent data-theme={level} closeLabel="Close">
+        <DialogContent data-theme={level} className={fonts} closeLabel="Close">
           <DialogHeader>
             <DialogTitle>Delete “Night sea”?</DialogTitle>
             <DialogDescription>
@@ -89,7 +93,7 @@ export function DialogDemo() {
         <DialogTrigger asChild>
           <Button variant="outline">What is new</Button>
         </DialogTrigger>
-        <DialogContent data-theme={level} closeLabel="Close">
+        <DialogContent data-theme={level} className={fonts} closeLabel="Close">
           <DialogHeader>
             <DialogTitle>Issue 2 is out</DialogTitle>
             <DialogDescription>

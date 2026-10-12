@@ -7,12 +7,13 @@ import { AuditFeed } from "@/components/audit/audit-feed";
 import { ReaderProgressTable } from "@/components/education/reader-progress";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { DataTable, Time } from "@/components/ui/data";
+import { GrantStatus } from "@/components/ui/grant-status";
 import { Facts, Panel, PanelLink, Stat, Status } from "@/components/ui/layout";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import type { UserDetail } from "@/lib/adapters/identity";
 import { bookOfFeature, grantTargetOf, libraryFeature } from "@/lib/education";
 import { grantTargets } from "@/lib/grant-targets";
-import { grantPhase } from "@/lib/grants";
+import { grantStatus, revocable } from "@/lib/grants";
 import { getLabels } from "@/lib/labels";
 import { educationBooks } from "@/lib/queries";
 import { getFormatter } from "@/lib/request";
@@ -175,60 +176,69 @@ export async function AccessTab({
                 </tr>
               </thead>
               <tbody>
-                {payments.data.items.map((grant) => (
-                  <tr key={grant.id}>
-                    <td data-primary="">
-                      <span className="cell-main">{grant.feature}</span>
-                      <span className="cell-sub mono">{grant.service}</span>
-                    </td>
-                    <td data-label={t("colSource")}>
-                      {label("grantSource", grant.sourceType)}
-                      {grant.reason && (
-                        <span className="cell-sub">“{grant.reason}”</span>
-                      )}
-                    </td>
-                    <td data-label={t("colState")}>
-                      <Status tone={toneOf("grant", grant.state)}>
-                        {label("grantState", grant.state)}
-                      </Status>
-                    </td>
-                    <td data-label={t("colUntil")}>
-                      {grant.validUntil ? (
-                        <Time iso={grant.validUntil} />
-                      ) : (
-                        <span className="muted">{t("forever")}</span>
-                      )}
-                    </td>
-                    {granted.has("grants.assign") && (
-                      <td data-label={t("colActions")} className="num">
-                        {grant.state === "active" && (
-                          <ActionDialog
-                            action={revokeAccess}
-                            triggerLabel={t("revoke")}
-                            triggerVariant="ghost"
-                            triggerIcon={<XCircleIcon aria-hidden="true" />}
-                            title={t("revokeTitle")}
-                            description={t("revokeDescription", {
-                              feature: grant.feature,
-                              name,
-                            })}
-                            consequences={[
-                              t("revokeEffect"),
-                              ...(grant.sourceType === "subscription"
-                                ? [t("revokeRenewal")]
-                                : []),
-                              t("revokeOthers"),
-                              t("audited"),
-                            ]}
-                            confirmLabel={t("revokeConfirm")}
-                            destructive
-                            hidden={{ grantId: grant.id }}
-                          />
+                {payments.data.items.map((grant) => {
+                  // Where it stands now, not only what Payments recorded:
+                  // "active" also covers booked-ahead and run-out grants.
+                  const status = grantStatus(grant, f.now);
+                  return (
+                    <tr key={grant.id}>
+                      <td data-primary="">
+                        <span className="cell-main">{grant.feature}</span>
+                        <span className="cell-sub mono">{grant.service}</span>
+                      </td>
+                      <td data-label={t("colSource")}>
+                        {label("grantSource", grant.sourceType)}
+                        {grant.reason && (
+                          <span className="cell-sub">“{grant.reason}”</span>
                         )}
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      <td data-label={t("colState")}>
+                        <GrantStatus status={status} label={label} />
+                        {status.phase === "scheduled" && (
+                          <span className="cell-sub">
+                            {t("from")}{" "}
+                            <Time iso={grant.validFrom} format="date" />
+                          </span>
+                        )}
+                      </td>
+                      <td data-label={t("colUntil")}>
+                        {grant.validUntil ? (
+                          <Time iso={grant.validUntil} />
+                        ) : (
+                          <span className="muted">{t("forever")}</span>
+                        )}
+                      </td>
+                      {granted.has("grants.assign") && (
+                        <td data-label={t("colActions")} className="num">
+                          {revocable(status.phase) && (
+                            <ActionDialog
+                              action={revokeAccess}
+                              triggerLabel={t("revoke")}
+                              triggerVariant="ghost"
+                              triggerIcon={<XCircleIcon aria-hidden="true" />}
+                              title={t("revokeTitle")}
+                              description={t("revokeDescription", {
+                                feature: grant.feature,
+                                name,
+                              })}
+                              consequences={[
+                                t("revokeEffect"),
+                                ...(grant.sourceType === "subscription"
+                                  ? [t("revokeRenewal")]
+                                  : []),
+                                t("revokeOthers"),
+                                t("audited"),
+                              ]}
+                              confirmLabel={t("revokeConfirm")}
+                              destructive
+                              hidden={{ grantId: grant.id }}
+                            />
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </DataTable>
           )}
@@ -514,7 +524,7 @@ export async function EducationTab({ userId }: { userId: string }) {
               {grants.map((grant) => {
                 // Scheduled, in force, expired or revoked: from its window,
                 // not only from what Payments recorded ("active").
-                const phase = grantPhase(grant, f.now);
+                const status = grantStatus(grant, f.now);
                 return (
                   <tr key={grant.grantId}>
                     <td data-primary="">
@@ -529,9 +539,7 @@ export async function EducationTab({ userId }: { userId: string }) {
                       {label("grantSource", grant.sourceType)}
                     </td>
                     <td data-label={t("colState")}>
-                      <Status tone={toneOf("grantPhase", phase)}>
-                        {label("grantPhase", phase)}
-                      </Status>
+                      <GrantStatus status={status} label={label} />
                     </td>
                     <td data-label={t("colValid")}>
                       <span>
