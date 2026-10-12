@@ -4,19 +4,31 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import paw from "@/assets/zine/paw.webp";
 
 /**
- * A cat's paw reaches in from the left edge a couple of seconds after the
- * block comes into view, shoves the first item a little off its place
- * (it stays crooked) and withdraws. Once per page view.
+ * A cat's paw puts the block in its place: the block lies askew off its
+ * place until it comes into view, then the paw reaches in from the left
+ * edge, pushes it home and withdraws. Once per page view; without motion
+ * (or without script) the block simply stands in its place.
+ *
+ * `cue`: a selector for what, once on screen, sends the paw in at once
+ * (the e-mail line beside the coupon); without it, the block itself.
  */
-export function CatPaw({ children }: { children: ReactNode }) {
+export function CatPaw({
+  children,
+  cue,
+}: {
+  children: ReactNode;
+  cue?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<
-    "idle" | "reach" | "push" | "back" | "done"
+    "idle" | "armed" | "reach" | "push" | "back" | "done"
   >("idle");
 
   useEffect(() => {
     const zone = ref.current;
     if (!zone || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setState("armed");
+    const target = (cue && document.querySelector(cue)) || zone;
     const timers: number[] = [];
     const at = (ms: number, next: typeof state) =>
       timers.push(window.setTimeout(() => setState(next), ms));
@@ -24,19 +36,19 @@ export function CatPaw({ children }: { children: ReactNode }) {
       ([entry]) => {
         if (!entry.isIntersecting) return;
         observer.disconnect();
-        at(2200, "reach");
-        at(3000, "push");
-        at(3500, "back");
-        at(4400, "done");
+        at(0, "reach");
+        at(550, "push");
+        at(1000, "back");
+        at(1800, "done");
       },
-      { threshold: 0.7 },
+      { threshold: 0.5 },
     );
-    observer.observe(zone);
+    observer.observe(target);
     return () => {
       observer.disconnect();
       timers.forEach(clearTimeout);
     };
-  }, []);
+  }, [cue]);
 
   return (
     <div ref={ref} className="paw-zone" data-paw={state}>

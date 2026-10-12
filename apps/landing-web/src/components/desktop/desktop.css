@@ -1,0 +1,785 @@
+/* ─── What I can build: an old desktop ────────────────────── */
+/* A desktop in the spirit of the early-2000s one: wallpaper, shortcuts,
+   blue-titled windows on beige chrome, a taskbar. Exactly one screen tall
+   on wide screens, the taskbar at its foot. The system faces of the time
+   (Tahoma, Trebuchet MS, Lucida Console) with ordinary fallbacks; none are
+   loaded. The colours are the era's, kept here and nowhere else. */
+.os {
+  --xp-face: Tahoma, Verdana, "Segoe UI", sans-serif;
+  --xp-title-face: "Trebuchet MS", Tahoma, "Segoe UI", sans-serif;
+  --xp-mono: "Lucida Console", Consolas, "Courier New", monospace;
+  --xp-chrome: #ece9d8;
+  --xp-frame: #0054e3;
+  --xp-select: #316ac5;
+  position: relative;
+  isolation: isolate;
+  /* the screens stacked on one another overhang the end of the computer by
+     a screen (their margins pull them up); nothing of them shows past it */
+  overflow: clip;
+  font-family: var(--xp-face);
+  color: #000;
+}
+/* the wallpaper and the taskbar stay on screen all the way through */
+.os-backdrop {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  height: 100svh;
+  margin-bottom: -100svh;
+  overflow: hidden;
+}
+.desktop-wallpaper {
+  object-fit: cover;
+  object-position: 50% 70%;
+}
+.os-backdrop .xp-taskbar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+}
+.desktop {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  padding-bottom: 34px;
+  /* an anchor lands on the very top: the page's scroll padding undone */
+  scroll-margin-top: -96px;
+}
+.desktop-area {
+  display: grid;
+  flex: 1;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 24px;
+  min-height: 0;
+  padding-block: 18px;
+}
+
+/* shortcuts down the left */
+.desktop-icons {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+.desktop-icon {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 80px;
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+  color: #fff;
+  text-shadow:
+    1px 1px 1px rgb(0 0 0 / 70%),
+    0 0 4px rgb(0 0 0 / 50%);
+}
+.desktop-icon svg {
+  width: 38px;
+  height: 38px;
+  filter: drop-shadow(1px 2px 1px rgb(0 0 0 / 40%));
+}
+a.desktop-icon:is(:hover, :focus-visible) span {
+  background: var(--xp-select);
+  text-shadow: none;
+}
+
+/* two windows on a twelve-column desk, each as tall as what is in it and
+   not lined up, as windows are left open: the text file, small and a bit
+   lower, and the stack in Explorer */
+.desktop-windows {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  min-height: 0;
+}
+.is-notepad {
+  grid-column: 1 / 6;
+  margin-top: 48px;
+}
+.is-stack {
+  grid-column: 6 / 13;
+}
+
+/* ── the window ── */
+.xp-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: 3px solid var(--xp-frame);
+  border-top: 0;
+  border-radius: 8px 8px 0 0;
+  background: var(--xp-chrome);
+  box-shadow: 2px 4px 12px rgb(0 0 0 / 40%);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.xp-title {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 5px 3px 8px;
+  font-family: var(--xp-title-face);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 1px 1px #0f1089;
+  background: linear-gradient(
+    to bottom,
+    #0997ff 0%,
+    #0053ee 8%,
+    #0050ee 40%,
+    #0066ff 88%,
+    #0066ff 93%,
+    #005bff 95%,
+    #003dd7 96%,
+    #003dd7 100%
+  );
+}
+.xp-title > :is(h3, span:not(.xp-controls)) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xp-title-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.xp-controls {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+.xp-controls span {
+  position: relative;
+  width: 21px;
+  height: 21px;
+  border: 1px solid #fff;
+  border-radius: 3px;
+  background: radial-gradient(
+    circle at 90% 90%,
+    #0054e9 0%,
+    #2263d5 55%,
+    #4479e4 70%,
+    #a3bbec 90%,
+    #fff 100%
+  );
+}
+.xp-controls .is-close {
+  background: radial-gradient(
+    circle at 90% 90%,
+    #cc4600 0%,
+    #dc6527 55%,
+    #cd7546 70%,
+    #ffccb2 90%,
+    #fff 100%
+  );
+}
+.xp-controls .is-min::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 7px;
+  height: 3px;
+  background: #fff;
+}
+.xp-controls .is-max::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid #fff;
+  border-top-width: 3px;
+}
+.xp-controls .is-close::before,
+.xp-controls .is-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 13px;
+  height: 2px;
+  background: #fff;
+  translate: -50% -50%;
+  rotate: 45deg;
+}
+.xp-controls .is-close::after {
+  rotate: -45deg;
+}
+.xp-menu {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 1px 4px;
+  font-size: 12px;
+}
+.xp-menu span {
+  padding: 1px 6px;
+}
+/* a body that does not fit scrolls, as windows do */
+.xp-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0 3px 3px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #7f9db9;
+}
+.xp-status {
+  flex: none;
+  margin: 0 3px 3px;
+  padding: 2px 6px;
+  overflow: hidden;
+  font-size: 11px;
+  color: #000;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow:
+    inset 1px 1px #a0a0a0,
+    inset -1px -1px #fff;
+}
+.xp-link {
+  color: #0b4bc3;
+  text-decoration: underline;
+}
+.xp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+.xp-tags li {
+  padding: 0 6px;
+  font-size: 11px;
+  background: #eef3fb;
+  border: 1px solid #7f9db9;
+  border-radius: 2px;
+}
+.xp-button {
+  display: inline-block;
+  min-width: 75px;
+  margin-top: 10px;
+  padding: 3px 14px;
+  font-size: 12px;
+  text-align: center;
+  color: #000;
+  border: 1px solid #003c74;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, #fff 0%, #ecebe6 86%, #d6d0c5 100%);
+}
+.xp-button:hover {
+  box-shadow:
+    inset -1px 1px #fff0cf,
+    inset 1px 2px #fdd889,
+    inset -2px 2px #fbc761,
+    inset 2px -2px #e5a01a;
+}
+.xp-button:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+}
+.xp-input {
+  display: block;
+  padding: 2px 4px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #7f9db9;
+  white-space: nowrap;
+}
+
+/* ── the text file ── */
+.notepad-text {
+  padding: 16px 18px;
+  font-family: var(--xp-mono);
+  font-size: 15px;
+  line-height: 1.65;
+}
+.notepad-text h2 {
+  margin-bottom: 14px;
+  font-family: var(--xp-mono);
+  font-size: clamp(20px, 2vw, 30px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+.notepad-caret {
+  display: inline-block;
+  width: 1px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: #000;
+  animation: xp-blink 1s steps(1) infinite;
+}
+@keyframes xp-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── the stack in Explorer ── */
+/* the address bar, then a folder for each part of the work */
+.stack-address {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #aca899;
+  font-size: 11px;
+  color: #444;
+}
+.stack-address .xp-input {
+  flex: 1;
+  color: #000;
+}
+.stack-folders {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.stack-folder h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #d3e0f1;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0b3c8c;
+}
+.stack-folder h4::first-letter {
+  text-transform: uppercase;
+}
+.stack-folder h4 svg {
+  flex: none;
+  font-size: 16px;
+  color: #e9b949;
+}
+.stack-folder .xp-tags {
+  margin-top: 6px;
+}
+
+/* ── the taskbar ── */
+.xp-taskbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  background: linear-gradient(
+    to bottom,
+    #1f2f86 0%,
+    #3165c4 3%,
+    #3682e5 6%,
+    #4490e6 10%,
+    #3883e5 12%,
+    #2b71e0 15%,
+    #2663da 18%,
+    #235bd6 20%,
+    #2258d5 23%,
+    #2157d6 38%,
+    #245ddb 54%,
+    #2562df 86%,
+    #245fdc 89%,
+    #2158d4 92%,
+    #1d4ec0 95%,
+    #1941a5 98%
+  );
+}
+.xp-start {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 22px 0 12px;
+  font-family: var(--xp-title-face);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgb(0 0 0 / 50%);
+  border-radius: 0 12px 12px 0;
+  background: radial-gradient(
+    circle at 50% -20%,
+    #79d65b 0%,
+    #3c9b2a 55%,
+    #2c7a1d 100%
+  );
+  box-shadow: inset -3px 0 4px rgb(0 0 0 / 25%);
+}
+.xp-start svg {
+  width: 20px;
+  height: 20px;
+}
+.xp-tasks {
+  display: flex;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+.xp-tasks span {
+  flex: 0 1 150px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 3px;
+  background: #3c81f3;
+  box-shadow:
+    inset 1px 1px rgb(255 255 255 / 25%),
+    inset -1px -1px rgb(0 0 0 / 20%);
+}
+.xp-tasks .is-active {
+  background: #1e52b7;
+  box-shadow: inset 1px 1px 2px rgb(0 0 0 / 40%);
+}
+.xp-tasks .is-game {
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+.xp-tasks .is-game svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.os:not([data-stage]) .xp-tasks .is-game,
+.os[data-game] .xp-tasks .is-game {
+  display: flex;
+}
+/* minimised, every program is a button again; the game is the one open */
+.os[data-minimised] .xp-tasks > .is-active {
+  background: #3c81f3;
+  box-shadow:
+    inset 1px 1px rgb(255 255 255 / 25%),
+    inset -1px -1px rgb(0 0 0 / 20%);
+}
+.os[data-game] .xp-tasks > .is-game {
+  background: #1e52b7;
+  box-shadow: inset 1px 1px 2px rgb(0 0 0 / 40%);
+}
+.xp-tray {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 100%;
+  padding: 0 14px;
+  font-size: 12px;
+  color: #fff;
+  border-left: 1px solid #1042af;
+  background: linear-gradient(
+    to bottom,
+    #0c59b9 1%,
+    #139ee9 6%,
+    #18b5f2 10%,
+    #139beb 14%,
+    #1290e8 19%,
+    #0d8dea 63%,
+    #0d9ff1 81%,
+    #0f9eed 88%,
+    #119be9 91%,
+    #1392e2 94%,
+    #137ed7 97%,
+    #095bc9 100%
+  );
+}
+
+/* ── the loader and the game ── */
+.os-loading {
+  display: none;
+}
+.os-loader {
+  width: min(380px, 100% - 32px);
+}
+.os-loader-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 14px;
+  align-items: center;
+  padding: 16px 18px 18px;
+}
+.os-hourglass {
+  grid-row: span 3;
+  width: 40px;
+  height: 40px;
+  color: #2a5ab8;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .os-hourglass {
+    animation: os-turn 1.4s steps(8) infinite;
+  }
+}
+@keyframes os-turn {
+  to {
+    rotate: 1turn;
+  }
+}
+.os-loader-title {
+  font-weight: 700;
+}
+.os-loader-note {
+  font-size: 11px;
+  color: #444;
+}
+.xp-progress {
+  height: 16px;
+  padding: 2px;
+  background: #fff;
+  border: 1px solid #686868;
+  border-radius: 3px;
+}
+.xp-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to right,
+    #2fc23c 0 8px,
+    transparent 8px 10px
+  );
+}
+.os-game-layer {
+  position: relative;
+  z-index: 1;
+  padding: 48px clamp(16px, 3vw, 40px) 82px;
+}
+/* clip, not hidden: the cartoon pins itself inside it when not staged */
+.os-game {
+  overflow: clip;
+}
+.os-game-screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 3px 3px;
+  background: #000;
+}
+/* the title screen of the game */
+.os-game-intro {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper-white);
+}
+.os-game-chapter {
+  padding: 2px 10px;
+  font-family: var(--font-loud);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper-white);
+  background: var(--ink);
+}
+.os-game-intro h2 {
+  max-width: 18ch;
+  font-family: var(--font-sign);
+  font-size: clamp(30px, 3.6vw, 52px);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+.os-game-intro h2 span {
+  display: block;
+  color: var(--spot-red);
+}
+.os-game-intro > p:not(.os-game-chapter) {
+  max-width: 52ch;
+  font-family: var(--font-plain);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.os-game-start {
+  font-family: var(--xp-mono);
+  font-size: 13px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .os-game-start {
+    animation: xp-blink 1.1s steps(1) infinite;
+  }
+}
+.os-mark {
+  display: none;
+  position: absolute;
+  left: 0;
+  width: 1px;
+  pointer-events: none;
+  /* an anchor lands on the very top: the page's scroll padding undone */
+  scroll-margin-top: -96px;
+}
+
+/* ── staged: one pinned screen, the acts played by scroll (OsStage) ── */
+/* the screens stay pinned to the end of the play (the last screen of the
+   stage is padding), then go up with the page */
+.os[data-stage] {
+  height: 700svh;
+  padding-bottom: 100svh;
+}
+.os[data-stage] > :is(.desktop, .os-loading, .os-game-layer) {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 0;
+  margin-bottom: -100svh;
+}
+.os[data-stage] .os-loading {
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding-bottom: 34px;
+  pointer-events: none;
+  opacity: 0;
+}
+.os[data-stage] .os-loading {
+  transition: opacity 160ms ease-out;
+}
+.os[data-stage][data-loading] .os-loading {
+  opacity: 1;
+}
+.os[data-stage][data-game] .os-loading {
+  opacity: 0;
+}
+/* the bar fills in chunks, as it did, over the loading time OsStage sets */
+.os[data-stage][data-loading] .xp-progress span {
+  width: 100%;
+  transition: width var(--boot, 1.4s) steps(14, end);
+}
+.os[data-stage] .os-game-layer {
+  z-index: 3;
+  padding: 14px clamp(16px, 2vw, 32px) 48px;
+  pointer-events: none;
+}
+.os[data-stage] .os-game {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  pointer-events: auto;
+  opacity: 0;
+  scale: 0.25;
+  transition:
+    opacity 260ms ease-out,
+    scale 420ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+.os[data-stage][data-game] .os-game {
+  opacity: 1;
+  scale: 1;
+}
+.os[data-stage]:not([data-game]) .os-game {
+  pointer-events: none;
+}
+.os[data-stage] .os-game .pj[data-mode="live"] {
+  height: 100%;
+}
+.os[data-stage] .os-game .pj[data-mode="live"] .pj-viewport {
+  position: relative;
+  height: 100%;
+}
+.os[data-stage] .os-game-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  place-content: center;
+  background: color-mix(in srgb, var(--paper-white) 94%, transparent);
+  opacity: var(--intro, 1);
+}
+.os[data-stage] .os-mark {
+  display: block;
+}
+.os[data-stage] .os-mark.is-services {
+  top: 0;
+  height: 220svh;
+}
+.os[data-stage] .os-mark.is-process {
+  top: 220svh;
+  height: 480svh;
+}
+
+/* the windows open as the desktop comes into view: the text file grows
+   out of the start button's corner, the programs pop open after it */
+@media (prefers-reduced-motion: no-preference) {
+  .xp-window[data-reveal] {
+    transition:
+      opacity 240ms ease-out,
+      scale 300ms cubic-bezier(0.2, 0.9, 0.3, 1.15),
+      translate 300ms ease-out;
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .is-notepad[data-reveal] {
+    transform-origin: 0 100%;
+  }
+  html[data-reveal-ready] .xp-window[data-reveal]:not([data-shown]) {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.88;
+    filter: none;
+  }
+  html[data-reveal-ready] .is-notepad[data-reveal]:not([data-shown]) {
+    scale: 0.4;
+  }
+}
+
+/* one screen exactly where the windows fit it; below that the desktop
+   grows with them */
+@media (min-width: 1024px) and (min-height: 640px) {
+  .desktop {
+    height: 100svh;
+  }
+}
+@media (max-width: 1279px) {
+  .desktop-windows {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .desktop-windows > .xp-window {
+    grid-column: auto;
+  }
+}
+@media (max-width: 1279px), (max-height: 639px) {
+  .desktop {
+    height: auto;
+  }
+}
+@media (max-width: 1023px) {
+  .xp-tasks span:not(.is-active) {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .desktop {
+    scroll-margin-top: -76px;
+  }
+  .desktop-area {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .desktop-icons {
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: 6px;
+  }
+  .desktop-icon {
+    width: 72px;
+  }
+}

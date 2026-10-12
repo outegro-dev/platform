@@ -22,24 +22,15 @@ import { calendly } from "@/lib/contact";
 import { LocaleSwitcher } from "./locale-switcher";
 
 /** Sections of the main page, in page order. */
-export const sections = [
-  "projects",
-  "platform",
-  "services",
-  "process",
-  "faq",
-  "contact",
-] as const;
+export const sections = ["projects", "services", "process", "contact"] as const;
 type Section = (typeof sections)[number];
 
 /** Navigation order: the Stack page sits between the sections. */
 const nav: ({ key: Section; section: Section } | { key: "stack" })[] = [
   { key: "projects", section: "projects" },
-  { key: "platform", section: "platform" },
   { key: "services", section: "services" },
   { key: "process", section: "process" },
   { key: "stack" },
-  { key: "faq", section: "faq" },
   { key: "contact", section: "contact" },
 ];
 
@@ -215,23 +206,39 @@ export function Header({
             className="wordmark"
             aria-label={home ? t("home") : t("homePage")}
           >
+            {/* on the main page the name signs the magazine: "by" the author */}
+            {home && <span className="wordmark-by">{t("by")}</span>}
             Nick Lukashik
           </a>
-          <nav
-            className="desktop-nav og-glass max-2xl:hidden!"
-            aria-label={t("sections")}
-          >
-            {links.map((link) => (
-              <a
-                key={link.key}
-                className={link.current ? "is-active" : undefined}
-                aria-current={link.ariaCurrent}
-                href={link.href}
-              >
-                {t(link.key)}
-              </a>
-            ))}
-          </nav>
+          {/* on the main page a rule runs from the byline, as on a masthead */}
+          {home && <span className="header-rule" aria-hidden="true" />}
+          {/* at the top of the main page: two links, as on a masthead; the
+              section strip and the menu take over once the page scrolls */}
+          {home && (
+            <nav className="masthead-nav" aria-label={t("sections")}>
+              <a href="#projects">{t("projects")}</a>
+              <a href="#process">{t("process")}</a>
+            </nav>
+          )}
+          {/* elsewhere the strip of every section; the main page has its
+              masthead links instead */}
+          {!home && (
+            <nav
+              className="desktop-nav og-glass max-2xl:hidden!"
+              aria-label={t("sections")}
+            >
+              {links.map((link) => (
+                <a
+                  key={link.key}
+                  className={link.current ? "is-active" : undefined}
+                  aria-current={link.ariaCurrent}
+                  href={link.href}
+                >
+                  {t(link.key)}
+                </a>
+              ))}
+            </nav>
+          )}
           <div className="header-actions">
             <LocaleSwitcher className="header-locale" />
             {visitor === "off" ? null : visitor === undefined ? (
@@ -246,6 +253,7 @@ export function Header({
                   : "header-account max-md:hidden",
               )
             )}
+            {home && <span className="header-divider" aria-hidden="true" />}
             {/* The short label where the bar is narrow or shared with the
                 section strip; the accessible name is the visible one. */}
             <Button asChild size="sm" className="header-book max-md:hidden">
@@ -257,6 +265,7 @@ export function Header({
               >
                 <span className="max-lg:hidden 2xl:hidden">{t("book")}</span>
                 <span className="lg:max-2xl:hidden">{t("bookShort")}</span>
+                {home && <span className="book-talk">{t("talk")}</span>}
                 <ArrowUpRightIcon aria-hidden="true" />
               </a>
             </Button>
@@ -268,7 +277,12 @@ export function Header({
                 <Button
                   variant="glass"
                   size="icon"
-                  className="mobile-menu-toggle max-2xl:inline-flex!"
+                  // the main page needs the menu only where its masthead
+                  // links are folded away
+                  className={cn(
+                    "mobile-menu-toggle",
+                    home ? "max-lg:inline-flex!" : "max-2xl:inline-flex!",
+                  )}
                   aria-label={t("menu")}
                 >
                   <ListIcon />

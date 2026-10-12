@@ -238,6 +238,12 @@
 .bonk-door:not(:disabled):hover .bonk-door-leaf {
   background: var(--primary-hover);
 }
+/* pressed for the visitor (BonkRetry on cue): held down a beat */
+.bonk-door[data-pressed] .bonk-door-leaf {
+  background: var(--primary-hover);
+  scale: 0.95;
+  animation: none;
+}
 .bonk[data-phase="failed"] .bonk-door::before {
   content: "";
   position: absolute;

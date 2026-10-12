@@ -72,10 +72,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [locale, gate, t, stats] = await Promise.all([
+  const [locale, gate, stats] = await Promise.all([
     getLocale(),
     gateDue(),
-    getTranslations("loader"),
     analytics(),
   ]);
   return (
@@ -91,13 +90,7 @@ export default async function RootLayout({
       )}
       <body>
         {/* first in the body, so it is in the first streamed chunk over the page */}
-        {gate && (
-          <GateLoader
-            cookie={GATE_COOKIE}
-            pier={t("pier")}
-            opening={t("opening")}
-          />
-        )}
+        {gate && <GateLoader cookie={GATE_COOKIE} />}
         <NextIntlClientProvider>
           {/* before the skip link: the question comes ahead of the page */}
           {stats && !stats.consent && <ConsentBanner />}

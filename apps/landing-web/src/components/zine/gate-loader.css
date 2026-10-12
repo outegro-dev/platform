@@ -1,11 +1,12 @@
 /*
- * «Ворота Причала №1» (GateLoader): two corrugated, rusty port gate leaves
- * over every page load, cut out of the same paper as the magazine. Pure CSS
+ * The port gates (GateLoader): two corrugated, rusty port gate leaves over
+ * every page load, cut out of the same paper as the magazine, with nothing
+ * written on them. Pure CSS
  * from the server markup: the show ends hidden and click-through with or
  * without scripting. Every time below is multiplied by --gate-pace
  * (1.4375, so the show takes 2.3 s) and the whole show is tuned in one
  * place. Timeline at pace 1, seconds:
- *   0.08 · 0.30 · 0.52   stamps 3, 2, 1
+ *   0 → 0.62             the gates stand shut
  *   0.62                 the top hinge bolt pops, the padlock opens
  *   0.66 → 1.26          the left leaf sags and falls at the viewer
  *   0.70                 clicks reach the page
@@ -108,18 +109,6 @@
   transform-origin: 0 100%;
   animation: gate-slide calc(0.6s * var(--gate-pace))
     cubic-bezier(0.55, 0, 0.85, 0.4) calc(0.76s * var(--gate-pace)) both;
-}
-/* a stencilled berth number, half worn off */
-.gate-leaf.is-left::after {
-  content: "01";
-  position: absolute;
-  top: 50%;
-  left: 14%;
-  font-family: var(--font-sign);
-  font-size: clamp(64px, 12vw, 180px);
-  line-height: 1;
-  color: color-mix(in srgb, var(--paper-white) 45%, transparent);
-  translate: 0 -50%;
 }
 @keyframes gate-fall {
   0% {
@@ -370,132 +359,6 @@
     translate: -3vw 70vh;
     rotate: -40deg;
     opacity: 0;
-  }
-}
-
-/* ─── The sign over the seam ─── */
-.gate-sign {
-  position: absolute;
-  top: 16%;
-  left: 100%;
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  width: max-content;
-  max-width: min(88vw, 640px);
-  padding: 16px clamp(14px, 2.4vw, 26px) 18px;
-  border: 3px solid var(--ink);
-  background:
-    radial-gradient(circle at 10px 10px, var(--ink) 0 3px, transparent 3.5px),
-    radial-gradient(
-      circle at calc(100% - 10px) 10px,
-      var(--ink) 0 3px,
-      transparent 3.5px
-    ),
-    radial-gradient(
-      circle at 10px calc(100% - 10px),
-      var(--ink) 0 3px,
-      transparent 3.5px
-    ),
-    radial-gradient(
-      circle at calc(100% - 10px) calc(100% - 10px),
-      var(--ink) 0 3px,
-      transparent 3.5px
-    ),
-    var(--paper-white);
-  box-shadow: 5px 5px 0 var(--ink);
-  text-align: center;
-  translate: -50% 0;
-  rotate: -2.5deg;
-}
-/* Ruslan Display stays legible from 28px; the plates print a bit off */
-.gate-sign-name {
-  font-family: var(--font-mast);
-  font-size: clamp(32px, 2.8vw + 22px, 62px);
-  line-height: 1.05;
-  text-transform: uppercase;
-  text-wrap: balance;
-  color: var(--ink);
-  text-shadow:
-    -2px 1px 0 color-mix(in srgb, var(--spot-red) 70%, transparent),
-    2px -1px 0 color-mix(in srgb, var(--spot-blue) 60%, transparent);
-}
-/* paper-white on the deep red passes AA as small text */
-.gate-sign-note {
-  padding: 5px 10px 4px;
-  font-family: var(--font-loud);
-  font-size: clamp(12px, 1.25vw, 17px);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--paper-white);
-  background: var(--spot-red-deep);
-  rotate: 1.5deg;
-}
-
-/* ─── The countdown, stamped on a taped notice ─── */
-.gate-notice {
-  position: absolute;
-  top: 62%;
-  left: 50%;
-  padding: 22px clamp(12px, 2vw, 26px) 18px;
-  border: 2px solid var(--ink);
-  background: var(--paper-white);
-  box-shadow: 4px 4px 0 var(--ink);
-  translate: -50% 0;
-  rotate: 2deg;
-}
-.gate-notice .gate-tape {
-  top: -16px;
-  left: 50%;
-  width: 92px;
-  height: 28px;
-  translate: -50% 0;
-  rotate: -4deg;
-}
-.gate-count {
-  display: flex;
-  align-items: center;
-  gap: clamp(4px, 1vw, 14px);
-}
-/* rubber stamps are 22px+ faces; spot red on paper-white is large text */
-.gate-count > span {
-  display: inline-block;
-  padding: 2px 0.28em 0;
-  font-family: var(--font-stamp);
-  font-size: clamp(30px, 4vw, 54px);
-  line-height: 1.1;
-  color: var(--spot-red);
-  border: 4px double currentColor;
-  border-radius: 8px;
-  mix-blend-mode: multiply;
-  opacity: 0;
-  animation: gate-stamp calc(0.13s * var(--gate-pace))
-    cubic-bezier(0.3, 0, 0.6, 1) both;
-}
-.gate-count > :nth-child(1) {
-  rotate: -9deg;
-  animation-delay: calc(0.08s * var(--gate-pace));
-}
-.gate-count > :nth-child(2) {
-  rotate: 4deg;
-  animation-delay: calc(0.3s * var(--gate-pace));
-}
-.gate-count > :nth-child(3) {
-  rotate: -3deg;
-  animation-delay: calc(0.52s * var(--gate-pace));
-}
-@keyframes gate-stamp {
-  from {
-    opacity: 0;
-    scale: 2.4;
-  }
-  70% {
-    opacity: 0.92;
-    scale: 0.92;
-  }
-  to {
-    opacity: 0.92;
-    scale: 1;
   }
 }
 

@@ -61,13 +61,19 @@ function hardwareWebGL() {
  * a hardware GPU or after a lost context it is laid out as paper notes with
  * stickers instead (the live layout only applies under
  * `(scripting: enabled) and (prefers-reduced-motion: no-preference)`).
+ *
+ * `track`: a selector for an element elsewhere whose scroll span drives the
+ * cartoon instead of its own, while that element is laid out (the desktop's
+ * game window, which pins the cartoon itself, see OsStage).
  */
 export function PaperJourney({
   steps,
   labels,
+  track,
 }: {
   steps: Step[];
   labels: { youSee: string };
+  track?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
@@ -133,7 +139,10 @@ export function PaperJourney({
     let frame = 0;
     const measure = () => {
       frame = 0;
-      const rect = element.getBoundingClientRect();
+      const driver = track ? document.querySelector<HTMLElement>(track) : null;
+      const rect = (
+        driver && driver.offsetParent !== null ? driver : element
+      ).getBoundingClientRect();
       const span = rect.height - window.innerHeight;
       const p = span > 0 ? -rect.top / span : 0;
       progress.current = p;
@@ -162,7 +171,7 @@ export function PaperJourney({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [mode, steps.length]);
+  }, [mode, steps.length, track]);
 
   const fail = () => {
     setEnabled(false);

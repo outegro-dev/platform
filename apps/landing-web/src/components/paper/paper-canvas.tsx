@@ -127,7 +127,6 @@ export default function PaperCanvas({
       }}
       onCreated={({ gl }) => {
         gl.setClearColor(PAPER, 1);
-        gl.localClippingEnabled = true;
         gl.domElement.addEventListener("webglcontextlost", onLost, {
           once: true,
         });

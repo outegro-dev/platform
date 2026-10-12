@@ -19,7 +19,7 @@ import localFont from "next/font/local";
  * life instead of re-setting the stamps seconds in; the next one has it from
  * the cache.
  *
- * Eight faces, each with one job (smallest size it stays legible at):
+ * Eleven faces, each with one job (smallest size it stays legible at):
  *   --og-body-*: old-standard-tt — loud body text, an old magazine column (17px)
  *   --og-mast-*: ruslan-display — masthead and big numbers (28px)
  *   --og-sign-*: unbounded — wide sign lettering for headlines (16px)
@@ -28,6 +28,12 @@ import localFont from "next/font/local";
  *   --og-stamp-*: rubik-dirt — rubber stamps, a word or two (22px)
  *   --og-type-*: pt-mono — typewriter labels and code (12px)
  *   --og-hand-*: caveat — notes in the margins (20px)
+ *   --og-serif-*: source-serif-4 (variable, optical sizes) — the vintage
+ *     cover's lede and the masthead links (16px)
+ *   --og-display-*: noto-serif (variable, widths) — the cover's
+ *     heavy narrow headline and the byline in the masthead (24px)
+ *   --og-cond-*: fira-sans-condensed — spaced caps on the cover's buttons
+ *     and labels (11px)
  * The calm level reads in Manrope from fonts.ts. The retired faces (kitsch,
  * drip, glitch, pixel, marker) keep their --font-* names in zine.css.
  */
@@ -380,6 +386,171 @@ const handLatin = localFont({
   ],
 });
 
+const serifCyrillic = localFont({
+  src: [
+    {
+      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-cyrillic-opsz-normal.woff2",
+      weight: "200 900",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-cyrillic-opsz-italic.woff2",
+      weight: "200 900",
+      style: "italic",
+    },
+  ],
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  variable: "--og-serif-cyrillic",
+  declarations: [
+    {
+      prop: "unicode-range",
+      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
+    },
+  ],
+});
+
+const serifLatin = localFont({
+  src: [
+    {
+      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-normal.woff2",
+      weight: "200 900",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-italic.woff2",
+      weight: "200 900",
+      style: "italic",
+    },
+  ],
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  variable: "--og-serif-latin",
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+    },
+  ],
+});
+
+const condCyrillic = localFont({
+  src: [
+    {
+      path: "../node_modules/@fontsource/fira-sans-condensed/files/fira-sans-condensed-cyrillic-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource/fira-sans-condensed/files/fira-sans-condensed-cyrillic-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource/fira-sans-condensed/files/fira-sans-condensed-cyrillic-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+  ],
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  variable: "--og-cond-cyrillic",
+  declarations: [
+    {
+      prop: "unicode-range",
+      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
+    },
+  ],
+});
+
+const condLatin = localFont({
+  src: [
+    {
+      path: "../node_modules/@fontsource/fira-sans-condensed/files/fira-sans-condensed-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource/fira-sans-condensed/files/fira-sans-condensed-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource/fira-sans-condensed/files/fira-sans-condensed-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+  ],
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  variable: "--og-cond-latin",
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+    },
+  ],
+});
+
+const displayCyrillic = localFont({
+  src: [
+    {
+      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-cyrillic-wdth-normal.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-cyrillic-wdth-italic.woff2",
+      weight: "100 900",
+      style: "italic",
+    },
+  ],
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  variable: "--og-display-cyrillic",
+  declarations: [
+    { prop: "font-stretch", value: "62.5% 100%" },
+    {
+      prop: "unicode-range",
+      value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
+    },
+  ],
+});
+
+const displayLatin = localFont({
+  src: [
+    {
+      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-latin-wdth-normal.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+    {
+      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-latin-wdth-italic.woff2",
+      weight: "100 900",
+      style: "italic",
+    },
+  ],
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  variable: "--og-display-latin",
+  declarations: [
+    { prop: "font-stretch", value: "62.5% 100%" },
+    {
+      prop: "unicode-range",
+      value:
+        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+    },
+  ],
+});
+
 /** Put on <html> next to `fontVariables` to use the zine theme. */
 export const zineFontVariables = [
   bodyCyrillic,
@@ -398,6 +569,12 @@ export const zineFontVariables = [
   typeLatin,
   handCyrillic,
   handLatin,
+  serifCyrillic,
+  serifLatin,
+  condCyrillic,
+  condLatin,
+  displayCyrillic,
+  displayLatin,
 ]
   .map((font) => font.variable)
   .join(" ");

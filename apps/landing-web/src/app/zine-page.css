@@ -5,6 +5,33 @@
  */
 
 /* ─── Shared bits ─────────────────────────────────────────── */
+/* the plain sans of the calm level, for what has to read at a glance; the
+   book serif and the condensed caps of the vintage cover */
+[data-theme="zine"] {
+  --font-serif:
+    var(--og-serif-cyrillic), var(--og-serif-latin), Georgia, "Times New Roman",
+    serif;
+  --font-cond:
+    var(--og-cond-cyrillic), var(--og-cond-latin), "Arial Narrow", sans-serif;
+  /* the cream paper of the vintage cover and its grain, down to the old
+     computer */
+  --vintage-paper: #f6eede;
+  --vintage-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .36 0 0 0 0 .27 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --font-cover:
+    var(--og-display-cyrillic), var(--og-display-latin), Georgia, serif;
+  --font-plain:
+    var(--og-manrope-cyrillic, "Manrope"), var(--og-manrope-latin, "Manrope"),
+    ui-sans-serif, system-ui, sans-serif;
+}
+/* the main page on the vintage cover's cream paper all the way down: the
+   old computer paints its own wallpaper over it */
+html[data-theme="zine"]:has(.cover) {
+  --background: var(--vintage-paper);
+}
+html[data-theme="zine"]:has(.cover) body {
+  background-image: var(--vintage-grain);
+  background-size: auto;
+}
 .section-space {
   padding-block: 110px;
 }
@@ -24,14 +51,7 @@
 /* running text sits on a clean patch of paper, never on the halftone dots;
    the soft shadow pads the patch and fades it out without moving the text */
 [data-theme="zine"]
-:is(
-  .cover-lead,
-  .section-lead,
-  .project-summary,
-  .process-ai,
-  .tags-note,
-  .footer-imprint
-) {
+:is(.section-lead, .project-summary, .process-ai, .tags-note, .footer-imprint) {
   width: fit-content;
   background-color: var(--background);
   box-shadow: 0 0 10px 10px var(--background);
@@ -40,7 +60,6 @@
 /* crooked blocks: --tilt comes from the markup, seeded per block; text-heavy
    blocks get small angles there, long text is never tilted */
 .ads > li,
-.coverlines > li,
 .price-tags > li,
 .platform-layer {
   rotate: var(--tilt, 0deg);
@@ -103,9 +122,45 @@
   border-bottom: 3px double var(--border);
 }
 [data-theme="zine"] .wordmark {
-  font-family: var(--font-mast);
-  font-size: 22px;
-  letter-spacing: 0.02em;
+  font-family: var(--font-cover);
+  font-size: 23px;
+  font-stretch: 82%;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+/* the byline in front of the name, in italic, the name stays the mark */
+.wordmark-by {
+  margin-right: 0.26em;
+  font-stretch: 100%;
+  font-style: italic;
+  font-weight: 400;
+}
+/* the rule from the byline to the links; gone once the strip is there */
+.header-rule {
+  flex: 1;
+  height: 1px;
+  margin-inline: 8px 12px;
+  background: currentColor;
+  opacity: 0.8;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+.site-header[data-scrolled]:not(:has(.masthead-nav)) .header-rule {
+  opacity: 0;
+}
+[data-theme="zine"] .site-header:has(.masthead-nav)::before {
+  background-color: var(--vintage-paper);
+  background-image: var(--vintage-grain);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+}
+@media (max-width: 767px) {
+  .header-rule {
+    display: none;
+  }
+}
+[data-tone="dark"] .wordmark-by {
+  color: inherit;
+  opacity: 0.75;
 }
 [data-theme="zine"] .desktop-nav {
   border-radius: 0;
@@ -125,184 +180,295 @@
 }
 
 /* ─── Cover ───────────────────────────────────────────────── */
+/* the first screen as the vintage cover it was drawn as: on cream paper a
+   heavy narrow headline with its end cut out of magazines, the lede and two
+   flat calls; the magazine lying on the right, and along the bottom a torn
+   strip of red paper with the way of the work, a scrap of blue in the
+   corner. Everything is sized by the screen as a whole (--u: a hundredth of
+   the width of a 3:2 screen), so the composition holds on any wide screen */
 .cover {
-  padding-top: 112px;
-  padding-bottom: 40px;
-}
-.cover-strip {
+  --u: min(1vw, 1.5svh);
+  --cover-paper: var(--vintage-paper);
+  --cover-ink: #171512;
+  --cover-red: #cf3a2c;
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 6px 0;
-  border-block: 2px solid var(--ink);
-  font-family: var(--font-type);
-  font-size: 13px;
-  text-transform: uppercase;
+  flex-direction: column;
+  min-height: 100svh;
+  padding-top: calc(var(--u) * 5.4);
+  padding-bottom: calc(var(--u) * 10.3);
+  /* the torn papers along the bottom run on a little into the next block */
+  overflow: clip visible;
+  color: var(--cover-ink);
 }
-.cover-mast {
-  margin-top: 6px;
-  font-family: var(--font-mast);
-  font-size: min(10.2vw, 172px);
-  line-height: 0.92;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  color: var(--ink);
-  white-space: nowrap;
-  animation: misprint 6s steps(4) infinite;
+/* the copy in the middle of the room between the masthead and the strip:
+   where it is shorter (in Russian) it does not hang at the top */
+.cover-copy {
+  position: relative;
+  z-index: 2;
+  margin-block: auto;
 }
-.cover-tagline {
-  font-family: var(--font-hand);
-  font-size: clamp(22px, 2.4vw, 32px);
-  color: var(--spot-blue);
-  rotate: -2deg;
-  translate: clamp(8px, 20vw, 360px) -6px;
-  width: max-content;
-  max-width: 100%;
-}
-.cover-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: 48px;
-  align-items: start;
-  margin-top: 28px;
-}
+/* the headline in heavy narrow type, printed: the edges a little rough */
 .cover-headline {
-  font-size: clamp(38px, 5.6vw, 84px);
-  line-height: 1.12;
+  font-family: var(--font-cover);
+  font-size: calc(var(--u) * 14.2);
+  font-stretch: 62.5%;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 0.79;
+  letter-spacing: -0.012em;
+  color: var(--cover-ink);
 }
+/* narrower than the narrowest width of the face, as on the cover: drawn
+   in its narrowest width and pressed a little more */
 .cover-lead {
-  max-width: 560px;
-  margin-top: 26px;
-  font-size: 19px;
-  line-height: 1.55;
+  display: block;
+  max-width: calc(var(--u) * 58);
+  transform: scaleX(0.72);
+  transform-origin: left;
+  filter: url("#cover-ink");
 }
-.cover-lead::first-letter {
-  float: left;
-  margin: 6px 8px 0 0;
-  padding: 2px 8px;
-  font-family: var(--font-mast);
-  font-size: 58px;
-  line-height: 1;
-  color: var(--paper-white);
-  background: var(--ink);
+/* the Russian lead is longer: smaller, so it still takes two lines */
+.cover-headline:lang(ru) {
+  font-size: calc(var(--u) * 10.4);
 }
-.coverlines {
-  display: grid;
-  gap: 14px;
-  margin-top: 30px;
-  max-width: 600px;
+.cover-headline:lang(ru) .cover-lead {
+  max-width: calc(var(--u) * 82);
 }
-.coverlines a {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: baseline;
-  gap: 14px;
-  padding: 12px 16px;
-  background: var(--paper-white);
-  border: 2px solid var(--ink);
-  box-shadow: var(--shadow-hard);
-  transition:
-    translate 160ms var(--ease-out),
-    rotate 200ms var(--ease-out);
+.cover-cut {
+  display: block;
+  width: calc(var(--u) * 44.4);
+  height: auto;
+  margin-top: calc(var(--u) * 0.9);
 }
-.coverlines a:hover {
-  translate: 4px -2px;
-  rotate: 1deg;
+.cover-lede {
+  margin-top: calc(var(--u) * 2.1);
+  font-family: var(--font-serif);
+  font-size: calc(var(--u) * 2.42);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
 }
-.coverline-kicker {
-  padding: 3px 7px;
-  font-family: var(--font-loud);
-  font-size: 12px;
-  text-transform: uppercase;
-  color: var(--paper-white);
-  background: var(--spot-red);
-}
-.coverlines li:nth-child(2) .coverline-kicker {
-  background: var(--spot-blue);
-}
-.coverlines li:nth-child(3) .coverline-kicker {
-  background: var(--ink);
-  font-family: var(--font-stamp);
-  font-size: 14px;
-}
-.coverlines li:nth-child(4) .coverline-kicker {
-  background: var(--spot-yellow);
-  color: var(--ink);
-}
-/* the line itself is calm: upright bold body serif in a softer ink, so the
-   loud kicker is the only shout on the strip */
-.coverline-text {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 19px;
-  line-height: 1.4;
-  color: var(--ink-soft);
-}
-.coverline-page {
-  font-family: var(--font-type);
-  font-size: 13px;
-}
-.coverline-page::before {
-  content: "стр. ";
-}
-:lang(en) .coverline-page::before {
-  content: "p. ";
+.cover-lede span {
+  display: block;
 }
 .cover-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 34px;
+  gap: calc(var(--u) * 1.8);
+  margin-top: calc(var(--u) * 2.3);
 }
-.cover-hint {
-  margin-top: 16px;
-  font-family: var(--font-hand);
-  font-size: 23px;
-  line-height: 1.2;
-  color: var(--spot-blue);
-  rotate: -1.5deg;
-  width: max-content;
-  max-width: 100%;
+.cover-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8em;
+  min-height: 44px;
+  height: calc(var(--u) * 4.25);
+  padding-inline: calc(var(--u) * 2.75);
+  font-family: var(--font-cond);
+  font-size: max(12px, calc(var(--u) * 1.12));
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cover-ink);
+  border: 1.5px solid var(--cover-ink);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
-.cover-art {
-  position: relative;
-  margin: 10px 0 0;
-  rotate: 2.2deg;
-  border: 10px solid var(--paper-white);
-  box-shadow:
-    0 0 0 2px var(--ink),
-    14px 16px 0 var(--ink);
+.cover-button svg {
+  font-size: 1.2em;
 }
-.cover-art img {
+.cover-button:hover {
+  color: var(--cover-paper);
+  background: var(--cover-ink);
+}
+.cover-button.is-red {
+  color: #fff;
+  background: var(--cover-red);
+  border-color: var(--cover-red);
+}
+.cover-button.is-red:hover {
+  background: #b23022;
+  border-color: #b23022;
+}
+.cover-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* the magazine lying on the page, as drawn, its shadow and all; .cover-art
+   marks its cover for the book that lifts off it */
+.cover-mag {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--u) * 2.5);
+  right: calc(var(--u) * 0.4);
+  width: calc(var(--u) * 53.4);
+}
+.cover-mag img {
   display: block;
   width: 100%;
   height: auto;
-  filter: contrast(1.08) saturate(1.15) sepia(0.12);
 }
-/* a halftone screen over the print */
-.cover-art::after {
-  content: "";
+.cover-art {
   position: absolute;
-  inset: 0;
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--ink) 30%, transparent) 0.8px,
-    transparent 1.3px
-  );
-  background-size: 4px 4px;
-  mix-blend-mode: multiply;
+  top: 47.7%;
+  left: 51.7%;
+  width: 86.8%;
+  height: 86.5%;
+  translate: -50% -50%;
+  rotate: 5deg;
+  visibility: hidden;
   pointer-events: none;
 }
-.cover-art .tape.is-top {
-  top: -22px;
-  left: 34%;
-  rotate: -4deg;
+
+/* the torn strip along the bottom: the way of the work on red paper, the
+   promise on the page beside it, the blue scrap in the corner */
+.cover-band {
+  position: absolute;
+  z-index: 2;
+  inset: auto 0 0;
+  height: calc(var(--u) * 10.3);
 }
-.cover-art .tape.is-bottom {
-  bottom: -18px;
-  right: -26px;
-  rotate: 38deg;
+/* the strip and the scrap are torn below too: that part lies over the
+   top of the next block, the strip's third, the scrap's two fifths */
+.cover-strip {
+  position: absolute;
+  bottom: calc(var(--u) * -5.15);
+  left: 0;
+  width: calc(var(--u) * 64.5);
+  height: auto;
 }
+.cover-scrap {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--u) * -3.7);
+  width: calc(var(--u) * 6.25);
+  height: auto;
+}
+.cover-band-inner {
+  position: relative;
+  height: 100%;
+}
+.cover-steps {
+  position: absolute;
+  bottom: calc(var(--u) * 1.95);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.1);
+  width: calc(var(--u) * 52.8);
+  padding-top: calc(var(--u) * 1.3);
+  border-top: 1px solid rgb(255 236 222 / 0.5);
+  font-family: var(--font-cond);
+  font-size: max(10px, calc(var(--u) * 0.78));
+  font-weight: 400;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgb(255 240 228 / 0.92);
+}
+.cover-steps li {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: calc(var(--u) * 1.1);
+  white-space: nowrap;
+}
+.cover-steps li:first-child {
+  flex: none;
+}
+.cover-steps li + li::before {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgb(255 236 222 / 0.5);
+}
+
+/* the magazine's cover, flat: the front of the flying book */
+.poster {
+  position: relative;
+  background: #f3ecdc;
+  box-shadow: 10px 16px 30px rgb(27 25 21 / 0.28);
+}
+.poster > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* the masthead of the main page, as on the cover, at the top and once
+   scrolled: the byline with a rule, two links, the language and the call;
+   on the cover's paper once there is page under it. Phones keep the menu */
+.masthead-nav,
+.header-divider,
+.book-talk {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .site-header:has(.masthead-nav) .masthead-nav {
+    display: flex;
+    gap: 38px;
+    margin-left: 4px;
+    font-family: var(--font-serif);
+    font-size: 17px;
+  }
+  .site-header:has(.masthead-nav) .masthead-nav a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .site-header:has(.masthead-nav) .header-account {
+    display: none;
+  }
+  .site-header:has(.masthead-nav) .header-divider {
+    display: block;
+    width: 1px;
+    height: 30px;
+    background: currentColor;
+    opacity: 0.75;
+  }
+  .site-header:has(.masthead-nav) .header-locale {
+    margin-left: 20px;
+    font-family: var(--font-cond);
+    font-size: 14px;
+    letter-spacing: 0.16em;
+  }
+  .site-header:has(.masthead-nav) .header-locale button {
+    min-width: 0;
+    padding-inline: 0;
+  }
+  .site-header:has(.masthead-nav) .header-locale button + button::before {
+    content: "/";
+    margin-inline: 0.45em 0.35em;
+    letter-spacing: 0;
+  }
+  .site-header:has(.masthead-nav) .header-locale button span {
+    border: 0;
+  }
+  .site-header:has(.masthead-nav) .header-book {
+    height: 43px;
+    padding-inline: 22px;
+    font-family: var(--font-cond);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: #fff;
+    background: #cf3a2c;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    rotate: none;
+  }
+  .site-header:has(.masthead-nav) .header-book > span:not(.book-talk) {
+    display: none;
+  }
+  .site-header:has(.masthead-nav) .book-talk {
+    display: inline;
+  }
+}
+
 .burst {
   position: absolute;
   z-index: 3;
@@ -372,23 +538,6 @@
     rotate: -6deg;
     scale: 1.06;
   }
-}
-/* out of the flow over the photo: the selector outranks .price-tag's
-   position: relative, which comes later */
-.cover-art .cover-tag {
-  position: absolute;
-  z-index: 3;
-  left: -44px;
-  bottom: 70px;
-  width: 220px;
-  min-width: 0;
-  rotate: -9deg;
-}
-.cover-art .barcode {
-  position: absolute;
-  z-index: 3;
-  right: 14px;
-  bottom: 14px;
 }
 
 /* ─── Ransom letters ──────────────────────────────────────── */
@@ -630,21 +779,31 @@
 }
 
 /* ─── Ticker ──────────────────────────────────────────────── */
+/* a news crawl along the bottom of the screen, as on TV, while the cover is
+   read; once the cover has gone up it stays put in its place under it. The
+   still, wrapped list of reduced motion stays in the flow */
 .ticker {
   display: flex;
   align-items: stretch;
   overflow: hidden;
-  border-block: 3px solid var(--ink);
+  border-block: 2px solid var(--ink);
   background: var(--spot-yellow);
   color: var(--ink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ticker {
+    position: sticky;
+    z-index: 25;
+    bottom: 0;
+  }
 }
 .ticker-label {
   flex: none;
   display: grid;
   place-items: center;
-  padding: 10px 16px;
+  padding: 4px 12px;
   font-family: var(--font-loud);
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
   color: var(--paper-white);
   background: var(--spot-red);
@@ -663,16 +822,17 @@
   flex: none;
 }
 .ticker-run li {
-  padding: 10px 26px;
+  padding: 5px 22px;
   font-family: var(--font-tabloid);
   font-style: italic;
   font-weight: 900;
-  font-size: 17px;
+  font-size: 14px;
+  line-height: 1.4;
   white-space: nowrap;
 }
 .ticker-run li::after {
   content: "★";
-  margin-left: 26px;
+  margin-left: 22px;
   color: var(--spot-red);
   font-style: normal;
 }
@@ -682,29 +842,309 @@
   }
 }
 
-/* ─── Contents ────────────────────────────────────────────── */
-.toc {
+/* ─── The issue: the cover, the contents, the report ──────── */
+/* Two leaves over a last page (see Issue). By default (no script, reduced
+   motion, screens under 1024px) the two spreads lie one under the other.
+   In flight (IssueFlight) the book is fixed and placed by the script: the
+   cover flies here from the first screen and opens on the way, the spread
+   is pinned, the contents page lifts its corner and turns over, and the
+   report is read before the stage lets go (--issue-stage of scrolling). */
+.issue {
+  --issue-stage: 385svh;
+  /* the blank pages and the broken page: the page's own paper */
+  --blank: var(--vintage-paper);
+  position: relative;
+  padding-block: 72px 32px;
+}
+.issue-pin {
   display: grid;
-  grid-template-columns: 220px minmax(0, 720px);
-  gap: 24px 48px;
-  padding-block: 70px 10px;
+  place-items: center;
+}
+/* a spread: two 2:3 pages, as tall as fits between header and bottom strip */
+.issue-slot {
+  position: relative;
+  width: min(100%, calc(min(100svh - 180px, 900px) * 4 / 3));
+}
+
+/* pages: paper, darker towards the spine */
+.book-sheet {
+  position: relative;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  background-color: var(--paper-white);
+}
+/* the margins go on what is on the page: cqi there is of the page, while
+   on the page itself it would be of the screen */
+.book-sheet > * {
+  margin-inline: 8cqi;
+}
+.book-sheet > :first-child {
+  margin-top: 7cqi;
+}
+.book-sheet > :last-child {
+  margin-bottom: 5cqi;
+}
+.book-sheet.is-recto {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--ink) 14%, transparent),
+    transparent 9%
+  );
+  box-shadow:
+    0 0 0 2px var(--page-ink, var(--ink)),
+    12px 14px 0 var(--page-ink, var(--ink));
+}
+.book-sheet.is-verso {
+  background-image: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--ink) 14%, transparent),
+    transparent 9%
+  );
+  box-shadow:
+    0 0 0 2px var(--page-ink, var(--ink)),
+    0 14px 0 var(--page-ink, var(--ink));
+}
+.book-running {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2cqi;
+  padding-bottom: 1.6cqi;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-plain);
+  font-size: clamp(9px, 2.1cqi, 12px);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+/* the section, on a plaque */
+.book-section {
+  padding: 0.5cqi 2cqi;
+  font-family: var(--font-loud);
+  font-size: clamp(9px, 2.3cqi, 13px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--paper-white);
+  background: var(--ink);
+}
+.book-folio {
+  margin-top: auto;
+  padding-top: 2cqi;
+  font-family: var(--font-plain);
+  font-weight: 600;
+  font-size: clamp(10px, 2.4cqi, 13px);
+  text-align: right;
+}
+.book-sheet.is-verso .book-folio {
+  text-align: left;
+}
+/* only the top margin here: the sides are the page margins of every
+   block on the page, from the running head down */
+.book-photo {
+  margin-top: 7cqi;
+}
+.book-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1440 / 900;
+  object-fit: cover;
+  border: 2px solid var(--ink);
+  filter: contrast(1.05) sepia(0.1);
+}
+.book-photo figcaption {
+  margin-top: 2.4cqi;
+  font-family: var(--font-type);
+  font-size: clamp(10px, 2.6cqi, 13px);
+  color: var(--ink-soft);
+}
+
+/* the inside of the cover: a friends' form written on the page itself;
+   the title in felt-tip pens, the photo in album corners, the questions in
+   print and the answers in ballpoint */
+.form {
+  --pen: #1f3f9e;
+  flex: 1;
+  min-height: 0;
+  margin-top: 3.6cqi;
+  font-family: var(--font-plain);
+}
+/* a longer title is written smaller, to stay on one line by the photo */
+.form-title {
+  margin: 0 0 4cqi;
+  font-family: var(--font-hand);
+  font-size: clamp(22px, min(11.5cqi, 69cqi / var(--letters, 6)), 66px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+/* one felt-tip pen after another, each letter a little askew; a word
+   stays whole */
+.form-word {
+  display: inline-block;
+  margin-right: 0.22em;
+  white-space: nowrap;
+}
+.form-word > span {
+  display: inline-block;
+}
+.form-pen-0 {
+  color: var(--spot-red);
+  rotate: -4deg;
+}
+.form-pen-1 {
+  color: var(--spot-blue);
+  rotate: 3deg;
+  translate: 0 0.04em;
+}
+.form-pen-2 {
+  color: var(--spot-green);
+  rotate: -2deg;
+}
+.form-pen-3 {
+  color: #e0791b;
+  rotate: 4deg;
+  translate: 0 -0.03em;
+}
+.form-title small {
+  display: block;
+  width: fit-content;
+  margin: 0.6cqi 0 0 11cqi;
+  font-size: clamp(14px, 5.4cqi, 30px);
+  font-weight: 400;
+  color: var(--pen);
+  rotate: -3deg;
+}
+/* the photo: a print with a white border, held by four album corners */
+.form-photo {
+  position: relative;
+  float: right;
+  width: 31cqi;
+  margin: -0.6cqi -1cqi 3cqi 3.4cqi;
+  padding: 1.4cqi 1.4cqi 0;
+  background: #fff;
+  box-shadow: 0.5cqi 0.7cqi 0 color-mix(in srgb, var(--ink) 18%, transparent);
+  rotate: 3deg;
+}
+.form-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.form-photo::after {
+  --corner: 5.4cqi;
+  content: "";
+  position: absolute;
+  inset: -0.7cqi;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, var(--ink) 50%, transparent 50%) top left /
+    var(--corner) var(--corner) no-repeat,
+    linear-gradient(225deg, var(--ink) 50%, transparent 50%) top right /
+    var(--corner) var(--corner) no-repeat,
+    linear-gradient(45deg, var(--ink) 50%, transparent 50%) bottom left /
+    var(--corner) var(--corner) no-repeat,
+    linear-gradient(315deg, var(--ink) 50%, transparent 50%) bottom right /
+    var(--corner) var(--corner) no-repeat;
+}
+.form-photo figcaption {
+  padding: 0.4cqi 0 1cqi;
+  font-family: var(--font-hand);
+  font-size: clamp(14px, 4.8cqi, 26px);
+  line-height: 1;
+  text-align: center;
+  color: var(--pen);
+}
+/* the questions, numbered, each answered on its line */
+.form-rows {
+  margin: 0;
+  counter-reset: question;
+}
+/* the line is the answer's: the print sits on the handwriting's line */
+.form-rows > div {
+  counter-increment: question;
+  padding: 1.6cqi 0 1.3cqi;
+  font-size: clamp(13px, 4.5cqi, 25px);
+  line-height: 1.2;
+  border-bottom: 1px dashed color-mix(in srgb, var(--ink) 28%, transparent);
+}
+.form-rows dt {
+  display: inline;
+  font-size: clamp(10px, 2.9cqi, 16px);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.form-rows dt::before {
+  content: counter(question) ". ";
+}
+.form-rows dd {
+  display: inline;
+  margin: 0 0 0 1cqi;
+  font-family: var(--font-hand);
+  color: var(--pen);
+}
+.form-rows a {
+  color: inherit;
+  text-decoration: none;
+}
+.form-rows a:hover {
+  text-decoration: underline wavy var(--spot-red) 1.5px;
+  text-underline-offset: 0.18em;
+}
+/* the craft, gone over with a highlighter */
+.form-rows mark {
+  padding: 0 0.14em;
+  color: inherit;
+  background: linear-gradient(
+    transparent 22%,
+    color-mix(in srgb, var(--spot-yellow) 70%, transparent) 22% 90%,
+    transparent 90%
+  );
+  box-decoration-break: clone;
+}
+/* the hobbies: a list under the question, one craft a line */
+.form-rows > .is-list dd {
+  display: block;
+  margin: 0.4cqi 0 0;
+}
+.form-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.form-list li + li {
+  margin-top: 0.6cqi;
+}
+.form-rows > div:last-child {
+  border-bottom: 0;
+}
+
+/* page 1: the contents */
+.toc {
+  margin-top: 8cqi;
 }
 .toc-title {
+  width: fit-content;
   font-family: var(--font-tabloid);
-  font-size: 46px;
+  font-size: clamp(30px, 10cqi, 56px);
   font-weight: 400;
+  line-height: 1.1;
   color: var(--spot-red);
   rotate: -4deg;
 }
 .toc ol {
-  counter-reset: toc;
+  margin-top: 6cqi;
 }
 .toc a {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 7px 0;
-  font-size: 19px;
+  padding: 1.7cqi 0;
+  font-size: clamp(14px, 3.7cqi, 19px);
 }
 .toc a:hover .toc-name {
   background: var(--spot-yellow);
@@ -716,7 +1156,412 @@
 }
 .toc-page {
   font-family: var(--font-loud);
-  font-size: 14px;
+  font-size: clamp(11px, 2.8cqi, 14px);
+}
+
+/* page 2: the report's story, in two faces only: the heavy sans for the
+   headings, the plain sans for the text */
+.story {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: 6cqi;
+}
+.story-title {
+  font-family: var(--font-sign);
+  font-size: clamp(18px, 6.2cqi, 38px);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+.story-accent {
+  display: block;
+  color: var(--spot-red);
+}
+.story-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2cqi 3cqi;
+  margin-top: 4.4cqi;
+  padding-top: 2.6cqi;
+  border-top: 2px solid var(--ink);
+}
+.story-name {
+  font-family: var(--font-sign);
+  font-size: clamp(15px, 4.8cqi, 28px);
+  font-weight: 900;
+  line-height: 1.05;
+}
+.story-summary {
+  margin-top: 2.4cqi;
+  font-family: var(--font-plain);
+  font-size: clamp(10px, 2.9cqi, 15px);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.issue .book :is(.story-play, .screens-play) {
+  align-self: flex-start;
+  height: auto;
+  min-height: 0;
+  padding: 1.4cqi 2.8cqi;
+  font-size: clamp(9px, 2.4cqi, 13px);
+}
+.issue .book .story-head .story-play {
+  align-self: center;
+}
+/* how it works: the rules of the game, each marked with a cell of the
+   board, a hit in its corner */
+.story-rules-title {
+  margin-top: 5cqi;
+  font-family: var(--font-sign);
+  font-size: clamp(12px, 3.6cqi, 20px);
+  font-weight: 900;
+  line-height: 1.1;
+}
+.story-rules {
+  display: grid;
+  gap: 2.2cqi;
+  margin-top: 2.6cqi;
+  font-family: var(--font-plain);
+}
+.story-rules li {
+  display: grid;
+  grid-template-columns: 7.4cqi minmax(0, 1fr);
+  gap: 2.6cqi;
+  align-items: center;
+}
+.story-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1.5px solid var(--ink);
+  font-size: clamp(8px, 2.3cqi, 13px);
+  font-weight: 700;
+  background: var(--paper);
+}
+.story-cell::after {
+  content: "";
+  position: absolute;
+  top: 0.7cqi;
+  right: 0.7cqi;
+  width: 1.4cqi;
+  height: 1.4cqi;
+  border-radius: 50%;
+  background: var(--spot-red);
+}
+.story-rules p {
+  font-size: clamp(10px, 2.75cqi, 15px);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.story-rules b {
+  font-weight: 800;
+}
+.story-label {
+  margin-top: 4cqi;
+  font-family: var(--font-plain);
+  font-size: clamp(9px, 2.1cqi, 12px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* page 3: the report's screens, one large and three small, each with its
+   caption under it, in the game's own colours */
+.screens {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: 5cqi;
+}
+.screens-shot {
+  margin: 0;
+}
+.screens-frame {
+  overflow: hidden;
+  aspect-ratio: 1440 / 900;
+  border: 1.5px solid var(--ink);
+  background: var(--paper-deep);
+}
+.screens-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.screens-shot figcaption {
+  margin-top: 1.4cqi;
+  font-family: var(--font-plain);
+  font-size: clamp(9px, 2.4cqi, 13px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.screens-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3cqi;
+  margin-top: 3.2cqi;
+}
+.screens-row figcaption {
+  font-size: clamp(8px, 2.1cqi, 12px);
+}
+.issue .screens .badge-list {
+  gap: 1.2cqi;
+  margin-top: 1.6cqi;
+}
+.issue .screens .badge-list li > * {
+  padding: 0.4cqi 1.8cqi;
+  font-size: clamp(9px, 2.2cqi, 12px);
+}
+.issue .book .screens-play {
+  margin-top: 3cqi;
+}
+.screens-note {
+  margin-top: auto;
+  padding-top: 2.4cqi;
+  font-family: var(--font-plain);
+  font-size: clamp(8px, 2cqi, 11px);
+  color: var(--ink-soft);
+}
+
+/* ── lying open: the two spreads one under the other ── */
+.issue:not([data-flight]) .book {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: 56px;
+}
+.issue:not([data-flight]) .book-leaf {
+  display: contents;
+}
+.issue:not([data-flight]) .book-sheet {
+  aspect-ratio: 2 / 3;
+}
+.issue:not([data-flight])
+  :is(.book-face.poster, .book-curl, .is-blank, .issue-error) {
+  display: none;
+}
+.issue:not([data-flight]) .is-inside {
+  grid-area: 1 / 1;
+}
+.issue:not([data-flight]) .is-contents {
+  grid-area: 1 / 2;
+}
+.issue:not([data-flight]) .is-story {
+  grid-area: 2 / 1;
+}
+.issue:not([data-flight]) .is-screens {
+  grid-area: 2 / 2;
+}
+/* a phone: the pages one by one, in the order of the issue */
+@media (max-width: 767px) {
+  .issue:not([data-flight]) .issue-slot {
+    width: min(100%, 440px);
+  }
+  .issue:not([data-flight]) .book {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+  }
+  .issue:not([data-flight])
+    :is(.is-inside, .is-contents, .is-story, .is-screens) {
+    aspect-ratio: auto;
+  }
+  .issue:not([data-flight]) .is-inside {
+    grid-area: 1 / 1;
+  }
+  .issue:not([data-flight]) .is-contents {
+    grid-area: 2 / 1;
+  }
+  .issue:not([data-flight]) .is-story {
+    grid-area: 3 / 1;
+  }
+  .issue:not([data-flight]) .is-screens {
+    grid-area: 4 / 1;
+  }
+}
+
+/* ── in flight: a 3D book on a pinned stage ── */
+/* #projects while the issue is a stage: from where the report lies open
+   (top set by IssueFlight) to the end of the stage */
+.issue-anchor {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  pointer-events: none;
+}
+.issue:not([data-flight]) .issue-anchor {
+  display: none;
+}
+.issue[data-flight] {
+  height: calc(100svh + var(--issue-stage));
+  padding-block: 0;
+}
+.issue[data-flight] .issue-pin {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+}
+.issue[data-flight] .issue-slot {
+  aspect-ratio: 4 / 3;
+}
+.issue[data-flight] .book {
+  --open: 0;
+  --turn: 0;
+  --turn-on: 0;
+  --curl: 0px;
+  --curl-a: 0px;
+  --curl-b: 0px;
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  transform-origin: 75% 50%;
+  perspective: 3400px;
+  will-change: transform;
+}
+.issue[data-flight] :is(.book-page, .book-leaf) {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+}
+/* the last page keeps what is layered on it (the phone, the marks) to
+   itself, under the leaves */
+.issue[data-flight] .book-page {
+  z-index: 0;
+}
+/* the leaves lie over the right page and turn over to the left on the
+   spine; the one turned last lies on top */
+.issue[data-flight] .book-leaf {
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transform: rotateY(calc(var(--leaf) * -180deg));
+}
+.is-cover-leaf {
+  --leaf: var(--open);
+  z-index: 5;
+}
+.is-contents-leaf {
+  --leaf: var(--turn);
+  z-index: 3;
+}
+.is-report-leaf {
+  --leaf: var(--turn-on);
+  z-index: 2;
+}
+.book[data-opened] .is-cover-leaf {
+  z-index: 1;
+}
+.book[data-turned] .is-report-leaf {
+  z-index: 4;
+}
+/* past the report: blank pages, as plain as the broken page coming up */
+.is-blank {
+  background: var(--blank);
+}
+.book-page.is-blank {
+  box-shadow:
+    0 0 0 2px var(--page-ink, var(--ink)),
+    12px 14px 0 var(--page-ink, var(--ink));
+}
+.book-face.is-blank {
+  box-shadow:
+    0 0 0 2px var(--page-ink, var(--ink)),
+    0 14px 0 var(--page-ink, var(--ink));
+}
+/* while the book is shut its pages print no ink round the cover: the
+   outlines come in as it opens */
+.issue[data-flight] .book {
+  --page-ink: color-mix(
+    in srgb,
+    var(--ink) calc(var(--open, 1) * 100%),
+    transparent
+  );
+}
+.issue[data-flight] .book-face {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  backface-visibility: hidden;
+}
+.issue[data-flight] .book-face.is-back {
+  transform: rotateY(180deg);
+}
+/* the corner: the contents page cut along the fold, and the flap of it
+   folded back over the page, showing the back of the paper */
+.issue[data-flight] :is(.is-contents, .is-screens) {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--page-curl)),
+    calc(100% - var(--page-curl)) 100%,
+    0 100%
+  );
+}
+.issue[data-flight] .is-contents {
+  --page-curl: var(--curl-a);
+}
+.issue[data-flight] .is-screens {
+  --page-curl: var(--curl-b);
+}
+.book-curl {
+  position: absolute;
+  z-index: 6;
+  top: calc(100% - var(--curl));
+  left: calc(100% - var(--curl));
+  width: var(--curl);
+  height: var(--curl);
+  filter: drop-shadow(
+    2px 3px 4px color-mix(in srgb, var(--ink) 35%, transparent)
+  );
+  pointer-events: none;
+}
+.book-curl span {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  background: linear-gradient(
+    135deg,
+    var(--paper-white) 20%,
+    var(--paper-deep) 50%
+  );
+}
+
+/* the broken page: white across the screen over the pinned issue, the
+   504 card in the middle (IssueFlight fades it in and out) */
+.issue-error {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: 100%;
+  translate: -50% 0;
+  background-color: var(--blank);
+  background-image: var(--vintage-grain);
+  opacity: 0;
+  pointer-events: none;
+}
+.issue-error[data-shown] {
+  pointer-events: auto;
+}
+.issue-error .bonk {
+  width: min(460px, 100% - 32px);
+}
+.issue-error .bonk-overlay {
+  position: static;
+}
+.issue-error .bonk-card {
+  position: static;
+  margin: 0;
 }
 
 /* ─── Section headings: magazine rubrics ──────────────────── */
@@ -1095,16 +1940,27 @@
 }
 .paw-zone[data-paw="reach"] .paw {
   translate: calc(-100% + 46px) 0;
+  transition-duration: 500ms;
 }
 .paw-zone[data-paw="push"] .paw {
   translate: calc(-100% + 120px) 6px;
   transition-duration: 260ms;
 }
-.paw-zone:is([data-paw="push"], [data-paw="back"], [data-paw="done"])
-  .price-tags
-  > li:first-child {
-  translate: 74px 10px;
-  rotate: 11deg;
+/* the block lies askew off its place until the paw pushes it home */
+.paw-zone > :first-child {
+  transition:
+    translate 420ms cubic-bezier(0.3, 1.6, 0.5, 1),
+    rotate 420ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.paw-zone:is([data-paw="armed"], [data-paw="reach"]) > :first-child {
+  translate: -64px 22px;
+  rotate: -6deg;
+}
+@media (max-width: 767px) {
+  .paw-zone:is([data-paw="armed"], [data-paw="reach"]) > :first-child {
+    translate: -36px 14px;
+    rotate: -5deg;
+  }
 }
 .tags-note {
   margin-top: 28px;
@@ -1418,6 +2274,30 @@
 [data-theme="zine"] .contact-where {
   font-size: 15px;
 }
+/* the coupon and the booked call on the left; every other way to write on
+   the right, from the lead's height (its 36px top margin) down */
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 0 clamp(32px, 5vw, 88px);
+  align-items: start;
+}
+.contact-side {
+  margin-top: 36px;
+}
+/* the narrower column: the address still on one line */
+.contact-side .contact-handle {
+  font-size: clamp(16px, 1.5vw, 22px);
+  white-space: nowrap;
+}
+@media (max-width: 1023px) {
+  .contact-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .contact-side {
+    margin-top: 40px;
+  }
+}
 
 /* ─── Footer: the imprint ─────────────────────────────────── */
 [data-theme="zine"] .site-footer {
@@ -1504,18 +2384,51 @@
   .section-space {
     padding-block: 80px;
   }
+  /* the cover on a phone: the copy, the magazine under it, the strip
+     under that, each in the flow */
   .cover {
+    --u: 2.3vw;
+    min-height: 0;
     padding-top: 96px;
+    padding-bottom: 0;
   }
-  .cover-grid {
-    grid-template-columns: 1fr;
-    gap: 64px;
+  .cover-mag {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: calc(100% + 24px);
+    margin: 28px -12px -8px;
   }
-  .cover-tagline {
-    translate: 0 -2px;
+  .cover-band {
+    position: relative;
+    height: auto;
+    padding: 64px 0 60px;
   }
-  .cover-art {
-    margin-inline: 12px;
+  .cover-strip {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 12% top;
+  }
+  .cover-scrap {
+    display: none;
+  }
+  .cover-steps {
+    position: static;
+    flex-wrap: wrap;
+    width: auto;
+    gap: 8px 12px;
+    padding-top: 12px;
+  }
+  .cover-steps li,
+  .cover-steps li:first-child {
+    flex: none;
+    gap: 12px;
+  }
+  .cover-steps li + li::before {
+    flex: none;
+    width: 14px;
   }
   .burst {
     width: 150px;
@@ -1526,28 +2439,12 @@
   .burst b {
     font-size: 12.5px;
   }
-  .cover-art .cover-tag {
-    left: -18px;
-    bottom: 30px;
-    scale: 0.8;
-  }
   .toc {
     grid-template-columns: 1fr;
   }
   .ads {
     grid-template-columns: 1fr;
   }
-  .coverlines a {
-    grid-template-columns: 1fr auto;
-  }
-  .coverline-kicker {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-  .coverline-text {
-    font-size: 18px;
-  }
-  .cover-actions > *,
   .coupon-actions > *,
   .faq-more > a {
     flex: 1 1 auto;
@@ -1567,7 +2464,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cover-mast,
   .ransom-letter,
   .burst,
   .ticker-track,
@@ -1592,15 +2488,7 @@ html[data-dozing] .ransom-letter {
   translate: 0 calc(0.6em + var(--dy) * 4);
   rotate: calc(var(--r) * 6);
 }
-html[data-dozing] .cover-mast {
-  animation: none;
-  transition:
-    letter-spacing 3s ease-in,
-    opacity 3s;
-  letter-spacing: -0.06em;
-  opacity: 0.8;
-}
-html[data-dozing] .cover-tagline::after {
+html[data-dozing] .form-photo figcaption::after {
   content: " zzz…";
   animation: zzz 1.6s steps(3) infinite;
 }
