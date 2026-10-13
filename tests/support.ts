@@ -55,13 +55,23 @@ export async function hydrated(page: Page) {
 /**
  * Collects what the page complains about from here on: console errors,
  * uncaught exceptions and every CSP violation (reported by the browser as
- * an event, whether or not it also logs it).
+ * an event, whether or not it also logs it); and any page it is served
+ * without a CSP, which would have nothing to complain about.
  */
 export async function watch(page: Page) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
+  });
+  page.on("response", (response) => {
+    if (response.request().resourceType() !== "document") return;
+    const headers = response.headers();
+    if (
+      /^text\/html/.test(headers["content-type"] ?? "") &&
+      !headers["content-security-policy"]
+    )
+      errors.push(`${response.url()} came without a CSP`);
   });
   await page.addInitScript(() => {
     const seen: string[] = [];
@@ -91,18 +101,28 @@ export async function settle(page: Page) {
 
 /**
  * Reads the whole page down to the footer, a screen at a time, each step
- * given two frames for the scroll stages to place themselves.
+ * given two frames for the scroll stages to place themselves; `look` is
+ * told each place they have settled in, the first screen too.
  */
-export async function scrollThrough(page: Page) {
+export async function scrollThrough(
+  page: Page,
+  look?: (y: number) => Promise<void>,
+) {
   const until = Date.now() + 45_000;
+  await look?.(await page.evaluate(() => scrollY));
   for (;;) {
-    const end = await page.evaluate(() => {
+    const { y, end } = await page.evaluate(() => {
       window.scrollBy({ top: innerHeight * 0.6, behavior: "instant" });
-      return scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
+      return {
+        y: scrollY,
+        end: scrollY + innerHeight >= document.documentElement.scrollHeight - 2,
+      };
     });
-    if (end) return;
-    if (Date.now() > until) throw new Error("The scroll never reached the end");
+    if (!end && Date.now() > until)
+      throw new Error("The scroll never reached the end");
     await settle(page);
+    await look?.(y);
+    if (end) return;
   }
 }
 

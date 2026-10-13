@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { menu, trumpDeck } from "../apps/landing-web/src/lib/stack";
 import {
   centre,
@@ -46,8 +46,11 @@ const LINKEDIN = "https://www.linkedin.com/in/nick-lukashick/";
 const GITHUB = "https://github.com/coping-barrel";
 const GAME = "https://battleship.outegro.dev";
 const ACCOUNT = "https://id.outegro.dev";
-/** The page's anchors: the cover, the report, the process, the contacts. */
-const ANCHORS = ["top", "projects", "process", "contact"];
+/**
+ * The page's anchors: the cover, the issue's top, the report, the desktop,
+ * the process, the contacts.
+ */
+const ANCHORS = ["top", "about", "projects", "services", "process", "contact"];
 const desktop = { width: 1440, height: 900 };
 const phone = { width: 375, height: 812 };
 
@@ -679,17 +682,73 @@ for (const [device, viewport] of [
     await hydrated(page);
     for (const id of ANCHORS)
       await expect(page.locator(`#${id}`)).toHaveCount(1);
-    // the scroll stages move ids about; never onto a second element
-    const repeated = await page.evaluate(() => {
-      const ids = [...document.querySelectorAll("[id]")].map((el) => el.id);
-      return ids.filter((id, i) => ids.indexOf(id) !== i);
+    // wide, the issue takes off before the read: its stage plays too
+    if (device === "desktop")
+      await expect(page.locator("#about")).toHaveAttribute("data-flight", "");
+    // the scroll stages move ids about as they play: never off the page or
+    // onto a second element, anywhere down
+    const misplaced = new Map<string, string>();
+    await scrollThrough(page, async (y) => {
+      for (const miss of await page.evaluate((anchors) => {
+        const ids = [...document.querySelectorAll("[id]")].map((el) => el.id);
+        return [
+          ...anchors
+            .filter((id) => !ids.includes(id))
+            .map((id) => `#${id} gone`),
+          ...ids
+            .filter((id, i) => ids.indexOf(id) !== i)
+            .map((id) => `#${id} twice`),
+        ];
+      }, ANCHORS))
+        if (!misplaced.has(miss)) misplaced.set(miss, `${miss} at ${y}px`);
     });
-    expect(repeated).toEqual([]);
+    expect([...misplaced.values()]).toEqual([]);
     const targets = new Set(await hrefs(page.locator('a[href^="#"]')));
     for (const href of targets)
       await expect(page.locator(href ?? ""), `${href}`).toHaveCount(1);
   });
 }
+
+test("desktop: the issue's book, flown and gone up off the screen, is only not painted: a screen reader finds its headings and links anywhere down", async ({
+  page,
+}) => {
+  // Wide, with motion, the book is fixed over the page and placed on every
+  // scroll frame. A reader of the desktop, the process or the contacts
+  // still finds the report and the contents in the lists of headings and
+  // links, and reads back up into them.
+  await page.setViewportSize(desktop);
+  await page.goto("/");
+  await hydrated(page);
+  const issue = page.locator("#about");
+  await expect(issue).toHaveAttribute("data-flight", "");
+  // what assistive tech has of the issue: each heading and link, by its tag
+  // and words
+  const read = async () =>
+    (
+      await Promise.all(
+        (["heading", "link"] as const).map((role) =>
+          issue
+            .getByRole(role)
+            .evaluateAll((els) =>
+              els.map((el) => `${el.localName} ${el.textContent?.trim()}`),
+            ),
+        ),
+      )
+    ).flat();
+  const all = await read();
+  for (const tag of [/^h\d /, /^a /])
+    expect(
+      all.some((name) => tag.test(name)),
+      `${tag}`,
+    ).toBe(true);
+  const missing = new Map<string, string>();
+  await scrollThrough(page, async (y) => {
+    const now = await read();
+    for (const name of all.filter((name) => !now.includes(name)))
+      if (!missing.has(name)) missing.set(name, `${name}: gone at ${y}px`);
+  });
+  expect([...missing.values()]).toEqual([]);
+});
 
 test("header: the name leads to the top, the masthead links land, the call is booked in Calendly", async ({
   page,
@@ -882,15 +941,24 @@ test("header: tucked away while reading down, back on the slightest scroll up", 
   await expect(name).toBeInViewport();
 });
 
-test("phone menu: the sections and the call, and it closes after a jump", async ({
+test("phone menu: the sections and the call, Esc back to its square, and it closes after a jump", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize(phone);
   await page.goto("/");
   await hydrated(page);
-  await page.getByRole("button", { name: messages.en.nav.menu }).click();
+  // the open dialog hides the rest of the page from assistive tech
+  const square = page.getByRole("button", {
+    name: messages.en.nav.menu,
+    includeHidden: true,
+  });
+  await square.click();
+  // the dialog's code comes once the menu is asked for, so it opens a
+  // moment after the press
   const menu = page.getByRole("dialog");
+  await expect(menu).toBeVisible();
+  await expect(square).toHaveAttribute("aria-expanded", "true");
   const nav = menu.getByRole("navigation", { name: messages.en.nav.sections });
   const links = (await hrefs(nav.getByRole("link"))).filter((href) =>
     href?.startsWith("#"),
@@ -902,9 +970,18 @@ test("phone menu: the sections and the call, and it closes after a jump", async 
   await expect(book).toBeVisible();
   await expectNewTab(book);
 
+  // Esc gives the focus back to the square; opened from the keyboard, the
+  // menu starts on its first section
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(square).toBeFocused();
+  await expect(square).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("Enter");
+  await expect(nav.getByRole("link").first()).toBeFocused();
+
   const last = links.at(-1) ?? "";
   await nav.locator(`a[href="${last}"]`).click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(menu).toHaveCount(0);
   await expect(page.locator(last)).toBeInViewport();
 });
 
@@ -972,6 +1049,313 @@ for (const [way, from, href, links] of [
     await expect(page.locator(href), "where the jump lands").toBeInViewport();
     expect(await wandersOff(page, href.slice(1), 8_000)).toBeNull();
   });
+
+/**
+ * Each time from here on the focus falls to the page itself, looked at
+ * every frame and after each focus taken away with nowhere to go (so a
+ * drop is seen even if put right before the next frame): where the page
+ * stood and how far the 504 joke had played (again as the joke plays on
+ * meanwhile); read back with the function returned.
+ */
+async function focusDrops(page: Page) {
+  await page.evaluate(() => {
+    const drops: string[] = [];
+    Object.defineProperty(window, "focusDrops", { value: drops });
+    // the joke as it stood when last seen with the focus lost
+    let lost: string | null = null;
+    const look = () => {
+      const focus = document.activeElement;
+      const joke = document.querySelector("[data-phase]");
+      const phase = joke?.getAttribute("data-phase") ?? "";
+      if (focus && focus !== document.body) lost = null;
+      else if (lost !== phase) {
+        lost = phase;
+        drops.push(`at ${Math.round(scrollY)}px, the joke ${phase}`);
+      }
+    };
+    const everyFrame = () => {
+      look();
+      requestAnimationFrame(everyFrame);
+    };
+    requestAnimationFrame(everyFrame);
+    document.addEventListener("focusout", (event) => {
+      if (!event.relatedTarget) setTimeout(look);
+    });
+  });
+  return () =>
+    page.evaluate(
+      () => (window as unknown as { focusDrops: string[] }).focusDrops,
+    );
+}
+
+/**
+ * Scrolls `step` px at a time, each step given two frames for the stages to
+ * place themselves, until something matches `selector`; given an event's
+ * name, until that event has reached what it matches.
+ */
+function scrollTill(
+  page: Page,
+  step: number,
+  selector: string,
+  event?: string,
+) {
+  return page.evaluate(
+    ([step, selector, event]) =>
+      new Promise<void>((done, fail) => {
+        let heard = false;
+        if (event)
+          document.querySelector(selector)?.addEventListener(
+            event,
+            () => {
+              heard = true;
+            },
+            { once: true },
+          );
+        let left = 500;
+        const next = () => {
+          if (event ? heard : document.querySelector(selector)) done();
+          else if (!left--)
+            fail(
+              new Error(
+                `Scrolled on, never to ${event ? `${event} on ` : ""}${selector}`,
+              ),
+            );
+          else {
+            window.scrollBy({ top: step, behavior: "instant" });
+            requestAnimationFrame(() => requestAnimationFrame(next));
+          }
+        };
+        next();
+      }),
+    [step, selector, event] as const,
+  );
+}
+
+/**
+ * What the 504 card went on to within `ms`, read every frame, if it left
+ * its failed state; null while it still waits on its door.
+ */
+function pressedWithin(page: Page, ms: number) {
+  return page.evaluate(
+    (ms) =>
+      new Promise<string | null>((done) => {
+        const start = performance.now();
+        const check = (now: number) => {
+          const phase = document
+            .querySelector("[data-phase]")
+            ?.getAttribute("data-phase");
+          if (phase !== "failed")
+            done(`${phase ?? "no card"} ${Math.round(now - start)} ms on`);
+          else if (now - start >= ms) done(null);
+          else requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+      }),
+    ms,
+  );
+}
+
+/** Whether the focus is on what `locator` finds or somewhere inside it. */
+function holdsFocus(locator: Locator) {
+  return locator.evaluate((el) => el.contains(document.activeElement));
+}
+
+/** Until the page sits still: a smooth scroll under way has come to rest. */
+async function scrolledStill(page: Page) {
+  let last = Number.NaN;
+  await expect
+    .poll(
+      async () => {
+        const y = await page.evaluate(() => scrollY);
+        const still = y === last;
+        last = y;
+        return still;
+      },
+      { intervals: [300] },
+    )
+    .toBe(true);
+}
+
+/** The old desktop, by its name: its stage moves #services onto a mark. */
+function theDesktop(page: Page) {
+  const t = messages.en.services;
+  return page.getByRole("region", { name: twoPart(t.title, t.titleAccent) });
+}
+
+/**
+ * Wide, with motion, the issue in flight: the keyboard on the report's
+ * last link, then scrolled on until the broken page is up over the issue.
+ * Watches the focus from the report on.
+ */
+async function toTheBrokenPage(page: Page) {
+  await page.setViewportSize(desktop);
+  await page.goto("/");
+  await hydrated(page);
+  const issue = page.locator("#about");
+  await expect(issue).toHaveAttribute("data-flight", "");
+  // a Tab first: the stage follows only the keyboard's focus to its spread
+  await page.keyboard.press("Tab");
+  await issue.locator(`a[href="${GAME}"]`).last().focus();
+  const drops = await focusDrops(page);
+  await scrollTill(page, 30, ".issue-error[data-shown]");
+  return drops;
+}
+
+/** Until the 504 card has failed and shows its door. */
+const doorUp = (page: Page) =>
+  expect(page.locator("[data-phase]")).toHaveAttribute("data-phase", "failed");
+
+/** Scrolls on until the stage asks the 504 card to press its door. */
+const scrollOnToThePress = (page: Page) =>
+  scrollTill(page, 30, ".bonk", "bonk-retry");
+
+// The 504 card plays over the issue's broken page: its door changes as the
+// joke plays, the card goes, the broken page goes inert as it is scrolled
+// off and the page glides on. The keyboard's place is kept all the while.
+// Scrolled on, the stage presses the door for the reader, but not with the
+// keyboard on it, nor once the keyboard comes to it: that reader presses it.
+for (const [way, toTheDoor] of [
+  [
+    "once the card has failed",
+    async (page: Page) => {
+      await doorUp(page);
+      await page.keyboard.press("Tab");
+    },
+  ],
+  [
+    "and scrolled on",
+    async (page: Page) => {
+      await doorUp(page);
+      await page.keyboard.press("Tab");
+      await scrollOnToThePress(page);
+    },
+  ],
+  [
+    "as it is about to be pressed for the reader scrolling on",
+    async (page: Page) => {
+      await scrollOnToThePress(page);
+      await page.waitForFunction(
+        () => document.querySelector("[data-phase] [data-pressed]"),
+        null,
+        { polling: "raf" },
+      );
+      await page.keyboard.press("Tab");
+    },
+  ],
+] as const)
+  test(`keyboard: the 504 card's door, tabbed to ${way}, waits for the reader's Enter, keeps the focus through the joke and hands it on to the desktop`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName === "webkit",
+      "Safari only tabs to links with Option+Tab by default.",
+    );
+    test.setTimeout(60_000);
+    const drops = await toTheBrokenPage(page);
+    const joke = page.locator("[data-phase]");
+    const door = page.getByRole("button", { name: messages.en.bonk.retry });
+    await toTheDoor(page);
+    await expect(door).toBeFocused();
+    await expect(joke).toHaveAttribute("data-phase", "failed");
+    // the card waits 0.7 s before it presses the door for the reader
+    expect(await pressedWithin(page, 1_500)).toBeNull();
+    await expect(door).not.toHaveAttribute("data-pressed");
+    await page.keyboard.press("Enter");
+    await expect(joke).toHaveAttribute("data-phase", "loaded", {
+      timeout: 20_000,
+    });
+    await scrolledStill(page);
+    // the page has glided on to the desktop, and so has the keyboard
+    const desktopPart = theDesktop(page);
+    await expect(desktopPart).toBeInViewport();
+    await page.keyboard.press("Tab");
+    await expect.poll(() => holdsFocus(desktopPart)).toBe(true);
+    expect(await drops()).toEqual([]);
+  });
+
+for (const [when, phase] of [
+  ["while the card loads", "loading"],
+  ["once it has failed", "failed"],
+] as const)
+  test(`keyboard: Tab on past the 504 card ${when} and Shift+Tab back keep the focus in the issue`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName === "webkit",
+      "Safari only tabs to links with Option+Tab by default.",
+    );
+    test.setTimeout(60_000);
+    const drops = await toTheBrokenPage(page);
+    const joke = page.locator("[data-phase]");
+    await expect(joke).toHaveAttribute("data-phase", phase);
+    // on to the desktop's first shortcut: past the door, if there is one yet
+    const desktopPart = theDesktop(page);
+    if (phase === "failed") await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    await expect.poll(() => holdsFocus(desktopPart)).toBe(true);
+    await expect(joke).not.toHaveAttribute("data-phase", /armed|loading/);
+    // back: onto the door, or the report if the page has gone up off it
+    for (let back = 0; back < 2; back++) {
+      await page.keyboard.press("Shift+Tab");
+      await scrolledStill(page);
+      await expect.poll(() => holdsFocus(page.locator("#about"))).toBe(true);
+    }
+    expect(await drops()).toEqual([]);
+  });
+
+test("keyboard: scrolled back up off the 504 card, the focus on its door goes on from the report", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(
+    browserName === "webkit",
+    "Safari only tabs to links with Option+Tab by default.",
+  );
+  test.setTimeout(60_000);
+  const drops = await toTheBrokenPage(page);
+  const joke = page.locator("[data-phase]");
+  await expect(joke).toHaveAttribute("data-phase", "failed");
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: messages.en.bonk.retry }),
+  ).toBeFocused();
+  // the broken page goes inert as it fades, and the joke is set again a
+  // little further up, its door gone
+  await scrollTill(page, -30, ".issue-error:not([data-shown])");
+  await scrollTill(page, -30, '[data-phase="armed"]');
+  await settle(page);
+  expect(await holdsFocus(page.locator(".issue-error"))).toBe(false);
+  expect(await holdsFocus(page.locator("#about"))).toBe(true);
+  expect(await drops()).toEqual([]);
+});
+
+test("keyboard: the 504 joke played for a reader scrolling on from the report leaves the focus there, and the next Tab goes on to the desktop", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(
+    browserName === "webkit",
+    "Safari only tabs to links with Option+Tab by default.",
+  );
+  test.setTimeout(60_000);
+  const drops = await toTheBrokenPage(page);
+  const joke = page.locator("[data-phase]");
+  await scrollOnToThePress(page);
+  await expect(joke).toHaveAttribute("data-phase", "loaded", {
+    timeout: 20_000,
+  });
+  await scrolledStill(page);
+  const desktopPart = theDesktop(page);
+  await expect(desktopPart).toBeInViewport();
+  expect(await holdsFocus(page.locator("#about"))).toBe(true);
+  // on from where the reader was, to where the page now stands
+  await page.keyboard.press("Tab");
+  await expect.poll(() => holdsFocus(desktopPart)).toBe(true);
+  await expect(desktopPart).toBeInViewport();
+  expect(await drops()).toEqual([]);
+});
 
 test("the masthead on /stack leads to the main page's sections, with scripts and without", async ({
   browser,
@@ -1592,35 +1976,94 @@ test("security headers: a fresh nonce per page, no eval in production, no framin
   expect(nonces.size).toBe(paths.length);
 });
 
-test("an unknown address that only looks like a file, a card or a probe is still the 404 slip under the CSP", async ({
+test("every page the server sends comes under the CSP: the 404 slip at any address, a page loaded ahead or posted to", async ({
   request,
 }) => {
-  // The proxy that sets the policy leaves out the build's files, the probes
-  // and the generated pictures by their paths; a scanner's /wp-login.php,
-  // a card in a language the site has not and a page merely named like a
-  // route are pages of the site all the same. A deeper path too.
-  for (const path of [
+  // The proxy that sets the policy leaves out, each by its whole path, the
+  // routes that answer with a file; whatever else comes back in HTML is a
+  // page of the site. A scanner's /wp-login.php, a card in a language the
+  // site has not, an address that only starts or ends like one of those
+  // routes, a deeper path: each is the 404 slip, under the policy.
+  const files = [
+    "/_next/static/no-such-chunk.js",
+    "/_next/image",
+    "/health",
+    "/health/deep",
+    "/og",
+    "/og/ru",
+    "/icon",
+    "/apple-icon",
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap.xml",
+  ];
+  // a shared link's tracking query is the same page
+  const pages = [
+    "/",
+    "/?utm_source=telegram",
+    "/stack",
+    "/privacy",
+    "/auth/error",
+    "/design-system",
+  ];
+  const unknown = [
+    "/no-such-page",
     "/stack/no-such-page",
+    "/STACK",
     "/wp-login.php",
+    "/.env",
     "/og/de",
     "/ogre",
     "/healthz",
     "/icons",
+    "/_next/no-such-file",
+    "/api/no-such-route",
+    ...files
+      .filter((path) => !path.startsWith("/_next/"))
+      .flatMap((path) => [`${path}x`, `${path}/x`, `${path}.php`]),
+  ];
+  const html = (headers: Record<string, string>) =>
+    /^text\/html/.test(headers["content-type"] ?? "");
+  for (const path of files)
+    expect
+      .soft(html((await request.get(path)).headers()), `${path} is a file`)
+      .toBe(false);
+
+  // A page loaded ahead is the very page the reader then gets, whoever
+  // says so: Chromium's speculative loads in Sec-Purpose, older browsers in
+  // Purpose, the Next router in a header of its own. A form posted back is
+  // answered with a page too.
+  const ways = [
+    ["loaded ahead", { headers: { "sec-purpose": "prefetch;prerender" } }],
+    ["fetched ahead", { headers: { purpose: "prefetch" } }],
+    ["prefetched by the router", { headers: { "next-router-prefetch": "1" } }],
+    ["posted to", { method: "POST" }],
+  ] as const;
+  for (const [path, where, options] of [
+    ...[...pages, ...unknown].map((path) => [path, path, {}] as const),
+    ...ways.flatMap(([way, options]) =>
+      ["/", "/no-such-page"].map(
+        (path) => [path, `${path} ${way}`, options] as const,
+      ),
+    ),
   ]) {
-    const response = await request.get(path);
-    expect.soft(response.status(), path).toBe(404);
-    const html = await response.text();
-    expect
-      .soft(html, path)
-      .toContain(`<title>${messages.en.notFound.meta.title}</title>`);
+    const response = await request.fetch(path, options);
+    const found = pages.includes(path);
+    expect.soft(response.status(), where).toBe(found ? 200 : 404);
+    expect.soft(html(response.headers()), `${where} is a page`).toBe(true);
+    const body = await response.text();
+    if (!found)
+      expect
+        .soft(body, where)
+        .toContain(`<title>${messages.en.notFound.meta.title}</title>`);
     const csp = response.headers()["content-security-policy"] ?? "";
-    const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
     expect
-      .soft(csp, `${path}: the CSP`)
+      .soft(csp, `${where}: the CSP`)
       .toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/);
+    const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
     if (nonce)
-      for (const script of html.match(/<script\b[^>]*>/g) ?? [])
-        expect.soft(script, path).toContain(`nonce="${nonce}"`);
+      for (const script of body.match(/<script\b[^>]*>/g) ?? [])
+        expect.soft(script, where).toContain(`nonce="${nonce}"`);
   }
 });
 
