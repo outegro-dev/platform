@@ -8,7 +8,6 @@
     "services": "Services",
     "process": "Process",
     "stack": "Stack",
-    "faq": "FAQ",
     "contact": "Contact",
     "menu": "Open navigation",
     "close": "Close navigation",
@@ -91,7 +90,9 @@
       "Waiting for the server…",
       "Almost there…"
     ],
+    "request": "GET /blocks/desktop",
     "pending": "pending",
+    "ok": "200 OK · 3 ms",
     "progressLabel": "Loading the block",
     "errorTitle": "This block failed to load",
     "errorBody": "504 Gateway Timeout — the server dozed off.",
@@ -99,55 +100,12 @@
     "knock": "TUNG!",
     "shout": "SAHUR!",
     "hit": "BONK!",
-    "reloading": "Reloading at bonk speed",
-    "replay": "Break the block again"
+    "reloading": "Reloading at bonk speed"
   },
   "services": {
-    "index": "04",
     "title": "What I can build",
     "titleAccent": "for you.",
     "intro": "6+ years in the JavaScript ecosystem. You bring an idea or an existing product; I take it through design, code, payments and infrastructure to launch, and stay for support. One engineer for the whole chain: no handoffs, one person answerable for the result.",
-    "items": [
-      {
-        "title": "Web products and SaaS",
-        "body": "Customer-facing apps with accounts, subscriptions, notifications and an admin panel behind them.",
-        "stack": ["Next.js", "NestJS", "PostgreSQL"],
-        "proof": "Live: battleship.outegro.dev",
-        "href": "https://battleship.outegro.dev"
-      },
-      {
-        "title": "Payments and subscriptions",
-        "body": "Checkout, one-time purchases and subscriptions, receipts and refunds — reconciled with the provider, so money and access never drift apart.",
-        "stack": ["Lava", "Webhooks"],
-        "proof": "Live: the Battleship shop",
-        "href": "https://battleship.outegro.dev/shop"
-      },
-      {
-        "title": "Accounts and sign-in",
-        "body": "Single sign-on across your apps with email codes and Google, plus active sessions and a security page for your users.",
-        "stack": ["SSO", "OAuth 2.0"],
-        "proof": "Live: id.outegro.dev",
-        "href": "https://id.outegro.dev"
-      },
-      {
-        "title": "Real-time and interactive",
-        "body": "WebSocket apps and games, fast and accessible interfaces, and 3D in the browser where it serves the product.",
-        "stack": ["WebSocket", "Three.js"],
-        "proof": "Live: Battleship and this site"
-      },
-      {
-        "title": "Internal tools and integrations",
-        "body": "Admin consoles with roles and an audit log, Telegram and email notifications, integrations with payment and email providers.",
-        "stack": ["Next.js", "Telegram"],
-        "proof": "Live: the outegro.dev operator console"
-      },
-      {
-        "title": "Infrastructure and DevOps",
-        "body": "Kubernetes, CI/CD with GitOps, monitoring, alerts and backups with a tested restore — set up so a release is a merge and a rollback is a revert.",
-        "stack": ["Kubernetes", "Argo CD", "Prometheus"],
-        "proof": "Live: every outegro.dev app"
-      }
-    ],
     "desktop": {
       "start": "start",
       "icons": {
@@ -172,7 +130,6 @@
     }
   },
   "process": {
-    "index": "05",
     "label": "Process",
     "title": "Clear steps,",
     "titleAccent": "visible progress.",
@@ -210,89 +167,6 @@
     "loading": "Starting: Process",
     "levels": "Loading levels",
     "start": "Scroll to start the game"
-  },
-  "engagement": {
-    "index": "06",
-    "title": "Yours to keep,",
-    "titleAccent": "from day one.",
-    "deliverablesTitle": "What you get",
-    "deliverables": [
-      {
-        "title": "Source code in your repository",
-        "body": "Your account and the full history, from the first commit."
-      },
-      {
-        "title": "Tests",
-        "body": "Unit, integration and end-to-end tests that run on every change."
-      },
-      {
-        "title": "Documentation",
-        "body": "Architecture, setup, operations and the decisions behind them."
-      },
-      {
-        "title": "CI/CD",
-        "body": "Every change checked, built and deployed automatically."
-      },
-      {
-        "title": "Monitoring",
-        "body": "Metrics, logs and alerts, in place before launch."
-      },
-      {
-        "title": "Handover",
-        "body": "A walkthrough for your team, with every account and access in your name."
-      }
-    ],
-    "formatsTitle": "Ways to work",
-    "formats": [
-      {
-        "title": "A project",
-        "body": "A product or a feature from idea to launch, with an agreed scope, plan and estimate."
-      },
-      {
-        "title": "Long-term work",
-        "body": "Ongoing development, infrastructure and support, as part of your team."
-      },
-      {
-        "title": "Audit or rescue",
-        "body": "A review of an existing product — code, performance, security, infrastructure — with a prioritised plan, and hands-on fixes if you need them."
-      }
-    ],
-    "cta": "Discuss your project"
-  },
-  "faq": {
-    "index": "07",
-    "label": "Letters to the editor",
-    "title": "Your questions,",
-    "titleAccent": "straight answers.",
-    "intro": "What people usually ask before we start.",
-    "answer": "The editor replies",
-    "items": [
-      {
-        "q": "Who owns the code and the accounts?",
-        "a": "You do, from day one. The repository, the domain, hosting, payment and email services are set up in your name or your company’s, and I work in them as an invited member. All the code and its full history stay in your repository."
-      },
-      {
-        "q": "What if the developer disappears?",
-        "a": "The project does not hang on one person. Documentation on the architecture, setup and operations, tests and automated builds are part of the work, not an extra. You hold every access from the start, so your team or another engineer can pick it up. And when we wrap up, I hand the project over and walk your team through it."
-      },
-      {
-        "q": "Will you sign an NDA?",
-        "a": "Yes. If the task cannot be described without a non-disclosure agreement, send me yours and we sign it before getting into the details."
-      },
-      {
-        "q": "How much does it cost, and can I pay in parts?",
-        "a": "It depends on the scope and the format: a project is priced by estimate, long-term work by the month, an audit at a fixed price. Bigger work is split into stages and paid stage by stage, and every stage ends with something you can open and check. We settle the exact amount and the payment schedule after a short call about the task."
-      },
-      {
-        "q": "Who makes changes and supports the product after launch?",
-        "a": "We can keep going as long-term work: fixes, improvements, new features and an eye on metrics and alerts. Or your own team takes over — by then it has everything it needs: the code, documentation, tests and access."
-      },
-      {
-        "q": "How fast do you reply?",
-        "a": "Usually within a day. If you would rather talk, book a call: 30 minutes at a time that suits you."
-      }
-    ],
-    "more": "Didn’t find your question? Ask it on a call."
   },
   "contact": {
     "index": "08",
@@ -745,20 +619,8 @@
     },
     "coverAlt": "A cover in the style of an old popular-science magazine: an engineer’s desk at night, a brass lamp, a monitor with a Battleship game, a wooden toy ship, a notebook with a ticked list, posters of the Moon and a space shuttle, and a glass of tea in a holder.",
     "burst": "New!",
-    "burstText": "edu.outegro.dev went live on October 6",
     "tagPrice": "$999.99",
     "tagNote": "marked down",
-    "tickerLabel": "Breaking",
-    "ticker": [
-      "Battleship has been in production since September 29",
-      "One account on id.outegro.dev works in every app",
-      "Payments through Lava: receipts, refunds and provider reconciliation",
-      "Every database comes back from backup in 81 seconds",
-      "A watchdog checks the cluster every 5 minutes and reports to Telegram",
-      "The books “Node.js inside out” and “SQL inside out” live on edu.outegro.dev",
-      "Every app is multilingual",
-      "Tests against real PostgreSQL, Valkey and RabbitMQ on every change"
-    ],
     "tocTitle": "In this issue",
     "toc": [
       {
@@ -782,19 +644,6 @@
         "page": "06"
       }
     ],
-    "stampPaid": "Accepted",
-    "adsTitle": "Classifieds",
-    "adWrite": "Message me on Telegram: {title}",
-    "tagsTitle": "Price tags",
-    "tagsNote": "The price depends on the scope: you get a number after a short call about the task.",
-    "tagWas": "$999.99",
-    "tags": ["estimate", "monthly", "fixed price"],
-    "receiptTitle": "Receipt",
-    "receiptNumber": "Receipt No. 0001",
-    "receiptIncluded": "included",
-    "receiptTotal": "Total",
-    "receiptTotalValue": "a product in production",
-    "receiptThanks": "Thank you for your purchase! The code and the access are yours.",
     "couponTitle": "Coupon",
     "couponOffer": "A free 30-minute call",
     "couponFine": "Valid for the bearer: we'll go through the task, the timeline and the cost. No strings attached.",
@@ -802,6 +651,7 @@
     "couponCut2": "Coupon cut out. The contacts are right below.",
     "flyGone": "Fly shooed away",
     "imprint": "Editor-in-chief, author, layout and courier — Nick Lukashik. Print run: 1 copy. The editors are not responsible for the actions of Tung Tung Tung Sahur.",
+    "consoleShout": "TUNG TUNG TUNG SAHUR",
     "consoleNote": "If you are reading this, we will get along. I wrote this site and the platform behind it: https://github.com/coping-barrel. Say hi: https://t.me/coping_barrel"
   }
 }

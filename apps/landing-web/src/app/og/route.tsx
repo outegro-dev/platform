@@ -59,7 +59,7 @@ const papers = [
   { bg: pink, fg: ink },
 ];
 
-/** The cover headline as a ransom note, seeded like the one on the page. */
+/** The headline as a ransom note, seeded like the zine's Ransom. */
 function Ransom({ text }: { text: string }) {
   const next = generator(seed(text));
   return (

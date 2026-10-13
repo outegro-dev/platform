@@ -268,29 +268,6 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   border: 1px solid #7f9db9;
   border-radius: 2px;
 }
-.xp-button {
-  display: inline-block;
-  min-width: 75px;
-  margin-top: 10px;
-  padding: 3px 14px;
-  font-size: 12px;
-  text-align: center;
-  color: #000;
-  border: 1px solid #003c74;
-  border-radius: 3px;
-  background: linear-gradient(to bottom, #fff 0%, #ecebe6 86%, #d6d0c5 100%);
-}
-.xp-button:hover {
-  box-shadow:
-    inset -1px 1px #fff0cf,
-    inset 1px 2px #fdd889,
-    inset -2px 2px #fbc761,
-    inset 2px -2px #e5a01a;
-}
-.xp-button:focus-visible {
-  outline: 1px dotted #000;
-  outline-offset: -4px;
-}
 .xp-input {
   display: block;
   padding: 2px 4px;
@@ -717,7 +694,7 @@ a.desktop-icon:is(:hover, :focus-visible) span {
 }
 
 /* the windows open as the desktop comes into view: the text file grows
-   out of the start button's corner, the programs pop open after it */
+   out of the start button's corner, Explorer pops open after it */
 @media (prefers-reduced-motion: no-preference) {
   .xp-window[data-reveal] {
     transition:
@@ -750,7 +727,6 @@ a.desktop-icon:is(:hover, :focus-visible) span {
 @media (max-width: 1279px) {
   .desktop-windows {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
   }
   .desktop-windows > .xp-window {
     grid-column: auto;

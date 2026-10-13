@@ -9,17 +9,11 @@ const PAPERS = ["white", "yellow", "ink", "red", "blue", "news", "pink"];
  * twitches now and then on its own (a long CSS cycle with a seeded delay)
  * and shuffles on hover.
  */
-export function Ransom({
-  text,
-  className,
-}: {
-  text: string;
-  className?: string;
-}) {
+export function Ransom({ text }: { text: string }) {
   const next = generator(seed(text));
   const words = text.split(" ");
   return (
-    <span className={`ransom ${className ?? ""}`}>
+    <span className="ransom">
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
         {words.map((word, w) => (

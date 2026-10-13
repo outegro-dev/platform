@@ -22,7 +22,7 @@ import { calendly } from "@/lib/contact";
 import { LocaleSwitcher } from "./locale-switcher";
 
 /** Sections of the main page, in page order. */
-export const sections = ["projects", "services", "process", "contact"] as const;
+const sections = ["projects", "services", "process", "contact"] as const;
 type Section = (typeof sections)[number];
 
 /** Navigation order: the Stack page sits between the sections. */
@@ -74,18 +74,13 @@ function useVisitor(accounts: boolean): Visitor {
   return visitor;
 }
 
-/** Where the strip is probed for a dark section under it: its middle. */
-const PROBE = 38;
-
 /**
  * Fixed header: transparent over the cover, a strip of the masthead once
  * scrolled, tucked away while reading down and back on the slightest scroll
- * up. It takes the tone of the section under it: over a dark one the strip
- * turns ink and its lettering paper, so the name and the language switch
- * stay legible. On the right: the language, the platform account (the same
- * menu as on every outegro.dev app; none while the site has no accounts)
- * and the call to book, the page's main action. On the Stack page the
- * section links lead back to the main page.
+ * up. On the right: the language, the platform account (the same menu as on
+ * every outegro.dev app; none while the site has no accounts) and the call
+ * to book, the page's main action. On the Stack page the section links lead
+ * back to the main page.
  *
  * The section strip is centred across the bar, and next to the account and
  * the call it only fits from 2xl (1536px): below that it folds into the
@@ -111,15 +106,11 @@ export function Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [dark, setDark] = useState(false);
   const destination = useRef<string | null>(null);
 
   useEffect(() => {
     let last = window.scrollY;
     let frame = 0;
-    const darkSections = [
-      ...document.querySelectorAll<HTMLElement>("main [data-tone='dark']"),
-    ];
     const update = () => {
       frame = 0;
       const y = window.scrollY;
@@ -128,12 +119,6 @@ export function Header({
         setHidden(y > last && y > 480);
         last = y;
       }
-      setDark(
-        darkSections.some((el) => {
-          const rect = el.getBoundingClientRect();
-          return rect.top <= PROBE && rect.bottom >= PROBE;
-        }),
-      );
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
@@ -197,7 +182,6 @@ export function Header({
         className="site-header"
         data-scrolled={scrolled || undefined}
         data-hidden={(hidden && !menuOpen) || undefined}
-        data-tone={dark ? "dark" : undefined}
         onFocusCapture={() => setHidden(false)}
       >
         <div className="site-header-inner og-container">

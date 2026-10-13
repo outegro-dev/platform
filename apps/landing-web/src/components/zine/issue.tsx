@@ -11,11 +11,11 @@ type TocItem = { title: string; href: string; page: string };
  * The issue itself: the cover, opened at the contents, then turned to the
  * Battleship report, then turned once more and broken. Three leaves over a
  * last page: the cover leaf (the cover, and on its back a friends' form:
- * who, the six crafts, production),
+ * who, the favourite toys, the hobby),
  * the contents leaf (the contents, and on its back the report's story,
  * page 2), the report leaf (the report's screens, page 3, and a blank back)
  * and a blank last page; over it all, the broken page that takes the
- * issue's place, where the 504 joke plays (BonkRetry on cue).
+ * issue's place, where the 504 joke plays (BonkRetry).
  *
  * Without script, with reduced motion and on screens under 1024px the two
  * spreads simply lie one under the other. Otherwise IssueFlight flies the
@@ -104,7 +104,7 @@ export async function Issue({ toc }: { toc: TocItem[] }) {
         </div>
         {/* instead of the issue, a broken page: the block "failed to load" */}
         <div className="issue-error" inert>
-          <BonkRetry cue />
+          <BonkRetry />
         </div>
       </div>
       {/* where the report is once the page has turned: IssueFlight moves

@@ -52,7 +52,7 @@ import {
  * like stop-motion.
  */
 
-export const STATIONS = [0, 9.5, 19, 28.5, 38] as const;
+const STATIONS = [0, 9.5, 19, 28.5, 38] as const;
 /** Where a narrow (phone) frame centres on each station. */
 const PHONE_FOCUS = [0.7, 0.3, 0, 0.1, -0.15] as const;
 const LAST = STATIONS.length - 1;
@@ -153,7 +153,7 @@ const hash = (a: number, b: number) => {
   const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
-export const coastX = (z: number) =>
+const coastX = (z: number) =>
   COAST + Math.sin(z * 1.3) * 0.5 + Math.sin(z * 3.1 + 1) * 0.22;
 
 const aspectOf = (name: SpriteName) =>

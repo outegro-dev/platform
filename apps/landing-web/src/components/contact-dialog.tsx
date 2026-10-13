@@ -14,28 +14,18 @@ import type { ReactNode } from "react";
 
 export function ContactDialog({
   variant = "outline",
-  compact = false,
-  label,
   children,
 }: {
   variant?: "primary" | "outline" | "glass";
-  compact?: boolean;
-  label?: string;
   /** Contact list, rendered on the server and passed through. */
   children: ReactNode;
 }) {
   const t = useTranslations("contact");
-  const name = label ?? t("button");
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button
-          variant={variant}
-          size={compact ? "icon" : "lg"}
-          aria-label={compact ? name : undefined}
-          className={compact ? "contact-compact" : undefined}
-        >
-          {!compact && name}
+        <Button variant={variant} size="lg">
+          {t("button")}
           <ArrowUpRightIcon />
         </Button>
       </DialogTrigger>

@@ -1,5 +1,6 @@
 import { Button } from "@outegro/ui/button";
 import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr";
+import type { Viewport } from "next";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import cutEn from "@/assets/cover/cut-en.webp";
@@ -20,6 +21,10 @@ import { Issue } from "@/components/zine/issue";
 import { Mischief } from "@/components/zine/mischief";
 import { calendly, contacts } from "@/lib/contact";
 import { sso } from "@/lib/sso";
+
+// the vintage cover's cream paper, which runs down the whole page; the
+// other pages keep the zine paper of the layout
+export const viewport: Viewport = { themeColor: "#f6eede" };
 
 type TocItem = { title: string; href: string; page: string };
 
@@ -179,7 +184,7 @@ export default async function Home() {
       <SiteFooter />
       <RevealObserver />
       <Fly gone={t("zine.flyGone")} />
-      <Mischief note={t("zine.consoleNote")} />
+      <Mischief shout={t("zine.consoleShout")} note={t("zine.consoleNote")} />
     </>
   );
 }

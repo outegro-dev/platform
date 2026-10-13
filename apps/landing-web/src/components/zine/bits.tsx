@@ -49,16 +49,14 @@ export function PriceTag({
   was,
   note,
   children,
-  className,
 }: {
   price: string;
   was?: string;
   note?: string;
   children?: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <div className={`price-tag ${className ?? ""}`}>
+    <div className="price-tag">
       {was && <s className="price-was">{was}</s>}
       <p className="price-value">{price}</p>
       {note && <p className="price-note">{note}</p>}
@@ -70,7 +68,7 @@ export function PriceTag({
   );
 }
 
-/** A rubber-stamp mark; `Stamped` animates the stamp coming down. */
+/** A rubber-stamp mark; `Stamp` animates the stamp coming down. */
 export function StampMark({
   text,
   tone = "red",

@@ -6,7 +6,7 @@
  */
 .consent {
   position: fixed;
-  /* over the boat bar (30) and the header (40), under dialogs and the gates */
+  /* over the header (40), under dialogs and the gates */
   z-index: 45;
   right: 20px;
   bottom: 20px;

@@ -69,10 +69,10 @@ const flip = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
  *   little, then the corner peels back and the page turns over: from the
  *   contents to the report, then from the report to blank pages, while a
  *   white "failed to load" page comes up over the issue. Scrolled on, its
- *   retry presses itself and the 504 joke plays (BonkRetry on cue) with the
- *   page held still; once the block has "reloaded" the broken page is gone
- *   and the page glides on to the classified ads. Scrolled back above the
- *   broken page, it is all set to break again on the way down.
+ *   retry presses itself and the 504 joke plays (BonkRetry) with the page
+ *   held still; once the block has "reloaded" the broken page is gone and
+ *   the page glides on to the desktop. Scrolled back above the broken page,
+ *   it is all set to break again on the way down.
  *
  * Only the pages in sight can be reached by keyboard, and #projects moves
  * to where the report is open. Everywhere else the spreads lie open in
@@ -94,7 +94,6 @@ export function IssueFlight() {
     const joke = broken?.querySelector<HTMLElement>(".bonk");
     const poster = document.querySelector<HTMLElement>(".cover-art");
     const magazine = document.querySelector<HTMLElement>(".cover-mag");
-    const ticker = document.querySelector<HTMLElement>(".ticker");
     if (
       !issue ||
       !pin ||
@@ -256,12 +255,6 @@ export function IssueFlight() {
         hold();
         joke.dispatchEvent(new Event("bonk-retry"));
       }
-      // under the news crawl while it rides the bottom of the screen, over it
-      // once it has settled into the page; the sticky pin is the book's
-      // stacking context, so the pin is the one raised
-      const crawling =
-        ticker !== null && ticker.getBoundingClientRect().bottom >= screen - 1;
-      pin.style.zIndex = crawling ? "" : "26";
       // gone up past the screen, or gone for good with the broken page:
       // nothing to paint
       const gone = to.bottom < 0 || (mended && turningOn >= 1);
@@ -270,7 +263,7 @@ export function IssueFlight() {
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(place);
     };
-    // the block has "reloaded": the broken page goes, on to the classifieds
+    // the block has "reloaded": the broken page goes, on to the desktop
     const mend = () => {
       release();
       mended = true;
@@ -317,6 +310,9 @@ export function IssueFlight() {
       if (!live || flying || !motion.matches) return;
       flying = true;
       issue.dataset.flight = "";
+      // the sticky pin is the fixed book's stacking context, so the pin is
+      // the one raised over the page
+      pin.style.zIndex = "26";
       story.removeAttribute("id");
       anchor.id = "projects";
       place();

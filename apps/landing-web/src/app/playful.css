@@ -28,29 +28,6 @@
 ) {
   min-height: 380px;
 }
-.bonk:is(
-    [data-phase="armed"],
-    [data-phase="loading"],
-    [data-phase="failed"],
-    [data-phase="show"],
-    [data-phase="reloading"]
-  )
-  .bonk-content {
-  visibility: hidden;
-}
-.bonk[data-phase="loaded"] .bonk-content {
-  animation: bonk-pop 520ms var(--ease-out);
-}
-@keyframes bonk-pop {
-  from {
-    opacity: 0;
-    scale: 0.96;
-    filter: blur(6px);
-  }
-  45% {
-    scale: 1.012;
-  }
-}
 .bonk-overlay {
   position: absolute;
   inset: 0;
@@ -315,29 +292,6 @@
     rotate: -12deg;
   }
 }
-.bonk-replay {
-  margin-top: 28px;
-  text-align: center;
-}
-.bonk-replay button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 14px;
-  border: 0;
-  background: none;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted-foreground);
-  border-radius: var(--radius-pill);
-}
-.bonk-replay button:hover {
-  color: var(--foreground);
-}
-
 /* The puppet and its comic lettering sit on the page, above everything. */
 .sahur-layer {
   position: absolute;

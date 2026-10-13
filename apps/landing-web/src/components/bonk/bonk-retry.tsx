@@ -2,7 +2,7 @@
 
 import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import batSprite from "@/assets/sahur/bat.webp";
 import angrySprite from "@/assets/sahur/body-angry.webp";
@@ -35,23 +35,15 @@ import {
 import { bonk, knock, whoosh } from "./sound";
 
 /*
- * A block that "fails" to load the first time it scrolls into view. Its retry
- * button turns out to be a door: three knocks, Tung Tung Tung Sahur walks out,
- * bonks the block, it reloads at sixteen times the speed, and he leaves with
- * the bat on his shoulder.
- *
- * The real content is server-rendered and stays in the page the whole time
- * (only hidden while the joke runs), so search engines, no-JS visitors and
- * reduced-motion visitors simply get the block. The joke runs once per tab
- * session; the replay button under the block runs it again.
- *
- * `cue`: the joke without a block, played from outside. The card waits
- * until a "bonk-start" event reaches it, loads quicker, and a "bonk-retry"
- * event presses its door for the visitor (at once if it has failed, else
- * as soon as it does); it runs every time, and once the block has
- * "reloaded" it sends "bonk-loaded" up the page instead of showing
- * anything (the issue's broken page, see IssueFlight). A "bonk-reset"
- * event arms it again, for the next time the page comes this way.
+ * The 504 card of the issue's broken page, played from outside (see
+ * IssueFlight). It waits until a "bonk-start" event reaches it, then "fails"
+ * to load; a "bonk-retry" event presses its retry button for the visitor (at
+ * once if it has failed, else as soon as it does). The button turns out to
+ * be a door: three knocks, Tung Tung Tung Sahur walks out, bonks the block,
+ * it reloads at sixteen times the speed, and he leaves with the bat on his
+ * shoulder. Once the block has "reloaded" the card sends "bonk-loaded" up
+ * the page; a "bonk-reset" event arms it again, for the next time the page
+ * comes this way.
  */
 
 type Phase =
@@ -63,10 +55,8 @@ type Phase =
   | "reloading"
   | "loaded";
 
-const SEEN_KEY = "og-bonk-seen";
-const LOAD_MS = 2600;
-const CUE_LOAD_MS = 1500;
-/** On cue, how long the failed card is seen before its door is pressed. */
+const LOAD_MS = 1500;
+/** How long the failed card is seen before its door is pressed. */
 const PRESS_MS = 700;
 const RELOAD_MS = 560;
 
@@ -176,29 +166,19 @@ function Actor({
   );
 }
 
-export function BonkRetry({
-  children,
-  className,
-  cue = false,
-}: {
-  children?: ReactNode;
-  className?: string;
-  cue?: boolean;
-}) {
+export function BonkRetry() {
   const t = useTranslations("bonk");
   const root = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const door = useRef<HTMLButtonElement>(null);
   const [phase, setPhase] = useState<Phase>("static");
-  // The replay button needs JS and motion, so it appears only after hydration.
-  const [canPlay, setCanPlay] = useState(false);
   const [knocks, setKnocks] = useState(0);
   const [doorOpen, setDoorOpen] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [stage, setStage] = useState<Stage | null>(null);
   const [sprites, setSprites] = useState<Sprites | null>(null);
   const [status, setStatus] = useState(0);
-  // on cue: the door is to be pressed for the visitor
+  // the door is to be pressed for the visitor
   const [pressed, setPressed] = useState(false);
   const timers = useRef<number[]>([]);
   const later = (ms: number, run: () => void) =>
@@ -206,11 +186,11 @@ export function BonkRetry({
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  // On cue: armed at once, loading when told to, and armed afresh when
-  // told to reset (whatever it was doing, Sahur included).
+  // Armed once hydrated, loading when told to, and armed afresh when told
+  // to reset (whatever it was doing, Sahur included).
   useEffect(() => {
     const element = root.current;
-    if (!cue || !element) return;
+    if (!element) return;
     setPhase("armed");
     const start = () => setPhase((now) => (now === "armed" ? "loading" : now));
     const press = () => setPressed(true);
@@ -233,40 +213,16 @@ export function BonkRetry({
       element.removeEventListener("bonk-retry", press);
       element.removeEventListener("bonk-reset", reset);
     };
-  }, [cue]);
-
-  // Arm only below the fold, with motion allowed, once per tab session.
-  useEffect(() => {
-    const element = root.current;
-    if (cue || !element) return;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    setCanPlay(true);
-    try {
-      if (sessionStorage.getItem(SEEN_KEY)) return;
-    } catch {}
-    if (element.getBoundingClientRect().top < window.innerHeight) return;
-    setPhase("armed");
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        observer.disconnect();
-        setPhase("loading");
-      },
-      { threshold: 0.25 },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [cue]);
+  }, []);
 
   // The slow, doomed load.
   // biome-ignore lint/correctness/useExhaustiveDependencies: timers belong to the phase.
   useEffect(() => {
     if (phase !== "loading") return;
-    const load = cue ? CUE_LOAD_MS : LOAD_MS;
     setStatus(0);
-    later(load * 0.35, () => setStatus(1));
-    later(load * 0.7, () => setStatus(2));
-    later(load, () => setPhase("failed"));
+    later(LOAD_MS * 0.35, () => setStatus(1));
+    later(LOAD_MS * 0.7, () => setStatus(2));
+    later(LOAD_MS, () => setPhase("failed"));
     loadSprites({
       calm: calmSprite.src,
       angry: angrySprite.src,
@@ -277,16 +233,18 @@ export function BonkRetry({
     }).then(setSprites, () => {});
   }, [phase]);
 
+  // the block is back: the broken page can go
+  const reloaded = () => {
+    setPhase("loaded");
+    root.current?.dispatchEvent(new Event("bonk-loaded", { bubbles: true }));
+  };
+
   const retry = () => {
     const c = card.current;
     const d = door.current;
     if (!c || !d) return;
     if (!sprites) {
-      setPhase("loaded");
-      if (cue)
-        root.current?.dispatchEvent(
-          new Event("bonk-loaded", { bubbles: true }),
-        );
+      reloaded();
       return;
     }
     setStage(planStage(c, d));
@@ -297,42 +255,26 @@ export function BonkRetry({
         setKnocks(i + 1);
       });
     later(DOOR_OPEN, () => setDoorOpen(true));
-    if (!cue)
-      try {
-        sessionStorage.setItem(SEEN_KEY, "1");
-      } catch {}
   };
 
-  // on cue, the door pressed for the visitor once the card has failed
+  // the door pressed for the visitor once the card has failed
   // biome-ignore lint/correctness/useExhaustiveDependencies: retry reads the refs of this render.
   useEffect(() => {
-    if (!cue || !pressed || phase !== "failed") return;
+    if (!pressed || phase !== "failed") return;
     const id = window.setTimeout(() => {
       setPressed(false);
       retry();
     }, PRESS_MS);
     return () => window.clearTimeout(id);
-  }, [cue, pressed, phase]);
+  }, [pressed, phase]);
 
   const impactHit = () => {
     setShaking(true);
     setPhase("reloading");
     later(RELOAD_MS, () => {
-      setPhase("loaded");
       setShaking(false);
-      if (cue)
-        root.current?.dispatchEvent(
-          new Event("bonk-loaded", { bubbles: true }),
-        );
+      reloaded();
     });
-  };
-
-  const replay = () => {
-    setKnocks(0);
-    setDoorOpen(false);
-    setStage(null);
-    setPhase("loading");
-    root.current?.scrollIntoView({ block: "start" });
   };
 
   const covered = phase !== "static" && phase !== "loaded";
@@ -341,16 +283,10 @@ export function BonkRetry({
   return (
     <div
       ref={root}
-      className={`bonk ${className ?? ""}`}
+      className="bonk"
       data-phase={phase}
       data-shaking={shaking ? "" : undefined}
     >
-      {children && (
-        <div className="bonk-content" aria-hidden={covered || undefined}>
-          {children}
-        </div>
-      )}
-
       {covered && (
         <div className="bonk-overlay">
           <div
@@ -373,7 +309,7 @@ export function BonkRetry({
                   <span />
                 </div>
                 <p className="bonk-log" aria-hidden="true">
-                  GET /blocks/services … {t("pending")}
+                  {t("request")} … {t("pending")}
                 </p>
               </>
             ) : phase === "reloading" ? (
@@ -388,7 +324,7 @@ export function BonkRetry({
                   <span />
                 </div>
                 <p className="bonk-log" aria-hidden="true">
-                  GET /blocks/services … 200 OK · 3 ms
+                  {t("request")} … {t("ok")}
                 </p>
               </>
             ) : (
@@ -428,15 +364,6 @@ export function BonkRetry({
             )}
           </div>
         </div>
-      )}
-
-      {(phase === "loaded" || (phase === "static" && canPlay)) && (
-        <p className="bonk-replay">
-          <button type="button" onClick={replay}>
-            <ArrowClockwiseIcon aria-hidden="true" />
-            {t("replay")}
-          </button>
-        </p>
       )}
 
       {stage && sprites && (
