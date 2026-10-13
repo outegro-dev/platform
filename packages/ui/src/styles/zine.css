@@ -42,32 +42,103 @@
  * few known lines, so theirs are matched on those: the headline, the name
  * and its byline (display), the lede as a phone sets it, where it wraps
  * (serif: its optical sizes widen smaller text, ~4% at the 17px masthead
- * links), and the spaced capitals (cond).
+ * links), and the spaced capitals (cond). So are the regular body and the
+ * tabloid, which /stack's menu cover draws its first frame in on every
+ * visit (zine-page.css): on its intro as phones, tablets and desktops set
+ * it (at a few widths a word still moves to the next line) and on its
+ * subtitle.
  *
- * The first face of a family has no unicode-range and covers Latin and
- * everything else; the later ones narrow it (the face defined last is
- * checked first for a character). Weights and styles mirror fonts-zine.ts,
- * so a run picks the same weight in the fallback as in the face. Where the
- * local font is missing (most phones), the next family in the token stack
- * stands in. Recompute the numbers when a face changes in fonts-zine.ts.
+ * Android ships none of these local fonts, so the serif faces (body,
+ * tabloid, and the cover's serif and display 900) also have faces on its
+ * system serif, Noto Serif, matched on the same lines (the rest of the
+ * body's on the sample), and so has the hand, which has one on Times New
+ * Roman too for iOS, where Comic Sans is missing: those are matched on the
+ * menu's chef line, sized to just fit its card. Each such set comes before
+ * the one it stands in for: a face whose local font is missing is passed
+ * over for the one defined before it. The first face of a set has no
+ * unicode-range and covers Latin and everything else; the later ones
+ * narrow it (the face defined last is checked first for a character).
+ * Weights and styles mirror fonts-zine.ts, so a run picks the same weight
+ * in the fallback as in the face. Where no local font is there, the next
+ * family in the token stack stands in. Recompute the numbers when a face
+ * changes in fonts-zine.ts.
  */
 @font-face {
   font-family: "og-body-fallback";
-  src: local("Times New Roman"), local("TimesNewRomanPSMT");
+  src: local("Noto Serif"), local("NotoSerif-Regular"), local("NotoSerif");
   font-weight: 400;
-  size-adjust: 106.5%;
-  ascent-override: 71.55%;
-  descent-override: 22.35%;
-  line-gap-override: 22.16%;
+  size-adjust: 90.75%;
+  ascent-override: 83.97%;
+  descent-override: 26.23%;
+  line-gap-override: 26.01%;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Noto Serif"), local("NotoSerif-Regular"), local("NotoSerif");
+  font-weight: 400;
+  size-adjust: 86.5%;
+  ascent-override: 88.09%;
+  descent-override: 27.51%;
+  line-gap-override: 27.28%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Noto Serif Italic"), local("NotoSerif-Italic");
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 91.62%;
+  ascent-override: 83.17%;
+  descent-override: 25.98%;
+  line-gap-override: 25.76%;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Noto Serif Italic"), local("NotoSerif-Italic");
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 89.33%;
+  ascent-override: 85.3%;
+  descent-override: 26.64%;
+  line-gap-override: 26.42%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Noto Serif Bold"), local("NotoSerif-Bold");
+  font-weight: 700;
+  size-adjust: 87.05%;
+  ascent-override: 87.54%;
+  descent-override: 27.34%;
+  line-gap-override: 27.11%;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Noto Serif Bold"), local("NotoSerif-Bold");
+  font-weight: 700;
+  size-adjust: 84%;
+  ascent-override: 90.71%;
+  descent-override: 28.33%;
+  line-gap-override: 28.1%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
   font-family: "og-body-fallback";
   src: local("Times New Roman"), local("TimesNewRomanPSMT");
   font-weight: 400;
-  size-adjust: 101.59%;
-  ascent-override: 75.01%;
-  descent-override: 23.43%;
-  line-gap-override: 23.23%;
+  size-adjust: 107.9%;
+  ascent-override: 70.62%;
+  descent-override: 22.06%;
+  line-gap-override: 21.87%;
+}
+@font-face {
+  font-family: "og-body-fallback";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT");
+  font-weight: 400;
+  size-adjust: 101.75%;
+  ascent-override: 74.89%;
+  descent-override: 23.39%;
+  line-gap-override: 23.19%;
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -180,12 +251,33 @@
 }
 @font-face {
   font-family: "og-tabloid-fallback";
+  src: local("Noto Serif Bold Italic"), local("NotoSerif-BoldItalic");
+  font-weight: 900;
+  font-style: italic;
+  size-adjust: 90.1%;
+  ascent-override: 120.09%;
+  descent-override: 27.86%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-tabloid-fallback";
+  src: local("Noto Serif Bold Italic"), local("NotoSerif-BoldItalic");
+  font-weight: 900;
+  font-style: italic;
+  size-adjust: 95.3%;
+  ascent-override: 113.54%;
+  descent-override: 26.34%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-tabloid-fallback";
   src: local("Georgia Bold Italic"), local("Georgia-BoldItalic");
   font-weight: 900;
   font-style: italic;
-  size-adjust: 88.83%;
-  ascent-override: 121.8%;
-  descent-override: 28.26%;
+  size-adjust: 87.6%;
+  ascent-override: 123.52%;
+  descent-override: 28.65%;
   line-gap-override: 0%;
 }
 @font-face {
@@ -238,6 +330,44 @@
 }
 @font-face {
   font-family: "og-hand-fallback";
+  src: local("Noto Serif"), local("NotoSerif-Regular"), local("NotoSerif");
+  font-weight: 600;
+  size-adjust: 70.65%;
+  ascent-override: 135.88%;
+  descent-override: 42.46%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-hand-fallback";
+  src: local("Noto Serif"), local("NotoSerif-Regular"), local("NotoSerif");
+  font-weight: 600;
+  size-adjust: 68.6%;
+  ascent-override: 139.94%;
+  descent-override: 43.73%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-hand-fallback";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT");
+  font-weight: 600;
+  size-adjust: 81.6%;
+  ascent-override: 117.65%;
+  descent-override: 36.76%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-hand-fallback";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT");
+  font-weight: 600;
+  size-adjust: 75.6%;
+  ascent-override: 126.98%;
+  descent-override: 39.68%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-hand-fallback";
   src: local("Comic Sans MS"), local("ComicSansMS");
   font-weight: 600;
   size-adjust: 71.53%;
@@ -257,6 +387,25 @@
 }
 @font-face {
   font-family: "og-serif-fallback";
+  src: local("Noto Serif"), local("NotoSerif-Regular"), local("NotoSerif");
+  font-weight: 400;
+  size-adjust: 93.53%;
+  ascent-override: 110.77%;
+  descent-override: 35.82%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-serif-fallback";
+  src: local("Noto Serif"), local("NotoSerif-Regular"), local("NotoSerif");
+  font-weight: 400;
+  size-adjust: 93.58%;
+  ascent-override: 110.71%;
+  descent-override: 35.8%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-serif-fallback";
   src: local("Georgia");
   font-weight: 400;
   size-adjust: 100.51%;
@@ -271,6 +420,25 @@
   size-adjust: 101.12%;
   ascent-override: 102.46%;
   descent-override: 33.13%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-display-fallback";
+  src: local("Noto Serif Bold"), local("NotoSerif-Bold");
+  font-weight: 900;
+  size-adjust: 87.47%;
+  ascent-override: 122.21%;
+  descent-override: 33.5%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-display-fallback";
+  src: local("Noto Serif Bold"), local("NotoSerif-Bold");
+  font-weight: 900;
+  size-adjust: 86.9%;
+  ascent-override: 123.01%;
+  descent-override: 33.72%;
   line-gap-override: 0%;
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }

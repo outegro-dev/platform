@@ -21,15 +21,22 @@ import localFont from "next/font/local";
  * the cache.
  *
  * A face that a Russian page may set without a Latin letter (serif,
- * tabloid, loud, the display's 900, the condensed's regular) also has a
- * common cut: the spaces, figures and the punctuation of running text,
- * from its Latin file. On a Russian page the tokens put it between
- * the Cyrillic and the Latin file (zine.css, zine-page.css), so that page
- * fetches the Latin file only for Latin letters; other pages have it all in
- * the Latin file and never ask for it. The display's and the condensed's
- * other weights set Latin on every page (the name and its byline, EN / RU),
- * so their cut has the one weight, and zine-page.css keeps it to the text
- * set in that weight. The stamp keeps its spaces apart instead (see
+ * tabloid, loud, the display's 900, the condensed) also has a common cut:
+ * the spaces, figures and the punctuation of running text, from its Latin
+ * file; the condensed's, in both its weights, also has the capitals of
+ * EN / RU, all the Latin a Russian page sets in it. On a Russian page the
+ * tokens put it between the Cyrillic and the Latin file (zine.css,
+ * zine-page.css), so that page fetches the Latin file only for Latin
+ * letters; other pages have it all in the Latin file and never ask for it.
+ * The display's 900 Cyrillic cut also holds the spaces, all the Russian
+ * headline sets outside Cyrillic, so the cover's first paint needs no
+ * common cut of it; an English page reads its Latin cut first, so as not
+ * to ask for the Cyrillic one for a space. The condensed's does not: a run
+ * loads the first file of its face that covers a space, and most Russian
+ * pages set no Cyrillic in it, only the masthead switch's EN / RU.
+ * The display's other weights set only the masthead's name and its byline,
+ * Latin on every page, so they are a face of their own, cut to those
+ * letters (nameLatin). The stamp keeps its spaces apart instead (see
  * stampSpace).
  *
  * Eleven faces, each with one job (smallest size it stays legible at):
@@ -45,8 +52,8 @@ import localFont from "next/font/local";
  *     the lede's size follows the screen) — the vintage cover's lede and
  *     the masthead links (16px)
  *   --og-display-*: noto-serif in three fixed cuts — the cover's heavy
- *     narrow headline (900 at 62.5% width), the masthead's name (700 at 82%)
- *     and its byline (400 italic) (24px)
+ *     narrow headline (900 at 62.5% width), and as --og-name-latin the
+ *     masthead's name (700 at 82%) and its byline (400 italic) (24px)
  *   --og-cond-*: fira-sans-condensed — spaced caps on the cover's buttons
  *     and labels (11px)
  * The calm level reads in Manrope from fonts.ts. The retired faces (kitsch,
@@ -65,18 +72,21 @@ import localFont from "next/font/local";
  * woff2); their licence is fonts/OFL.txt.
  *   noto-serif-*: @fontsource-variable/noto-serif 5.3.0, the wdth files,
  *     static at wght 900 wdth 62.5 (Latin and Cyrillic), wght 700 wdth 82
- *     and wght 400 wdth 100 italic (Latin only: the name and the byline are
- *     Latin in both languages); the common cut comes from the 900 Latin one
+ *     and wght 400 wdth 100 italic (Latin only, cut to the letters of the
+ *     name and the byline, Latin in both languages); the common cut comes
+ *     from the 900 Latin one, and so do the 900 Cyrillic one's spaces (an
+ *     advance, in no kerning pair)
  *   og-serif-*: @fontsource-variable/source-serif-4 5.3.1, the opsz files,
  *     wght pinned at 400, opsz 8–60 kept (the landing sets it from 15px up;
  *     cutting the axis there moves outlines by rounding for 3 KB); renamed,
  *     as the OFL asks of a changed copy of a face with a Reserved Font Name
  *     ("Source"); its common cut comes from the Latin one
- *   caveat-*, fira-sans-condensed-*: the Fontsource 5.3.0 files; the
- *     condensed's common cut comes from the 400 Latin one
- *   rubik-dirt-*: Fontsource 5.3.0 too, cut to the letters the stamps set
- *     (listed at stampMenuCyrillic): a letter that new stamp copy brings has
- *     to go into a cut, or it draws in the fallback
+ *   fira-sans-condensed-*: the Fontsource 5.3.0 files; the condensed's
+ *     common cuts come from its Latin ones
+ *   caveat-*, rubik-dirt-*: Fontsource 5.3.0 too, cut to the characters
+ *     the hand face and the stamps set (listed at handCyrillic and
+ *     stampMenuCyrillic): a character that new copy brings in them has to
+ *     go into a cut, or it draws in the fallback
  *   og-tabloid-common-*, rubik-mono-one-common-*: from the Fontsource 5.3.0
  *     Latin files; the tabloid's renamed, "Playfair Display" being a
  *     Reserved Font Name too
@@ -518,6 +528,12 @@ const typeLatin = localFont({
   ],
 });
 
+/*
+ * The hand cuts hold what the pages write by hand, as it is drawn: /stack's
+ * notes, prices and chef's line, the main page's questionnaire and cut
+ * coupon, the paper ride's label and the kit specimen's notes and price
+ * tags; and every figure, for the prices.
+ */
 const handCyrillic = localFont({
   src: [
     {
@@ -533,7 +549,8 @@ const handCyrillic = localFont({
   declarations: [
     {
       prop: "unicode-range",
-      value: "U+0401, U+0410-044F, U+0451, U+2116",
+      value:
+        "U+0410-0413, U+0415, U+041A-041B, U+041D-0421, U+0423-0428, U+0430-0449, U+044B-044F, U+0451",
     },
   ],
 });
@@ -554,7 +571,7 @@ const handLatin = localFont({
     {
       prop: "unicode-range",
       value:
-        "U+0020-007E, U+00A0-00BF, U+00D7, U+00F7, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215",
+        "U+0020-0021, U+0024, U+002C-003B, U+0041-0043, U+0045-0046, U+0048-0054, U+0056-0057, U+0059, U+0061-0070, U+0072-007A, U+00A0, U+00B7, U+2014, U+2019",
     },
   ],
 });
@@ -679,6 +696,11 @@ const condCommon = localFont({
       weight: "400",
       style: "normal",
     },
+    {
+      path: "./fonts/fira-sans-condensed-common-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
   ],
   display: "swap",
   preload: false,
@@ -688,7 +710,7 @@ const condCommon = localFont({
     {
       prop: "unicode-range",
       value:
-        "U+0020-0040, U+005B-0060, U+007B-007E, U+00A0, U+00AB, U+00B7, U+00BB, U+2013-2014, U+2018-201A, U+201C-201E, U+2026",
+        "U+0020-0040, U+0045, U+004E, U+0052, U+0055, U+005B-0060, U+007B-007E, U+00A0, U+00AB, U+00B7, U+00BB, U+2013-2014, U+2018-201A, U+201C-201E, U+2026",
     },
   ],
 });
@@ -708,7 +730,7 @@ const displayCyrillic = localFont({
   declarations: [
     {
       prop: "unicode-range",
-      value: "U+0401, U+0410-044F, U+0451, U+2116",
+      value: "U+0020, U+00A0, U+0401, U+0410-044F, U+0451, U+2116",
     },
   ],
 });
@@ -720,6 +742,26 @@ const displayLatin = localFont({
       weight: "900",
       style: "normal",
     },
+  ],
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  variable: "--og-display-latin",
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0020-007E, U+00A0-00BF, U+00D7, U+00F7, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215",
+    },
+  ],
+});
+
+/*
+ * The masthead's name ("Nick Lukashik") and its byline ("by"), each cut to
+ * its letters: the range is the two together, each sets only its own.
+ */
+const nameLatin = localFont({
+  src: [
     {
       path: "./fonts/noto-serif-latin-700-normal-wdth82.woff2",
       weight: "700",
@@ -734,12 +776,12 @@ const displayLatin = localFont({
   display: "swap",
   preload: false,
   adjustFontFallback: false,
-  variable: "--og-display-latin",
+  variable: "--og-name-latin",
   declarations: [
     {
       prop: "unicode-range",
       value:
-        "U+0020-007E, U+00A0-00BF, U+00D7, U+00F7, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215",
+        "U+0020, U+004C, U+004E, U+0061-0063, U+0068-0069, U+006B, U+0073, U+0075, U+0079",
     },
   ],
 });
@@ -797,6 +839,7 @@ export const zineFontVariables = [
   displayCyrillic,
   displayLatin,
   displayCommon,
+  nameLatin,
 ]
   .map((font) => font.variable)
   .join(" ");
