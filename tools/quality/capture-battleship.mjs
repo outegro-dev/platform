@@ -28,7 +28,6 @@ const PLATFORM_PORT = 4295;
 const APP = `http://localhost:${APP_PORT}`;
 const PLATFORM = `http://localhost:${PLATFORM_PORT}`;
 const desktop = { width: 1440, height: 900 };
-const phone = { width: 390, height: 844 };
 
 const children = [];
 function start(args, env) {
@@ -290,10 +289,6 @@ try {
     await stats.page.getByTestId("stat-cards").waitFor();
     await capture(stats.page, `profile-${locale}`);
     await stats.close();
-
-    const lobby = await signIn(browser, { locale, viewport: phone });
-    await capture(lobby.page, `lobby-phone-${locale}`);
-    await lobby.close();
   }
 } finally {
   await browser?.close();
