@@ -66,7 +66,8 @@ export async function Os() {
               weight="fill"
               aria-hidden="true"
             />
-            <span>{t("window")}</span>
+            {/* the program's name: the chapter under it says it again */}
+            <span aria-hidden="true">{t("window")}</span>
             <Controls />
           </div>
           <div className="os-game-screen">

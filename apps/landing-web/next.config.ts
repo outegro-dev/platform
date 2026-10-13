@@ -77,8 +77,14 @@ const config: NextConfig = {
   devIndicators: false,
   // One quality for every picture (the cover, screenshots, paper cut-outs).
   // WebP only: encoding AVIF pushed the server past its memory limit in
-  // production (OOM kills) for a few percent in size.
-  images: { formats: ["image/webp"], qualities: [75] },
+  // production (OOM kills) for a few percent in size. Next's widths with a
+  // step between 1200 and 1920: a need of up to 1440px (the cover's torn
+  // strip on a phone, a picture across a 1440px screen) took the 1920 cut.
+  images: {
+    formats: ["image/webp"],
+    qualities: [75],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1440, 1920, 2048, 3840],
+  },
   // A fresh pod optimises every image variant on first request: one libvips
   // thread per image, no operation cache, streamed decoding. The pod peaked
   // at 504 of its 512 MiB in production with the defaults (01.10.2026).
@@ -105,11 +111,13 @@ const config: NextConfig = {
     ];
     return [
       { source: "/:path*", headers: securityHeaders },
+      // Those files only: the 404 page at any other address under them is a
+      // page like the rest. /og/ru is the card's one other language, as in
+      // the proxy's matcher.
       {
-        source: "/:file(og|icon|apple-icon)/:locale?",
+        source: "/:file(og|og/ru|icon|apple-icon|favicon\\.ico)",
         headers: sharedFileHeaders,
       },
-      { source: "/favicon.ico", headers: sharedFileHeaders },
       // Pages stay public; the SSO round trip and the account API carry
       // per-visitor cookies and state, so no cache may keep any of it.
       {

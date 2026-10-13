@@ -105,13 +105,13 @@ export default async function Home() {
               <span className="sr-only">{t("zine.headlineCut")}</span>
               {/* the end cut out of magazines, a picture in each language;
                   a tablet held upright has its own cover (zine-page.css,
-                  the Russian headline set larger there), the pictures
-                  sized for it next to the phone's */}
+                  the cut across the column there), the pictures sized for
+                  it next to the phone's */}
               <Image
                 src={locale === "ru" ? cutRu : cutEn}
                 alt=""
                 className="cover-cut"
-                sizes={`(max-width: 767px) 90vw, (max-aspect-ratio: 4/5) ${locale === "ru" ? 91 : 71}vw, 46vw`}
+                sizes="(max-width: 767px) 90vw, (max-aspect-ratio: 4/5) 91vw, 46vw"
                 preload
               />
             </h1>

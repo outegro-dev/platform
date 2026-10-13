@@ -66,7 +66,8 @@
 /* ─── Header ─────────────────────────────────────────────── */
 .skip-link {
   position: fixed;
-  z-index: 100;
+  /* over the port gates (1000) too: a Tab while they are shut lands here */
+  z-index: 1001;
   top: 10px;
   left: 10px;
   transform: translateY(-160%);
@@ -454,11 +455,16 @@
 }
 
 /* ─── Print ──────────────────────────────────────────────── */
-/* fixed, the bar would come out on every sheet */
 @media print {
+  /* fixed, the bar would come out on every sheet */
   .skip-link,
   .site-header {
     display: none;
+  }
+  /* the red is a background, left out with the background graphics: the
+     paper-light label would print pale on white paper */
+  [data-slot="button"][data-variant="primary"] {
+    print-color-adjust: exact;
   }
 }
 

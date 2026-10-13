@@ -38,7 +38,8 @@ import { bonk, knock, whoosh } from "./sound";
  * The 504 card of the issue's broken page, played from outside (see
  * IssueFlight). It waits until a "bonk-start" event reaches it, then "fails"
  * to load; a "bonk-retry" event presses its retry button for the visitor (at
- * once if it has failed, else as soon as it does). The button turns out to
+ * once if it has failed, else as soon as it does), unless the keyboard is
+ * on the button: that reader presses it themselves. The button turns out to
  * be a door: three knocks, Tung Tung Tung Sahur walks out, bonks the block,
  * it reloads at sixteen times the speed, and he leaves with the bat on his
  * shoulder. Once the block has "reloaded" the card sends "bonk-loaded" up
@@ -193,7 +194,10 @@ export function BonkRetry() {
     if (!element) return;
     setPhase("armed");
     const start = () => setPhase((now) => (now === "armed" ? "loading" : now));
-    const press = () => setPressed(true);
+    // not for a reader whose keyboard is on the door: they press it
+    const press = () => {
+      if (!door.current?.matches(":focus-visible")) setPressed(true);
+    };
     const reset = () => {
       for (const id of timers.current) clearTimeout(id);
       timers.current = [];
@@ -269,6 +273,10 @@ export function BonkRetry() {
   }, [pressed, phase]);
 
   const impactHit = () => {
+    // the door goes with the failed card: focus on it waits on the card
+    // until the block is back (IssueFlight takes it on from there)
+    if (door.current === document.activeElement)
+      card.current?.focus({ preventScroll: true });
     setShaking(true);
     setPhase("reloading");
     later(RELOAD_MS, () => {
@@ -291,7 +299,7 @@ export function BonkRetry() {
         <div className="bonk-overlay">
           {/* a status is polite already; an explicit aria-live would keep
               the page exposed behind an open dialog (aria-hidden skips it) */}
-          <div ref={card} className="bonk-card" role="status">
+          <div ref={card} className="bonk-card" role="status" tabIndex={-1}>
             {phase === "armed" || phase === "loading" ? (
               <>
                 <p className="bonk-status">
@@ -340,6 +348,10 @@ export function BonkRetry() {
                       {t("knock")}
                     </span>
                   )}
+                  {/* pressed once; aria-disabled, as a disabled button
+                      would drop the focus it holds. The keyboard coming to
+                      it while it is about to be pressed for the visitor
+                      takes it over */}
                   <button
                     ref={door}
                     type="button"
@@ -348,7 +360,11 @@ export function BonkRetry() {
                     data-pressed={pressed ? "" : undefined}
                     data-knock={knocks > 0 && !doorOpen ? knocks : undefined}
                     onClick={phase === "failed" ? retry : undefined}
-                    disabled={phase !== "failed"}
+                    onFocus={(event) => {
+                      if (event.currentTarget.matches(":focus-visible"))
+                        setPressed(false);
+                    }}
+                    aria-disabled={phase !== "failed"}
                   >
                     <span className="bonk-door-hole" aria-hidden="true" />
                     <span className="bonk-door-leaf">

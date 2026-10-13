@@ -2,14 +2,6 @@
 
 import { Button } from "@outegro/ui/button";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "@outegro/ui/dialog";
-import {
   type AccountMenuUser,
   productionPlatformUrls,
 } from "@outegro/ui/lib/platform";
@@ -20,6 +12,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import { calendly } from "@/lib/contact";
 import { LocaleSwitcher } from "./locale-switcher";
+import type { MobileMenu } from "./mobile-menu";
 
 /** Sections of the main page, in page order. */
 const sections = ["projects", "services", "process", "contact"] as const;
@@ -44,6 +37,15 @@ const AccountMenu = dynamic(
   () => import("@outegro/ui/account-menu").then((mod) => mod.AccountMenu),
   { ssr: false, loading: () => accountRoom },
 );
+
+/**
+ * The menu's dialog (MobileMenu), fetched as the pointer or the focus comes
+ * to the menu's square, so it is mostly there by the time the square is
+ * pressed. The Header holds it once it is in and renders it at once, not
+ * through next/dynamic: a lazy component suspends on its first render even
+ * with its script in, and React holds a fallback's reveal back some 300 ms.
+ */
+const loadMenu = () => import("./mobile-menu").then((mod) => mod.MobileMenu);
 
 /** localStorage: someone was signed in on the last page here. */
 const SIGNED_IN = "og-signed-in";
@@ -143,10 +145,16 @@ export function Header({
   const menuHint = useId();
   const [active, setActive] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  // the dialog once its script is in (loadMenu); from then on it stays
+  // mounted (closed, it renders nothing), so it plays its way out
+  const [Menu, setMenu] = useState<typeof MobileMenu>();
+  const menuId = useId();
+  const toggle = useRef<HTMLButtonElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const destination = useRef<string | null>(null);
   const menuLinks = useRef<HTMLElement>(null);
+  const mastheadLinks = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let last = window.scrollY;
@@ -165,23 +173,39 @@ export function Header({
     };
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
+    // the section in view, by whatever holds its id at the time: the issue
+    // in flight and the staged desktop move #projects, #services and
+    // #process onto marks spanning their acts, and back when they land
+    const holders = new Map<Element, string>();
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries)
-          if (entry.isIntersecting) setActive(entry.target.id);
+        for (const entry of entries) {
+          const section = holders.get(entry.target);
+          if (entry.isIntersecting && section) setActive(section);
+        }
       },
       { rootMargin: "-35% 0px -55% 0px" },
     );
-    if (home) {
+    const watch = () => {
+      observer.disconnect();
+      holders.clear();
       for (const id of ["top", ...sections]) {
         const el = document.getElementById(id);
-        if (el) observer.observe(el);
+        if (!el) continue;
+        holders.set(el, id);
+        observer.observe(el);
       }
+    };
+    const moves = new MutationObserver(watch);
+    if (home) {
+      watch();
+      moves.observe(document.body, { subtree: true, attributeFilter: ["id"] });
     }
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(frame);
       observer.disconnect();
+      moves.disconnect();
     };
   }, [home]);
 
@@ -206,6 +230,22 @@ export function Header({
     </>
   );
 
+  // the dialog's script, asked for ahead and again on the press. If it
+  // cannot come the square stays closed, and a press while online reloads
+  // the page: a deploy has most likely replaced this page's scripts since
+  // it loaded
+  const fetchMenu = (pressed: boolean) => {
+    if (Menu) return;
+    loadMenu().then(
+      (loaded) => setMenu(() => loaded),
+      () => {
+        if (!pressed) return;
+        setMenuOpen(false);
+        if (navigator.onLine) window.location.reload();
+      },
+    );
+  };
+
   const account = (className: string) =>
     known ? (
       <AccountMenu
@@ -223,7 +263,27 @@ export function Header({
 
   return (
     <>
-      <a className="skip-link" href="#main">
+      {/* the content takes the focus, not only the scroll: not every
+          screen reader reads on from where the page scrolled to. A place,
+          not a control: no ring, and its tabindex goes once the focus moves
+          on (else a click anywhere on the page would focus it, and the next
+          Tab start over from the top of the content) */}
+      {/* biome-ignore lint/a11y/useValidAnchor: a real link, which the browser scrolls to and puts in the address; the click only hands the focus on. */}
+      <a
+        className="skip-link"
+        href="#main"
+        onClick={() => {
+          const main = document.getElementById("main");
+          if (!main) return;
+          main.setAttribute("tabindex", "-1");
+          main.focus({ preventScroll: true, focusVisible: false });
+          main.addEventListener(
+            "blur",
+            () => main.removeAttribute("tabindex"),
+            { once: true },
+          );
+        }}
+      >
         {t("skip")}
       </a>
       <header
@@ -239,7 +299,11 @@ export function Header({
             <span className="sr-only">, {t(home ? "toTop" : "toHome")}</span>
           </a>
           <span className="header-rule" aria-hidden="true" />
-          <nav className="masthead-nav" aria-label={t("sections")}>
+          <nav
+            ref={mastheadLinks}
+            className="masthead-nav"
+            aria-label={t("sections")}
+          >
             {links.map((link) => (
               <a
                 key={link.section}
@@ -271,18 +335,34 @@ export function Header({
             {known?.user
               ? account("header-account")
               : visitor === "returning" && accountRoom}
-            <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
-              <DialogTrigger asChild>
-                <button
-                  type="button"
-                  className="mobile-menu-toggle"
-                  aria-label={t("menu")}
-                >
-                  <ListIcon aria-hidden="true" />
-                </button>
-              </DialogTrigger>
-              <DialogContent
-                showCloseButton={false}
+            {/* the menu's square, the dialog's trigger in Radix's place:
+                the dialog comes once the square is pressed */}
+            <button
+              ref={toggle}
+              type="button"
+              className="mobile-menu-toggle"
+              aria-label={t("menu")}
+              aria-haspopup="dialog"
+              aria-expanded={menuOpen}
+              // as Radix's trigger: only while there is a dialog to point to
+              // (not while closed, nor while its script is still coming)
+              aria-controls={menuOpen && Menu ? menuId : undefined}
+              onPointerEnter={() => fetchMenu(false)}
+              onFocus={() => fetchMenu(false)}
+              onClick={() => {
+                setMenuOpen(true);
+                fetchMenu(true);
+              }}
+            >
+              <ListIcon aria-hidden="true" />
+            </button>
+            {Menu && (
+              <Menu
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                title={t("sections")}
+                description="Nick Lukashik"
+                id={menuId}
                 className="mobile-menu"
                 // its top row lies over the bar, as tall as the bar is now
                 data-scrolled={scrolled || undefined}
@@ -299,9 +379,19 @@ export function Header({
                   event.preventDefault();
                   menuLinks.current?.querySelector("a")?.focus();
                 }}
+                // back to the square, as Radix does for its own trigger (or,
+                // a tablet turned past 1024px meanwhile, the square gone, to
+                // the bar's own links), or on to the section a link jumped to
                 onCloseAutoFocus={(event) => {
-                  if (!destination.current) return;
                   event.preventDefault();
+                  if (!destination.current) {
+                    const square = toggle.current;
+                    (square?.offsetParent
+                      ? square
+                      : mastheadLinks.current?.querySelector("a")
+                    )?.focus();
+                    return;
+                  }
                   const target = document.getElementById(destination.current);
                   destination.current = null;
                   requestAnimationFrame(() => {
@@ -316,10 +406,6 @@ export function Header({
                   });
                 }}
               >
-                <DialogTitle className="sr-only">{t("sections")}</DialogTitle>
-                <DialogDescription className="sr-only">
-                  Nick Lukashik
-                </DialogDescription>
                 <p className="wordmark mobile-menu-mark" aria-hidden="true">
                   <span>{name}</span>
                 </p>
@@ -330,16 +416,16 @@ export function Header({
                   className="header-divider mobile-menu-divider"
                   aria-hidden="true"
                 />
-                <DialogClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="mobile-menu-close"
-                    aria-label={t("close")}
-                  >
-                    <XIcon aria-hidden="true" />
-                  </Button>
-                </DialogClose>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="mobile-menu-close"
+                  aria-label={t("close")}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <XIcon aria-hidden="true" />
+                </Button>
                 <nav ref={menuLinks} aria-label={t("sections")}>
                   {links.map((link, i) => (
                     <a
@@ -373,8 +459,8 @@ export function Header({
                   {t("bookHint")}
                 </p>
                 {account("mobile-menu-account")}
-              </DialogContent>
-            </Dialog>
+              </Menu>
+            )}
           </div>
         </div>
       </header>

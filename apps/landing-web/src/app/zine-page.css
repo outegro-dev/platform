@@ -12,53 +12,55 @@
   --og-serif: var(--og-serif-cyrillic), var(--og-serif-latin);
   --font-serif:
     var(--og-serif), "og-serif-fallback", Georgia, "Times New Roman", serif;
-  --font-cond:
-    var(--og-cond-cyrillic), var(--og-cond-latin), "og-cond-fallback",
-    "Arial Narrow", sans-serif;
+  --og-cond: var(--og-cond-cyrillic), var(--og-cond-latin);
+  --font-cond: var(--og-cond), "og-cond-fallback", "Arial Narrow", sans-serif;
   /* the cream paper of the vintage cover and its grain, down to the old
      computer */
   --vintage-paper: #f6eede;
   --vintage-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .36 0 0 0 0 .27 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --og-display: var(--og-display-cyrillic), var(--og-display-latin);
+  /* the Latin cut first: the Cyrillic one holds spaces too (fonts-zine.ts) */
+  --og-display: var(--og-display-latin), var(--og-display-cyrillic);
   --font-cover: var(--og-display), "og-display-fallback", Georgia, serif;
-  /* the name and its byline: Latin in both languages, in weights only the
-     Latin file has, so never the Russian common cut, whose 900 would set
-     their spaces */
-  --font-name: var(--og-display-latin), "og-display-fallback", Georgia, serif;
+  /* the name and its byline: Latin in both languages, in a cut of their
+     own (fonts-zine.ts) */
+  --font-name: var(--og-name-latin), "og-display-fallback", Georgia, serif;
   --font-plain: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
-/* the lede and the headlines set no Latin letter: a Russian page reads
-   their spaces and punctuation from the common cuts (fonts-zine.ts) */
+/* the lede, the headlines and the condensed caps set no Latin letter (the
+   caps' common cut has EN / RU): a Russian page reads their spaces and
+   punctuation from the common cuts, but for the headlines' spaces, which
+   their Cyrillic cut holds (fonts-zine.ts) */
 [data-theme="zine"]:lang(ru) {
   --og-serif:
     var(--og-serif-cyrillic), var(--og-serif-common), var(--og-serif-latin);
   --og-display:
     var(--og-display-cyrillic), var(--og-display-common),
     var(--og-display-latin);
+  --og-cond:
+    var(--og-cond-cyrillic), var(--og-cond-common), var(--og-cond-latin);
 }
-/* and so do the steps and the menu's numbers, in the condensed's regular:
-   its common cut has that weight alone, the semibold setting Latin on
-   every page anyway (EN / RU) */
-:is(.cover-steps, .mobile-menu-no):lang(ru) {
-  --font-cond:
-    var(--og-cond-cyrillic), var(--og-cond-common), var(--og-cond-latin),
-    "og-cond-fallback", "Arial Narrow", sans-serif;
-}
-/* without the flight (phones, tablets, reduced motion) the home page's
-   first screen is the cover, set in its own three faces only: the zine
-   faces wait on their sized fallbacks until the page has loaded
-   (LateFaces), so the first paint does not queue behind a score of font
-   files, and on phones the steps on the strip, a screen down, wait too.
-   The reader-statistics note sets four of them over the cover, so those
-   come at once while it is up */
+/* the zine faces wait on their sized fallbacks until the first contentful
+   paint is out (LateFaces lets them go as it is reported), so that paint
+   does not queue behind a score of font files. Without the flight (phones,
+   tablets, reduced motion) the home page's first screen is the cover, set
+   in its own three faces only, and on phones the steps on the strip, a
+   screen down, wait too; /stack's menu cover sets them all, so there they
+   swap in sight, from fallbacks matched on its lines (zine.css): at a few
+   widths a word of the intro still moves to the next line, and a centred
+   line moves a few pixels. The reader-statistics note sets four of them
+   over the cover, so those come at once while it is up, and all of them do
+   for an address with a fragment: faces arriving after the jump would
+   re-wrap the text it passed and move its target. The stamp never waits:
+   an optional face first asked for after the first paint is drawn only out
+   of the cache, so a first visit would never see it */
 @media (scripting: enabled) and (max-width: 1023px),
   (scripting: enabled) and (prefers-reduced-motion: reduce) {
-  html[data-theme="zine"]:has([data-faces-wait]) {
+  html[data-theme="zine"]:has([data-faces-wait]):not(:has(:target)) {
     --og-mast: "og-mast-fallback";
     --og-sign: "og-sign-fallback";
     --og-hand: "og-hand-fallback";
   }
-  html[data-theme="zine"]:has([data-faces-wait]):not(:has(.consent)) {
+  html[data-theme="zine"]:has([data-faces-wait]):not(:has(:target, .consent)) {
     --og-body: "og-body-fallback";
     --og-tabloid: "og-tabloid-fallback";
     --og-loud: "og-loud-fallback";
@@ -66,9 +68,16 @@
   }
 }
 @media (scripting: enabled) and (max-width: 767px) {
-  html:has([data-faces-wait]) .cover-steps {
+  html:has([data-faces-wait]):not(:has(:target)) .cover-steps {
     --font-cond: "og-cond-fallback", "Arial Narrow", sans-serif;
   }
+}
+/* the skip link waits off screen for a Tab, laid out all the same: set in
+   the body face, it would have the face's Cyrillic file fetched ahead of
+   the first paint of a page that sets no other Russian in it there (the
+   main page from 1024px up), so it takes the face only once it is shown */
+[data-theme="zine"] .skip-link:not(:focus) {
+  font-family: "og-body-fallback", "Times New Roman", serif;
 }
 /* the main page on the vintage cover's cream paper all the way down (the
    old computer paints its own wallpaper over it), and so are /stack,
@@ -230,18 +239,38 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   display: flex;
   margin-left: 18px;
 }
+/* each the height of its line, a finger's height to tap all the same, so
+   that the focus ring goes round the letters, as on the links: the kit's,
+   round the finger's height, ran over the slash and the other label */
 :is(.header-locale, .mobile-menu-locale) button {
+  position: relative;
+  height: 24px;
   min-width: 24px;
   padding-inline: 0;
+}
+:is(.header-locale, .mobile-menu-locale) button::after {
+  content: "";
+  position: absolute;
+  inset: -10px 0;
+}
+:is(.header-locale, .mobile-menu-locale) button:focus-visible {
+  outline-offset: -2px;
 }
 /* the slash in the middle of the gap: EN's trailing tracking would add to
    the room before it */
 :is(.header-locale, .mobile-menu-locale) button:first-child span {
   margin-right: -0.16em;
 }
+/* RU's box starts past the slash, which keeps its place in front of it,
+   and ends a pixel past the tracking: its ring leaves the slash out and
+   lies as close to the letters on either side */
+:is(.header-locale, .mobile-menu-locale) button + button {
+  margin-inline: 0.58em -1px;
+  padding-right: 1px;
+}
 :is(.header-locale, .mobile-menu-locale) button + button::before {
   content: "/";
-  margin-inline: 0 0.35em;
+  margin-inline: -0.58em 0.35em;
   letter-spacing: 0;
 }
 :is(.header-locale, .mobile-menu-locale) button span {
@@ -607,6 +636,12 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   letter-spacing: -0.012em;
   color: var(--cover-ink);
 }
+/* the cut's words are only read out: set in the face, they would have a
+   Russian page fetch its common cut ahead of the first paint for their
+   full stop */
+.cover-headline .sr-only {
+  font-family: "og-display-fallback", Georgia, serif;
+}
 /* narrower than the narrowest width of the face, as on the cover: drawn
    in its narrowest width and pressed a little more */
 .cover-lead {
@@ -849,17 +884,18 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
     grid-column: 2 / 4;
     grid-row: 1;
   }
-  /* the Russian headline is a line shorter: set larger, as tall as the
-     English, so it still runs across the top; its lead pressed into the
-     column's width */
+  /* the headline runs across the top: its lead pressed into the column's
+     width, a line of it in English ("I'll build the"), two in Russian, set
+     larger to fill them; the cut under it as wide in either language */
   .cover-headline:lang(ru) {
     --u: calc(var(--cover-u) * 1.28);
   }
-  .cover-headline:lang(ru) .cover-lead {
+  .cover-lead {
     width: calc(100% / 0.72);
+    max-width: none;
   }
   .cover-cut {
-    width: calc(var(--u) * 44.4);
+    width: calc(var(--cover-u) * 1.28 * 44.4);
   }
   .cover-lede {
     grid-column: 2;
@@ -1019,7 +1055,10 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   translate: 0 var(--dy);
   scale: var(--s);
   box-shadow: 1px 2px 0 var(--halftone);
-  animation: ransom-twitch 14s var(--d) infinite;
+  /* each letter twitches once at its own moment (--d spreads them over
+     14 s, a quarter of that here) and then holds its cut: motion that
+     plays on by itself past 5 s would need a stop */
+  animation: ransom-twitch 1s calc(0.4s + var(--d) / 4);
   transition: rotate 180ms var(--ease-out);
 }
 .ransom-letter:hover {
@@ -1027,15 +1066,14 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
 }
 @keyframes ransom-twitch {
   0%,
-  93%,
   100% {
     translate: 0 var(--dy);
   }
-  95% {
+  28% {
     translate: 0 calc(var(--dy) - 0.25em);
     rotate: calc(var(--r) * -2);
   }
-  97% {
+  56% {
     translate: 0 calc(var(--dy) + 0.05em);
   }
 }
@@ -2101,14 +2139,28 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
     0 14px 0 var(--page-ink, var(--ink));
 }
 /* while the book is shut its pages print no ink round the cover: the
-   outlines come in as it opens, and go again as the last leaf turns to
-   the blank pages (--turn-on 0.65 to 0.9), while the broken page comes up
-   over them: no spine shows through its card */
+   outlines come in as it opens, and go again as the broken page starts to
+   come up over the blank pages, before it is a tenth there (IssueFlight
+   sets --inked): no spine shows through its card */
 .issue[data-flight] .book {
-  --inked: calc(var(--open, 1) * clamp(0, 3.6 - 4 * var(--turn-on, 0), 1));
+  --inked: 0;
   --page-ink: color-mix(
     in srgb,
     var(--ink) calc(var(--inked) * 100%),
+    transparent
+  );
+}
+/* and the report's page, the one the last leaf turns over, goes blank with
+   them: no strip of it is seen sliced by an edge no longer drawn, and a
+   focus ring on it comes back only with the ink, once the broken page has
+   nearly gone */
+.issue[data-flight] .is-story > * {
+  opacity: var(--inked);
+}
+.issue[data-flight] .is-story:focus-visible {
+  outline-color: color-mix(
+    in srgb,
+    var(--ring) calc(var(--inked) * 100%),
     transparent
   );
 }
@@ -3099,6 +3151,11 @@ html[data-waking] main {
   /* the photo as on screen, white border and corners: the corners are
      backgrounds, and left out they print blank over the photo */
   .form-photo {
+    print-color-adjust: exact;
+  }
+  /* the cover's red button as the kit's (globals.css): its white label
+     needs the red behind it */
+  .cover-button.is-red {
     print-color-adjust: exact;
   }
 }

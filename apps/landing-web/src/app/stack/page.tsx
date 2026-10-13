@@ -14,6 +14,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Dish } from "@/components/stack/dish";
 import { TrumpCard } from "@/components/stack/trump-card";
 import { StampMark } from "@/components/zine/bits";
+import { LateFaces } from "@/components/zine/late-faces";
 import { generator, seed, tilt } from "@/components/zine/random";
 import { Ransom } from "@/components/zine/ransom";
 import { Stamp } from "@/components/zine/stamp";
@@ -254,6 +255,7 @@ export default async function Stack() {
       </main>
       <SiteFooter />
       <RevealObserver />
+      <LateFaces />
     </>
   );
 }

@@ -50,6 +50,11 @@
   gap: 12px;
   text-align: center;
 }
+/* where a reader's focus waits while the door goes (BonkRetry): a place,
+   not a control, so no ring round the card */
+.bonk .bonk-card:focus {
+  outline: none;
+}
 .bonk[data-shaking] .bonk-card {
   animation: bonk-shake 300ms steps(6) both;
 }
@@ -182,7 +187,7 @@
   color: var(--primary-foreground);
   -webkit-tap-highlight-color: transparent;
 }
-.bonk-door:disabled {
+.bonk-door[aria-disabled="true"] {
   cursor: default;
 }
 .bonk-door-hole {
@@ -212,7 +217,7 @@
     background-color var(--duration-fast);
   backface-visibility: hidden;
 }
-.bonk-door:not(:disabled):hover .bonk-door-leaf {
+.bonk-door:not([aria-disabled="true"]):hover .bonk-door-leaf {
   background: var(--primary-hover);
 }
 /* pressed for the visitor (BonkRetry on cue): held down a beat */

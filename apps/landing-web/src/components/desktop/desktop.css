@@ -56,6 +56,11 @@
   /* an anchor lands on the very top: the page's scroll padding undone */
   scroll-margin-top: -96px;
 }
+/* where a reader's focus goes on from the broken issue (IssueFlight):
+   a place, not a control, so no ring round the whole desktop */
+.desktop:focus {
+  outline: none;
+}
 .desktop-area {
   display: grid;
   flex: 1;
@@ -103,6 +108,13 @@ a.desktop-icon:focus-visible {
   outline: 2px dashed #fff;
   outline-offset: 2px;
   box-shadow: 0 0 0 6px rgb(0 0 0 / 60%);
+}
+/* the top shortcut lies in the page's scroll padding, which is there for
+   the masthead: with the masthead tucked away the shortcut is in sight as
+   it is, and focus coming to it leaves the desktop where it is instead of
+   dropping it to the middle of the screen */
+html:has(.site-header[data-hidden]) .desktop-icon {
+  scroll-margin-top: -96px;
 }
 
 /* two windows on a twelve-column desk, each as tall as what is in it and
@@ -438,7 +450,7 @@ a.desktop-icon:focus-visible {
   min-width: 0;
   overflow: hidden;
 }
-.xp-tasks span {
+.xp-tasks > span {
   flex: 0 1 150px;
   min-width: 0;
   overflow: hidden;
@@ -466,6 +478,12 @@ a.desktop-icon:focus-visible {
   flex: none;
   width: 14px;
   height: 14px;
+}
+/* the name after the icon is cut short like the others */
+.xp-tasks .is-game span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .os:not([data-stage]) .xp-tasks .is-game,
 .os[data-game] .xp-tasks .is-game {
@@ -812,12 +830,13 @@ a.desktop-icon:focus-visible {
   }
 }
 @media (max-width: 1023px) {
-  .xp-tasks span:not(.is-active) {
+  .xp-tasks > span:not(.is-active) {
     display: none;
   }
 }
 @media (max-width: 767px) {
-  .desktop {
+  .desktop,
+  html:has(.site-header[data-hidden]) .desktop-icon {
     scroll-margin-top: -76px;
   }
   .desktop-area {
@@ -831,6 +850,14 @@ a.desktop-icon:focus-visible {
   }
   .desktop-icon {
     width: 72px;
+  }
+}
+/* narrow phones: slimmer taskbar buttons, so the names fit (the game's
+   only on the wider of them, and later in English, whose clock is longer;
+   short of that it ends in an ellipsis) */
+@media (max-width: 359px) {
+  .xp-tasks > span {
+    padding-inline: 6px;
   }
 }
 /* the narrowest phones: the four shortcuts still end inside the margin */

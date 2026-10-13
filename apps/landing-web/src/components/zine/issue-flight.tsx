@@ -33,6 +33,10 @@ const PEEL_CURL = 0.22;
  * joke and takes the pointer and the keyboard, its card at full ink. */
 const BREAK_FROM = 0.55;
 const BREAK_TO = 0.78;
+/** Of the broken page's coming up, where the pages have lost their
+ * outlines: while it is still faint (a tenth there), so no spine shows
+ * through its card. */
+const INK_OUT = 0.2;
 /** Scrolling into the broken page, of the screen, that presses its retry. */
 const PRESS_AT = 0.12;
 /** How long the joke holds the page against the wheel, in milliseconds:
@@ -97,6 +101,7 @@ export function IssueFlight() {
     const joke = broken?.querySelector<HTMLElement>(".bonk");
     const poster = document.querySelector<HTMLElement>(".cover-art");
     const magazine = document.querySelector<HTMLElement>(".cover-mag");
+    const desktop = document.querySelector<HTMLElement>(".desktop");
     if (
       !issue ||
       !pin ||
@@ -229,7 +234,18 @@ export function IssueFlight() {
       const lifted = clamp(flight / FADE);
       magazine.style.opacity = (1 - lifted).toFixed(3);
       book.style.transform = `translate(${x - page * 1.5}px, ${top - to.height / 2}px) scale(${scaleX}, ${scaleY}) rotate(${lerp(TILT, 0, fly)}deg)`;
+      // the pages print their outlines as the cover opens, and lose them
+      // again as the broken page starts to come up over the blank ones
+      const inked =
+        open *
+        (1 -
+          glide(
+            clamp(
+              (turningOn - BREAK_FROM) / ((BREAK_TO - BREAK_FROM) * INK_OUT),
+            ),
+          ));
       book.style.setProperty("--open", open.toFixed(4));
+      book.style.setProperty("--inked", inked.toFixed(3));
       book.style.setProperty("--turn", turn.toFixed(4));
       book.style.setProperty("--turn-on", turnOn.toFixed(4));
       book.style.setProperty("--curl-a", `${curlA.toFixed(1)}px`);
@@ -251,6 +267,9 @@ export function IssueFlight() {
         ? 0
         : glide(clamp((turningOn - BREAK_FROM) / (BREAK_TO - BREAK_FROM)));
       const shown = blank >= 1;
+      // a reader scrolled back up off the broken page with its focus goes
+      // on from the report, before the page goes inert under it
+      if (!shown && broken.contains(document.activeElement)) land();
       broken.style.opacity = blank.toFixed(3);
       broken.toggleAttribute("data-shown", shown);
       broken.inert = !shown;
@@ -266,20 +285,20 @@ export function IssueFlight() {
         joke.dispatchEvent(new Event("bonk-retry"));
       }
       // gone up past the screen: nothing to paint. Gone for good with the
-      // broken page, it is not seen and out of the pointer's way, but its
-      // links stay on the keyboard's way back up: one that takes focus
+      // broken page, it is not seen and out of the pointer's way. Either
+      // way it is only not painted: its pages are still read, and its links
+      // stay on the keyboard's way back up, where one that takes focus
       // brings the spread back (follow)
       const spent = mended && turningOn >= 1;
-      book.style.visibility = to.bottom < 0 ? "hidden" : "";
-      book.style.opacity = spent ? "0" : lifted.toFixed(3);
+      book.style.opacity = spent || to.bottom < 0 ? "0" : lifted.toFixed(3);
       book.toggleAttribute("data-spent", spent);
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(place);
     };
     // the block has "reloaded": the broken page goes and a reader still on
-    // it goes on to the desktop; one who has jumped or tabbed on meanwhile
-    // stays where they are
+    // it goes on to the desktop, and so does a focus held on it; one who
+    // has jumped or tabbed on meanwhile stays where they are
     const mend = () => {
       release();
       mended = true;
@@ -291,6 +310,7 @@ export function IssueFlight() {
         focus instanceof HTMLElement &&
         !issue.contains(focus) &&
         focus.matches(":focus-visible");
+      if (broken.contains(focus)) desktop?.focus({ preventScroll: true });
       if (card.top < middle && card.bottom > middle && !tabbedOn)
         document
           .getElementById("services")
@@ -318,29 +338,27 @@ export function IssueFlight() {
     };
     // a jump to #projects scrolls to the anchor past the book: the report's
     // page takes focus there, so the keyboard goes on through the report;
-    // a link clicked, or the address or history taken there. A book hidden
-    // far off the screen cannot take focus: then it is taken once the
-    // glide there has ended, if it has ended there
+    // a link clicked, or the address or history taken there
     const land = () => {
-      if (book.style.visibility === "hidden") return;
       landing = true;
       story.focus({ preventScroll: true });
       landing = false;
     };
-    const toReport = () =>
-      requestAnimationFrame(() => {
-        if (book.style.visibility !== "hidden") land();
-        else window.addEventListener("scrollend", land, { once: true });
-      });
+    const toReport = () => requestAnimationFrame(land);
+    // a jump made before the take-off glides to where its section lay
+    // then, above a stage not put in yet: once the book is placed the jump
+    // is aimed again, unless the reader has taken over meanwhile
+    let aimed = "";
+    const unaim = () => {
+      aimed = "";
+    };
+    const takeOver = ["wheel", "touchstart", "keydown", "pointerdown"];
     const jump = (event: MouseEvent) => {
       const link =
         event.target instanceof Element ? event.target.closest("a") : null;
-      if (
-        flying &&
-        link?.hash === "#projects" &&
-        link.pathname === window.location.pathname
-      )
-        toReport();
+      if (!link?.hash || link.pathname !== window.location.pathname) return;
+      if (!flying) aimed = link.hash;
+      else if (link.hash === "#projects") toReport();
     };
     const arrive = () => {
       if (flying && window.location.hash === "#projects") toReport();
@@ -369,16 +387,11 @@ export function IssueFlight() {
       delete issue.dataset.flight;
       magazine.style.removeProperty("opacity");
       pin.style.removeProperty("z-index");
-      for (const name of [
-        "width",
-        "height",
-        "transform",
-        "visibility",
-        "opacity",
-      ])
+      for (const name of ["width", "height", "transform", "opacity"])
         book.style.removeProperty(name);
       for (const name of [
         "--open",
+        "--inked",
         "--turn",
         "--turn-on",
         "--curl",
@@ -396,16 +409,44 @@ export function IssueFlight() {
       anchor.style.removeProperty("height");
       story.id = "projects";
     };
+    // the text's size on the pages, flying or lying open, settles whether
+    // the book flies: the fonts, a window's new size, the reader's spacing.
+    // Its first answer, once the pages are laid out, is the first decision:
+    // nothing is measured at load, and a cover that cannot fly stays
+    // unfetched. The pages are measured as the observer is told, on the
+    // layout just made: a frame later the blocks under the cover may be
+    // unveiling, and a reading then would force their layout. Made before
+    // the two observers below, which change the page in their turns, it
+    // reads first when told in the same turn
+    let fit = false;
+    let refit = 0;
+    const resized = new ResizeObserver(() => {
+      fit = fits();
+      refit ||= requestAnimationFrame(() => {
+        refit = 0;
+        if (flying && !fit) ground();
+        else if (!flying && motion.matches && fit) coverReady().then(takeOff);
+      });
+    });
     // the first placing measures the stage once the browser has laid it out
     // (a resize observer's turn: after layout, before paint) rather than
     // forcing that layout in the middle of the change
     const settle = new ResizeObserver(() => {
       settle.disconnect();
       place();
+      if (aimed)
+        document
+          .getElementById(aimed.slice(1))
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      unaim();
     });
-    // one task: the stage, and the book over the magazine's cover
-    const takeOff = () => {
-      due = false;
+    // one task: the stage, and the book over the magazine's cover. It too
+    // waits for an observer's turn, so where the pin lies is read on a page
+    // laid out, and the first placing follows in the same frame (the slot
+    // lies deeper than the issue: the browser lays out again and tells it
+    // before the paint)
+    const lift = new ResizeObserver(() => {
+      lift.disconnect();
       if (!live || flying || printing || !motion.matches) return;
       if (!flown && pin.getBoundingClientRect().top < window.innerHeight) {
         due = true;
@@ -421,10 +462,14 @@ export function IssueFlight() {
       story.removeAttribute("id");
       anchor.id = "projects";
       settle.observe(slot);
+    });
+    const takeOff = () => {
+      due = false;
+      lift.observe(issue);
     };
     const decide = () => {
       if (!motion.matches) ground();
-      else if (fits()) coverReady().then(takeOff);
+      else if (fit) coverReady().then(takeOff);
     };
     // a printout counts its sheets from the page as it stands: the book is
     // on the ground before that, stays there whatever the page does
@@ -437,19 +482,6 @@ export function IssueFlight() {
       printing = false;
       decide();
     };
-    // the text's size on the pages, flying or lying open, settles whether
-    // the book flies: the fonts, a window's new size, the reader's spacing.
-    // Its first answer, once the pages are laid out, is the first decision:
-    // nothing is measured at load, and a cover that cannot fly stays unfetched
-    let refit = 0;
-    const resized = new ResizeObserver(() => {
-      refit ||= requestAnimationFrame(() => {
-        refit = 0;
-        if (flying && !fits()) ground();
-        else if (!flying && motion.matches && fits())
-          coverReady().then(takeOff);
-      });
-    });
     for (const page of pages)
       for (const part of [
         page,
@@ -462,20 +494,23 @@ export function IssueFlight() {
     book.addEventListener("focusin", follow);
     document.addEventListener("click", jump);
     window.addEventListener("hashchange", arrive);
+    for (const type of takeOver)
+      window.addEventListener(type, unaim, { passive: true });
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     window.addEventListener("beforeprint", toPrint);
     window.addEventListener("afterprint", printed);
     return () => {
       live = false;
-      settle.disconnect();
       resized.disconnect();
+      settle.disconnect();
+      lift.disconnect();
       motion.removeEventListener("change", decide);
       broken.removeEventListener("bonk-loaded", mend);
       book.removeEventListener("focusin", follow);
       document.removeEventListener("click", jump);
       window.removeEventListener("hashchange", arrive);
-      window.removeEventListener("scrollend", land);
+      for (const type of takeOver) window.removeEventListener(type, unaim);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       window.removeEventListener("beforeprint", toPrint);

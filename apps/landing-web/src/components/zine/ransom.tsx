@@ -6,8 +6,8 @@ const PAPERS = ["white", "yellow", "ink", "red", "blue", "news", "pink"];
 /**
  * A ransom-note line: every letter cut out of a different magazine. Screen
  * readers get the plain text; the clippings are decoration. Each letter
- * twitches now and then on its own (a long CSS cycle with a seeded delay)
- * and shuffles on hover.
+ * twitches once at its own seeded moment, then holds its cut, and tips the
+ * other way on hover.
  */
 export function Ransom({ text }: { text: string }) {
   const next = generator(seed(text));

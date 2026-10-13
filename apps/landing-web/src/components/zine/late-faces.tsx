@@ -1,21 +1,34 @@
-"use client";
+import { headers } from "next/headers";
+import { FacesWait } from "./faces-wait";
 
-import { useSyncExternalStore } from "react";
-
-const subscribe = (change: () => void) => {
-  document.addEventListener("readystatechange", change);
-  return () => document.removeEventListener("readystatechange", change);
-};
-const loaded = () => document.readyState === "complete";
-const serving = () => false;
+// the paint as it is reported, not hydration, which comes seconds after it
+// on a slow phone
+const release = [
+  'PerformanceObserver.supportedEntryTypes.includes("paint")&&',
+  "new PerformanceObserver((list,observer)=>{",
+  'if(list.getEntriesByName("first-contentful-paint").length===0)return;',
+  "observer.disconnect();",
+  'document.querySelector("[data-faces-wait]")?.removeAttribute("data-faces-wait")',
+  '}).observe({type:"paint",buffered:true})',
+].join("");
 
 /**
- * Holds the faces the home page's first screen does not set until the page
- * has loaded: zine-page.css keeps them on their fallbacks while this marker
- * is in the page. The server and hydration render it; a soft navigation
- * after the load never does, so the faces in use do not blink back.
+ * Holds the zine faces back until the first contentful paint is out:
+ * zine-page.css keeps them on their sized fallbacks while the marker
+ * (FacesWait) carries its attribute, so that paint does not queue behind
+ * their files. This nonced script takes the attribute off at that paint;
+ * where paints go unreported, the marker goes once the page has loaded.
  */
-export function LateFaces() {
-  const done = useSyncExternalStore(subscribe, loaded, serving);
-  return done ? null : <span hidden data-faces-wait="" />;
+export async function LateFaces() {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  return (
+    <>
+      <FacesWait />
+      <script
+        nonce={nonce}
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: a fixed script with no input.
+        dangerouslySetInnerHTML={{ __html: release }}
+      />
+    </>
+  );
 }

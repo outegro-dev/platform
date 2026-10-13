@@ -102,7 +102,7 @@ export async function Taskbar() {
         ))}
         <span className="is-game">
           <GameControllerIcon weight="fill" />
-          {process("window")}
+          <span>{process("window")}</span>
         </span>
       </span>
       <span className="xp-tray">
@@ -138,8 +138,15 @@ export async function Desktop() {
     { icon: FileTextIcon, label: t("desktop.icons.stack"), href: "/stack" },
   ];
 
+  // focusable by script: a reader's focus on the broken issue goes on here
+  // once the block has "reloaded" (IssueFlight)
   return (
-    <section id="services" className="desktop" aria-labelledby="services-title">
+    <section
+      id="services"
+      className="desktop"
+      aria-labelledby="services-title"
+      tabIndex={-1}
+    >
       <div className="desktop-area og-container">
         <ul className="desktop-icons">
           {shortcuts.map((item) => {
