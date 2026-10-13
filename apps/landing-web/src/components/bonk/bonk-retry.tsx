@@ -289,12 +289,9 @@ export function BonkRetry() {
     >
       {covered && (
         <div className="bonk-overlay">
-          <div
-            ref={card}
-            className="bonk-card"
-            role="status"
-            aria-live="polite"
-          >
+          {/* a status is polite already; an explicit aria-live would keep
+              the page exposed behind an open dialog (aria-hidden skips it) */}
+          <div ref={card} className="bonk-card" role="status">
             {phase === "armed" || phase === "loading" ? (
               <>
                 <p className="bonk-status">

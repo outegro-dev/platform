@@ -6,18 +6,12 @@
  * page's own, since a stylesheet stays loaded after client navigation.
  */
 
-/* running text outside the paper sits on a clean patch, never on the dots */
-.menu-cover-side,
-.trumps-rules p,
-.trumps-note {
-  background-color: var(--background);
-  box-shadow: 0 0 12px 12px var(--background);
-}
-
 /* ─── Cover: the menu's front page ────────────────────────── */
+/* the contents keep the width of their longest row with its dot leader;
+   on a narrow desktop the card gives up the difference */
 .menu-cover {
   display: grid;
-  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 520px) minmax(440px, 1fr);
   align-items: center;
   gap: 64px 80px;
   padding-block: 136px 80px;
@@ -54,10 +48,13 @@
   text-transform: uppercase;
   color: var(--ink-soft);
 }
+/* the house's name in the heavy narrow type of the main page's cover */
 .menu-house {
-  font-family: var(--font-mast);
-  font-size: clamp(36px, 4.4vw, 56px);
-  line-height: 1.05;
+  font-family: var(--font-cover);
+  font-size: clamp(40px, 4.2vw, 60px);
+  font-stretch: 62.5%;
+  font-weight: 900;
+  line-height: 0.95;
   color: var(--spot-red-deep);
 }
 .menu-ornament {
@@ -70,8 +67,10 @@
   justify-items: center;
   gap: 6px;
 }
+/* as wide as the card holds: wider, it pushed the card's lines off centre
+   and cut the end of the subtitle */
 .menu-title {
-  font-size: clamp(64px, 10vw, 128px);
+  font-size: clamp(56px, 6.6vw, 96px);
   line-height: 1.08;
 }
 .menu-subtitle {
@@ -252,10 +251,11 @@
   gap: 6px;
 }
 .menu-section-title {
-  font-family: var(--font-mast);
-  font-weight: 400;
-  font-size: clamp(34px, 4.4vw, 56px);
-  line-height: 1.05;
+  font-family: var(--font-cover);
+  font-size: clamp(40px, 5vw, 68px);
+  font-stretch: 62.5%;
+  font-weight: 900;
+  line-height: 0.95;
 }
 /* a small caption between two rules, like the course names on a menu */
 .menu-section-kind {
@@ -533,7 +533,7 @@
 .trump-label {
   margin-top: 8px;
   font-family: var(--font-loud);
-  font-size: 11.5px;
+  font-size: 12px;
   text-transform: uppercase;
   color: var(--spot-red-deep);
 }
@@ -653,10 +653,26 @@
 }
 
 /* ─── Small screens ───────────────────────────────────────── */
+/* phones and tablets: the cover is a screen tall at least (it is taller
+   than any of them anyway), so the first frame lays it out alone, as the
+   main page does with its own (zine-page.css, first-frame): the menu, the
+   cards and the footer come in once the first contentful paint is out
+   (RevealObserver), a second at most, and the faces only they set are
+   fetched after that paint, not ahead of it. An address with a fragment
+   gets the whole page at once: faces arriving after the jump would re-wrap
+   the text it passed and move its target */
 @media (max-width: 1023px) {
   .menu-cover {
     grid-template-columns: minmax(0, 560px);
     justify-content: center;
+    min-height: 100svh;
+  }
+  html:not([data-painted], :has(:target)) .menu-page {
+    animation: first-frame-room 0s 1s backwards;
+  }
+  html:not([data-painted], :has(:target))
+    :is(.menu-page > .menu-cover ~ *, .menu-page ~ .site-footer) {
+    animation: first-frame 0s 1s backwards;
   }
   .menu-dishes {
     grid-template-columns: 1fr;
@@ -667,9 +683,25 @@
     padding-block: 112px 56px;
     gap: 72px;
   }
+  /* one column as wide as the card's inside, so every line centres in it
+     and the ones that can wrap do; the lines that cannot (the house name,
+     the clippings) and the chef's line shrink with the screen to fit it */
   .menu-cover-card {
+    grid-template-columns: minmax(0, 1fr);
     padding: 44px 24px 40px;
     rotate: -1deg;
+  }
+  .menu-house {
+    font-size: clamp(30px, 10.5vw, 40px);
+  }
+  .menu-title {
+    font-size: clamp(44px, 14vw, 56px);
+  }
+  .menu-subtitle {
+    font-size: clamp(19px, 6.4vw, 22px);
+  }
+  .menu-chef {
+    font-size: clamp(22px, 7vw, 26px);
   }
   .menu-tape.is-left {
     left: -16px;
@@ -728,8 +760,16 @@
   .menu-cta {
     padding-bottom: 100px;
   }
+  /* the buttons' wide mono labels wrap onto a second line rather than run
+     out of the card on a narrow phone */
   .menu-cta-actions > * {
     flex: 1 1 auto;
+    min-width: 0;
+    height: auto;
+    min-height: 58px;
+    padding-block: 10px;
+    white-space: normal;
+    text-align: center;
   }
 }
 
@@ -741,5 +781,31 @@
   .trump:hover .trump-inner,
   .trump:hover .trump-flip {
     translate: none;
+  }
+}
+
+/* ─── Print ───────────────────────────────────────────────── */
+/* paper flattens the turn and ignores the hidden back, which would come out
+   mirrored over the face: each card lies face up, as without scripts, even
+   one turned before printing, and without the button that turns it */
+@media print {
+  .trump[data-flipped] .trump-inner {
+    transform: none;
+  }
+  .trump-back,
+  .trump-flip {
+    display: none;
+  }
+  /* whole on one sheet, with the corners of its tilt and its shadow inside
+     the box kept whole: outside it they leave slivers on the next sheet */
+  .trumps-deck > li {
+    padding-block: 10px 16px;
+    break-inside: avoid;
+  }
+  /* the band's colour and the bars' fill are backgrounds: left out, the
+     white names fade and the bars print empty */
+  .trump-band,
+  .trump-bar {
+    print-color-adjust: exact;
   }
 }

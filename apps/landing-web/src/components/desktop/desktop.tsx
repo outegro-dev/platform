@@ -12,6 +12,7 @@ import {
 import { getTranslations } from "next-intl/server";
 import { menu } from "@/lib/stack";
 import { Clock } from "./clock";
+import { ScrollBody } from "./scroll-body";
 import "./desktop.css";
 
 /** The window's own buttons: there to be seen, not pressed. */
@@ -180,9 +181,8 @@ export async function Desktop() {
               ))}
             </div>
             <div className="xp-body notepad-text">
-              <h2 id="services-title">
-                {t("title")} {t("titleAccent")}
-              </h2>
+              {/* one text node: a space of its own is dropped from the name */}
+              <h2 id="services-title">{`${t("title")} ${t("titleAccent")}`}</h2>
               <p>
                 {t("intro")}
                 <span className="notepad-caret" aria-hidden="true" />
@@ -208,7 +208,10 @@ export async function Desktop() {
               <span>{t("desktop.stack.address")}</span>
               <span className="xp-input">{t("desktop.stack.path")}</span>
             </p>
-            <div className="xp-body stack-folders">
+            <ScrollBody
+              className="xp-body stack-folders"
+              label={t("desktop.stack.title")}
+            >
               {menu.map((section) => (
                 <div key={section.id} className="stack-folder">
                   <h4>
@@ -224,7 +227,7 @@ export async function Desktop() {
                   </ul>
                 </div>
               ))}
-            </div>
+            </ScrollBody>
           </Window>
         </div>
       </div>

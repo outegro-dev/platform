@@ -88,25 +88,28 @@ const config: NextConfig = {
     imgOptSequentialRead: true,
   },
   async headers() {
+    // The share cards (/og, /og/<locale>) and the tab and home-screen icons
+    // (/favicon.ico, /icon, /apple-icon) are shown on other sites too (link
+    // previews, OG debuggers, readers that hotlink them) and are the same
+    // for everyone until the next deploy; next dev serves them uncached.
+    const sharedFileHeaders = [
+      { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+      ...(process.env.NODE_ENV === "production"
+        ? [
+            {
+              key: "Cache-Control",
+              value: "public, max-age=86400, stale-while-revalidate=604800",
+            },
+          ]
+        : []),
+    ];
     return [
       { source: "/:path*", headers: securityHeaders },
-      // The share card and the tab icon are shown on other sites too (link
-      // previews, OG debuggers, readers that hotlink them) and are the same
-      // for everyone until the next deploy; next dev redraws them per request.
       {
-        source: "/:file(og|icon)",
-        headers: [
-          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
-          ...(process.env.NODE_ENV === "production"
-            ? [
-                {
-                  key: "Cache-Control",
-                  value: "public, max-age=86400, stale-while-revalidate=604800",
-                },
-              ]
-            : []),
-        ],
+        source: "/:file(og|icon|apple-icon)/:locale?",
+        headers: sharedFileHeaders,
       },
+      { source: "/favicon.ico", headers: sharedFileHeaders },
       // Pages stay public; the SSO round trip and the account API carry
       // per-visitor cookies and state, so no cache may keep any of it.
       {

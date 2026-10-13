@@ -3,7 +3,7 @@ import {
   ArrowDownIcon,
   ArrowUpRightIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ContactDialog } from "@/components/contact-dialog";
 import { ContactLinks } from "@/components/contact-links";
@@ -38,6 +38,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// the main page's cream paper, which this page is printed on too (stack.css)
+export const viewport: Viewport = { themeColor: "#f6eede" };
+
 /** A seeded crooked angle per block, the same on every render. */
 const crooked = (key: string, max: number) =>
   ({
@@ -62,7 +65,7 @@ export default async function Stack() {
 
   return (
     <>
-      <Header page="stack" accounts={sso !== null} />
+      <Header accounts={sso !== null} />
       <main id="main" className="menu-page">
         <section
           className="menu-cover og-container"
@@ -233,7 +236,7 @@ export default async function Stack() {
                   aria-describedby="stack-book-hint"
                 >
                   {nav("book")}
-                  <ArrowUpRightIcon />
+                  <ArrowUpRightIcon aria-hidden="true" />
                 </a>
               </Button>
               <ContactDialog variant="outline">

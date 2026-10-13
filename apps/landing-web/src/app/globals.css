@@ -47,7 +47,8 @@
 }
 
 /* ─── Reveal ─────────────────────────────────────────────── */
-@media (prefers-reduced-motion: no-preference) {
+/* on screen only: a printout has every section, scrolled to or not */
+@media screen and (prefers-reduced-motion: no-preference) {
   [data-reveal] {
     transition:
       opacity var(--duration-slow) var(--ease-out),
@@ -93,10 +94,6 @@
   inset: 0;
   z-index: -1;
   opacity: 0;
-  background: color-mix(in srgb, var(--background) 72%, transparent);
-  /* unprefixed only: the CSS build adds -webkit- and, given both, drops this */
-  backdrop-filter: blur(22px) saturate(1.4);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   transition: opacity var(--duration-base);
 }
 .site-header[data-scrolled]::before {
@@ -117,62 +114,18 @@
   height: 68px;
 }
 .wordmark {
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.065em;
   white-space: nowrap;
-}
-.desktop-nav {
-  position: absolute;
-  left: 50%;
-  translate: -50% 0;
-  display: flex;
-  padding: 4px;
-  border-radius: var(--radius-pill);
-  gap: 2px;
-}
-.desktop-nav a {
-  padding: 10px 18px;
-  border-radius: var(--radius-pill);
-  font-size: 13px;
-  font-weight: 500;
-  transition:
-    background-color var(--duration-base),
-    color var(--duration-base);
-}
-.desktop-nav a:hover {
-  background: color-mix(in srgb, var(--foreground) 8%, transparent);
-}
-.desktop-nav a.is-active {
-  background: var(--primary);
-  color: var(--primary-foreground);
 }
 .header-actions {
   display: flex;
   align-items: center;
   gap: 14px;
 }
-.mobile-menu-toggle {
-  display: none;
-}
-.mobile-menu {
-  padding: 64px 28px 28px;
-}
 .mobile-menu nav {
   display: grid;
-  gap: 6px;
 }
 .mobile-menu nav a {
   display: flex;
-  align-items: baseline;
-  gap: 14px;
-  font-size: 32px;
-  font-weight: 600;
-  letter-spacing: -0.055em;
-  padding-block: 6px;
-}
-.mobile-menu-locale {
-  margin-top: 12px;
 }
 
 /* ─── Section headings ───────────────────────────────────── */
@@ -365,13 +318,17 @@
   width: 18px;
   height: 18px;
 }
+/* the column, not its widest word, sets the track */
 .legal-head {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   padding-block: 72px 24px;
 }
+/* below 352px the floor follows the screen, so the longest accent word,
+   "необходимое.", still fits the phone's column */
 .legal-head h1 {
-  font-size: clamp(44px, 6.4vw, 88px);
+  font-size: clamp(min(44px, 12.5vw), 6.4vw, 88px);
   font-weight: 650;
   line-height: 1;
   letter-spacing: -0.06em;
@@ -434,18 +391,26 @@
   text-decoration-color: currentColor;
 }
 
+/* ─── Sign-in error ──────────────────────────────────────── */
+/* as a grid item the panel would grow to its widest label; it keeps to the
+   column, and on a narrow phone a button wraps its label at its height */
+.auth-error > [data-slot="state-panel"] {
+  min-width: 0;
+}
+.auth-error [data-slot="state-panel-actions"] > [data-slot="button"] {
+  flex-shrink: 1;
+  min-width: 0;
+  height: auto;
+  min-height: 58px;
+  white-space: normal;
+  text-wrap: balance;
+  text-align: center;
+}
+
 /* ─── Responsive ─────────────────────────────────────────── */
 @media (max-width: 1100px) {
   .section-space {
     padding-block: 110px;
-  }
-  .desktop-nav a {
-    padding-inline: 12px;
-  }
-}
-@media (max-width: 960px) {
-  .desktop-nav {
-    display: none;
   }
 }
 @media (max-width: 767px) {
@@ -458,15 +423,6 @@
   .site-header-inner,
   .site-header[data-scrolled] .site-header-inner {
     height: 64px;
-  }
-  .wordmark {
-    font-size: 19px;
-  }
-  .header-locale {
-    display: none;
-  }
-  .mobile-menu-toggle {
-    display: inline-flex;
   }
   .section-title {
     font-size: clamp(44px, 12.4vw, 72px);
@@ -494,6 +450,15 @@
     grid-template-columns: 1fr;
     gap: 28px;
     padding-top: 44px;
+  }
+}
+
+/* ─── Print ──────────────────────────────────────────────── */
+/* fixed, the bar would come out on every sheet */
+@media print {
+  .skip-link,
+  .site-header {
+    display: none;
   }
 }
 

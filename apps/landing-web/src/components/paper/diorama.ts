@@ -1105,8 +1105,14 @@ export class Diorama {
   }
 }
 
-/** Loads the sprites and the sign, then builds the diorama. */
-export async function createDiorama(renderer: WebGLRenderer) {
+/**
+ * Loads the sprites and the sign (its lines in the page's language), then
+ * builds the diorama.
+ */
+export async function createDiorama(
+  renderer: WebGLRenderer,
+  lines = ["PIER", "No. 1"],
+) {
   const loader = new TextureLoader();
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const names = Object.keys(sprites) as SpriteName[];
@@ -1119,7 +1125,7 @@ export async function createDiorama(renderer: WebGLRenderer) {
         return map;
       }),
     ),
-    signText(["PIER", "No. 1"]).catch(() => null),
+    signText(lines).catch(() => null),
   ]);
   const maps = {} as Maps;
   names.forEach((name, i) => {

@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
 import { userAgent } from "next/server";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { CONSENT_COOKIE, parseConsent } from "@/components/consent/consent";
 import { ConsentBanner } from "@/components/consent/consent-banner";
 import { GtmBootstrap } from "@/components/consent/gtm-bootstrap";
@@ -61,6 +61,14 @@ async function analytics() {
   };
 }
 
+/**
+ * What client components translate on their own: the header and the
+ * language switch, the consent note and settings, the contact dialog, the
+ * 504 card. The rest is translated on the server, so the page's payload
+ * carries only these, not every message of every page.
+ */
+const CLIENT_MESSAGES = ["nav", "consent", "contact", "bonk"];
+
 export const viewport: Viewport = {
   themeColor: "#efe4c6",
   colorScheme: "light",
@@ -71,10 +79,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [locale, gate, stats] = await Promise.all([
+  const [locale, gate, stats, messages] = await Promise.all([
     getLocale(),
     gateDue(),
     analytics(),
+    getMessages(),
   ]);
   // Only the zine faces: the issue recasts the kit's sans, display and mono
   // tokens to them, so the kit's own faces (fonts.ts, which preloads Manrope,
@@ -90,7 +99,11 @@ export default async function RootLayout({
       <body>
         {/* first in the body, so it is in the first streamed chunk over the page */}
         {gate && <GateLoader cookie={GATE_COOKIE} />}
-        <NextIntlClientProvider>
+        <NextIntlClientProvider
+          messages={Object.fromEntries(
+            CLIENT_MESSAGES.map((key) => [key, messages[key]]),
+          )}
+        >
           {/* before the skip link: the question comes ahead of the page */}
           {stats && !stats.consent && <ConsentBanner />}
           {children}

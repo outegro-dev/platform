@@ -11,6 +11,9 @@
   --xp-chrome: #ece9d8;
   --xp-frame: #0054e3;
   --xp-select: #316ac5;
+  /* a program's button on the taskbar, a shade under the era's #3c81f3 so
+     its white label reads (4.7:1) */
+  --xp-task: #2f6fe0;
   position: relative;
   isolation: isolate;
   /* the screens stacked on one another overhang the end of the computer by
@@ -27,6 +30,10 @@
   height: 100svh;
   margin-bottom: -100svh;
   overflow: hidden;
+}
+.desktop-wallpaper-frame {
+  position: absolute;
+  inset: 0;
 }
 .desktop-wallpaper {
   object-fit: cover;
@@ -74,9 +81,12 @@
   line-height: 1.25;
   text-align: center;
   color: #fff;
+  /* the era's tight black halo: the white reads on the clouds too */
   text-shadow:
-    1px 1px 1px rgb(0 0 0 / 70%),
-    0 0 4px rgb(0 0 0 / 50%);
+    0 0 1px #000,
+    0 0 2px #000,
+    0 0 3px #000,
+    1px 1px 2px #000;
 }
 .desktop-icon svg {
   width: 38px;
@@ -86,6 +96,13 @@
 a.desktop-icon:is(:hover, :focus-visible) span {
   background: var(--xp-select);
   text-shadow: none;
+}
+/* the focus rectangle in white dashes on a dark band, so it reads on the
+   sky and on a cloud alike */
+a.desktop-icon:focus-visible {
+  outline: 2px dashed #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgb(0 0 0 / 60%);
 }
 
 /* two windows on a twelve-column desk, each as tall as what is in it and
@@ -99,8 +116,10 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   min-height: 0;
 }
 .is-notepad {
+  /* how much lower it was left */
+  --notepad-drop: 48px;
   grid-column: 1 / 6;
-  margin-top: 48px;
+  margin-top: var(--notepad-drop);
 }
 .is-stack {
   grid-column: 6 / 13;
@@ -243,7 +262,7 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   margin: 0 3px 3px;
   padding: 2px 6px;
   overflow: hidden;
-  font-size: 11px;
+  font-size: 12px;
   color: #000;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -261,9 +280,12 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   gap: 4px;
   margin-top: 8px;
 }
+/* 12px type in the chip's old 16px line, a pixel less padding: Explorer
+   keeps its height */
 .xp-tags li {
-  padding: 0 6px;
-  font-size: 11px;
+  padding: 0 5px;
+  font-size: 12px;
+  line-height: 16px;
   background: #eef3fb;
   border: 1px solid #7f9db9;
   border-radius: 2px;
@@ -298,7 +320,10 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   margin-left: 2px;
   vertical-align: -0.15em;
   background: #000;
-  animation: xp-blink 1s steps(1) infinite;
+}
+/* it blinks a few times as the window opens, then holds still */
+.xp-window[data-shown] .notepad-caret {
+  animation: xp-blink 1s steps(1) 4;
 }
 @keyframes xp-blink {
   50% {
@@ -314,7 +339,7 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   gap: 8px;
   padding: 4px 8px;
   border-bottom: 1px solid #aca899;
-  font-size: 11px;
+  font-size: 12px;
   color: #444;
 }
 .stack-address .xp-input {
@@ -324,8 +349,12 @@ a.desktop-icon:is(:hover, :focus-visible) span {
 .stack-folders {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 10px;
   padding: 12px 14px;
+}
+/* the window clips round its body: the ring of a focused body goes inside */
+.xp-body.stack-folders:focus-visible {
+  outline-offset: -5px;
 }
 .stack-folder h4 {
   display: flex;
@@ -414,12 +443,12 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   min-width: 0;
   overflow: hidden;
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: #fff;
   text-overflow: ellipsis;
   white-space: nowrap;
   border-radius: 3px;
-  background: #3c81f3;
+  background: var(--xp-task);
   box-shadow:
     inset 1px 1px rgb(255 255 255 / 25%),
     inset -1px -1px rgb(0 0 0 / 20%);
@@ -444,7 +473,7 @@ a.desktop-icon:is(:hover, :focus-visible) span {
 }
 /* minimised, every program is a button again; the game is the one open */
 .os[data-minimised] .xp-tasks > .is-active {
-  background: #3c81f3;
+  background: var(--xp-task);
   box-shadow:
     inset 1px 1px rgb(255 255 255 / 25%),
     inset -1px -1px rgb(0 0 0 / 20%);
@@ -462,15 +491,17 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   font-size: 12px;
   color: #fff;
   border-left: 1px solid #1042af;
+  /* the bright rim of the era's tray; the band the clock sits on a shade
+     deeper, so its white reads (4.5:1) */
   background: linear-gradient(
     to bottom,
     #0c59b9 1%,
     #139ee9 6%,
     #18b5f2 10%,
     #139beb 14%,
-    #1290e8 19%,
-    #0d8dea 63%,
-    #0d9ff1 81%,
+    #0b7fdd 22%,
+    #0a77d8 40% 66%,
+    #0d8dea 81%,
     #0f9eed 88%,
     #119be9 91%,
     #1392e2 94%,
@@ -513,7 +544,7 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   font-weight: 700;
 }
 .os-loader-note {
-  font-size: 11px;
+  font-size: 12px;
   color: #444;
 }
 .xp-progress {
@@ -591,9 +622,31 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   font-family: var(--xp-mono);
   font-size: 13px;
 }
+/* it blinks a few times once the cartoon is ready to play (staged, once its
+   window has opened) and then holds still */
 @media (prefers-reduced-motion: no-preference) {
-  .os-game-start {
-    animation: xp-blink 1.1s steps(1) infinite;
+  .os:is(:not([data-stage]), [data-game])
+    .os-game-screen:has(.pj[data-ready])
+    .os-game-start {
+    animation: xp-blink 1.1s steps(1) 4;
+  }
+}
+/* the prompt says what happens: scrolling plays the cartoon or, where it
+   lies as paper notes instead (reduced motion, no script, no GPU, print:
+   see PaperJourney), all its levels are open below */
+.os-game-start .is-static,
+.os-game-screen:has(.pj[data-mode="static"]) .os-game-start .is-live {
+  display: none;
+}
+.os-game-screen:has(.pj[data-mode="static"]) .os-game-start .is-static {
+  display: inline;
+}
+@media (prefers-reduced-motion: reduce), (scripting: none), print {
+  .os-game-start .is-live {
+    display: none;
+  }
+  .os-game-start .is-static {
+    display: inline;
   }
 }
 .os-mark {
@@ -619,6 +672,11 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   height: 100svh;
   min-height: 0;
   margin-bottom: -100svh;
+}
+/* shrunk into the taskbar buttons the windows are out of the pointer's way;
+   their links stay in the keyboard's (a focused one brings them back) */
+.os[data-minimised] .desktop-windows {
+  pointer-events: none;
 }
 .os[data-stage] .os-loading {
   z-index: 2;
@@ -694,8 +752,9 @@ a.desktop-icon:is(:hover, :focus-visible) span {
 }
 
 /* the windows open as the desktop comes into view: the text file grows
-   out of the start button's corner, Explorer pops open after it */
-@media (prefers-reduced-motion: no-preference) {
+   out of the start button's corner, Explorer pops open after it; a
+   printout has them open, scrolled to or not */
+@media screen and (prefers-reduced-motion: no-preference) {
   .xp-window[data-reveal] {
     transition:
       opacity 240ms ease-out,
@@ -724,9 +783,24 @@ a.desktop-icon:is(:hover, :focus-visible) span {
     height: 100svh;
   }
 }
+/* side by side on that one screen, a window taller than the desk stops at
+   the taskbar and its body scrolls */
+@media (min-width: 1280px) and (min-height: 640px) {
+  .desktop-windows {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .desktop-windows > .xp-window {
+    max-height: 100%;
+  }
+  .desktop-windows > .is-notepad {
+    max-height: calc(100% - var(--notepad-drop));
+  }
+}
+/* one under the other, at the top of a desk taller than both */
 @media (max-width: 1279px) {
   .desktop-windows {
     grid-template-columns: minmax(0, 1fr);
+    align-content: start;
   }
   .desktop-windows > .xp-window {
     grid-column: auto;
@@ -757,5 +831,37 @@ a.desktop-icon:is(:hover, :focus-visible) span {
   }
   .desktop-icon {
     width: 72px;
+  }
+}
+/* the narrowest phones: the four shortcuts still end inside the margin */
+@media (max-width: 339px) {
+  .desktop-icon {
+    width: 64px;
+  }
+}
+
+/* on paper the windows lie on the page itself: no wallpaper or taskbar (a
+   sheet-sized picture, and backgrounds do not print), the shortcuts named
+   in ink, the title bars blue whatever the print settings, so their white
+   names read; a window is never cut between two sheets */
+@media print {
+  .os-backdrop {
+    display: none;
+  }
+  .desktop {
+    min-height: 0;
+  }
+  .desktop-icon {
+    color: #000;
+    text-shadow: none;
+  }
+  .desktop-icon svg {
+    filter: none;
+  }
+  .xp-title {
+    print-color-adjust: exact;
+  }
+  .desktop-windows > .xp-window {
+    break-inside: avoid;
   }
 }

@@ -15,7 +15,9 @@ type TocItem = { title: string; href: string; page: string };
  * the contents leaf (the contents, and on its back the report's story,
  * page 2), the report leaf (the report's screens, page 3, and a blank back)
  * and a blank last page; over it all, the broken page that takes the
- * issue's place, where the 504 joke plays (BonkRetry).
+ * issue's place, where the 504 joke plays (BonkRetry). The markup keeps
+ * them in reading order, so the headings and the keyboard go page by page;
+ * how they stack is the CSS's.
  *
  * Without script, with reduced motion and on screens under 1024px the two
  * spreads simply lie one under the other. Otherwise IssueFlight flies the
@@ -24,12 +26,13 @@ type TocItem = { title: string; href: string; page: string };
  */
 export async function Issue({ toc }: { toc: TocItem[] }) {
   const t = await getTranslations();
-  // the running head: the issue, and on the right the date, or the section
-  // on a plaque
+  // the running head: the issue (the magazine's name too, where there is
+  // room), and on the right the date, or the section on a plaque
   const running = (section?: string) => (
     <p className="book-running" aria-hidden="true">
       <span>
-        {t("zine.poster.mast")} · {t("zine.poster.issue")}
+        <span className="book-mast">{`${t("zine.poster.mast")} · `}</span>
+        {t("zine.poster.issue")}
       </span>
       {section ? (
         <b className="book-section">{section}</b>
@@ -43,20 +46,19 @@ export async function Issue({ toc }: { toc: TocItem[] }) {
       {page}
     </p>
   );
+  // #about is the issue's top: the first spread, open on the friends' form
+  // whether the book lies open or lands there in flight
   return (
-    <section className="issue" aria-labelledby="toc-title">
+    <section id="about" className="issue" aria-labelledby="toc-title">
       <div className="issue-pin og-container">
         <div className="issue-slot">
           <div className="book">
-            {/* past the report the issue breaks: the next pages are blank */}
-            <div className="book-page is-blank" />
-            <div className="book-leaf is-report-leaf">
-              <div className="book-face is-front book-sheet is-recto is-screens">
-                {running(t("projects.label"))}
-                <ProjectScreens />
-                {folio(3)}
+            <div className="book-leaf is-cover-leaf">
+              <Poster className="book-face is-front" />
+              <div className="book-face is-back book-sheet is-verso is-inside">
+                {running()}
+                <FriendForm />
               </div>
-              <div className="book-face is-back is-blank" />
             </div>
             <div className="book-leaf is-contents-leaf">
               <div className="book-face is-front book-sheet is-recto is-contents">
@@ -69,9 +71,18 @@ export async function Issue({ toc }: { toc: TocItem[] }) {
                     {toc.map((item) => (
                       <li key={item.href}>
                         <a href={item.href}>
-                          <span className="toc-name">{item.title}</span>
-                          <span className="toc-dots" aria-hidden="true" />
-                          <span className="toc-page">{item.page}</span>
+                          {/* the leader runs on from its last word */}
+                          <span className="toc-name">
+                            <span>{item.title}</span>
+                          </span>
+                          {/* an abbreviation's point («обл.») kerned in
+                              its own span: the face is monospaced */}
+                          <span className="toc-page">
+                            {item.page.replace(/\.$/, "")}
+                            {item.page.endsWith(".") && (
+                              <span className="toc-point">.</span>
+                            )}
+                          </span>
                         </a>
                       </li>
                     ))}
@@ -79,23 +90,29 @@ export async function Issue({ toc }: { toc: TocItem[] }) {
                 </nav>
                 {folio(1)}
               </div>
+              {/* focusable by script: a jump to #projects in flight lands
+                  here (IssueFlight) */}
               <section
                 id="projects"
                 className="book-face is-back book-sheet is-verso is-story"
                 aria-labelledby="projects-title"
+                tabIndex={-1}
               >
                 {running(t("projects.label"))}
                 <ProjectStory />
                 {folio(2)}
               </section>
             </div>
-            <div className="book-leaf is-cover-leaf">
-              <Poster className="book-face is-front" />
-              <div className="book-face is-back book-sheet is-verso is-inside">
-                {running()}
-                <FriendForm />
+            <div className="book-leaf is-report-leaf">
+              <div className="book-face is-front book-sheet is-recto is-screens">
+                {running(t("projects.label"))}
+                <ProjectScreens />
+                {folio(3)}
               </div>
+              <div className="book-face is-back is-blank" />
             </div>
+            {/* past the report the issue breaks: the next pages are blank */}
+            <div className="book-page is-blank" />
             {/* the right page's corner, lifting before the page turns */}
             <div className="book-curl" aria-hidden="true">
               <span />

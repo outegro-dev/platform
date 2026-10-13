@@ -1,7 +1,16 @@
 "use client";
 
+import { getImageProps } from "next/image";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import paw from "@/assets/zine/paw.webp";
+
+// the optimiser's copy for the paw's width, min(560px, 70vw) (zine-page.css)
+const { props: pawImage } = getImageProps({
+  src: paw,
+  alt: "",
+  sizes: "(max-width: 800px) 70vw, 560px",
+  loading: "lazy",
+});
 
 /**
  * A cat's paw puts the block in its place: the block lies askew off its
@@ -54,15 +63,7 @@ export function CatPaw({
     <div ref={ref} className="paw-zone" data-paw={state}>
       {children}
       {/* biome-ignore lint/performance/noImgElement: a decorative sprite that only animates. */}
-      <img
-        className="paw"
-        src={paw.src}
-        width={paw.width}
-        height={paw.height}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-      />
+      <img {...pawImage} className="paw" alt="" aria-hidden="true" />
     </div>
   );
 }

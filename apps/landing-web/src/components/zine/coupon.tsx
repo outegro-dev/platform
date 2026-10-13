@@ -56,11 +56,13 @@ export function Coupon({
         <p className="coupon-fine">{fine}</p>
         <div className="coupon-actions">
           {action}
+          {/* cut once; aria-disabled, as a disabled button would drop the
+              focus it holds */}
           <button
             type="button"
             className="coupon-cut"
             onClick={start}
-            disabled={state !== "whole"}
+            aria-disabled={state !== "whole"}
           >
             <ScissorsIcon aria-hidden="true" />
             {cut}

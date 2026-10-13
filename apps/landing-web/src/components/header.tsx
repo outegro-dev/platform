@@ -1,9 +1,9 @@
 "use client";
 
-import { AccountMenu, AccountMenuPlaceholder } from "@outegro/ui/account-menu";
 import { Button } from "@outegro/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -13,8 +13,8 @@ import {
   type AccountMenuUser,
   productionPlatformUrls,
 } from "@outegro/ui/lib/platform";
-import { cn } from "@outegro/ui/lib/utils";
-import { ArrowUpRightIcon, ListIcon } from "@phosphor-icons/react";
+import { ArrowUpRightIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
@@ -23,27 +23,60 @@ import { LocaleSwitcher } from "./locale-switcher";
 
 /** Sections of the main page, in page order. */
 const sections = ["projects", "services", "process", "contact"] as const;
-type Section = (typeof sections)[number];
 
-/** Navigation order: the Stack page sits between the sections. */
-const nav: ({ key: Section; section: Section } | { key: "stack" })[] = [
-  { key: "projects", section: "projects" },
-  { key: "services", section: "services" },
-  { key: "process", section: "process" },
-  { key: "stack" },
-  { key: "contact", section: "contact" },
-];
+/** The masthead's two links, as on the cover. */
+const masthead = ["projects", "process"] as const;
+
+/**
+ * The account's room at the end of the bar (zine-page.css; nothing in the
+ * menu, where nothing comes after it): held while the account is on its
+ * way for someone signed in on the last page here, so the links and the
+ * call do not move when it comes.
+ */
+const accountRoom = <span className="header-account-room" aria-hidden="true" />;
+
+/**
+ * The platform account (Radix's dropdown and a dozen icons) shows in the
+ * opened menu, or in the bar for someone signed in, once /api/account has
+ * answered: it loads then, not with every page, its room held meanwhile.
+ */
+const AccountMenu = dynamic(
+  () => import("@outegro/ui/account-menu").then((mod) => mod.AccountMenu),
+  { ssr: false, loading: () => accountRoom },
+);
+
+/** localStorage: someone was signed in on the last page here. */
+const SIGNED_IN = "og-signed-in";
+
+const signedInBefore = () => {
+  try {
+    return localStorage.getItem(SIGNED_IN) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const noteSignedIn = (signedIn: boolean) => {
+  try {
+    if (signedIn) localStorage.setItem(SIGNED_IN, "1");
+    else localStorage.removeItem(SIGNED_IN);
+  } catch {
+    // no storage: the account makes its room when it comes
+  }
+};
 
 /**
  * Who is signed in, as the site's own /api/account says once the page has
  * loaded: the HTML is the same for every visitor, so it never carries an
- * account. Undefined while asking; "off" while the site has no accounts
- * (SSO off: the page says so up front, or the route answers 404), and then
- * there is no account control at all; null for nobody, and also when the
- * account service cannot answer (the site then simply offers to sign in).
+ * account. Undefined while asking, "returning" while asking after a page
+ * someone was signed in on; "off" while the site has no accounts (SSO off:
+ * the page says so up front, or the route answers 404), and then there is
+ * no account control at all; null for nobody, and also when the account
+ * service cannot answer (the site then simply offers to sign in).
  */
 type Visitor =
   | { user: AccountMenuUser | null; home: string }
+  | "returning"
   | "off"
   | undefined;
 
@@ -51,12 +84,16 @@ function useVisitor(accounts: boolean): Visitor {
   const [visitor, setVisitor] = useState<Visitor>(accounts ? undefined : "off");
   useEffect(() => {
     if (!accounts) return;
+    if (signedInBefore()) setVisitor("returning");
     const controller = new AbortController();
-    const settle = (user: AccountMenuUser | null) =>
+    const settle = (user: AccountMenuUser | null) => {
+      noteSignedIn(user !== null);
       setVisitor({ user, home: new URL("/", window.location.href).href });
+    };
     fetch("/api/account", { cache: "no-store", signal: controller.signal })
       .then((response) => {
         if (response.status === 404) {
+          noteSignedIn(false);
           setVisitor("off");
           return undefined;
         }
@@ -75,23 +112,25 @@ function useVisitor(accounts: boolean): Visitor {
 }
 
 /**
- * Fixed header: transparent over the cover, a strip of the masthead once
- * scrolled, tucked away while reading down and back on the slightest scroll
- * up. On the right: the language, the platform account (the same menu as on
- * every outegro.dev app; none while the site has no accounts) and the call
- * to book, the page's main action. On the Stack page the section links lead
- * back to the main page.
+ * Fixed header, the masthead of the vintage cover on every page:
+ * transparent at the top, on the cover's paper once scrolled, tucked away
+ * while reading down and back on the slightest scroll up. The name with a
+ * rule, two links (on the other pages they lead back to the main page), the
+ * language and the call to talk, the page's main action.
  *
- * The section strip is centred across the bar, and next to the account and
- * the call it only fits from 2xl (1536px): below that it folds into the
- * menu (the `!` utilities win over the layout rules in globals.css). Phones
- * keep the bar to the avatar: signing in and booking are in the menu there.
+ * The platform account (the same menu as on every outegro.dev app; none
+ * while the site has no accounts) shows in the bar only once someone is
+ * signed in, at its end: the bar never offers to sign in, the page is there
+ * to book a call. Below 1024px the links, the call and the account fold
+ * into the menu, which unfolds from the masthead and also offers to sign
+ * in: the bar keeps the name, the language and the menu.
  */
 export function Header({
-  page = "home",
+  home = false,
   accounts = true,
 }: {
-  page?: "home" | "stack";
+  /** The main page: the name signs the cover, the links stay on the page. */
+  home?: boolean;
   /** Whether the site has accounts (SSO on); without them, no account control. */
   accounts?: boolean;
 }) {
@@ -99,14 +138,15 @@ export function Header({
   const locale = useLocale();
   const pathname = usePathname();
   const visitor = useVisitor(accounts);
-  const known = visitor === "off" ? undefined : visitor;
+  const known = typeof visitor === "object" ? visitor : undefined;
   const bookHint = useId();
-  const home = page === "home";
+  const menuHint = useId();
   const [active, setActive] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const destination = useRef<string | null>(null);
+  const menuLinks = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let last = window.scrollY;
@@ -145,33 +185,41 @@ export function Header({
     };
   }, [home]);
 
-  const links = nav.map((item) => {
-    const section = "section" in item ? item.section : null;
-    const current = section ? home && active === section : page === item.key;
-    return {
-      key: item.key,
-      section,
-      href: section ? `${home ? "" : "/"}#${section}` : "/stack",
-      current,
-      // A section in view is a location; the page you are on is the page.
-      ariaCurrent: current ? (section ? "location" : "page") : undefined,
-    } as const;
-  });
+  const links = masthead.map((section) => ({
+    section,
+    href: `${home ? "" : "/"}#${section}`,
+    // the section in view is where the reader is
+    current: home && active === section ? ("location" as const) : undefined,
+  }));
 
-  // Signing in is quiet next to the call: the page is there to book one.
-  const account = (className?: string) => (
-    <AccountMenu
-      user={known?.user ?? null}
-      current="site"
-      urls={productionPlatformUrls}
-      locale={locale}
-      signInHref={`/auth/sign-in?returnTo=${encodeURIComponent(pathname || "/")}`}
-      signOut="/auth/sign-out"
-      returnTo={known?.home}
-      compact
-      className={cn(!known?.user && "bg-secondary text-foreground", className)}
-    />
+  // on the main page the name signs the magazine: "by" the author, an
+  // English word on either page. The space opens the name's own text: a
+  // space alone between the tags drops out of the link's spoken name
+  const name = (
+    <>
+      {home && (
+        <span className="wordmark-by" lang="en">
+          {t("by")}
+        </span>
+      )}
+      {home ? " Nick Lukashik" : "Nick Lukashik"}
+    </>
   );
+
+  const account = (className: string) =>
+    known ? (
+      <AccountMenu
+        user={known.user}
+        current="site"
+        urls={productionPlatformUrls}
+        locale={locale}
+        signInHref={`/auth/sign-in?returnTo=${encodeURIComponent(pathname || "/")}`}
+        signOut="/auth/sign-out"
+        returnTo={known.home}
+        compact
+        className={className}
+      />
+    ) : null;
 
   return (
     <>
@@ -185,96 +233,72 @@ export function Header({
         onFocusCapture={() => setHidden(false)}
       >
         <div className="site-header-inner og-container">
-          <a
-            href={home ? "#top" : "/"}
-            className="wordmark"
-            aria-label={home ? t("home") : t("homePage")}
-          >
-            {/* on the main page the name signs the magazine: "by" the author */}
-            {home && <span className="wordmark-by">{t("by")}</span>}
-            Nick Lukashik
+          {/* the name as it reads, then where it leads */}
+          <a href={home ? "#top" : "/"} className="wordmark">
+            {name}
+            <span className="sr-only">, {t(home ? "toTop" : "toHome")}</span>
           </a>
-          {/* on the main page a rule runs from the byline, as on a masthead */}
-          {home && <span className="header-rule" aria-hidden="true" />}
-          {/* at the top of the main page: two links, as on a masthead; the
-              section strip and the menu take over once the page scrolls */}
-          {home && (
-            <nav className="masthead-nav" aria-label={t("sections")}>
-              <a href="#projects">{t("projects")}</a>
-              <a href="#process">{t("process")}</a>
-            </nav>
-          )}
-          {/* elsewhere the strip of every section; the main page has its
-              masthead links instead */}
-          {!home && (
-            <nav
-              className="desktop-nav og-glass max-2xl:hidden!"
-              aria-label={t("sections")}
-            >
-              {links.map((link) => (
-                <a
-                  key={link.key}
-                  className={link.current ? "is-active" : undefined}
-                  aria-current={link.ariaCurrent}
-                  href={link.href}
-                >
-                  {t(link.key)}
-                </a>
-              ))}
-            </nav>
-          )}
+          <span className="header-rule" aria-hidden="true" />
+          <nav className="masthead-nav" aria-label={t("sections")}>
+            {links.map((link) => (
+              <a
+                key={link.section}
+                href={link.href}
+                aria-current={link.current}
+              >
+                {t(link.section)}
+              </a>
+            ))}
+          </nav>
           <div className="header-actions">
             <LocaleSwitcher className="header-locale" />
-            {visitor === "off" ? null : visitor === undefined ? (
-              <AccountMenuPlaceholder
-                compact
-                className="header-account max-md:hidden"
-              />
-            ) : (
-              account(
-                visitor.user
-                  ? "header-account"
-                  : "header-account max-md:hidden",
-              )
-            )}
-            {home && <span className="header-divider" aria-hidden="true" />}
-            {/* The short label where the bar is narrow or shared with the
-                section strip; the accessible name is the visible one. */}
-            <Button asChild size="sm" className="header-book max-md:hidden">
-              <a
-                href={calendly}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-describedby={bookHint}
-              >
-                <span className="max-lg:hidden 2xl:hidden">{t("book")}</span>
-                <span className="lg:max-2xl:hidden">{t("bookShort")}</span>
-                {home && <span className="book-talk">{t("talk")}</span>}
-                <ArrowUpRightIcon aria-hidden="true" />
-              </a>
-            </Button>
+            <span className="header-divider" aria-hidden="true" />
+            <a
+              className="header-book"
+              href={calendly}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-describedby={bookHint}
+            >
+              {t("talk")}
+              <ArrowUpRightIcon aria-hidden="true" />
+            </a>
             <span id={bookHint} hidden>
               {t("bookHint")}
             </span>
+            {/* from 1024px, where the menu's square stands below that: who is
+                signed in and the way to sign out, only once someone is */}
+            {known?.user
+              ? account("header-account")
+              : visitor === "returning" && accountRoom}
             <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
               <DialogTrigger asChild>
-                <Button
-                  variant="glass"
-                  size="icon"
-                  // the main page needs the menu only where its masthead
-                  // links are folded away
-                  className={cn(
-                    "mobile-menu-toggle",
-                    home ? "max-lg:inline-flex!" : "max-2xl:inline-flex!",
-                  )}
+                <button
+                  type="button"
+                  className="mobile-menu-toggle"
                   aria-label={t("menu")}
                 >
-                  <ListIcon />
-                </Button>
+                  <ListIcon aria-hidden="true" />
+                </button>
               </DialogTrigger>
               <DialogContent
-                closeLabel={t("close")}
+                showCloseButton={false}
                 className="mobile-menu"
+                // its top row lies over the bar, as tall as the bar is now
+                data-scrolled={scrolled || undefined}
+                // Radix wraps Tab round the menu without scrolling it: on a
+                // screen shorter than the menu the focused control is
+                // brought into view (a tap's focus stays where it is)
+                onFocusCapture={(event) => {
+                  const { currentTarget: menu, target } = event;
+                  if (menu.contains(target) && target.matches(":focus-visible"))
+                    target.scrollIntoView({ block: "nearest" });
+                }}
+                // the first link, not the language (Radix skips links)
+                onOpenAutoFocus={(event) => {
+                  event.preventDefault();
+                  menuLinks.current?.querySelector("a")?.focus();
+                }}
                 onCloseAutoFocus={(event) => {
                   if (!destination.current) return;
                   event.preventDefault();
@@ -296,41 +320,59 @@ export function Header({
                 <DialogDescription className="sr-only">
                   Nick Lukashik
                 </DialogDescription>
-                <nav aria-label={t("sections")}>
+                <p className="wordmark mobile-menu-mark" aria-hidden="true">
+                  <span>{name}</span>
+                </p>
+                {/* the top row first, as it reads: the language, then the
+                    close (the kit's own close would come last) */}
+                <LocaleSwitcher className="mobile-menu-locale" />
+                <span
+                  className="header-divider mobile-menu-divider"
+                  aria-hidden="true"
+                />
+                <DialogClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="mobile-menu-close"
+                    aria-label={t("close")}
+                  >
+                    <XIcon aria-hidden="true" />
+                  </Button>
+                </DialogClose>
+                <nav ref={menuLinks} aria-label={t("sections")}>
                   {links.map((link, i) => (
                     <a
                       href={link.href}
-                      key={link.key}
-                      aria-current={link.ariaCurrent}
+                      key={link.section}
+                      aria-current={link.current}
                       onClick={() => {
                         // In-page jumps restore focus to the section; links to
                         // another page just navigate.
-                        destination.current =
-                          home && link.section ? link.section : null;
+                        destination.current = home ? link.section : null;
                         setMenuOpen(false);
                       }}
                     >
-                      <span className="og-eyebrow">0{i + 1}</span>
-                      {t(link.key)}
+                      <span className="mobile-menu-no">0{i + 1}</span>
+                      {t(link.section)}
                     </a>
                   ))}
                 </nav>
-                <div className="mt-8 flex flex-wrap items-center gap-4 md:hidden">
-                  <Button asChild size="lg">
-                    <a
-                      href={calendly}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-describedby={bookHint}
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      {t("book")}
-                      <ArrowUpRightIcon aria-hidden="true" />
-                    </a>
-                  </Button>
-                  {known && !known.user ? account() : null}
-                </div>
-                <LocaleSwitcher className="mobile-menu-locale" />
+                <a
+                  className="mobile-menu-book"
+                  href={calendly}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-describedby={menuHint}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t("book")}
+                  <ArrowUpRightIcon aria-hidden="true" />
+                </a>
+                <p id={menuHint} className="mobile-menu-hint">
+                  {t("bookHint")}
+                </p>
+                {account("mobile-menu-account")}
               </DialogContent>
             </Dialog>
           </div>

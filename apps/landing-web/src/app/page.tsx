@@ -1,8 +1,9 @@
 import { Button } from "@outegro/ui/button";
 import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Viewport } from "next";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
+import { preload } from "react-dom";
 import cutEn from "@/assets/cover/cut-en.webp";
 import cutRu from "@/assets/cover/cut-ru.webp";
 import magazine from "@/assets/cover/magazine.webp";
@@ -18,6 +19,7 @@ import { CatPaw } from "@/components/zine/cat-paw";
 import { Coupon } from "@/components/zine/coupon";
 import { Fly } from "@/components/zine/fly";
 import { Issue } from "@/components/zine/issue";
+import { LateFaces } from "@/components/zine/late-faces";
 import { Mischief } from "@/components/zine/mischief";
 import { calendly, contacts } from "@/lib/contact";
 import { sso } from "@/lib/sso";
@@ -28,7 +30,26 @@ export const viewport: Viewport = { themeColor: "#f6eede" };
 
 type TocItem = { title: string; href: string; page: string };
 
+// a phone has the magazine a little wider than the screen (zine-page.css)
+const magazineSizes =
+  "(max-width: 767px) calc(100vw + 24px), (max-aspect-ratio: 4/5) 48vw, 54vw";
+
 export default async function Home() {
+  // the magazine is a wide cover's largest paint: there it is fetched first.
+  // A phone (and an upright tablet, where it lies small) keeps the image's
+  // own preload: raised there, it held the rest of the first screen back
+  const { props: magazineProps } = getImageProps({
+    src: magazine,
+    alt: "",
+    sizes: magazineSizes,
+  });
+  preload(magazineProps.src, {
+    as: "image",
+    imageSrcSet: magazineProps.srcSet,
+    imageSizes: "(max-aspect-ratio: 4/5) 48vw, 54vw",
+    fetchPriority: "high",
+    media: "(min-width: 768px) and (min-aspect-ratio: 4/5)",
+  });
   const t = await getTranslations();
   const toc = t.raw("zine.toc") as TocItem[];
   const steps = t.raw("zine.band.steps") as string[];
@@ -41,14 +62,14 @@ export default async function Home() {
     <Button asChild size="lg">
       <a href={calendly} target="_blank" rel="noopener noreferrer">
         {t("nav.book")}
-        <ArrowUpRightIcon />
+        <ArrowUpRightIcon aria-hidden="true" />
       </a>
     </Button>
   );
 
   return (
     <>
-      <Header accounts={sso !== null} />
+      <Header home accounts={sso !== null} />
       <main id="main">
         <section className="cover" id="top" aria-labelledby="hero-title">
           {/* printing ink: the headline's edges a little rough, a few specks
@@ -82,12 +103,15 @@ export default async function Home() {
             <h1 id="hero-title" className="cover-headline">
               <span className="cover-lead">{t("zine.headlineLead")}</span>{" "}
               <span className="sr-only">{t("zine.headlineCut")}</span>
-              {/* the end cut out of magazines, a picture in each language */}
+              {/* the end cut out of magazines, a picture in each language;
+                  a tablet held upright has its own cover (zine-page.css,
+                  the Russian headline set larger there), the pictures
+                  sized for it next to the phone's */}
               <Image
                 src={locale === "ru" ? cutRu : cutEn}
                 alt=""
                 className="cover-cut"
-                sizes="(max-width: 767px) 90vw, 46vw"
+                sizes={`(max-width: 767px) 90vw, (max-aspect-ratio: 4/5) ${locale === "ru" ? 91 : 71}vw, 46vw`}
                 preload
               />
             </h1>
@@ -118,16 +142,22 @@ export default async function Home() {
             <Image
               src={magazine}
               alt={t("zine.coverAlt")}
-              sizes="(max-width: 767px) 100vw, 54vw"
+              sizes={magazineSizes}
               preload
-              fetchPriority="high"
             />
             <span className="cover-art" aria-hidden="true" />
           </div>
 
-          {/* the torn strip: the way of the work, and where it ends */}
+          {/* the torn strip: the way of the work, and where it ends. A phone
+              fills a band of a fixed height with it, some 760px of the
+              picture whatever the screen's width */}
           <div className="cover-band">
-            <Image src={strip} alt="" className="cover-strip" sizes="66vw" />
+            <Image
+              src={strip}
+              alt=""
+              className="cover-strip"
+              sizes="(max-width: 767px) 760px, (max-aspect-ratio: 4/5) 88vw, 66vw"
+            />
             <Image src={scrap} alt="" className="cover-scrap" sizes="7vw" />
             <div className="cover-band-inner og-container">
               <ol className="cover-steps">
@@ -183,6 +213,7 @@ export default async function Home() {
       </main>
       <SiteFooter />
       <RevealObserver />
+      <LateFaces />
       <Fly gone={t("zine.flyGone")} />
       <Mischief shout={t("zine.consoleShout")} note={t("zine.consoleNote")} />
     </>

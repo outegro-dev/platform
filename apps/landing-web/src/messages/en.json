@@ -1,24 +1,21 @@
 {
   "meta": {
     "title": "Nick Lukashik — Senior full-stack engineer",
-    "description": "Senior full-stack engineer. Web products built turnkey — interface design, frontend, backend, payments, infrastructure and monitoring, from the idea to launch and support."
+    "description": "Senior full-stack engineer. Web products built turnkey — interface design, frontend, backend, payments, infrastructure and monitoring, from the idea to launch and support.",
+    "imageAlt": "An old magazine cover by Nick Lukashik: “I’ll build the whole thing.”, the end of the headline cut out of newspapers, the Outegro magazine lying beside it and a torn red strip along the bottom: ideas, code, payments, users, real products."
   },
   "nav": {
     "projects": "Projects",
-    "services": "Services",
     "process": "Process",
-    "stack": "Stack",
-    "contact": "Contact",
     "menu": "Open navigation",
     "close": "Close navigation",
-    "home": "Nick Lukashik, back to top",
-    "homePage": "Nick Lukashik, main page",
+    "toTop": "back to top",
+    "toHome": "main page",
     "by": "by",
     "skip": "Skip to content",
     "language": "Language",
     "sections": "Sections",
     "book": "Book a call",
-    "bookShort": "Call",
     "bookHint": "30 minutes, pick a time that suits you",
     "talk": "Let’s talk"
   },
@@ -28,7 +25,7 @@
     "titleAccent": "and live.",
     "name": "Battleship",
     "summary": "Classic Battleship, online — the first product on my platform. Designed, built and run end to end: interface, game server, payments and infrastructure.",
-    "play": "Play Battleship",
+    "play": "Play",
     "rulesTitle": "How it works",
     "rules": [
       {
@@ -166,7 +163,10 @@
     "window": "Process",
     "loading": "Starting: Process",
     "levels": "Loading levels",
-    "start": "Scroll to start the game"
+    "start": "Scroll to start the game",
+    "startStatic": "All levels unlocked",
+    "scene": "A paper pop-up diorama: as you scroll, a bicycle rides past a workshop with a treasure map, an easel, a ship in its scaffolding, a lighthouse and a rocket to Pier No. 1, where the ship moors.",
+    "sign": ["PIER", "No. 1"]
   },
   "contact": {
     "index": "08",
@@ -553,7 +553,10 @@
     }
   },
   "auth": {
-    "errorTitle": "Sign-in didn't finish",
+    "meta": {
+      "title": "Sign-in didn’t finish — Nick Lukashik"
+    },
+    "errorTitle": "Sign-in didn’t finish",
     "reasons": {
       "state_mismatch": "The sign-in link expired or was opened in another browser.",
       "missing_code": "The sign-in page did not send a code back.",
@@ -564,20 +567,25 @@
     "retry": "Try again",
     "home": "Back to the main page"
   },
+  "notFound": {
+    "meta": {
+      "title": "Page not found — Nick Lukashik"
+    },
+    "kicker": "Misprint",
+    "title": "This page isn’t in this issue",
+    "body": "The link may have a typo, or the page has moved. Everything else is where it was: the cover, the projects and the stack menu.",
+    "home": "Main page",
+    "stack": "Stack menu"
+  },
   "zine": {
-    "issue": "Issue #1 · October 2026 · outegro.dev",
-    "price": "Price: let’s talk",
-    "mast": "Nick Lukashik",
-    "tagline": "the magazine about products built start to finish",
     "poster": {
       "mast": "Outegro",
-      "issue": "Issue #1",
+      "issue": "Issue No. 1",
       "date": "October 2026"
     },
     "band": {
       "steps": ["Ideas", "Code", "Payments", "Users", "Real products"]
     },
-    "headline": "I’ll build the whole thing",
     "headlineLead": "I’ll build the",
     "headlineCut": "whole thing.",
     "lede": [
@@ -590,9 +598,9 @@
       "title": "About me",
       "subtitle": "for friends",
       "photo": "Nick Lukashik in the mountains, a towel tied against the wind",
-      "me": "that's me",
+      "me": "that’s me",
       "name": {
-        "q": "What's your name?",
+        "q": "What’s your name?",
         "a": "Nick Lukashik"
       },
       "job": {
@@ -618,35 +626,37 @@
       }
     },
     "coverAlt": "A cover in the style of an old popular-science magazine: an engineer’s desk at night, a brass lamp, a monitor with a Battleship game, a wooden toy ship, a notebook with a ticked list, posters of the Moon and a space shuttle, and a glass of tea in a holder.",
-    "burst": "New!",
-    "tagPrice": "$999.99",
-    "tagNote": "marked down",
     "tocTitle": "In this issue",
     "toc": [
       {
-        "title": "Report: Battleship",
+        "title": "About me: a page for friends",
+        "href": "#about",
+        "page": "cover"
+      },
+      {
+        "title": "Report from the shipyard: Battleship",
         "href": "#projects",
         "page": "02"
       },
       {
-        "title": "Classifieds: what I can build",
+        "title": "Computer club: what I build, with what",
         "href": "#services",
         "page": "04"
       },
       {
-        "title": "Cartoon in the margins: how the work goes",
+        "title": "Bike ride: from the idea to Pier No. 1",
         "href": "#process",
-        "page": "05"
+        "page": "06"
       },
       {
-        "title": "Coupon: a free call",
+        "title": "Write to the editor: a free-call coupon",
         "href": "#contact",
-        "page": "06"
+        "page": "08"
       }
     ],
     "couponTitle": "Coupon",
-    "couponOffer": "A free 30-minute call",
-    "couponFine": "Valid for the bearer: we'll go through the task, the timeline and the cost. No strings attached.",
+    "couponOffer": "A free 30-⁠minute call",
+    "couponFine": "Valid for the bearer: we’ll go through the task, the timeline and the cost. No strings attached.",
     "couponCut": "Cut out the coupon",
     "couponCut2": "Coupon cut out. The contacts are right below.",
     "flyGone": "Fly shooed away",

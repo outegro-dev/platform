@@ -6,16 +6,18 @@ import { Label } from "@outegro/ui/label";
 import { Notice } from "@outegro/ui/notice";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
+import { unlisted } from "@/lib/metadata";
 import { type ContrastPair, ContrastPairs } from "./demos";
 import { FurnitureSpread } from "./furniture";
 import { Head } from "./head";
 import { KitSpread } from "./kit";
 import s from "./specimen.module.css";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = unlisted({
   title: "Kit specimen — Nick Lukashik",
-  robots: { index: false, follow: false },
-};
+  description:
+    "The landing's kit, part by part: two levels, eight faces, the inks and their contrast, every control and the magazine furniture.",
+});
 
 /* An internal page in English: literal strings, no messages. */
 

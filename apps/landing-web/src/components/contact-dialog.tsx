@@ -26,7 +26,7 @@ export function ContactDialog({
       <DialogTrigger asChild>
         <Button variant={variant} size="lg">
           {t("button")}
-          <ArrowUpRightIcon />
+          <ArrowUpRightIcon aria-hidden="true" />
         </Button>
       </DialogTrigger>
       <DialogContent closeLabel={t("close")} className="contact-dialog">

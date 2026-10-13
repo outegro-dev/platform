@@ -370,8 +370,9 @@ export function pathStrip() {
 export const PATH_TILE = 3.2;
 
 /**
- * "PIER No. 1" for the blank pier sign. Tries the page's wide heavy face
- * (Unbounded 900 behind --og-sign-*), falls back to a system black weight.
+ * The pier's name ("PIER No. 1", «ПРИЧАЛ № 1») for the blank pier sign.
+ * Tries the page's wide heavy face (Unbounded 900 behind --og-sign-*, both
+ * scripts), falls back to a system black weight.
  */
 export async function signText(lines: string[]) {
   const families = [

@@ -58,7 +58,7 @@ export async function SiteFooter() {
         <span className="og-eyebrow">© {new Date().getFullYear()}</span>
         <a href="#top" className="footer-top">
           {t("back")}
-          <ArrowUpIcon />
+          <ArrowUpIcon aria-hidden="true" />
         </a>
       </div>
     </footer>

@@ -22,6 +22,9 @@ export function GtmBootstrap({
     "window.dataLayer=window.dataLayer||[];",
     "function gtag(){dataLayer.push(arguments)}",
     'gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",wait_for_update:500});',
+    // no Google signals: GA4 would copy every page view to google.com for
+    // ads audiences, which the CSP refuses (a console error) and no ad uses
+    'gtag("set",{allow_google_signals:false,allow_ad_personalization_signals:false});',
     consent === "granted"
       ? 'gtag("consent","update",{analytics_storage:"granted"});'
       : "",

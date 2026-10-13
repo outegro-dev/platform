@@ -50,9 +50,19 @@ function Gate({ cookie, onOpen }: { cookie: string; onOpen: () => void }) {
     gate.addEventListener("pointerdown", skip);
     gate.addEventListener("animationend", onEnd);
     document.addEventListener("keydown", onKey);
-    // hydrated after the show, or hidden by reduced motion: nothing left to wait for
-    if (gate.getAnimations().every((a) => a.playState === "finished")) onOpen();
+    // hydrated after the show, or hidden by reduced motion: nothing left to
+    // wait for. Asked once a frame has computed the gate's style, so the
+    // question never forces it in the middle of hydration.
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => {
+        if (gate.getAnimations().every((a) => a.playState === "finished"))
+          onOpen();
+      });
+    });
     return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
       gate.removeEventListener("pointerdown", skip);
       gate.removeEventListener("animationend", onEnd);
       document.removeEventListener("keydown", onKey);

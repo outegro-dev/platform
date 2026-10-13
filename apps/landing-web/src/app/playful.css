@@ -221,16 +221,17 @@
   scale: 0.95;
   animation: none;
 }
+/* failed, the door calls a few times and then rests */
 .bonk[data-phase="failed"] .bonk-door::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   box-shadow: 0 0 0 0 color-mix(in srgb, var(--foreground) 45%, transparent);
-  animation: bonk-pulse 1.4s var(--ease-out) infinite;
+  animation: bonk-pulse 1.4s var(--ease-out) 3;
 }
 .bonk[data-phase="failed"] .bonk-door-leaf {
-  animation: bonk-throb 1.4s var(--ease-out) infinite;
+  animation: bonk-throb 1.4s var(--ease-out) 3;
 }
 @keyframes bonk-pulse {
   70%,

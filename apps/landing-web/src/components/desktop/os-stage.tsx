@@ -34,7 +34,8 @@ const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
  * opens; its title screen then gives way to the cartoon by scroll.
  * Scrolled back up over the windows, the game closes and they open again.
  * The #services and #process anchors move onto the marks, which span their
- * acts. Only what is in sight can be reached by keyboard.
+ * acts. Both acts stay readable throughout; a desktop link that takes
+ * keyboard focus brings the windows back up.
  */
 export function OsStage() {
   useEffect(() => {
@@ -71,7 +72,6 @@ export function OsStage() {
         loading = 0;
         booted = true;
         os.toggleAttribute("data-game", true);
-        game.inert = false;
         opening = window.setTimeout(
           () => os.removeAttribute("data-loading"),
           OPEN_MS,
@@ -85,7 +85,6 @@ export function OsStage() {
       booted = false;
       os.removeAttribute("data-loading");
       os.removeAttribute("data-game");
-      game.inert = true;
     };
 
     const measure = () => {
@@ -120,23 +119,36 @@ export function OsStage() {
       os.toggleAttribute("data-minimised", down);
       if (down) boot();
       else shutDown();
-      desktop.inert = minimise > 0.5;
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(place);
+    };
+    // the desktop's links can be tabbed to at any act: one that takes focus
+    // scrolls back to the desktop, its windows up (a pointer's focus stays)
+    const follow = (event: FocusEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!on || !target?.matches(":focus-visible")) return;
+      const top = os.getBoundingClientRect().top;
+      if (-top / window.innerHeight <= READ) return;
+      window.scrollTo({ top: top + window.scrollY, behavior: "instant" });
+      cancelAnimationFrame(frame);
+      place();
     };
     const start = () => {
       if (on || !stage.matches) return;
       on = true;
       os.dataset.stage = "";
       os.style.setProperty("--boot", `${BOOT_MS}ms`);
-      game.inert = true;
       desktop.removeAttribute("id");
       game.removeAttribute("id");
       servicesMark.id = "services";
       processMark.id = "process";
-      measure();
-      place();
+      // the first placing in a frame, not forced in the middle of hydration
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        measure();
+        place();
+      });
     };
     const stop = () => {
       on = false;
@@ -148,8 +160,6 @@ export function OsStage() {
         win.style.transform = "";
         win.style.filter = "";
       }
-      desktop.inert = false;
-      game.inert = false;
       servicesMark.removeAttribute("id");
       processMark.removeAttribute("id");
       desktop.id = "services";
@@ -159,16 +169,24 @@ export function OsStage() {
 
     decide();
     stage.addEventListener("change", decide);
+    desktop.addEventListener("focusin", follow);
     window.addEventListener("scroll", schedule, { passive: true });
     const resize = () => {
       if (on) measure();
       schedule();
     };
     window.addEventListener("resize", resize);
+    // a printout counts its sheets from the page as it stands: the stage is
+    // let go before that, and taken up again after
+    window.addEventListener("beforeprint", stop);
+    window.addEventListener("afterprint", decide);
     return () => {
       stage.removeEventListener("change", decide);
+      desktop.removeEventListener("focusin", follow);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("beforeprint", stop);
+      window.removeEventListener("afterprint", decide);
       cancelAnimationFrame(frame);
       stop();
     };

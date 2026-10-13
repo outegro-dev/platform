@@ -11,6 +11,7 @@ import placementEn from "@/assets/battleship/placement-en.webp";
 import placementRu from "@/assets/battleship/placement-ru.webp";
 import profileEn from "@/assets/battleship/profile-en.webp";
 import profileRu from "@/assets/battleship/profile-ru.webp";
+import { WhenNear } from "@/components/when-near";
 
 type Shot = "battle" | "placement" | "leaderboard" | "profile";
 type Rule = { cell: string; term: string; text: string };
@@ -40,7 +41,7 @@ async function PlayButton({ className }: { className?: string }) {
     <Button asChild size="sm" className={className}>
       <a href={GAME}>
         {t("play")}
-        <ArrowUpRightIcon />
+        <ArrowUpRightIcon aria-hidden="true" />
       </a>
     </Button>
   );
@@ -94,16 +95,22 @@ export async function ProjectScreens() {
   const t = await getTranslations("projects");
   const set = shots[(await getLocale()) === "ru" ? "ru" : "en"];
   const stack = t.raw("stack") as string[];
+  // half a screen ahead: on a tablet the first layout has them under two
+  // screens down
   const screen = (key: Shot, sizes: string) => (
     <figure className="screens-shot">
-      <div className="screens-frame">
+      <WhenNear
+        className="screens-frame"
+        ahead="50% 0px"
+        label={t(`shots.${key}.alt`)}
+      >
         <Image
           src={set[key]}
           alt={t(`shots.${key}.alt`)}
           sizes={sizes}
           placeholder="empty"
         />
-      </div>
+      </WhenNear>
       <figcaption>{t(`shots.${key}.caption`)}</figcaption>
     </figure>
   );

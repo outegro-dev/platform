@@ -1,8 +1,9 @@
 /*
  * "Мультик на полях" (PaperJourney): the steps of the work as a paper
- * pop-up cartoon. By default (no scripting, reduced motion, no GPU) the
- * steps are paper notes with stickers; the pinned, scroll-driven stage
- * applies only under the media query at the bottom, with data-mode="live".
+ * pop-up cartoon. By default (no scripting, reduced motion, no GPU, print)
+ * the steps are paper notes with stickers; the pinned, scroll-driven stage
+ * applies only on screen under the media query at the bottom, with
+ * data-mode="live".
  * Colours come from the zine tokens, with fallbacks for other themes.
  */
 
@@ -167,7 +168,9 @@
   rotate: -3deg;
 }
 
-@media (max-width: 767px) {
+/* a phone stacks the stickers over their note; a printed sheet keeps them
+   side by side, so a step fits on one sheet whole */
+@media screen and (max-width: 767px) {
   .pj-step {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -181,9 +184,16 @@
     width: 38%;
   }
 }
+@media print {
+  .pj-step {
+    break-inside: avoid;
+  }
+}
 
 /* ─── Pinned scroll-driven stage (live layout) ──────────── */
-@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+@media screen and (scripting: enabled) and (
+    prefers-reduced-motion: no-preference
+  ) {
   .pj[data-mode="live"] {
     height: 480vh;
   }

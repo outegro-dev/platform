@@ -28,6 +28,9 @@ export async function Os() {
   const steps = t.raw("steps") as Step[];
   return (
     <div className="os">
+      {/* each mark comes before the act it spans: a jump to it and the
+          keyboard go on from there */}
+      <span className="os-mark is-services" aria-hidden="true" />
       <div className="os-backdrop" aria-hidden="true">
         <Wallpaper />
         <Taskbar />
@@ -50,6 +53,7 @@ export async function Os() {
           </div>
         </div>
       </div>
+      <span className="os-mark is-process" aria-hidden="true" />
       <div className="os-game-layer">
         <section
           id="process"
@@ -72,21 +76,26 @@ export async function Os() {
                 {t("title")} <span>{t("titleAccent")}</span>
               </h2>
               <p>{t("intro")}</p>
+              {/* scrolling starts the cartoon; where it cannot play, its
+                  levels lie open under the title screen */}
               <p className="os-game-start" aria-hidden="true">
-                ▶ {t("start")}
+                <span className="is-live">▶ {t("start")}</span>
+                <span className="is-static">▼ {t("startStatic")}</span>
               </p>
             </div>
             <PaperJourney
               steps={steps}
-              labels={{ youSee: t("youSee") }}
+              labels={{
+                youSee: t("youSee"),
+                scene: t("scene"),
+                sign: t.raw("sign") as string[],
+              }}
               track=".os-mark.is-process"
             />
           </div>
           <p className="xp-status">{t("ai")}</p>
         </section>
       </div>
-      <span className="os-mark is-services" aria-hidden="true" />
-      <span className="os-mark is-process" aria-hidden="true" />
       <OsStage />
     </div>
   );

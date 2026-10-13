@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { PaperJourney } from "@/components/paper/paper-journey";
+import { unlisted } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = unlisted({
   title: "Paper journey — Nick Lukashik",
-  robots: { index: false, follow: false },
-};
+  description:
+    "Lab for the paper cartoon of the process steps, played by scrolling.",
+});
 
 type Step = { title: string; body: string; see: string };
 
