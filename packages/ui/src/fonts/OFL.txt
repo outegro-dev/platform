@@ -1,5 +1,10 @@
+caveat-*.woff2: Copyright 2014 The Caveat Project Authors (https://github.com/googlefonts/caveat)
+fira-sans-condensed-*.woff2: Digitized data copyright 2012-2016, The Mozilla Foundation and Telefonica S.A.
 noto-serif-*.woff2: Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
 og-serif-*.woff2: Copyright 2014 - 2021 Adobe Systems Incorporated (http://www.adobe.com/), with Reserved Font Name 'Source'.
+og-tabloid-*.woff2: Copyright 2017 The Playfair Display Project Authors (https://github.com/clauseggers/Playfair-Display), with Reserved Font Name "Playfair Display".
+rubik-dirt-*.woff2: Copyright 2020 The Rubik Filtered Project Authors (https://github.com/NaN-xyz/Rubik-Filtered)
+rubik-mono-one-*.woff2: Copyright (c) 2013, 2014, Hubert and Fischer, Philipp Hubert (philipp@hubertfischer.com), Sebastian Fischer (sebastian@hubertfischer.com)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
