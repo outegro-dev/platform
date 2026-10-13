@@ -33,16 +33,18 @@ export function proxy(request: NextRequest) {
   const gtmHits = env.GTM_ID
     ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com"
     : "";
+  // Nothing unless listed: the pages embed no frames, media or manifest and
+  // start no workers.
   const csp = [
-    "default-src 'self'",
+    "default-src 'none'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${gtmScript}${dev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob:${gtmHits}`,
     "font-src 'self'",
     `connect-src 'self'${gtmHits}${dev ? " ws: wss:" : ""}`,
-    "worker-src 'self' blob:",
+    "worker-src 'none'",
     "object-src 'none'",
-    "base-uri 'self'",
+    "base-uri 'none'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     ...(https ? ["upgrade-insecure-requests"] : []),
