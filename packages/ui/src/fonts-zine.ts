@@ -2,7 +2,8 @@ import localFont from "next/font/local";
 
 /*
  * The "zine" theme faces: an old-magazine mix on top of the brand ones.
- * Fontsource files (SIL Open Font License) served from the app origin, split
+ * Fontsource files (SIL Open Font License; the cover's two variable faces
+ * cut down in fonts/, see below) served from the app origin, split
  * into Cyrillic and Latin by unicode-range like fonts.ts, none preloaded:
  * a page fetches only the faces and scripts it actually sets.
  * Options must be literals (next/font reads them at build time).
@@ -28,14 +29,31 @@ import localFont from "next/font/local";
  *   --og-stamp-*: rubik-dirt — rubber stamps, a word or two (22px)
  *   --og-type-*: pt-mono — typewriter labels and code (12px)
  *   --og-hand-*: caveat — notes in the margins (20px)
- *   --og-serif-*: source-serif-4 (variable, optical sizes) — the vintage
- *     cover's lede and the masthead links (16px)
- *   --og-display-*: noto-serif (variable, widths) — the cover's
- *     heavy narrow headline and the byline in the masthead (24px)
+ *   --og-serif-*: og-serif (Source Serif 4, regular, with optical sizes:
+ *     the lede's size follows the screen) — the vintage cover's lede and
+ *     the masthead links (16px)
+ *   --og-display-*: noto-serif in three fixed cuts — the cover's heavy
+ *     narrow headline (900 at 62.5% width), the masthead's name (700 at 82%)
+ *     and its byline (400 italic) (24px)
  *   --og-cond-*: fira-sans-condensed — spaced caps on the cover's buttons
  *     and labels (11px)
  * The calm level reads in Manrope from fonts.ts. The retired faces (kitsch,
  * drip, glitch, pixel, marker) keep their --font-* names in zine.css.
+ *
+ * The serif and the display faces come variable, every weight and width,
+ * and the cover sets a few points of them: fonts/ holds just those (Latin
+ * 271 KB down to 85 KB, Cyrillic 137 KB to 43 KB). Made with fontTools
+ * (varLib.instancer, then subset to the Fontsource file's own characters
+ * and the features a browser applies by default, woff2); their licence is
+ * fonts/OFL.txt.
+ *   noto-serif-*: @fontsource-variable/noto-serif 5.3.0, the wdth files,
+ *     static at wght 900 wdth 62.5 (Latin and Cyrillic), wght 700 wdth 82
+ *     and wght 400 wdth 100 italic (Latin only: the name and the byline are
+ *     Latin in both languages)
+ *   og-serif-*: @fontsource-variable/source-serif-4 5.3.1, the opsz files,
+ *     wght pinned at 400, opsz 8–60 kept; renamed, as the OFL asks of a
+ *     changed copy of a face with a Reserved Font Name ("Source")
+ * Any other weight, width or style set in them takes the nearest cut.
  */
 
 const bodyCyrillic = localFont({
@@ -389,14 +407,9 @@ const handLatin = localFont({
 const serifCyrillic = localFont({
   src: [
     {
-      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-cyrillic-opsz-normal.woff2",
-      weight: "200 900",
+      path: "./fonts/og-serif-cyrillic-400-normal-opsz.woff2",
+      weight: "400",
       style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-cyrillic-opsz-italic.woff2",
-      weight: "200 900",
-      style: "italic",
     },
   ],
   display: "swap",
@@ -414,14 +427,9 @@ const serifCyrillic = localFont({
 const serifLatin = localFont({
   src: [
     {
-      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-normal.woff2",
-      weight: "200 900",
+      path: "./fonts/og-serif-latin-400-normal-opsz.woff2",
+      weight: "400",
       style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-italic.woff2",
-      weight: "200 900",
-      style: "italic",
     },
   ],
   display: "swap",
@@ -501,14 +509,9 @@ const condLatin = localFont({
 const displayCyrillic = localFont({
   src: [
     {
-      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-cyrillic-wdth-normal.woff2",
-      weight: "100 900",
+      path: "./fonts/noto-serif-cyrillic-900-normal-wdth62.5.woff2",
+      weight: "900",
       style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-cyrillic-wdth-italic.woff2",
-      weight: "100 900",
-      style: "italic",
     },
   ],
   display: "swap",
@@ -516,7 +519,6 @@ const displayCyrillic = localFont({
   adjustFontFallback: false,
   variable: "--og-display-cyrillic",
   declarations: [
-    { prop: "font-stretch", value: "62.5% 100%" },
     {
       prop: "unicode-range",
       value: "U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116",
@@ -527,13 +529,18 @@ const displayCyrillic = localFont({
 const displayLatin = localFont({
   src: [
     {
-      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-latin-wdth-normal.woff2",
-      weight: "100 900",
+      path: "./fonts/noto-serif-latin-900-normal-wdth62.5.woff2",
+      weight: "900",
       style: "normal",
     },
     {
-      path: "../node_modules/@fontsource-variable/noto-serif/files/noto-serif-latin-wdth-italic.woff2",
-      weight: "100 900",
+      path: "./fonts/noto-serif-latin-700-normal-wdth82.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/noto-serif-latin-400-italic.woff2",
+      weight: "400",
       style: "italic",
     },
   ],
@@ -542,7 +549,6 @@ const displayLatin = localFont({
   adjustFontFallback: false,
   variable: "--og-display-latin",
   declarations: [
-    { prop: "font-stretch", value: "62.5% 100%" },
     {
       prop: "unicode-range",
       value:

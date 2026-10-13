@@ -38,7 +38,11 @@
  * the swap moves next to nothing. Courier New is exact for the two
  * monospaced faces; Ruslan Display draws lower case as capitals and has
  * narrow figures, so its fallback scales capitals, lower case and the rest
- * (figures, punctuation) apart.
+ * (figures, punctuation) apart. The vintage cover's three faces each set a
+ * few known lines, so theirs are matched on those: the headline, the name
+ * and its byline (display), the lede as a phone sets it, where it wraps
+ * (serif: its optical sizes widen smaller text, ~4% at the 17px masthead
+ * links), and the spaced capitals (cond).
  *
  * The first face of a family has no unicode-range and covers Latin and
  * everything else; the later ones narrow it (the face defined last is
@@ -251,6 +255,110 @@
   line-gap-override: 0%;
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
+@font-face {
+  font-family: "og-serif-fallback";
+  src: local("Georgia");
+  font-weight: 400;
+  size-adjust: 100.51%;
+  ascent-override: 103.07%;
+  descent-override: 33.33%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-serif-fallback";
+  src: local("Georgia");
+  font-weight: 400;
+  size-adjust: 101.12%;
+  ascent-override: 102.46%;
+  descent-override: 33.13%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-display-fallback";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT");
+  font-weight: 900;
+  size-adjust: 102.34%;
+  ascent-override: 104.45%;
+  descent-override: 28.63%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-display-fallback";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT");
+  font-weight: 900;
+  size-adjust: 99.41%;
+  ascent-override: 107.54%;
+  descent-override: 29.47%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-display-fallback";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT");
+  font-weight: 700;
+  size-adjust: 104.57%;
+  ascent-override: 102.23%;
+  descent-override: 28.02%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-display-fallback";
+  src: local("Georgia Italic"), local("Georgia-Italic");
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 96.11%;
+  ascent-override: 111.22%;
+  descent-override: 30.49%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-cond-fallback";
+  src: local("Tahoma");
+  font-weight: 400;
+  size-adjust: 86.07%;
+  ascent-override: 108.63%;
+  descent-override: 30.79%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-cond-fallback";
+  src: local("Tahoma");
+  font-weight: 400;
+  size-adjust: 86.18%;
+  ascent-override: 108.49%;
+  descent-override: 30.75%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "og-cond-fallback";
+  src: local("Tahoma");
+  font-weight: 500;
+  size-adjust: 93.04%;
+  ascent-override: 100.5%;
+  descent-override: 28.48%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-cond-fallback";
+  src: local("Tahoma Bold"), local("Tahoma-Bold");
+  font-weight: 600;
+  size-adjust: 77.38%;
+  ascent-override: 120.83%;
+  descent-override: 34.24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "og-cond-fallback";
+  src: local("Tahoma Bold"), local("Tahoma-Bold");
+  font-weight: 600;
+  size-adjust: 78.74%;
+  ascent-override: 118.74%;
+  descent-override: 33.65%;
+  line-gap-override: 0%;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
 
 /* ─── Tokens: one block for both levels ─── */
 [data-theme^="zine"] {
@@ -259,7 +367,8 @@
      the primary red (an error on this paper); paper in the dark tone */
   accent-color: var(--foreground);
 
-  /* the eight faces of fonts-zine.ts, each with its fallback face above */
+  /* the eight faces of fonts-zine.ts, each with its fallback face above;
+     the landing casts the cover's three (serif, display, cond) itself */
   --font-body:
     var(--og-body-cyrillic), var(--og-body-latin), "og-body-fallback",
     "Times New Roman", serif;
