@@ -1,0 +1,1846 @@
+<meta charset="utf-8">
+<title>Watchdog на трёх языках</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Onest:wght@400;500;600;700&amp;family=Unbounded:wght@500;700&amp;display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('wd-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
+<style>
+:root{
+  --bg:#f4f2ec;--surface:#fffdf8;--surface-2:#ece8df;--ink:#1b1c20;--ink-2:#474a53;--ink-3:#767983;--line:#dcd7cb;
+  --go:#00718f;--go-soft:#dcf0f5;--rust:#ad4419;--rust-soft:#f7e5db;--nest:#bf1d43;--nest-soft:#f8e0e6;
+  --pure:#3a6b2a;--pure-soft:#e3efd9;--io:#7a5a00;--io-soft:#f4ebcf;
+  --code-bg:#fbf9f4;--code-ink:#23252b;--code-line:#e6e1d6;
+  --t-kw:#94246a;--t-str:#2a6f37;--t-num:#ad4419;--t-com:#878a93;--t-fn:#1b5aa3;--t-type:#00718f;--t-meta:#7a5a00;
+  --shadow:0 1px 0 rgba(0,0,0,.04),0 8px 24px -16px rgba(40,30,10,.25);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101215;--surface:#171a1f;--surface-2:#1f232a;--ink:#ebeae6;--ink-2:#b5b7bd;--ink-3:#868993;--line:#2b3039;
+  --go:#4fc5df;--go-soft:#0f2f37;--rust:#f08d60;--rust-soft:#371f15;--nest:#f2647f;--nest-soft:#3b1520;
+  --pure:#9bd27f;--pure-soft:#1c2c15;--io:#e7c45f;--io-soft:#2f2710;
+  --code-bg:#0c0e11;--code-ink:#dde0e6;--code-line:#22272f;
+  --t-kw:#e88cc8;--t-str:#92d4a0;--t-num:#f5a672;--t-com:#7b7f89;--t-fn:#8db9f6;--t-type:#70d2e8;--t-meta:#e8c66a;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 10px 30px -18px rgba(0,0,0,.8);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#101215;--surface:#171a1f;--surface-2:#1f232a;--ink:#ebeae6;--ink-2:#b5b7bd;--ink-3:#868993;--line:#2b3039;
+  --go:#4fc5df;--go-soft:#0f2f37;--rust:#f08d60;--rust-soft:#371f15;--nest:#f2647f;--nest-soft:#3b1520;
+  --pure:#9bd27f;--pure-soft:#1c2c15;--io:#e7c45f;--io-soft:#2f2710;
+  --code-bg:#0c0e11;--code-ink:#dde0e6;--code-line:#22272f;
+  --t-kw:#e88cc8;--t-str:#92d4a0;--t-num:#f5a672;--t-com:#7b7f89;--t-fn:#8db9f6;--t-type:#70d2e8;--t-meta:#e8c66a;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 10px 30px -18px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Onest,system-ui,sans-serif;overflow-x:hidden}
+a{color:inherit;text-decoration-color:var(--line);text-underline-offset:3px}
+a:hover{text-decoration-color:currentColor}
+code,pre,kbd{font-family:"JetBrains Mono",ui-monospace,monospace}
+:not(pre)>code{font-size:.86em;background:var(--surface-2);padding:.08em .35em;border-radius:4px;white-space:nowrap}
+h1,h2,h3{line-height:1.2;margin:0}
+h2{font-family:Unbounded,Onest,sans-serif;font-weight:700;font-size:clamp(1.35rem,3.4vw,1.9rem);letter-spacing:-.01em}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:.6em 0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+.go{--c:var(--go);--cs:var(--go-soft)}.rust{--c:var(--rust);--cs:var(--rust-soft)}.nest{--c:var(--nest);--cs:var(--nest-soft)}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:12px;height:52px}
+.brand{font-family:Unbounded,sans-serif;font-weight:700;font-size:.9rem;white-space:nowrap;text-decoration:none}
+.brand i{font-style:normal;color:var(--ink-3);font-weight:500}
+.nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.nav::-webkit-scrollbar{display:none}
+.nav a{padding:6px 10px;border-radius:6px;font-size:.84rem;color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.nav a:hover,.nav a.on{background:var(--surface-2);color:var(--ink)}
+.theme{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:8px;height:32px;padding:0 10px;font:500 .8rem Onest,sans-serif;cursor:pointer;white-space:nowrap}
+
+/* hero */
+.hero{padding:56px 0 40px;border-bottom:1px solid var(--line)}
+.kicker{font:600 .75rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.hero h1{font-family:Unbounded,sans-serif;font-weight:700;font-size:clamp(2rem,6.4vw,4rem);letter-spacing:-.02em;margin:14px 0 18px;line-height:1.05}
+.hero h1 .go,.hero h1 .rust,.hero h1 .nest{color:var(--c)}
+.lead{font-size:clamp(1.02rem,2vw,1.2rem);color:var(--ink-2);max-width:62ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:32px}
+.stat{background:var(--surface);padding:16px}
+.stat b{display:block;font:700 clamp(1.2rem,2.4vw,1.5rem)/1.15 Unbounded,sans-serif;white-space:nowrap}
+.stat span{font-size:.85rem;color:var(--ink-3)}
+
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+.sec-head{display:grid;gap:8px;margin-bottom:24px;max-width:72ch}
+.sec-head .kicker{color:var(--ink-3)}
+.sec-head p{color:var(--ink-2);margin:0}
+
+/* flow */
+.flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;counter-reset:f}
+.flow li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;counter-increment:f;box-shadow:var(--shadow)}
+.flow li::before{content:counter(f,decimal-leading-zero);font:600 .75rem "JetBrains Mono",monospace;color:var(--ink-3);display:block;margin-bottom:6px}
+.flow b{display:block;margin-bottom:4px}
+.flow p{margin:0;font-size:.92rem;color:var(--ink-2)}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;margin-top:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow);min-width:0}
+.card h3{margin-bottom:8px}
+.card ul{margin:.4em 0;padding-left:1.1em}
+.card li{margin:.25em 0}
+
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-weight:600;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-2);white-space:nowrap}
+td code{white-space:nowrap}
+th.go,th.rust,th.nest{color:var(--c)}
+.msgs td:first-child{white-space:nowrap}
+
+/* architecture */
+.onion{display:grid;gap:0;margin-top:8px}
+.ring{border:1.5px dashed var(--line);border-radius:18px;padding:22px 18px 18px;position:relative}
+.ring>.lbl{position:absolute;top:-11px;left:16px;background:var(--bg);padding:0 8px;font:600 .72rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.ring.adapters{border-color:var(--io);background:color-mix(in srgb,var(--io-soft) 45%,transparent)}
+.ring.ports{border-color:var(--ink-3);background:var(--bg);margin-top:26px}
+.ring.core{border-style:solid;border-color:var(--pure);background:var(--pure-soft);margin-top:26px}
+.ring.adapters>.lbl{color:var(--io)}.ring.core>.lbl{color:var(--pure)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 .78rem "JetBrains Mono",monospace;padding:4px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--line);max-width:100%;overflow-wrap:anywhere}
+.ring.core .chip{border-color:color-mix(in srgb,var(--pure) 35%,var(--line))}
+.ring p{font-size:.9rem;color:var(--ink-2);margin:10px 0 0}
+
+.pipe{list-style:none;margin:20px 0 0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.pipe li{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 16px;border-bottom:1px solid var(--line)}
+.pipe li:last-child{border-bottom:0}
+.pipe .n{font:600 .8rem "JetBrains Mono",monospace;color:var(--ink-3);padding-top:2px}
+.pipe b{display:block}
+.pipe small{color:var(--ink-2);font-size:.86rem;display:block}
+.tag{font:600 .7rem "JetBrains Mono",monospace;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:5px;white-space:nowrap}
+.tag.pure{background:var(--pure-soft);color:var(--pure)}.tag.io{background:var(--io-soft);color:var(--io)}
+
+/* trees */
+.tree{font:13px/1.65 "JetBrains Mono",monospace;background:var(--code-bg);border:1px solid var(--code-line);border-radius:10px;padding:14px 16px;overflow-x:auto;white-space:pre;color:var(--code-ink);margin:10px 0 0}
+.tree em{font-style:normal;color:var(--ink-3)}
+.lang-badge{display:inline-flex;align-items:center;gap:8px;font:700 .8rem "JetBrains Mono",monospace;color:var(--c);background:var(--cs);padding:4px 10px;border-radius:999px}
+.lang-badge::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+ol.read{margin:.5em 0 0;padding-left:1.3em}
+ol.read li{margin:.3em 0}
+
+/* comparisons */
+.cmp{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-top:22px;box-shadow:var(--shadow);overflow:hidden}
+.cmp>header{padding:20px 20px 4px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px}
+.cmp-n{font:700 1.4rem/1.1 Unbounded,sans-serif;color:var(--ink-3);grid-row:span 2}
+.cmp>header p{grid-column:2;color:var(--ink-2);margin:2px 0 0;font-size:.95rem}
+.tabs{display:flex;gap:4px;padding:14px 20px 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{font:600 .85rem Onest,sans-serif;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px 10px;color:var(--ink-3);cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--c,var(--ink));border-bottom-color:var(--c,var(--ink))}
+.tabs button:hover{color:var(--ink)}
+.tabs button.all{margin-left:auto;font-weight:500}
+.pane{padding:16px 20px 20px;min-width:0}
+.js .pane[hidden]{display:none}
+.pane+.pane{border-top:1px dashed var(--line)}
+.pane-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
+.file{font:500 .78rem "JetBrains Mono",monospace;color:var(--ink-3);overflow-wrap:anywhere}
+.hypo{font:600 .7rem "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--nest);border:1px solid color-mix(in srgb,var(--nest) 40%,transparent);border-radius:5px;padding:2px 6px}
+pre{margin:0;background:var(--code-bg);border:1px solid var(--code-line);border-left:3px solid var(--c,var(--line));border-radius:10px;overflow-x:auto;max-width:100%}
+pre code{display:block;padding:14px 16px;font-size:12.8px;line-height:1.6;color:var(--code-ink);white-space:pre;tab-size:4;background:none}
+.notes{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.notes li{position:relative;padding-left:18px;font-size:.92rem;color:var(--ink-2)}
+.notes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--c,var(--ink-3))}
+.takeaway{margin:0 20px 20px;padding:12px 14px;border-radius:10px;background:var(--surface-2);font-size:.92rem}
+.takeaway b{font-weight:700}
+
+/* hljs tokens */
+.hljs-keyword,.hljs-built_in,.hljs-literal,.hljs-selector-tag{color:var(--t-kw)}
+.hljs-string,.hljs-regexp,.hljs-char.escape_{color:var(--t-str)}
+.hljs-number,.hljs-symbol{color:var(--t-num)}
+.hljs-comment,.hljs-quote{color:var(--t-com);font-style:italic}
+.hljs-title,.hljs-title.function_,.hljs-section{color:var(--t-fn)}
+.hljs-type,.hljs-title.class_,.hljs-class .hljs-title{color:var(--t-type)}
+.hljs-meta,.hljs-attr,.hljs-attribute,.hljs-variable.language_{color:var(--t-meta)}
+.hljs-params{color:inherit}
+
+.results td:nth-child(2),.results td:nth-child(3){font-variant-numeric:tabular-nums}
+.ok{color:var(--pure);font-weight:600}
+.diff{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;margin-top:16px}
+.diff .card{border-top:3px solid var(--c)}
+.cmd{margin-top:12px}
+.cmd pre{border-left-color:var(--ink-3)}
+.ex{counter-reset:ex;list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.ex li{counter-increment:ex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px 16px 58px;position:relative;box-shadow:var(--shadow)}
+.ex li::before{content:counter(ex);position:absolute;left:18px;top:14px;width:28px;height:28px;border-radius:8px;background:var(--surface-2);font:700 .85rem/28px Unbounded,sans-serif;text-align:center}
+.ex li p{margin:.3em 0 0;color:var(--ink-2);font-size:.92rem}
+dl.gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:10px;margin:0}
+dl.gloss div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+dl.gloss dt{font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+dl.gloss dt span{font:600 .68rem "JetBrains Mono",monospace;text-transform:uppercase;color:var(--c);background:var(--cs);padding:2px 6px;border-radius:4px}
+dl.gloss dd{margin:4px 0 0;color:var(--ink-2);font-size:.9rem}
+footer{padding:32px 0 56px;color:var(--ink-3);font-size:.86rem}
+@media (max-width:640px){
+  .hero{padding:36px 0 28px}
+  section{padding:40px 0}
+  .cmp>header,.pane{padding-left:14px;padding-right:14px}
+  .tabs{padding-left:14px;padding-right:14px}
+  .takeaway{margin:0 14px 14px}
+  pre code{font-size:12px;padding:12px}
+  .pipe li{grid-template-columns:28px minmax(0,1fr)}
+  .ring{padding:20px 10px 12px;border-radius:14px}
+  .ring>.lbl{left:10px}
+  .pipe li .tag{grid-column:2;justify-self:start}
+  .brand i{display:none}
+}
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top">watchdog <i>/ lab</i></a>
+    <nav class="nav" aria-label="Разделы">
+      <a href="#what">Сервис</a>
+      <a href="#arch">Архитектура</a>
+      <a href="#map">Карта кода</a>
+      <a href="#side">Три языка</a>
+      <a href="#libs">Библиотеки</a>
+      <a href="#results">Результаты</a>
+      <a href="#run">Запуск</a>
+      <a href="#practice">Упражнения</a>
+      <a href="#gloss">Словарь</a>
+    </nav>
+    <button class="theme" id="theme" type="button" aria-label="Тема">Тема: авто</button>
+  </div>
+</header>
+
+<main id="top">
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker">outegro-watchdog-lab · учебный проект · не в репозитории платформы</div>
+    <h1>Один watchdog,<br><span class="go">Go</span>, <span class="rust">Rust</span> и <span class="nest">NestJS</span></h1>
+    <p class="lead">Сторож кластера outegro.dev, написанный дважды: на Go и на Rust, по одной спецификации и с одинаковым поведением. Для каждого важного места показано, как то же самое выглядело бы в NestJS, чтобы опираться на то, что ты уже знаешь.</p>
+    <div class="stats">
+      <div class="stat"><b>11</b><span>проверок за проход</span></div>
+      <div class="stat"><b>5 мин</b><span>CronJob, один проход и выход</span></div>
+      <div class="stat"><b>112 / 225</b><span>тестов Go / Rust, все зелёные</span></div>
+      <div class="stat"><b>98,2 / 99,0 %</b><span>покрытие ядра Go / Rust</span></div>
+      <div class="stat"><b>10,0 / 13,8 МБ</b><span>образ distroless, сжатый</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="what">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">01 · что делает сервис</div>
+      <h2>Короткий проход раз в пять минут</h2>
+      <p>Сейчас в gitops работает shell-скрипт (sh + jq + kubectl). Обе новые реализации повторяют его поведение: те же проверки и те же сообщения в Telegram. Есть теневой режим <code>DRY_RUN</code>: сообщения печатаются в stdout, состояние не пишется.</p>
+    </div>
+    <ol class="flow">
+      <li><b>Собрать находки</b><p>Все источники опрашиваются параллельно. Находка — это ключ и текст: <code>pod:outegro/auth-backend</code> · «not ready for 12 min».</p></li>
+      <li><b>Сравнить с прошлым</b><p>Состояние лежит в ConfigMap: для каждого ключа хранятся <code>since</code>, <code>notified</code> и <code>message</code>, плюс <code>digestDay</code>.</p></li>
+      <li><b>Решить, что сказать</b><p>Новая проблема, напоминание раз в 6 ч, восстановление, приветствие при первом запуске, сводка после 07:00 UTC.</p></li>
+      <li><b>Отправить и запомнить</b><p>Отправка в Telegram, затем запись состояния. Отмечаются только доставленные сообщения, поэтому недоставленное повторится на следующем проходе.</p></li>
+    </ol>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Что проверяется</h3>
+        <ul>
+          <li><b>Поды:</b> CrashLoopBackOff или ImagePullBackOff, Ready не True дольше 10 мин, OOM за последние 15 мин</li>
+          <li><b>Узлы:</b> NotReady, давление памяти, диска или PID</li>
+          <li><b>Диск сервера:</b> занято 80 % или больше (statfs)</li>
+          <li><b>Сертификаты cert-manager:</b> не готовы или истекают меньше чем через 14 дней</li>
+          <li><b>CloudNativePG:</b> условия кластера и возраст последнего бэкапа (не старше 26 ч)</li>
+          <li><b>Argo CD:</b> приложение не Synced или не Healthy</li>
+          <li><b>HTTP:</b> 11 health-эндпоинтов должны ответить 200 за 10 с</li>
+          <li><b>Prometheus:</b> алерты в состоянии firing, без шумовых и дублирующих</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Почему есть «грация»</h3>
+        <p>Некоторым проблемам дают время исправиться самим: деплой Argo CD идёт пару минут, а сайт может моргнуть на один запрос.</p>
+        <div class="tablebox" style="margin-top:10px">
+          <table>
+            <tr><th>Префикс ключа</th><th>Ждём перед первым сообщением</th></tr>
+            <tr><td><code>argo:</code></td><td>15 мин</td></tr>
+            <tr><td><code>http:</code></td><td>4 мин</td></tr>
+            <tr><td><code>prom:api</code></td><td>15 мин</td></tr>
+            <tr><td>остальные</td><td>сразу</td></tr>
+          </table>
+        </div>
+        <p style="font-size:.9rem;color:var(--ink-2)">Если проблема исчезла до конца грации, о ней не сообщают: ни 🔴, ни 🟢.</p>
+      </div>
+    </div>
+
+    <div class="tablebox" style="margin-top:16px">
+      <table class="msgs">
+        <tr><th>Сообщение</th><th>Когда</th></tr>
+        <tr><td>👋 watchdog is on duty</td><td>Состояния ещё нет, то есть это первый запуск</td></tr>
+        <tr><td>🔴 problem</td><td>Новая проблема, грация прошла</td></tr>
+        <tr><td>🟠 still failing</td><td>О проблеме сообщили 6 ч назад или раньше, а она всё ещё есть</td></tr>
+        <tr><td>🟢 recovered</td><td>Проблема, о которой сообщали, исчезла</td></tr>
+        <tr><td>☀️ daily</td><td>После 07:00 UTC, один раз в сутки: число подов, возраст бэкапа, дни до истечения сертификата, процент диска</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="arch">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">02 · архитектура</div>
+      <h2>Порты и адаптеры: ядро ничего не знает о Kubernetes</h2>
+      <p>Обе реализации устроены одинаково, и в NestJS было бы так же. Разница в одном: в Go и Rust зависимости собираются вручную в <code>main</code>, а в Nest это делает DI-контейнер.</p>
+    </div>
+
+    <div class="onion">
+      <div class="ring adapters"><span class="lbl">адаптеры · I/O</span>
+        <div class="chips"><span class="chip">kube (client-go / kube-rs)</span><span class="chip">httpprobe</span><span class="chip">promalerts</span><span class="chip">disk (statfs)</span><span class="chip">telegram</span><span class="chip">console (DRY_RUN)</span><span class="chip">ConfigMap store</span><span class="chip">system clock</span></div>
+        <div class="ring ports"><span class="lbl">порты · интерфейсы / трейты</span>
+          <div class="chips"><span class="chip">ClusterSource</span><span class="chip">Prober</span><span class="chip">AlertsSource</span><span class="chip">DiskStat</span><span class="chip">StateStore</span><span class="chip">Notifier</span><span class="chip">Clock</span></div>
+          <div class="ring core"><span class="lbl">ядро · чистые функции</span>
+            <div class="chips"><span class="chip">domain</span><span class="chip">checks: Pods, Nodes, Disk, Certificates…</span><span class="chip">alerting.Plan</span><span class="chip">alerting.Apply</span><span class="chip">Dedupe</span></div>
+            <p>Без сети, без часов, без глобальных переменных. Тест подаёт на вход структуры и сравнивает результат, поэтому здесь покрытие около 100 % и тесты идут миллисекунды.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ol class="pipe">
+      <li><span class="n">1</span><div><b>Загрузить состояние</b><small><code>StateStore.Load</code>. Если данные испорчены (<code>ErrCorruptState</code>), проход считается первым, а не падает.</small></div><span class="tag io">I/O</span></li>
+      <li><span class="n">2</span><div><b>Опросить 9 источников параллельно</b><small>У каждого источника общий дедлайн. В Go это 3/4 от <code>RUN_TIMEOUT</code>, чтобы осталось время отправить и сохранить. Упавший источник не останавливает остальные.</small></div><span class="tag io">I/O</span></li>
+      <li><span class="n">3</span><div><b>Проверки → находки</b><small><code>checks.Pods(pods, watched, now)</code> и остальные: на входе структуры домена, на выходе <code>[]Finding</code>.</small></div><span class="tag pure">pure</span></li>
+      <li><span class="n">4</span><div><b>Plan</b><small>Прошлое состояние, находки и время на входе. На выходе сообщения и черновик нового состояния.</small></div><span class="tag pure">pure</span></li>
+      <li><span class="n">5</span><div><b>Отправить</b><small><code>Notifier.Send</code> для каждого сообщения. Ошибка отправки попадает в лог и не роняет проход.</small></div><span class="tag io">I/O</span></li>
+      <li><span class="n">6</span><div><b>Apply</b><small>Отмечает <code>notified</code> только для доставленных сообщений, а <code>digestDay</code> ставит, только если ушла сводка.</small></div><span class="tag pure">pure</span></li>
+      <li><span class="n">7</span><div><b>Сохранить</b><small>В <code>DRY_RUN</code> состояние не пишется. В Rust запись пропускается и тогда, когда состояние не изменилось.</small></div><span class="tag io">I/O</span></li>
+    </ol>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Зачем Plan и Apply разделены</h3>
+        <p>Если Telegram не ответил, сообщение не считается отправленным, и следующий проход повторит его. Логика «что отправить» и «что считать отправленным» остаётся чистой, а сеть живёт между ними. Это проще тестировать, чем один метод, который и решает, и шлёт, и пишет.</p>
+      </div>
+      <div class="card">
+        <h3>Общий формат состояния</h3>
+        <p>Go и Rust читают ConfigMap друг друга (на это есть тест <code>reads_the_go_implementation_state</code>), поэтому одну реализацию можно заменить другой без потери истории:</p>
+<pre class="go" style="margin-top:8px"><code class="language-json">{"version":1,"digestDay":"20261010","entries":{
+  "pod:outegro/auth-backend":{"since":1760083200,"notified":1760083500,
+                              "message":"outegro/auth-backend-7c9 not ready for 12 min"}}}</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="map">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">03 · карта кода</div>
+      <h2>Где что лежит и в каком порядке читать</h2>
+      <p>Папки разные, а смысл один. Читай изнутри наружу: сначала домен и порты, потом чистые проверки, потом runner, и только в конце адаптеры и <code>main</code>.</p>
+    </div>
+    <div class="grid2">
+      <div class="card go">
+        <span class="lang-badge">go/</span>
+<div class="tree">cmd/watchdog/main.go     <em>// сборка зависимостей, коды выхода</em>
+internal/
+  domain/                 <em>// Finding, State, Pod, Node…</em>
+  ports/ports.go          <em>// 7 интерфейсов + ErrNotFound</em>
+  checks/                 <em>// pods.go, infra.go, prometheus.go</em>
+  alerting/alerting.go    <em>// Grace, Plan, Apply</em>
+  runner/runner.go        <em>// один проход, errgroup</em>
+  config/config.go        <em>// caarlos0/env, Secret</em>
+  adapters/{kube,httpprobe,promalerts,
+            disk,telegram,console,clock}
+deploy/                   <em>// rbac, CronJob (DRY_RUN), kustomize</em>
+.golangci.yml  Makefile  Dockerfile  NOTES.md</div>
+        <ol class="read">
+          <li><code>internal/ports/ports.go</code>: контракт ядра</li>
+          <li><code>internal/checks/pods.go</code>: типичная чистая проверка</li>
+          <li><code>internal/alerting/alerting.go</code>: решение, что отправить</li>
+          <li><code>internal/runner/runner.go</code>: конкурентность и отмена</li>
+          <li><code>cmd/watchdog/main.go</code>: как всё соединяется</li>
+          <li><code>NOTES.md</code>: идиомы Go с объяснениями</li>
+        </ol>
+      </div>
+      <div class="card rust">
+        <span class="lang-badge">rust/</span>
+<div class="tree">src/main.rs               <em>// сборка зависимостей, сигналы</em>
+src/lib.rs                <em>// модули крейта</em>
+src/domain.rs             <em>// Finding, Pod, Node…</em>
+src/ports.rs              <em>// 7 трейтов + enum ошибок</em>
+src/checks/*.rs           <em>// по файлу на проверку</em>
+src/alerting.rs           <em>// grace_secs, plan, Plan::apply</em>
+src/run.rs                <em>// run_once, tokio::join!, JoinSet</em>
+src/state.rs              <em>// serde-формат ConfigMap</em>
+src/config.rs             <em>// clap, Secret, Delivery</em>
+src/adapters/*.rs         <em>// kube, reqwest, statvfs…</em>
+tests/{run.rs,cli.rs}     <em>// интеграционные тесты</em>
+Cargo.toml  clippy.toml  Dockerfile  NOTES.md</div>
+        <ol class="read">
+          <li><code>src/ports.rs</code>: трейты и типы ошибок</li>
+          <li><code>src/checks/pods.rs</code>: цепочка итераторов</li>
+          <li><code>src/alerting.rs</code>: <code>plan</code> и <code>apply</code></li>
+          <li><code>src/run.rs</code>: async, дедлайны, задачи</li>
+          <li><code>src/main.rs</code>: <code>select!</code> по сигналам</li>
+          <li><code>NOTES.md</code>: владение, Result, трейты, tokio</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="tablebox" style="margin-top:16px">
+      <table>
+        <tr><th>Роль</th><th class="go">Go</th><th class="rust">Rust</th><th class="nest">NestJS (как было бы)</th></tr>
+        <tr><td>Точка входа и сборка</td><td><code>cmd/watchdog/main.go</code></td><td><code>src/main.rs</code></td><td><code>main.ts</code> + <code>WatchdogModule</code></td></tr>
+        <tr><td>Порты</td><td><code>interface</code></td><td><code>trait</code> + <code>#[async_trait]</code></td><td><code>abstract class</code> как DI-токен</td></tr>
+        <tr><td>Внедрение</td><td>структура <code>Deps</code> в конструкторе</td><td><code>Deps</code> с <code>Arc&lt;dyn Trait&gt;</code></td><td><code>providers: [{ provide, useClass }]</code></td></tr>
+        <tr><td>Чистые проверки</td><td>функции пакета <code>checks</code></td><td>функции модулей <code>checks::*</code></td><td>чистые функции или <code>@Injectable()</code>-сервис</td></tr>
+        <tr><td>Один проход</td><td><code>runner.Run(ctx)</code></td><td><code>run::run_once(&amp;deps, &amp;settings)</code></td><td><code>RunnerService.run(signal)</code></td></tr>
+        <tr><td>Конфиг</td><td>struct tags + <code>validate()</code></td><td><code>#[derive(Parser)]</code> + <code>TryFrom</code></td><td><code>ConfigModule</code> + zod-схема</td></tr>
+        <tr><td>Логи</td><td><code>log/slog</code> JSON</td><td><code>tracing</code> JSON</td><td><code>nestjs-pino</code></td></tr>
+        <tr><td>Тесты</td><td><code>*_test.go</code> рядом с кодом</td><td><code>#[cfg(test)] mod tests</code> + <code>tests/</code></td><td><code>*.spec.ts</code> + <code>Test.createTestingModule</code></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="side">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">04 · один и тот же код на трёх языках</div>
+      <h2>Десять мест, где языки думают по-разному</h2>
+      <p>Код Go и Rust взят из проекта (иногда сокращён). Код NestJS написан для сравнения: в проекте его нет, и он помечен меткой «как было бы». Вкладка, выбранная в одном блоке, переключает все блоки сразу.</p>
+    </div>
+
+    <!-- 01 ports -->
+    <article class="cmp" id="c-ports">
+      <header><span class="cmp-n">01</span><h3>Порты: что ядру нужно от внешнего мира</h3><p>Контракт, который подменяется в тестах. Языки по-разному отвечают на вопрос «кто кого знает».</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/ports/ports.go</span></div>
+<pre><code class="language-go">// Adapters in internal/adapters satisfy these interfaces implicitly
+// (Go has no "implements"); tests satisfy them with small in-memory fakes.
+package ports
+
+// ErrNotFound reports that a requested object does not exist.
+var ErrNotFound = errors.New("not found")
+
+type ClusterSource interface {
+	Pods(ctx context.Context) ([]domain.Pod, error)
+	Nodes(ctx context.Context) ([]domain.Node, error)
+	Certificates(ctx context.Context) ([]domain.Certificate, error)
+	// PostgresCluster returns an error wrapping ErrNotFound when the
+	// cluster does not exist.
+	PostgresCluster(ctx context.Context, namespace, name string) (domain.PGCluster, error)
+	Backups(ctx context.Context, namespace string) ([]domain.Backup, error)
+	ArgoApps(ctx context.Context, namespace string) ([]domain.ArgoApp, error)
+}
+
+// Notifier delivers one message to the owner.
+type Notifier interface {
+	Send(ctx context.Context, text string) error
+}
+
+// Clock tells the time; tests use a fixed one.
+type Clock interface {
+	Now() time.Time
+}</code></pre>
+        <ul class="notes">
+          <li>Реализация неявная. У типа просто есть такие методы, и слово <code>implements</code> не нужно. Поэтому интерфейс объявляют у потребителя (в ядре), а не рядом с адаптером.</li>
+          <li><code>ctx context.Context</code> идёт первым аргументом по соглашению. В нём едут и отмена, и дедлайн.</li>
+          <li>Ошибка — второе возвращаемое значение. «Не найдено» передаётся sentinel-значением <code>ErrNotFound</code>, а проверяется через <code>errors.Is</code>.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/ports.rs</span></div>
+<pre><code class="language-rust">pub type BoxError = Box&lt;dyn StdError + Send + Sync + 'static&gt;;
+
+/// Kubernetes, reduced to the domain structs the checks need.
+#[async_trait]
+pub trait ClusterSource: Send + Sync {
+    /// All pods in all namespaces (the checks filter by namespace).
+    async fn pods(&amp;self) -&gt; Result&lt;Vec&lt;Pod&gt;, SourceError&gt;;
+    async fn nodes(&amp;self) -&gt; Result&lt;Vec&lt;Node&gt;, SourceError&gt;;
+    async fn certificates(&amp;self) -&gt; Result&lt;Vec&lt;Certificate&gt;, SourceError&gt;;
+    /// The CNPG cluster, `None` if it does not exist.
+    async fn pg_cluster(
+        &amp;self,
+        namespace: &amp;str,
+        name: &amp;str,
+    ) -&gt; Result&lt;Option&lt;PgCluster&gt;, SourceError&gt;;
+    async fn backups(&amp;self, namespace: &amp;str) -&gt; Result&lt;Vec&lt;Backup&gt;, SourceError&gt;;
+    async fn argo_applications(&amp;self, namespace: &amp;str) -&gt; Result&lt;Vec&lt;ArgoApp&gt;, SourceError&gt;;
+}
+
+#[async_trait]
+pub trait Notifier: Send + Sync {
+    async fn send(&amp;self, text: &amp;str) -&gt; Result&lt;(), NotifyError&gt;;
+}
+
+pub trait Clock: Send + Sync {
+    fn now(&amp;self) -&gt; DateTime&lt;Utc&gt;;
+}</code></pre>
+        <ul class="notes">
+          <li>Трейт реализуют явно: <code>impl ClusterSource for KubeCluster</code>. Компилятор сам проверит, что все методы на месте.</li>
+          <li><code>Send + Sync</code> говорит, что объект можно делить между задачами tokio. Без этого не скомпилируется <code>Arc&lt;dyn ClusterSource&gt;</code> в многопоточном коде.</li>
+          <li>«Кластера нет» — это <code>Ok(None)</code>, а не ошибка. Отсутствие выражено типом, и забыть обработать его нельзя.</li>
+          <li>Ошибка видна в сигнатуре и типизирована: <code>SourceError</code>, а не строка.</li>
+          <li><code>#[async_trait]</code> нужен потому, что <code>async fn</code> в трейте пока нельзя вызывать через <code>dyn</code>. Макрос превращает метод в функцию, возвращающую <code>Pin&lt;Box&lt;dyn Future&gt;&gt;</code>.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/ports/*.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">// Абстрактный класс одновременно и тип, и DI-токен:
+// TS-интерфейсы исчезают при компиляции, и Nest не смог бы по ним искать.
+export abstract class ClusterSource {
+  abstract pods(signal: AbortSignal): Promise&lt;Pod[]&gt;;
+  abstract nodes(signal: AbortSignal): Promise&lt;Node[]&gt;;
+  abstract certificates(signal: AbortSignal): Promise&lt;Certificate[]&gt;;
+  /** null, если кластера нет: это не ошибка */
+  abstract postgresCluster(ns: string, name: string, signal: AbortSignal): Promise&lt;PgCluster | null&gt;;
+  abstract backups(ns: string, signal: AbortSignal): Promise&lt;Backup[]&gt;;
+  abstract argoApps(ns: string, signal: AbortSignal): Promise&lt;ArgoApp[]&gt;;
+}
+
+export abstract class Notifier {
+  abstract send(text: string, signal?: AbortSignal): Promise&lt;void&gt;;
+}
+
+export abstract class Clock {
+  abstract now(): Date;
+}
+
+// адаптер
+@Injectable()
+export class KubeClusterSource implements ClusterSource {
+  constructor(private readonly core: CoreV1Api, private readonly custom: CustomObjectsApi) {}
+  async pods(signal: AbortSignal): Promise&lt;Pod[]&gt; { /* … */ }
+  // …
+}</code></pre>
+        <ul class="notes">
+          <li>Токеном служит класс, а не интерфейс: в рантайме TS-интерфейсов нет. Другой вариант — <code>Symbol</code> плюс <code>@Inject(CLUSTER)</code>.</li>
+          <li>Отмену приходится протаскивать вручную через <code>AbortSignal</code>, как <code>ctx</code> в Go, только без общего соглашения.</li>
+          <li>Ошибки не видны в типе: <code>Promise</code> может отклониться чем угодно.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> в Go контракт задают «утиной» типизацией, проверяемой компилятором. В Rust это явный трейт, в котором записаны и ошибки, и потокобезопасность. В Nest это класс-токен для контейнера.</p>
+    </article>
+
+    <!-- 02 wiring -->
+    <article class="cmp" id="c-wire">
+      <header><span class="cmp-n">02</span><h3>Сборка зависимостей: ручной DI против контейнера</h3><p>Где решается, какой адаптер стоит за портом. В <code>DRY_RUN</code> вместо Telegram подставляется консоль.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/cmd/watchdog/main.go</span></div>
+<pre><code class="language-go">var notifier ports.Notifier
+if cfg.DryRun {
+	notifier = console.New(stdout)
+} else {
+	notifier = telegram.New(cfg.TelegramAPIURL, cfg.TelegramBotToken.Reveal(), cfg.TelegramChatID,
+		telegram.WithUserAgent(userAgent))
+}
+
+r := runner.New(runner.Config{
+	Namespace:         cfg.Namespace,
+	WatchedNamespaces: cfg.WatchedNamespaces,
+	Probes:            toDomainProbes(cfg.Probes),
+	// Checks get three quarters of the pass; the rest is kept for
+	// sending and saving even when a source hangs.
+	ChecksTimeout: cfg.RunTimeout * 3 / 4,
+	DryRun:        cfg.DryRun,
+}, runner.Deps{
+	Cluster:  kube.NewCluster(core, dyn),
+	Prober:   httpprobe.New(cfg.HTTPTimeout, userAgent),
+	Alerts:   alerts,
+	Disk:     p.newDisk(cfg.DiskPath),
+	Store:    kube.NewStateStore(core, cfg.Namespace, cfg.StateConfigMap),
+	Notifier: notifier,
+	Clock:    p.clock,
+	Logger:   logger,
+})</code></pre>
+        <ul class="notes">
+          <li>Никакой магии: вся сборка читается сверху вниз в одном файле.</li>
+          <li><code>telegram.WithUserAgent(...)</code> — паттерн functional options, принятая в Go замена необязательным параметрам.</li>
+          <li><code>platform</code> (<code>p.newDisk</code>, <code>p.clock</code>) подменяется в <code>main_test.go</code>, так что даже <code>main</code> покрыт тестами.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/main.rs · rust/src/adapters/mod.rs</span></div>
+<pre><code class="language-rust">// Constructor injection: every port gets its adapter here and nowhere else.
+let deps = Deps {
+    cluster: Arc::new(KubeCluster::new(kube.clone())),
+    prober: Arc::new(HttpProber::new(http.clone(), config.http_timeout)),
+    alerts: Arc::new(alerts),
+    disk: Arc::new(StatvfsDisk::new(config.disk_path.clone())),
+    store: Arc::new(ConfigMapStore::new(
+        kube,
+        &amp;config.namespace,
+        config.state_configmap.clone(),
+    )),
+    notifier: adapters::notifier_for(&amp;config.delivery, http),
+    clock: Arc::new(SystemClock),
+};
+
+pub fn notifier_for(delivery: &amp;Delivery, client: reqwest::Client) -&gt; Arc&lt;dyn Notifier&gt; {
+    match delivery {
+        Delivery::DryRun =&gt; Arc::new(stdout::StdoutNotifier::stdout()),
+        Delivery::Telegram(config) =&gt; {
+            Arc::new(telegram::TelegramNotifier::new(client, config.clone()))
+        }
+    }
+}</code></pre>
+        <ul class="notes">
+          <li><code>Arc&lt;dyn Notifier&gt;</code> — общий указатель со счётчиком ссылок на «что-то, реализующее Notifier». Это и есть интерфейсная ссылка Rust.</li>
+          <li><code>kube.clone()</code> и <code>http.clone()</code> дешёвые: клиенты внутри сами на <code>Arc</code>, копируется только указатель.</li>
+          <li><code>Delivery</code> — enum. Состояние «Telegram без токена» в нём просто не выразить, поэтому <code>match</code> обязан разобрать оба варианта.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/watchdog.module.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">@Module({
+  imports: [ConfigModule.forRoot({ isGlobal: true, validate: parseEnv })],
+  providers: [
+    RunnerService,
+    { provide: ClusterSource, useClass: KubeClusterSource },
+    { provide: Prober, useClass: FetchProber },
+    { provide: AlertsSource, useClass: PrometheusAlertsSource },
+    { provide: DiskStat, useClass: StatfsDisk },
+    { provide: StateStore, useClass: ConfigMapStateStore },
+    {
+      provide: Notifier,
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService&lt;Env, true&gt;) =&gt;
+        cfg.get('DRY_RUN', { infer: true })
+          ? new ConsoleNotifier()
+          : new TelegramNotifier(cfg.get('TELEGRAM_BOT_TOKEN', { infer: true }), cfg.get('TELEGRAM_CHAT_ID', { infer: true })),
+    },
+    { provide: Clock, useValue: { now: () =&gt; new Date() } },
+  ],
+})
+export class WatchdogModule {}
+
+@Injectable()
+export class RunnerService {
+  constructor(
+    private readonly cluster: ClusterSource,
+    private readonly notifier: Notifier,
+    private readonly clock: Clock,
+    // …
+  ) {}
+}</code></pre>
+        <ul class="notes">
+          <li>Контейнер находит зависимости по типам параметров конструктора (через <code>emitDecoratorMetadata</code>).</li>
+          <li><code>useFactory</code> — аналог ветки <code>if cfg.DryRun</code> из Go.</li>
+          <li>Удобно на 50 провайдерах. На восьми ручная сборка короче и не требует рефлексии.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> в Go и Rust DI-контейнеры почти не используют, а <code>main</code> честно собирает граф руками. Что на что заменено, видно без запуска.</p>
+    </article>
+
+    <!-- 03 config -->
+    <article class="cmp" id="c-config">
+      <header><span class="cmp-n">03</span><h3>Конфигурация из переменных окружения</h3><p>Разобрать env, задать умолчания, провалидировать до первого сетевого запроса и не показать токен в логах.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/config/config.go</span><span class="file">caarlos0/env v11</span></div>
+<pre><code class="language-go">type Config struct {
+	Namespace         string        `env:"NAMESPACE" envDefault:"outegro"`
+	WatchedNamespaces []string      `env:"WATCHED_NAMESPACES" envDefault:"outegro,agents,argocd,cert-manager,cnpg-system,kube-system"`
+	Probes            []Probe       `env:"PROBES" envDefault:"landing=https://outegro.dev/,id=https://id.outegro.dev/health,…"`
+	TelegramBotToken  Secret        `env:"TELEGRAM_BOT_TOKEN"`
+	DryRun            bool          `env:"DRY_RUN" envDefault:"false"`
+	RunTimeout        time.Duration `env:"RUN_TIMEOUT" envDefault:"120s"`
+	LogLevel          slog.Level    `env:"LOG_LEVEL" envDefault:"info"`
+	// …
+}
+
+// UnmarshalText parses "name=URL". caarlos0/env calls it for every
+// comma-separated element of PROBES.
+func (p *Probe) UnmarshalText(text []byte) error {
+	name, target, ok := strings.Cut(strings.TrimSpace(string(text)), "=")
+	// …
+}
+
+func (c *Config) validate() error {
+	var errs []error
+	add := func(format string, args ...any) { errs = append(errs, fmt.Errorf(format, args...)) }
+
+	for _, msg := range validation.IsDNS1123Label(c.Namespace) {
+		add("NAMESPACE %q: %s", c.Namespace, msg)
+	}
+	// …
+	if !c.DryRun {
+		// Never echo the token itself, only whether it is there.
+		if strings.TrimSpace(c.TelegramBotToken.Reveal()) == "" {
+			add("TELEGRAM_BOT_TOKEN is required unless DRY_RUN=true")
+		}
+	}
+	return errors.Join(errs...)
+}</code></pre>
+        <ul class="notes">
+          <li>Struct tags (строки в обратных кавычках) — метаданные поля, их читает библиотека через рефлексию. Это ближайший аналог декораторов.</li>
+          <li><code>time.Duration</code> и <code>slog.Level</code> разбираются сами: <code>"120s"</code> и <code>"debug"</code>.</li>
+          <li>Все ошибки собираются и отдаются вместе через <code>errors.Join</code>. Человек видит весь список, а не одну ошибку за раз.</li>
+          <li>Namespace проверяется функцией из <code>k8s.io/apimachinery</code>, теми же правилами, что и в самом Kubernetes.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/config.rs</span><span class="file">clap 4 · derive + env</span></div>
+<pre><code class="language-rust">#[derive(Debug, Parser)]
+pub struct Cli {
+    /// Namespace of the PostgreSQL cluster, its backups and the state ConfigMap.
+    #[arg(long, env = "NAMESPACE", default_value = "outegro")]
+    pub namespace: String,
+
+    /// Comma-separated HTTP checks, `name=URL`.
+    #[arg(long, env = "PROBES", default_value = DEFAULT_PROBES, hide_default_value = true)]
+    pub probes: String,
+
+    /// Telegram bot token; required unless this is a dry run.
+    #[arg(long, env = "TELEGRAM_BOT_TOKEN", hide_env_values = true)]
+    pub telegram_bot_token: Option&lt;Secret&gt;,
+    // …
+}
+
+impl TryFrom&lt;Cli&gt; for Config {
+    type Error = ConfigError;
+
+    fn try_from(cli: Cli) -&gt; Result&lt;Self, Self::Error&gt; {
+        let delivery = if cli.dry_run {
+            Delivery::DryRun
+        } else {
+            let token = cli
+                .telegram_bot_token
+                .filter(|t| !t.expose().trim().is_empty());
+            let chat_id = cli.telegram_chat_id.filter(|c| !c.trim().is_empty());
+            let (Some(token), Some(chat_id)) = (token, chat_id) else {
+                return Err(ConfigError::MissingTelegram);
+            };
+            Delivery::Telegram(TelegramConfig {
+                api_url: http_url("TELEGRAM_API_URL", &amp;cli.telegram_api_url)?,
+                token,
+                chat_id,
+            })
+        };
+        Ok(Self {
+            namespace: non_blank("NAMESPACE", cli.namespace)?,
+            probes: parse_probes(&amp;cli.probes)?,
+            run_timeout: duration("RUN_TIMEOUT", &amp;cli.run_timeout)?,
+            // …
+            delivery,
+        })
+    }
+}</code></pre>
+        <ul class="notes">
+          <li>Doc-комментарии <code>///</code> становятся текстом <code>--help</code>. Каждую настройку можно задать и флагом, и переменной.</li>
+          <li>Двухэтапный приём: сырой <code>Cli</code> из строк, затем проверенный <code>Config</code> через <code>TryFrom</code>. После этого невалидный конфиг в программе невозможен.</li>
+          <li><code>let … else</code> распаковывает оба <code>Option</code> или выходит из функции. <code>?</code> возвращает первую ошибку.</li>
+          <li>Отличие от Go: здесь пользователь увидит только первую ошибку. Go собирает все.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/config/env.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">const csv = (s: string) =&gt; s.split(',').map((x) =&gt; x.trim()).filter(Boolean);
+
+export const EnvSchema = z
+  .object({
+    NAMESPACE: z.string().regex(DNS_LABEL).default('outegro'),
+    WATCHED_NAMESPACES: z.string().default('outegro,agents,argocd,cert-manager,cnpg-system,kube-system').transform(csv),
+    PROBES: z.string().default(DEFAULT_PROBES).transform(csv).pipe(z.array(ProbeSchema)),
+    TELEGRAM_BOT_TOKEN: z.string().trim().optional(),
+    TELEGRAM_CHAT_ID: z.string().trim().optional(),
+    DRY_RUN: z.stringbool().default(false),
+    RUN_TIMEOUT_MS: z.coerce.number().int().positive().default(120_000),
+    LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  })
+  .superRefine((env, ctx) =&gt; {
+    if (!env.DRY_RUN &amp;&amp; !env.TELEGRAM_BOT_TOKEN) {
+      ctx.addIssue({ code: 'custom', path: ['TELEGRAM_BOT_TOKEN'], message: 'required unless DRY_RUN=true' });
+    }
+  });
+
+export type Env = z.infer&lt;typeof EnvSchema&gt;;
+export const parseEnv = (raw: Record&lt;string, unknown&gt;): Env =&gt; EnvSchema.parse(raw);
+
+// watchdog.module.ts
+ConfigModule.forRoot({ isGlobal: true, validate: parseEnv });</code></pre>
+        <ul class="notes">
+          <li>Как и в Go, zod собирает все ошибки сразу, в <code>ZodError.issues</code>.</li>
+          <li>Тип <code>Env</code> выводится из схемы. В Go и Rust наоборот: сначала тип, потом правила разбора.</li>
+          <li>Скрыть токен в логах придётся отдельно, через redact в pino (см. блок 07).</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> во всех трёх — «разбери на границе, дальше работай с проверенным типом». В Rust этот принцип доведён до предела: <code>Delivery::Telegram</code> без токена просто не собрать.</p>
+    </article>
+
+    <!-- 04 concurrency -->
+    <article class="cmp" id="c-conc">
+      <header><span class="cmp-n">04</span><h3>Параллельный опрос источников</h3><p>Девять источников одновременно. Ошибка одного не должна останавливать остальные, а отмена (сигнал или дедлайн) должна останавливать всех.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/runner/runner.go</span><span class="file">golang.org/x/sync/errgroup</span></div>
+<pre><code class="language-go">// collected holds the output of every check. Each check goroutine writes
+// only its own fields; errgroup.Wait makes those writes visible to the
+// caller, so no mutex is needed.
+type collected struct {
+	pods, oom, nodes, disk, certs, pg, backups, argo, http, prom []domain.Finding
+	facts                                                        domain.Facts
+}
+
+func (r *Runner) collect(ctx context.Context, now time.Time) (*collected, error) {
+	checksCtx := ctx
+	if r.cfg.ChecksTimeout &gt; 0 {
+		var cancel context.CancelFunc
+		checksCtx, cancel = context.WithTimeout(ctx, r.cfg.ChecksTimeout)
+		defer cancel()
+	}
+	g, gctx := errgroup.WithContext(checksCtx)
+
+	var c collected
+	start := func(name string, check func(context.Context) error) {
+		g.Go(func() error {
+			err := check(gctx)
+			if err == nil {
+				return nil
+			}
+			if stop := interrupted(); stop != nil {
+				return stop // cancels gctx, so the other checks stop too
+			}
+			r.log.WarnContext(gctx, "check source failed", "check", name, "error", err)
+			return nil
+		})
+	}
+
+	start("pods", func(ctx context.Context) error { return r.checkPods(ctx, now, &amp;c) })
+	start("nodes", func(ctx context.Context) error { return r.checkNodes(ctx, &amp;c) })
+	start("disk", func(context.Context) error { return r.checkDisk(&amp;c) })
+	// … certificates, postgres, backups, argocd, http, prometheus
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	return &amp;c, nil
+}</code></pre>
+        <ul class="notes">
+          <li><code>g.Go</code> запускает горутину. <code>errgroup</code> ждёт все горутины и при первой вернувшейся ошибке отменяет <code>gctx</code>.</li>
+          <li>Хитрость в том, что обычная ошибка источника возвращает <code>nil</code> (только запись в лог), а сигнал или дедлайн возвращает ошибку. Так «упал один» не превращается в «отменить всех».</li>
+          <li>Мьютекс не нужен: каждая горутина пишет только своё поле, а <code>Wait</code> даёт happens-before. Это проверяет <code>go test -race</code>.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/run.rs</span><span class="file">tokio::join! · timeout_at</span></div>
+<pre><code class="language-rust">/// Reads every source concurrently, each bounded by the deadline.
+async fn gather(deps: &amp;Deps, settings: &amp;Settings, deadline: Instant) -&gt; Observations {
+    let cluster = deps.cluster.as_ref();
+    let namespace = settings.namespace.as_str();
+    let (pods, nodes, disk_percent, certificates, pg_cluster, backups, argo_apps, probes, alerts) = tokio::join!(
+        bounded(deadline, cluster.pods()),
+        bounded(deadline, cluster.nodes()),
+        bounded(deadline, deps.disk.percent_used()),
+        bounded(deadline, cluster.certificates()),
+        bounded(deadline, cluster.pg_cluster(namespace, PG_CLUSTER_NAME)),
+        bounded(deadline, cluster.backups(namespace)),
+        bounded(deadline, cluster.argo_applications(ARGO_NAMESPACE)),
+        probe_all(&amp;deps.prober, &amp;settings.probes, deadline),
+        bounded(deadline, deps.alerts.alerts()),
+    );
+    Observations { pods, nodes, disk_percent, certificates, pg_cluster, backups, argo_apps, probes, alerts }
+}
+
+/// Cancels `source` at the deadline; a late source counts as unavailable.
+async fn bounded&lt;T&gt;(
+    deadline: Instant,
+    source: impl Future&lt;Output = Result&lt;T, SourceError&gt;&gt;,
+) -&gt; Result&lt;T, SourceError&gt; {
+    timeout_at(deadline, source)
+        .await
+        .unwrap_or(Err(SourceError::Deadline))
+}</code></pre>
+        <ul class="notes">
+          <li><code>tokio::join!</code> опрашивает все futures на одном потоке. Runtime здесь <code>current_thread</code>: сервис почти всё время ждёт сеть, и второй поток ему не нужен.</li>
+          <li>Каждый результат — отдельный <code>Result</code>. Ошибка не «всплывает», а превращается в данные: дальше проверка решит, что делать с недоступным источником.</li>
+          <li>Future в Rust ленивый. Пока его не опрашивают, ничего не происходит, а drop отменяет работу. На этом построены и <code>timeout_at</code>, и отмена по сигналу.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/runner.service.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">private async collect(now: Date, signal: AbortSignal): Promise&lt;Collected&gt; {
+  // дедлайн проверок = 3/4 прохода, плюс внешняя отмена (сигнал)
+  const checks = AbortSignal.any([signal, AbortSignal.timeout(this.cfg.checksTimeoutMs)]);
+  const ns = this.cfg.namespace;
+
+  const [pods, nodes, disk, certs, pg, backups, argo, probes, alerts] = await Promise.allSettled([
+    this.cluster.pods(checks),
+    this.cluster.nodes(checks),
+    this.disk.usedPercent(),
+    this.cluster.certificates(checks),
+    this.cluster.postgresCluster(ns, 'pg', checks),
+    this.cluster.backups(ns, checks),
+    this.cluster.argoApps('argocd', checks),
+    this.probeAll(checks),
+    this.alerts.alerts(checks),
+  ]);
+  if (signal.aborted) throw new PassInterruptedError({ cause: signal.reason });
+
+  return {
+    pods: pods.status === 'fulfilled' ? checkPods(pods.value, this.cfg.watched, now) : podsUnavailable(),
+    nodes: this.orSkip('nodes', nodes, checkNodes),
+    // …
+  };
+}
+
+private orSkip&lt;T&gt;(name: string, r: PromiseSettledResult&lt;T&gt;, check: (v: T) =&gt; Finding[]): Finding[] {
+  if (r.status === 'fulfilled') return check(r.value);
+  this.logger.warn({ check: name, err: r.reason }, 'check source failed');
+  return [];
+}</code></pre>
+        <ul class="notes">
+          <li><code>Promise.allSettled</code> — ближайший аналог <code>join!</code>: ждёт всех и не падает на первой ошибке.</li>
+          <li>Promise «горячий»: запрос стартует в момент вызова. Отменить его можно, только если адаптер честно пробросил <code>signal</code> в <code>fetch</code> или клиент Kubernetes.</li>
+          <li>Однопоточность Node близка к <code>current_thread</code> в tokio: параллельно идёт ожидание I/O, а не вычисления.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> Go даёт настоящие потоки (горутины) и требует думать о гонках. Rust и Node — это кооперативный async на одном потоке, но в Rust отмена встроена в модель (drop future), а в Node её нужно проносить вручную.</p>
+    </article>
+
+    <!-- 05 fan-out -->
+    <article class="cmp" id="c-fan">
+      <header><span class="cmp-n">05</span><h3>Веер HTTP-проверок</h3><p>Одиннадцать URL параллельно, результат в порядке конфигурации. Упавший запрос даёт «no response», а не ошибку прохода.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/runner/runner.go</span><span class="file">sync.WaitGroup.Go (Go 1.25+)</span></div>
+<pre><code class="language-go">// checkHTTP probes every endpoint concurrently. A probe that fails counts
+// as "no response"; it is a finding, not a check error.
+func (r *Runner) checkHTTP(ctx context.Context, c *collected) error {
+	results := make([]domain.ProbeResult, len(r.cfg.Probes))
+	var wg sync.WaitGroup
+	for i, p := range r.cfg.Probes {
+		wg.Go(func() {
+			code, err := r.deps.Prober.Probe(ctx, p.URL)
+			if err != nil {
+				r.log.DebugContext(ctx, "probe failed", "probe", p.Name, "error", err)
+				code = 0
+			}
+			results[i] = domain.ProbeResult{Probe: p, Code: code}
+		})
+	}
+	wg.Wait()
+	c.http = checks.Probes(results)
+	return nil
+}</code></pre>
+        <ul class="notes">
+          <li>Слайс заранее нужной длины, и каждая горутина пишет в свой индекс <code>results[i]</code>. Порядок сохраняется без сортировки и без мьютекса.</li>
+          <li>С Go 1.22 переменные цикла <code>i</code> и <code>p</code> новые на каждой итерации, поэтому замыкание захватывает правильные значения.</li>
+          <li><code>wg.Go(f)</code> — свежий сахар вместо пары <code>wg.Add(1)</code> и <code>defer wg.Done()</code>.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/run.rs</span><span class="file">tokio::task::JoinSet</span></div>
+<pre><code class="language-rust">/// `JoinSet::spawn` needs `'static + Send` futures, hence the cloned `Arc`
+/// and the owned `Probe` in each task. Dropping the set aborts the tasks.
+async fn probe_all(
+    prober: &amp;Arc&lt;dyn Prober&gt;,
+    targets: &amp;[Probe],
+    deadline: Instant,
+) -&gt; Vec&lt;ProbeResult&gt; {
+    let mut tasks = JoinSet::new();
+    let mut task_index = HashMap::with_capacity(targets.len());
+    for (index, probe) in targets.iter().cloned().enumerate() {
+        let prober = Arc::clone(prober);
+        let handle = tasks.spawn(async move {
+            let status = bounded(deadline, prober.status(&amp;probe.url)).await;
+            (index, ProbeResult { probe, status })
+        });
+        task_index.insert(handle.id(), index);
+    }
+    let mut results = Vec::with_capacity(targets.len());
+    while let Some(joined) = tasks.join_next().await {
+        match joined {
+            Ok(result) =&gt; results.push(result),
+            // A panicked check must not vanish: it counts as "no response".
+            Err(err) =&gt; {
+                error!(error = %err, "HTTP check task failed");
+                if let Some(&amp;index) = task_index.get(&amp;err.id()) {
+                    let status = Err(SourceError::Request(Box::new(err)));
+                    let probe = targets[index].clone();
+                    results.push((index, ProbeResult { probe, status }));
+                }
+            }
+        }
+    }
+    results.sort_unstable_by_key(|(index, _)| *index);
+    results.into_iter().map(|(_, result)| result).collect()
+}</code></pre>
+        <ul class="notes">
+          <li>Задача (<code>spawn</code>) может пережить функцию, которая её создала, поэтому компилятор требует <code>'static</code>: всё нужное перемещается внутрь через <code>move</code>, а <code>Arc</code> клонируется.</li>
+          <li>Паника в задаче не роняет процесс. Она приходит как <code>Err(JoinError)</code> и превращается в «no response».</li>
+          <li>Результаты приходят в порядке завершения, поэтому в конце сортировка по индексу.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/runner.service.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">private probeAll(signal: AbortSignal): Promise&lt;ProbeResult[]&gt; {
+  return Promise.all(
+    this.cfg.probes.map(async (probe) =&gt; {
+      try {
+        const timeout = AbortSignal.timeout(this.cfg.httpTimeoutMs);
+        const res = await fetch(probe.url, { signal: AbortSignal.any([signal, timeout]) });
+        await res.body?.cancel(); // тело не нужно, освобождаем сокет
+        return { probe, code: res.status };
+      } catch (err) {
+        this.logger.debug({ probe: probe.name, err }, 'probe failed');
+        return { probe, code: 0 };
+      }
+    }),
+  );
+}</code></pre>
+        <ul class="notes">
+          <li>Самый короткий вариант: <code>Promise.all</code> сохраняет порядок, а <code>try/catch</code> внутри не даёт одному URL уронить всё.</li>
+          <li>Про владение и потоки думать не надо, но и защиты от гонок нет. Здесь она не нужна, потому что общего изменяемого состояния нет.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> одна задача — три уровня строгости. Rust заставляет явно решить, кто владеет данными в задаче и что делать с паникой. Go и Node оставляют это на совести автора.</p>
+    </article>
+
+    <!-- 06 cancel -->
+    <article class="cmp" id="c-cancel">
+      <header><span class="cmp-n">06</span><h3>Отмена, дедлайн и SIGTERM</h3><p>Kubernetes шлёт SIGTERM при удалении пода, а у прохода есть общий лимит <code>RUN_TIMEOUT</code>. Нужно остановиться аккуратно.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/cmd/watchdog/main.go · go/internal/runner/runner.go</span></div>
+<pre><code class="language-go">func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	code := run(ctx, env.ToMap(os.Environ()), os.Stdout, os.Stderr, platform{ /* … */ })
+	stop()
+	os.Exit(code)
+}
+
+// в run(): весь проход ограничен RUN_TIMEOUT
+ctx, cancel := context.WithTimeout(ctx, cfg.RunTimeout)
+defer cancel()
+
+// в Runner.Run(): запись состояния отвязана от отмены. Если сообщения
+// уже ушли, их нужно запомнить, иначе следующий проход их повторит.
+saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), saveTimeout)
+defer cancel()
+if err := r.deps.Store.Save(saveCtx, next); err != nil {
+	return done(fmt.Errorf("save state: %w", err))
+}
+if ctx.Err() != nil {
+	return done(fmt.Errorf("%w while sending: %w", ErrInterrupted, context.Cause(ctx)))
+}</code></pre>
+        <ul class="notes">
+          <li>Сигнал превращается в отмену <code>ctx</code>, и она сама расходится по всем вызовам: client-go, <code>net/http</code>, errgroup.</li>
+          <li><code>context.WithoutCancel</code> сохраняет значения контекста, но не его отмену. Так делают «последний важный шаг» после SIGTERM.</li>
+          <li>Два <code>%w</code> в одном <code>fmt.Errorf</code>: ошибка совпадает через <code>errors.Is</code> и с <code>ErrInterrupted</code>, и с причиной.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/main.rs · rust/src/run.rs</span></div>
+<pre><code class="language-rust">// Handlers first: from here on a signal cancels the pass cleanly instead
+// of killing the process with the default action.
+let mut terminate = signal(SignalKind::terminate()).context("cannot handle SIGTERM")?;
+let mut interrupt = signal(SignalKind::interrupt()).context("cannot handle SIGINT")?;
+// … build deps …
+
+// Whichever finishes first wins; the losing future is dropped, which
+// cancels in-flight requests and aborts the probe tasks.
+tokio::select! {
+    result = run::run_once(&amp;deps, &amp;settings) =&gt; {
+        result?;
+        Ok(ExitCode::SUCCESS)
+    }
+    _ = terminate.recv() =&gt; Ok(cancelled("SIGTERM", 15)),
+    _ = interrupt.recv() =&gt; Ok(cancelled("SIGINT", 2)),
+}
+
+/// Conventional `128 + signal number` exit code.
+fn cancelled(signal: &amp;str, number: u8) -&gt; ExitCode {
+    warn!(signal, "pass cancelled: unfinished checks stopped, state not written");
+    ExitCode::from(128 + number)
+}
+
+// в run_once: один дедлайн на весь проход
+let deadline = started + settings.run_timeout;</code></pre>
+        <ul class="notes">
+          <li><code>select!</code> ждёт первую из веток, остальные futures уничтожаются (drop). Так отмена устроена во всём async-Rust.</li>
+          <li>Дедлайн задан моментом времени (<code>Instant</code>), а не длительностью. Все источники упираются в один и тот же момент.</li>
+          <li>Код выхода 143 (128 + 15) — стандарт Unix для «убит SIGTERM».</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/main.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">async function bootstrap(): Promise&lt;number&gt; {
+  const app = await NestFactory.createApplicationContext(WatchdogModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
+
+  const shutdown = new AbortController();
+  for (const sig of ['SIGTERM', 'SIGINT'] as const) {
+    process.once(sig, () =&gt; shutdown.abort(new Error(sig)));
+  }
+  const cfg = app.get(ConfigService&lt;Env, true&gt;);
+  const pass = AbortSignal.any([shutdown.signal, AbortSignal.timeout(cfg.get('RUN_TIMEOUT_MS', { infer: true }))]);
+
+  try {
+    await app.get(RunnerService).run(pass);
+    return 0;
+  } catch (err) {
+    app.get(Logger).error({ err }, 'pass failed');
+    return shutdown.signal.aborted ? 143 : 1;
+  } finally {
+    await app.close();
+  }
+}
+void bootstrap().then((code) =&gt; { process.exitCode = code; });
+
+// в RunnerService.run(): сохранение со своим таймаутом, без signal прохода
+await this.store.save(next, AbortSignal.timeout(10_000));</code></pre>
+        <ul class="notes">
+          <li><code>createApplicationContext</code> — Nest без HTTP-сервера, подходит для CronJob и CLI.</li>
+          <li><code>AbortSignal.any</code> — ручной аналог дерева контекстов Go.</li>
+          <li>Можно было бы обойтись <code>app.enableShutdownHooks()</code> и <code>onApplicationShutdown</code>, но для отмены уже идущего прохода сигнал всё равно нужен.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Полезная разница:</b> политики отличаются. Go после сигнала дописывает состояние, если сообщения уже ушли. Rust прерывает проход целиком (код 143) и состояние не пишет, так что следующий проход может повторить сообщение. Оба варианта допустимы, но это осознанный выбор, а не случайность.</p>
+    </article>
+
+    <!-- 07 errors + secrets -->
+    <article class="cmp" id="c-err">
+      <header><span class="cmp-n">07</span><h3>Ошибки и секреты</h3><p>Ошибка должна нести причину и цепочку, но никогда не содержать токен бота: он сидит прямо в URL Telegram API.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/config/config.go · go/internal/runner/runner.go</span></div>
+<pre><code class="language-go">// Secret is a string that never prints its value: fmt, slog and JSON all
+// see "***". Use Reveal where the real value is required.
+type Secret string
+
+func (s Secret) Reveal() string { return string(s) }
+func (s Secret) String() string {
+	if s == "" {
+		return ""
+	}
+	return redacted
+}
+func (s Secret) GoString() string            { return `config.Secret("` + s.String() + `")` }
+func (s Secret) LogValue() slog.Value        { return slog.StringValue(s.String()) }
+func (s Secret) MarshalText() ([]byte, error) { return []byte(s.String()), nil }
+
+// ошибки: обёртка %w и проверка errors.Is
+func (r *Runner) checkPostgres(ctx context.Context, c *collected) error {
+	cluster, err := r.deps.Cluster.PostgresCluster(ctx, r.cfg.Namespace, pgClusterName)
+	switch {
+	case errors.Is(err, ports.ErrNotFound):
+		c.pg = checks.PostgresCluster(nil)
+		return nil
+	case err != nil:
+		c.pg = checks.PostgresCluster(nil)
+		return fmt.Errorf("get postgres cluster: %w", err)
+	default:
+		c.pg = checks.PostgresCluster(&amp;cluster)
+		return nil
+	}
+}</code></pre>
+        <ul class="notes">
+          <li>Тип <code>Secret</code> реализует 4 интерфейса печати, поэтому <code>logger.Info("config", cfg)</code> безопасен целиком.</li>
+          <li>Ошибка — обычное значение. <code>%w</code> строит цепочку, <code>errors.Is</code> и <code>errors.As</code> ищут в ней.</li>
+          <li>Адаптер Telegram заменяет токен в URL ошибки на <code>/bot***/</code>. Тест <code>TestTransportErrorsMaskTheToken</code> это проверяет.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/config.rs · rust/src/ports.rs</span><span class="file">thiserror · anyhow</span></div>
+<pre><code class="language-rust">/// A string that must not be printed: `Debug` shows `Secret(***)` and there
+/// is no `Display`, so it cannot end up in a log line or an error by accident.
+#[derive(Clone, PartialEq, Eq)]
+pub struct Secret(String);
+
+impl Secret {
+    /// The raw value, for the one place that needs it (the Telegram URL).
+    pub fn expose(&amp;self) -&gt; &amp;str {
+        &amp;self.0
+    }
+}
+
+impl fmt::Debug for Secret {
+    fn fmt(&amp;self, f: &amp;mut fmt::Formatter&lt;'_&gt;) -&gt; fmt::Result {
+        f.write_str("Secret(***)")
+    }
+}
+
+/// Why a source (cluster, HTTP, Prometheus, disk) gave no data.
+#[derive(Debug, Error)]
+pub enum SourceError {
+    #[error("deadline exceeded")]
+    Deadline,
+    #[error("request failed")]
+    Request(#[source] BoxError),
+    #[error("unexpected HTTP status {0}")]
+    Status(u16),
+    #[error("cannot decode response")]
+    Decode(#[source] BoxError),
+    #[error("I/O error")]
+    Io(#[from] std::io::Error),
+}</code></pre>
+        <ul class="notes">
+          <li>У <code>Secret</code> нет <code>Display</code>, поэтому <code>format!("{}", token)</code> просто не скомпилируется. Защита на уровне типов, а не соглашения.</li>
+          <li><code>thiserror</code> генерирует <code>Display</code> и <code>source()</code> из атрибутов. <code>#[from]</code> разрешает оператору <code>?</code> сам конвертировать <code>io::Error</code>.</li>
+          <li>Принятое разделение: в библиотечном коде типизированные enum-ы (<code>thiserror</code>), и только в <code>main.rs</code> стирающий типы <code>anyhow</code> с <code>.context("…")</code>.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/errors.ts · src/app.module.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">export class Secret {
+  readonly #value: string;            // приватное поле: не видно в JSON и Object.keys
+  constructor(value: string) { this.#value = value; }
+  reveal(): string { return this.#value; }
+  toString() { return '***'; }
+  toJSON() { return '***'; }
+  [Symbol.for('nodejs.util.inspect.custom')]() { return 'Secret(***)'; }
+}
+
+export class SourceError extends Error {
+  constructor(
+    readonly kind: 'deadline' | 'request' | 'status' | 'decode' | 'io',
+    message: string,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+    this.name = 'SourceError';
+  }
+}
+
+// использование: цепочка через cause, проверка через instanceof
+throw new SourceError('status', `unexpected HTTP status ${res.status}`, { cause: err });
+if (err instanceof SourceError &amp;&amp; err.kind === 'deadline') { /* … */ }
+
+// подстраховка в логах
+LoggerModule.forRoot({ pinoHttp: { redact: ['config.TELEGRAM_BOT_TOKEN', '*.token'] } });</code></pre>
+        <ul class="notes">
+          <li><code>Error</code> с <code>cause</code> (ES2022) — аналог <code>%w</code> и <code>#[source]</code>, но тип ошибки в сигнатуре не виден.</li>
+          <li>В HTTP-сервисе Nest ошибки обычно ловит exception filter и превращает в ответ. В CronJob фильтров нет, всё решает <code>try/catch</code> в <code>main.ts</code>.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> Go — «ошибка это значение». Rust — «ошибка это значение конкретного типа». TS — «ошибка это исключение любого типа». Чем строже язык, тем меньше нужно помнить.</p>
+    </article>
+
+    <!-- 08 pure check -->
+    <article class="cmp" id="c-pure">
+      <header><span class="cmp-n">08</span><h3>Чистая проверка: поды</h3><p>Отфильтровать поды, найти сбойный контейнер или долгий NotReady. Это обычная функция без I/O.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/checks/pods.go</span></div>
+<pre><code class="language-go">func Pods(pods []domain.Pod, watched []string, now time.Time) []domain.Finding {
+	var out []domain.Finding
+	for i := range pods {
+		p := &amp;pods[i]
+		if !slices.Contains(watched, p.Namespace) || p.Phase == phaseSucceeded || slices.Contains(p.OwnerKinds, ownerJob) {
+			continue
+		}
+		key := "pod:" + p.Namespace + "/" + AppName(p)
+		if reason, ok := badWaitingReason(p.Containers); ok {
+			out = append(out, domain.Finding{
+				Key:     key,
+				Message: fmt.Sprintf("%s/%s: %s", p.Namespace, p.Name, reason),
+			})
+			continue
+		}
+		ready, found := domain.FindCondition(p.Conditions, domain.ConditionReady)
+		status := domain.ConditionFalse
+		since := p.CreatedAt
+		if found {
+			status = ready.Status
+			if !ready.LastTransitionTime.IsZero() {
+				since = ready.LastTransitionTime
+			}
+		}
+		age := now.Unix() - since.Unix()
+		if status != domain.ConditionTrue &amp;&amp; age &gt; int64(NotReadyAfter/time.Second) {
+			out = append(out, domain.Finding{
+				Key:     key,
+				Message: fmt.Sprintf("%s/%s not ready for %d min", p.Namespace, p.Name, age/60),
+			})
+		}
+	}
+	return out
+}</code></pre>
+        <ul class="notes">
+          <li>Обычный цикл. В Go так и принято: <code>map</code> и <code>filter</code> не в чести, ценится очевидность.</li>
+          <li><code>p := &amp;pods[i]</code> берёт указатель на элемент, чтобы не копировать большую структуру на каждой итерации.</li>
+          <li>Пакет <code>slices</code> (Go 1.21+) закрыл старую боль: <code>Contains</code>, <code>Sort</code>, <code>Concat</code> из стандартной библиотеки.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/checks/pods.rs</span></div>
+<pre><code class="language-rust">pub fn evaluate(pods: &amp;[Pod], watched: &amp;[String], now: DateTime&lt;Utc&gt;) -&gt; Vec&lt;Finding&gt; {
+    pods.iter()
+        .filter(|pod| is_watched(pod, watched))
+        .filter(|pod| pod.phase.as_deref() != Some("Succeeded"))
+        .filter(|pod| !is_job_pod(pod))
+        .filter_map(|pod| problem(pod, now))
+        .collect()
+}
+
+fn problem(pod: &amp;Pod, now: DateTime&lt;Utc&gt;) -&gt; Option&lt;Finding&gt; {
+    let key = format!("pod:{}/{}", pod.namespace, app_name(pod));
+    let bad_reason = pod
+        .containers
+        .iter()
+        .filter_map(|c| c.waiting_reason.as_deref())
+        .find(|reason| BAD_WAITING_REASONS.contains(reason));
+    if let Some(reason) = bad_reason {
+        return Some(Finding::new(key, format!("{}/{}: {reason}", pod.namespace, pod.name)));
+    }
+
+    let ready = find_condition(&amp;pod.conditions, "Ready");
+    if ready.is_some_and(Condition::is_true) {
+        return None;
+    }
+    let since = ready.and_then(|c| c.last_transition).or(pod.created)?;
+    let age = (now - since).num_seconds();
+    (age &gt; NOT_READY_AFTER_SECS).then(|| {
+        Finding::new(key, format!("{}/{} not ready for {} min", pod.namespace, pod.name, age / 60))
+    })
+}</code></pre>
+        <ul class="notes">
+          <li>Цепочка итераторов ленивая и компилируется в тот же цикл, что и Go-версия (zero-cost abstractions).</li>
+          <li><code>&amp;[Pod]</code> — заимствование среза. Функция читает данные, но не владеет ими и не может их изменить.</li>
+          <li>Комбинаторы <code>Option</code>: <code>and_then</code>, <code>or</code>, <code>is_some_and</code>, <code>then</code>. <code>?</code> на <code>Option</code> значит «нет даты, нет находки».</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/checks/pods.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">export function checkPods(pods: Pod[], watched: string[], now: Date): Finding[] {
+  return pods
+    .filter((p) =&gt; watched.includes(p.namespace))
+    .filter((p) =&gt; p.phase !== 'Succeeded' &amp;&amp; !p.ownerKinds.includes('Job'))
+    .flatMap((p) =&gt; {
+      const key = `pod:${p.namespace}/${appName(p)}`;
+      const reason = p.containers
+        .map((c) =&gt; c.waitingReason)
+        .find((r) =&gt; r !== undefined &amp;&amp; BAD_WAITING_REASONS.has(r));
+      if (reason) return [{ key, message: `${p.namespace}/${p.name}: ${reason}` }];
+
+      const ready = p.conditions.find((c) =&gt; c.type === 'Ready');
+      if (ready?.status === 'True') return [];
+      const since = ready?.lastTransitionTime ?? p.createdAt;
+      if (!since) return [];
+      const age = Math.floor((now.getTime() - since.getTime()) / 1000);
+      return age &gt; NOT_READY_AFTER_SECS
+        ? [{ key, message: `${p.namespace}/${p.name} not ready for ${Math.floor(age / 60)} min` }]
+        : [];
+    });
+}</code></pre>
+        <ul class="notes">
+          <li>По форме ближе всего к Rust, но каждый <code>.filter</code> создаёт новый массив: здесь нет ленивости.</li>
+          <li><code>?.</code> и <code>??</code> — короткие аналоги комбинаторов <code>Option</code>. Компилятор TS следит за <code>undefined</code> только при включённом <code>strict</code>.</li>
+          <li>В Nest такие функции лучше держать чистыми, вне <code>@Injectable()</code>: их проще тестировать.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> чистое ядро переносится между языками почти дословно. Различия начинаются на границах: I/O, ошибки, конкурентность.</p>
+    </article>
+
+    <!-- 09 plan -->
+    <article class="cmp" id="c-plan">
+      <header><span class="cmp-n">09</span><h3>Сердце: Plan</h3><p>Прошлое состояние, находки и время на входе. Решение «кому что сказать» на выходе. Ни одного сетевого вызова.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/alerting/alerting.go</span></div>
+<pre><code class="language-go">func Grace(key string) time.Duration {
+	switch {
+	case strings.HasPrefix(key, "argo:"):
+		return 900 * time.Second
+	case strings.HasPrefix(key, "http:"):
+		return 240 * time.Second
+	case key == "prom:api":
+		return 900 * time.Second
+	default:
+		return 0
+	}
+}
+
+func Plan(prev *domain.State, findings []domain.Finding, facts domain.Facts, now time.Time) Outcome {
+	nowUnix := now.Unix()
+	old := domain.NewState()
+	if prev != nil {
+		old = prev.Clone()
+	}
+	current := domain.Dedupe(findings)
+	slices.SortStableFunc(current, func(a, b domain.Finding) int { return cmp.Compare(a.Key, b.Key) })
+
+	base := domain.State{Version: domain.StateVersion, DigestDay: old.DigestDay,
+		Entries: make(map[string]domain.Entry, len(current))}
+	var problems, reminders, recovered lines
+
+	for _, f := range current {
+		e, known := old.Entries[f.Key]
+		if !known {
+			e = domain.Entry{Since: nowUnix}
+		}
+		e.Message = f.Message
+		if nowUnix-e.Since &gt;= seconds(Grace(f.Key)) {
+			switch {
+			case e.Notified == 0:
+				problems.add(f.Key, f.Message)
+			case nowUnix-e.Notified &gt;= seconds(ReminderInterval):
+				reminders.add(f.Key, f.Message)
+			}
+		}
+		base.Entries[f.Key] = e
+	}
+	// … recovered, greeting, digest
+}</code></pre>
+        <ul class="notes">
+          <li><code>prev *domain.State</code>: <code>nil</code> означает «первый запуск». Указатель играет роль <code>Option</code>.</li>
+          <li><code>switch</code> без выражения — это цепочка <code>if/else if</code>, идиоматичная в Go.</li>
+          <li>Сортировка ключей обязательна: обход <code>map</code> в Go намеренно случайный, а сообщения должны быть стабильными.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/alerting.rs</span></div>
+<pre><code class="language-rust">pub fn grace_secs(key: &amp;str) -&gt; i64 {
+    match key {
+        "prom:api" =&gt; 900,
+        k if k.starts_with("argo:") =&gt; 900,
+        k if k.starts_with("http:") =&gt; 240,
+        _ =&gt; 0,
+    }
+}
+
+pub fn plan(previous: Option&lt;&amp;State&gt;, findings: &amp;[Finding], facts: &amp;Facts, now: DateTime&lt;Utc&gt;) -&gt; Plan {
+    let ts = now.timestamp();
+    let empty = State::default();
+    let prev = previous.unwrap_or(&amp;empty);
+
+    // First finding per key wins; iteration is in key order.
+    let mut current: BTreeMap&lt;&amp;str, &amp;Finding&gt; = BTreeMap::new();
+    for finding in findings {
+        current.entry(finding.key.as_str()).or_insert(finding);
+    }
+
+    let mut next = State { findings: BTreeMap::new(), digest_day: prev.digest_day.clone() };
+    let mut problems = Vec::new();
+    let mut reminders = Vec::new();
+    for (&amp;key, finding) in &amp;current {
+        let (since, notified) = prev
+            .findings
+            .get(key)
+            .map_or((ts, 0), |entry| (entry.since, entry.notified));
+        if ts - since &gt;= grace_secs(key) {
+            if notified == 0 {
+                problems.push(*finding);
+            } else if ts - notified &gt;= REMIND_AFTER_SECS {
+                reminders.push(*finding);
+            }
+        }
+        next.findings.insert(key.to_owned(), Entry { since, notified, message: finding.message.clone() });
+    }
+    // … recovered, greeting, digest
+}</code></pre>
+        <ul class="notes">
+          <li><code>match</code> с guard-ами (<code>k if …</code>) и обязательной веткой <code>_</code>: компилятор не даст забыть случай.</li>
+          <li><code>BTreeMap</code> сортирован по ключу, поэтому дедупликация и стабильный порядок получаются одной структурой.</li>
+          <li><code>BTreeMap&lt;&amp;str, &amp;Finding&gt;</code> хранит ссылки на входные данные без копирования. Компилятор гарантирует, что они живут дольше карты.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/alerting/plan.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">export const graceSecs = (key: string): number =&gt;
+  key === 'prom:api' || key.startsWith('argo:') ? 900 : key.startsWith('http:') ? 240 : 0;
+
+export function plan(prev: State | null, findings: Finding[], facts: Facts, now: Date): Plan {
+  const ts = Math.floor(now.getTime() / 1000);
+  const old = prev ?? emptyState();
+
+  // первый по ключу побеждает, обход в порядке ключей
+  const current = new Map&lt;string, Finding&gt;();
+  for (const f of findings) if (!current.has(f.key)) current.set(f.key, f);
+  const keys = [...current.keys()].sort();
+
+  const next: State = { version: 1, digestDay: old.digestDay, entries: {} };
+  const problems: Finding[] = [];
+  const reminders: Finding[] = [];
+  for (const key of keys) {
+    const f = current.get(key)!;
+    const { since = ts, notified = 0 } = old.entries[key] ?? {};
+    if (ts - since &gt;= graceSecs(key)) {
+      if (notified === 0) problems.push(f);
+      else if (ts - notified &gt;= REMIND_AFTER_SECS) reminders.push(f);
+    }
+    next.entries[key] = { since, notified, message: f.message };
+  }
+  // … recovered, greeting, digest
+}</code></pre>
+        <ul class="notes">
+          <li><code>Map</code> в JS хранит порядок вставки, а не сортировку, поэтому ключи сортируются отдельно.</li>
+          <li><code>current.get(key)!</code> — non-null assertion: «верь мне». В Rust и Go такого обещания компилятору нет.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> чистая функция от времени (<code>now</code> передаётся аргументом) позволяет протестировать «через 6 часов», «в 06:59 и 07:00 UTC» и «после смены суток» без ожидания и моков часов.</p>
+    </article>
+
+    <!-- 10 tests -->
+    <article class="cmp" id="c-tests">
+      <header><span class="cmp-n">10</span><h3>Тесты адаптера: фейковый Telegram</h3><p>Проверяем настоящий HTTP-клиент против локального сервера. Важно, что токен не утекает в текст ошибки.</p></header>
+      <div class="tabs" role="tablist"></div>
+      <div class="pane go" data-lang="go">
+        <div class="pane-meta"><span class="file">go/internal/adapters/telegram/telegram_test.go</span><span class="file">net/http/httptest · testify</span></div>
+<pre><code class="language-go">func TestSend(t *testing.T) {
+	t.Parallel()
+	srv, got := server(t, http.StatusOK, `{"ok":true,"result":{"message_id":1}}`)
+
+	c := telegram.New(srv.URL+"/", token, "-100123", telegram.WithUserAgent("outegro-watchdog/test"))
+	require.NoError(t, c.Send(t.Context(), "🔴 outegro.dev: problem\n• server disk 91% used"))
+
+	require.Len(t, *got, 1)
+	r := (*got)[0]
+	assert.Equal(t, "/bot"+token+"/sendMessage", r.path)
+	assert.Equal(t, "application/json", r.contentType)
+	assert.Equal(t, "outegro-watchdog/test", r.userAgent)
+}
+
+func TestTransportErrorsMaskTheToken(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.NotFoundHandler())
+	addr := srv.URL
+	srv.Close() // connection refused from now on
+
+	err := telegram.New(addr, token, "1").Send(t.Context(), "hi")
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), token)
+	assert.Contains(t, err.Error(), "/bot***/sendMessage")
+}</code></pre>
+        <ul class="notes">
+          <li><code>httptest.NewServer</code> поднимает настоящий HTTP-сервер на случайном порту, прямо из стандартной библиотеки.</li>
+          <li><code>t.Parallel()</code> запускает тесты пакета параллельно, а <code>-race</code> ловит гонки в них.</li>
+          <li>Для кластера используются фейки client-go (<code>kubernetes/fake</code>, <code>dynamic/fake</code>), а не моки по методам.</li>
+        </ul>
+      </div>
+      <div class="pane rust" data-lang="rust">
+        <div class="pane-meta"><span class="file">rust/src/adapters/telegram.rs</span><span class="file">wiremock · tokio::test</span></div>
+<pre><code class="language-rust">#[tokio::test]
+async fn posts_the_message_as_a_form() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path(format!("/bot{TOKEN}/sendMessage")))
+        .and(body_string_contains("chat_id=42"))
+        .and(body_string_contains("disable_web_page_preview=true"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "ok": true })))
+        .expect(1)
+        .mount(&amp;server)
+        .await;
+
+    notifier(&amp;server.uri())
+        .send("🔴 outegro.dev: problem\n• disk")
+        .await
+        .expect("sent");
+}
+
+#[tokio::test]
+async fn rejection_carries_the_description_but_not_the_token() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .respond_with(ResponseTemplate::new(400).set_body_json(json!({
+            "ok": false, "error_code": 400, "description": "Bad Request: chat not found"
+        })))
+        .mount(&amp;server)
+        .await;
+    let err = notifier(&amp;server.uri()).send("x").await.expect_err("rejected");
+    assert!(matches!(err, NotifyError::Rejected { status: 400, .. }));
+    let text = format!("{} | {err:?}", Chain(&amp;err));
+    assert!(text.contains("chat not found"), "{text}");
+    assert!(!text.contains("SECRET"), "{text}");
+}</code></pre>
+        <ul class="notes">
+          <li>Unit-тесты живут в том же файле, в <code>#[cfg(test)] mod tests</code>, и видят приватные функции модуля.</li>
+          <li><code>.expect(1)</code> у wiremock проверяет при завершении теста, что запрос был ровно один.</li>
+          <li><code>matches!</code> проверяет вариант enum-а ошибки. Так тест сверяет тип ошибки, а не текст.</li>
+        </ul>
+      </div>
+      <div class="pane nest" data-lang="nest">
+        <div class="pane-meta"><span class="file">src/adapters/telegram.notifier.spec.ts</span><span class="hypo">как было бы</span></div>
+<pre><code class="language-typescript">describe('TelegramNotifier', () =&gt; {
+  const TOKEN = '123:SECRET';
+  let notifier: TelegramNotifier;
+
+  beforeEach(async () =&gt; {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        { provide: Notifier, useFactory: () =&gt; new TelegramNotifier(new Secret(TOKEN), '42', 'https://tg.test') },
+      ],
+    }).compile();
+    notifier = moduleRef.get(Notifier);
+  });
+  afterEach(() =&gt; nock.cleanAll());
+
+  it('posts the message', async () =&gt; {
+    const scope = nock('https://tg.test')
+      .post(`/bot${TOKEN}/sendMessage`, (body) =&gt; body.chat_id === '42')
+      .reply(200, { ok: true });
+    await notifier.send('🔴 outegro.dev: problem\n• disk');
+    expect(scope.isDone()).toBe(true);
+  });
+
+  it('does not leak the token on transport errors', async () =&gt; {
+    nock('https://tg.test').post(/.*/).replyWithError('ECONNREFUSED');
+    const err = await notifier.send('x').catch((e: unknown) =&gt; e);
+    expect(err).toBeInstanceOf(NotifyError);
+    expect(String(err)).not.toContain('SECRET');
+    expect(String(err)).toContain('/bot***/sendMessage');
+  });
+});</code></pre>
+        <ul class="notes">
+          <li><code>Test.createTestingModule</code> собирает мини-контейнер, где порт подменяется через <code>useValue</code> или <code>useFactory</code>. В Go и Rust ту же роль играет обычная структура <code>Deps</code> с фейками.</li>
+          <li><code>nock</code> перехватывает HTTP на уровне Node, а <code>httptest</code> и wiremock поднимают настоящий сервер. Это ближе к реальности, поэтому сейчас часто берут <code>msw</code> или <code>undici MockAgent</code>.</li>
+        </ul>
+      </div>
+      <p class="takeaway"><b>Главное:</b> во всех трёх подходах фейк стоит за портом, а не мок внутри класса. Тестируется поведение («ушёл один POST, токена нет в ошибке»), а не то, какие методы вызывались.</p>
+    </article>
+  </div>
+</section>
+
+<section id="libs">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">05 · стек</div>
+      <h2>Библиотеки, которые берут в компаниях</h2>
+      <p>Выбор мейнстримный: это то, что встретится в чужом продакшен-коде. Версии зафиксированы в <code>go.mod</code> и <code>Cargo.lock</code>.</p>
+    </div>
+    <div class="tablebox">
+      <table>
+        <tr><th>Задача</th><th class="go">Go 1.27</th><th class="rust">Rust 1.99 · edition 2024</th><th class="nest">NestJS (аналог)</th></tr>
+        <tr><td>Kubernetes API</td><td><code>client-go</code> v0.37: typed + dynamic</td><td><code>kube</code> 4.2 + <code>k8s-openapi</code> 0.28</td><td><code>@kubernetes/client-node</code></td></tr>
+        <tr><td>Async и конкурентность</td><td>горутины, <code>errgroup</code>, <code>sync.WaitGroup.Go</code></td><td><code>tokio</code> 1.53: <code>join!</code>, <code>JoinSet</code>, <code>select!</code></td><td>event loop, <code>Promise.allSettled</code>, <code>AbortSignal</code></td></tr>
+        <tr><td>HTTP-клиент</td><td><code>net/http</code> (stdlib)</td><td><code>reqwest</code> 0.13 + <code>rustls</code> (ring)</td><td><code>fetch</code> (undici) / <code>@nestjs/axios</code></td></tr>
+        <tr><td>Prometheus API</td><td><code>prometheus/client_golang</code> api/v1</td><td><code>reqwest</code> + <code>serde</code></td><td><code>fetch</code> + zod</td></tr>
+        <tr><td>Конфиг</td><td><code>caarlos0/env</code> v11</td><td><code>clap</code> 4 (derive, env)</td><td><code>@nestjs/config</code> + zod</td></tr>
+        <tr><td>Сериализация</td><td><code>encoding/json</code> + теги</td><td><code>serde</code> + <code>serde_json</code></td><td><code>JSON</code> + class-transformer / zod</td></tr>
+        <tr><td>Логи</td><td><code>log/slog</code> JSON (stdlib)</td><td><code>tracing</code> + <code>tracing-subscriber</code> (json)</td><td><code>nestjs-pino</code></td></tr>
+        <tr><td>Ошибки</td><td><code>errors.Is/As</code>, <code>%w</code>, <code>errors.Join</code></td><td><code>thiserror</code> 2 (код), <code>anyhow</code> (main)</td><td><code>Error</code> + <code>cause</code>, exception filters</td></tr>
+        <tr><td>Время</td><td><code>time</code> (stdlib)</td><td><code>chrono</code>, <code>humantime</code></td><td><code>Date</code> / date-fns</td></tr>
+        <tr><td>Системные вызовы</td><td><code>golang.org/x/sys/unix</code> (statfs)</td><td><code>nix</code> (statvfs)</td><td><code>fs.statfs</code></td></tr>
+        <tr><td>Тесты</td><td><code>testing</code> + <code>testify</code>, <code>httptest</code>, client-go fake</td><td><code>#[test]</code>, <code>tokio::test</code>, <code>rstest</code>, <code>wiremock</code></td><td>Jest/Vitest, <code>@nestjs/testing</code>, nock/msw</td></tr>
+        <tr><td>Линт и формат</td><td><code>golangci-lint</code> v2.14, <code>gofmt</code></td><td><code>clippy</code> (pedantic), <code>rustfmt</code></td><td>ESLint / Biome</td></tr>
+        <tr><td>Покрытие</td><td><code>go test -cover</code></td><td><code>cargo-llvm-cov</code></td><td><code>--coverage</code> (v8/istanbul)</td></tr>
+        <tr><td>Образ</td><td>distroless/static, статический бинарник</td><td>cargo-chef → distroless/cc</td><td>node:alpine + node_modules</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">06 · что проверено</div>
+      <h2>Результаты на 10.10.2026</h2>
+      <p>Всё запускалось в Docker на этой машине, после переноса в отдельную папку <code>outegro-watchdog-lab</code>.</p>
+    </div>
+    <div class="tablebox">
+      <table class="results">
+        <tr><th>Проверка</th><th class="go">Go</th><th class="rust">Rust</th></tr>
+        <tr><td>Сборка и статический анализ</td><td><span class="ok">OK</span> · <code>go vet</code>, <code>golangci-lint</code>: 0 замечаний</td><td><span class="ok">OK</span> · <code>cargo fmt --check</code>, <code>clippy -D warnings</code> (pedantic)</td></tr>
+        <tr><td>Тесты</td><td><span class="ok">112 тест-функций</span> (плюс табличные подтесты), 13 пакетов, <code>go test -race</code></td><td><span class="ok">225 тестов</span>: 209 unit, 9 интеграционных проходов, 7 CLI (включая SIGTERM)</td></tr>
+        <tr><td>Покрытие</td><td>98,2 % (<code>internal/...</code>)</td><td>99,0 % строк (<code>cargo-llvm-cov</code>)</td></tr>
+        <tr><td>Объём</td><td>2 567 строк кода, 3 265 строк тестов</td><td>5 345 строк в <code>src/</code> (с unit-тестами внутри), 1 092 в <code>tests/</code></td></tr>
+        <tr><td>Образ</td><td>10,0 МБ сжатый · distroless/static, nonroot</td><td>13,8 МБ сжатый, 52 МБ на диске · distroless/cc, nonroot</td></tr>
+        <tr><td>Коды выхода</td><td>0 OK · 1 сбой · 2 конфиг</td><td>0 · 1 · 2 · 143 SIGTERM · 130 SIGINT</td></tr>
+        <tr><td>Формат состояния</td><td colspan="2">общий: <code>version</code>, <code>digestDay</code>, <code>entries</code>; Rust читает состояние, записанное Go (тест)</td></tr>
+        <tr><td>Деплой</td><td colspan="2"><code>deploy/</code>: RBAC только на чтение плюс один ConfigMap, CronJob с <code>DRY_RUN=true</code>. В кластер ничего не выкатывалось.</td></tr>
+      </table>
+    </div>
+
+    <div class="diff">
+      <div class="card go"><h3>Где силён Go</h3><p>Быстро пишется и читается. Стандартная библиотека закрывает HTTP, JSON, логи и тесты. Компиляция занимает секунды, client-go — родной клиент Kubernetes. Для операторов и CLI это выбор по умолчанию.</p></div>
+      <div class="card rust"><h3>Где силён Rust</h3><p>Ошибки, отсутствие значения и потокобезопасность выражены в типах. Невалидные состояния не собрать, утечку токена через <code>Display</code> не скомпилировать. Цена — медленная сборка (тулчейн 1,6 ГБ) и больше кода.</p></div>
+      <div class="card nest"><h3>Где был бы NestJS</h3><p>Быстрее всего для команды на TypeScript, DI из коробки. Но для одноразового CronJob контейнер и рефлексия — лишний вес, ошибки не видны в типах, а отмену приходится протаскивать руками.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="run">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">07 · запуск</div>
+      <h2>Всё через Docker, ставить Go и Rust не нужно</h2>
+      <p>Команды для Git Bash на Windows. <code>MSYS_NO_PATHCONV=1</code> не даёт Git Bash переписать пути внутри контейнера. Кеши лежат в именованных томах, поэтому повторные запуски быстрые.</p>
+    </div>
+    <div class="grid2">
+      <div class="card go">
+        <span class="lang-badge">go/</span>
+        <div class="cmd">
+<pre><code class="language-bash">cd ~/Desktop/outegro-watchdog-lab/go
+export MSYS_NO_PATHCONV=1
+VOLS='-v outegro-go-mod:/go/pkg/mod -v outegro-go-build:/root/.cache/go-build'
+
+# тесты с детектором гонок
+docker run --rm -v "$PWD:/src" -w /src $VOLS golang:1.27.2-trixie \
+  sh -c 'go vet ./... &amp;&amp; go test -race -cover ./...'
+
+# линтер
+docker run --rm -v "$PWD:/src" -w /src $VOLS \
+  -v outegro-golangci-cache:/root/.cache/golangci-lint \
+  golangci/golangci-lint:v2.14.0 golangci-lint run ./...
+
+# образ
+docker build -t outegro/watchdog-go:dev --build-arg VERSION=0.1.0-dev .</code></pre>
+        </div>
+      </div>
+      <div class="card rust">
+        <span class="lang-badge">rust/</span>
+        <div class="cmd">
+<pre><code class="language-bash">cd ~/Desktop/outegro-watchdog-lab/rust
+export MSYS_NO_PATHCONV=1
+
+# один раз: образ тулчейна (rustfmt, clippy, llvm-cov)
+docker build -f toolchain.Dockerfile -t outegro/watchdog-rs-toolchain:1.99.0 .
+
+# любая команда cargo
+docker run --rm -v "C:/Users/working/Desktop/outegro-watchdog-lab/rust:/src" -w /src \
+  -v outegro-cargo-registry:/usr/local/cargo/registry \
+  -v outegro-cargo-git:/usr/local/cargo/git \
+  -v outegro-rust-target:/target -e CARGO_TARGET_DIR=/target \
+  outegro/watchdog-rs-toolchain:1.99.0 cargo test --locked
+
+# образ
+docker build -t outegro/watchdog-rs:dev .</code></pre>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>Теневой прогон против настоящего кластера</h3>
+      <p>С kubeconfig только на чтение и <code>DRY_RUN=true</code> сервис ничего не отправляет и ничего не пишет. Он печатает в stdout сообщения, которые отправил бы, и JSON-логи в stderr. Так можно сравнить вывод с shell-скриптом.</p>
+<pre style="margin-top:8px"><code class="language-bash">docker run --rm --read-only --network host \
+  -v "$HOME/.kube/outegro:/kubeconfig:ro" -e KUBECONFIG=/kubeconfig \
+  -e DRY_RUN=true -e DISK_PATH=/ \
+  outegro/watchdog-go:dev            # или outegro/watchdog-rs:dev</code></pre>
+    </div>
+  </div>
+</section>
+
+<section id="practice">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">08 · упражнения</div>
+      <h2>Чтобы язык осел в руках</h2>
+      <p>Делай каждое упражнение сначала на Go, потом на Rust, и сравнивай, где компилятор помог, а где помешал. Тесты подскажут, если что-то сломалось.</p>
+    </div>
+    <ol class="ex">
+      <li><b>Новая проверка: перезапуски контейнеров</b><p>Находка <code>restarts:&lt;ns&gt;/&lt;container&gt;</code>, если <code>restartCount</code> вырос больше чем на 5 за час. Нужно поле в домене, маппинг в адаптере kube и чистая функция с тестом. Заметь, сколько файлов затронуто в каждом языке.</p></li>
+      <li><b>Грация из конфига</b><p>Перенеси числа из <code>Grace</code> и <code>grace_secs</code> в переменную <code>GRACE=argo:=15m,http:=4m</code>. На Go — свой <code>UnmarshalText</code>, на Rust — <code>FromStr</code> и <code>humantime</code>. Добавь тест на неверный формат.</p></li>
+      <li><b>Граница суток</b><p>Напиши табличный тест (в Rust через <code>rstest</code>): сводка в 06:59:59 не уходит, в 07:00:00 уходит, повторно в тот же день не уходит, на следующие сутки в 07:00 UTC уходит снова.</p></li>
+      <li><b>Сломай и посмотри</b><p>Убери маскировку токена в адаптере Telegram и запусти тесты: какой тест упадёт? В Rust попробуй вывести <code>Secret</code> через <code>{}</code> и прочитай ошибку компилятора.</p></li>
+      <li><b>Выровняй политику SIGTERM</b><p>Сейчас Go после сигнала сохраняет состояние, а Rust нет (блок 06). Сделай в Rust так же, как в Go: после отправки сохранение должно доживать до конца. Подсказка: вынести отправку и сохранение из ветки <code>select!</code>.</p></li>
+      <li><b>Версия на NestJS</b><p>Перепиши <code>checks/pods</code> и <code>alerting/plan</code> на TypeScript по образцам со страницы и прогони их на тех же входных данных, что и в Go-тестах. Расхождения покажут, где JS ведёт себя иначе (сортировка, даты, <code>undefined</code>).</p></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gloss">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">09 · словарь</div>
+      <h2>Термины, которые встретятся в коде</h2>
+    </div>
+    <dl class="gloss">
+      <div class="go"><dt>goroutine <span>go</span></dt><dd>Лёгкий поток, которым управляет рантайм Go. Запускается через <code>go f()</code>. В Node аналога нет, ближе всего worker, но горутины в тысячи раз дешевле.</dd></div>
+      <div class="go"><dt>context.Context <span>go</span></dt><dd>Отмена, дедлайн и значения запроса, которые передаются первым аргументом. Аналог <code>AbortSignal</code>, но встроен во всю экосистему.</dd></div>
+      <div class="go"><dt>errgroup <span>go</span></dt><dd>Группа горутин с общей ошибкой и отменой контекста. Аналог <code>Promise.all</code> с отменой остальных.</dd></div>
+      <div class="go"><dt>неявный интерфейс <span>go</span></dt><dd>Тип удовлетворяет интерфейсу, если у него есть нужные методы. Объявлять это не нужно.</dd></div>
+      <div class="go"><dt>race detector <span>go</span></dt><dd><code>go test -race</code> находит одновременный доступ к памяти без синхронизации во время выполнения тестов.</dd></div>
+      <div class="rust"><dt>владение и заимствование <span>rust</span></dt><dd>У значения один владелец. <code>&amp;T</code> — чтение, <code>&amp;mut T</code> — единственная запись. Проверяется при компиляции, сборщика мусора нет.</dd></div>
+      <div class="rust"><dt>Result / Option и <code>?</code> <span>rust</span></dt><dd>Ошибка и отсутствие значения как обычные типы. <code>?</code> возвращает ошибку наверх, это короткая форма <code>if err != nil { return err }</code>.</dd></div>
+      <div class="rust"><dt>trait и <code>dyn</code> <span>rust</span></dt><dd>Трейт — это интерфейс. <code>dyn Trait</code> даёт динамический вызов через таблицу методов, generics <code>&lt;T: Trait&gt;</code> — статический, без накладных расходов.</dd></div>
+      <div class="rust"><dt>Arc <span>rust</span></dt><dd>Atomic Reference Counted: общий указатель на данные, которые нужны нескольким задачам. Клонируется копированием указателя.</dd></div>
+      <div class="rust"><dt>Send / Sync <span>rust</span></dt><dd>Маркеры «можно передать в другой поток» и «можно читать из нескольких потоков». Их выводит компилятор, и они не дают собрать гонку.</dd></div>
+      <div class="rust"><dt>Future, ленивость, drop <span>rust</span></dt><dd>Async-функция возвращает future, который ничего не делает, пока его не опрашивают. Уничтожить future значит отменить работу.</dd></div>
+      <div class="rust"><dt>newtype <span>rust</span></dt><dd>Структура-обёртка над одним значением, например <code>Secret(String)</code>. Даёт свой тип и своё поведение без накладных расходов.</dd></div>
+      <div class="nest"><dt>провайдер и токен <span>nest</span></dt><dd>Запись в <code>providers</code>: что подставлять (<code>useClass</code>, <code>useFactory</code>, <code>useValue</code>) по какому ключу (класс или <code>Symbol</code>).</dd></div>
+      <div class="nest"><dt>application context <span>nest</span></dt><dd><code>NestFactory.createApplicationContext</code> — DI-контейнер без HTTP. Подходит для CronJob и воркеров.</dd></div>
+      <div><dt>ports &amp; adapters</dt><dd>Гексагональная архитектура: ядро объявляет интерфейсы (порты), внешние реализации (адаптеры) подключаются в точке сборки.</dd></div>
+      <div><dt>distroless</dt><dd>Образ без шелла и пакетного менеджера, только рантайм-библиотеки. Меньше размер и меньше поверхность атаки.</dd></div>
+      <div><dt>CronJob и ConfigMap</dt><dd>Kubernetes запускает под по расписанию, под делает один проход и завершается. Состояние между проходами хранится в ConfigMap.</dd></div>
+      <div><dt>DRY_RUN, теневой режим</dt><dd>Новая версия работает рядом со старой: всё вычисляет, но не отправляет и не пишет. Результаты сравнивают перед переключением.</dd></div>
+    </dl>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Папка проекта: <code>C:\Users\working\Desktop\outegro-watchdog-lab</code> (<code>SPEC.md</code>, <code>go/</code>, <code>rust/</code>, <code>.github/workflows/ci.yml</code>). Учебный проект: в репозитории платформы и gitops не коммитится и в production не выкатывается.
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function () {
+  var LANGS = [['go', 'Go'], ['rust', 'Rust'], ['nest', 'NestJS'], ['all', 'Все три']];
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  var current = store.get('wd-lang') || 'go';
+  var blocks = Array.prototype.slice.call(document.querySelectorAll('.cmp'));
+
+  blocks.forEach(function (block, bi) {
+    var bar = block.querySelector('.tabs');
+    LANGS.forEach(function (l) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.dataset.lang = l[0];
+      b.textContent = l[1];
+      if (l[0] === 'all') b.className = 'all';
+      else b.classList.add(l[0]);
+      b.addEventListener('click', function () { select(l[0], block); });
+      bar.appendChild(b);
+    });
+  });
+
+  function select(lang, origin) {
+    current = lang;
+    store.set('wd-lang', lang);
+    var top = origin ? origin.getBoundingClientRect().top : 0;
+    blocks.forEach(function (block) {
+      block.querySelectorAll('.tabs button').forEach(function (b) {
+        b.setAttribute('aria-selected', String(b.dataset.lang === lang));
+      });
+      block.querySelectorAll('.pane').forEach(function (p) {
+        p.hidden = !(lang === 'all' || p.dataset.lang === lang);
+      });
+    });
+    // keep the clicked block in place while the others change height
+    if (origin) window.scrollBy(0, origin.getBoundingClientRect().top - top);
+  }
+  select(current, null);
+
+  if (window.hljs) {
+    document.querySelectorAll('pre code').forEach(function (el) { window.hljs.highlightElement(el); });
+  }
+
+  // theme toggle: auto → light → dark
+  var btn = document.getElementById('theme');
+  var root = document.documentElement;
+  var names = { auto: 'Тема: авто', light: 'Тема: светлая', dark: 'Тема: тёмная' };
+  function applyTheme(t) {
+    if (t === 'auto') delete root.dataset.theme; else root.dataset.theme = t;
+    btn.textContent = names[t];
+  }
+  var theme = root.dataset.theme || 'auto';
+  applyTheme(theme);
+  btn.addEventListener('click', function () {
+    theme = theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto';
+    applyTheme(theme);
+    store.set('wd-theme', theme);
+  });
+
+  // nav highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id); });
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
