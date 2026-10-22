@@ -17,14 +17,13 @@ const toyLinks = ["/stack#frontend", "/stack#backend"];
  * corners, a doodle by it, and questions in print answered in ballpoint:
  * who, what for, the favourite toys (the frontend and the backend, each on
  * its line with what it is made of, marked with a highlighter and linking
- * to where it can be seen at work) and, for a laugh, the favourite hobby.
+ * to where it can be seen at work).
  */
 export async function FriendForm() {
   const t = await getTranslations("zine.form");
   const name = t.raw("name") as Row;
   const job = t.raw("job") as Row;
   const toys = t.raw("toys") as Toys;
-  const hobby = t.raw("hobby") as Row;
   const title = t("title");
   // the pens go round the letters of the whole title, word after word
   let pen = 0;
@@ -102,10 +101,6 @@ export async function FriendForm() {
               ))}
             </ul>
           </dd>
-        </div>
-        <div>
-          <dt>{hobby.q}</dt>
-          <dd>{hobby.a}</dd>
         </div>
       </dl>
     </div>

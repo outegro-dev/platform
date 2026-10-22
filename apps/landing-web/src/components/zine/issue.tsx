@@ -11,7 +11,7 @@ type TocItem = { title: string; href: string; page: string };
  * The issue itself: the cover, opened at the contents, then turned to the
  * Battleship report, then turned once more and broken. Three leaves over a
  * last page: the cover leaf (the cover, and on its back a friends' form:
- * who, the favourite toys, the hobby),
+ * who, the favourite toys),
  * the contents leaf (the contents, and on its back the report's story,
  * page 2), the report leaf (the report's screens, page 3, and a blank back)
  * and a blank last page; over it all, the broken page that takes the

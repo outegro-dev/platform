@@ -265,7 +265,7 @@ for (const lang of locales) {
       }
     });
 
-    test("the questionnaire: the photo, the name, the job, the toys on the stack and the hobby", async ({
+    test("the questionnaire: the photo, the name, the job and the toys on the stack", async ({
       page,
     }) => {
       const form = t.zine.form;
@@ -279,12 +279,10 @@ for (const lang of locales) {
         form.name.q,
         form.job.q,
         form.toys.q,
-        form.hobby.q,
       ]);
       const answers = rows.getByRole("definition");
       await expect(answers.nth(0)).toHaveText(form.name.a);
       await expect(answers.nth(1)).toHaveText(form.job.a);
-      await expect(answers.nth(3)).toHaveText(form.hobby.a);
       // Frontend, then Backend: each its own link to where it runs
       const toys = answers.nth(2).getByRole("link");
       await expect(toys).toHaveText(

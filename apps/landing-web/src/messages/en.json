@@ -619,10 +619,6 @@
             "a": "NestJS, PostgreSQL, RabbitMQ"
           }
         ]
-      },
-      "hobby": {
-        "q": "Favourite hobby?",
-        "a": "High heels"
       }
     },
     "coverAlt": "A cover in the style of an old popular-science magazine: an engineer’s desk at night, a brass lamp, a monitor with a Battleship game, a wooden toy ship, a notebook with a ticked list, posters of the Moon and a space shuttle, and a glass of tea in a holder.",
