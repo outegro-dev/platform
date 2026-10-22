@@ -7,11 +7,23 @@ type Point = { x: number; y: number };
 
 const SPEED = 0.11; // px per ms
 const SIZE = 46;
+/** sessionStorage: shooed, the fly stays away until the tab is closed. */
+const SHOOED = "og-fly-shooed";
+
+const shooedBefore = () => {
+  try {
+    return sessionStorage.getItem(SHOOED) === "1";
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Every now and then a fly lands on the page, wanders over the text in short
- * dashes, rubs its legs and leaves. Click it and it shoots off. It never
- * shows with reduced motion and waits while the tab is hidden.
+ * dashes, rubs its legs and leaves. Click it, or press Escape while it is
+ * out, and it shoots off for good: the moving picture can be stopped, and
+ * it stays away for the rest of the visit. It never shows with reduced
+ * motion and waits while the tab is hidden.
  */
 export function Fly({ gone }: { gone: string }) {
   const ref = useRef<HTMLButtonElement>(null);
@@ -20,9 +32,15 @@ export function Fly({ gone }: { gone: string }) {
 
   useEffect(() => {
     const fly = ref.current;
-    if (!fly || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (
+      !fly ||
+      matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      shooedBefore()
+    )
+      return;
     let timer = 0;
     let frame = 0;
+    let shooed = false;
     const later = (ms: number, run: () => void) => {
       clearTimeout(timer);
       timer = window.setTimeout(run, ms);
@@ -53,7 +71,7 @@ export function Fly({ gone }: { gone: string }) {
         const to = path[leg + 1];
         if (!to) {
           fly.hidden = true;
-          later(18000 + Math.random() * 22000, spawn);
+          if (!shooed) later(18000 + Math.random() * 22000, spawn);
           return;
         }
         if (rest > now) {
@@ -94,6 +112,8 @@ export function Fly({ gone }: { gone: string }) {
     };
 
     shoo.current = () => {
+      if (shooed) return;
+      shooed = true;
       const box = fly.getBoundingClientRect();
       const here = { x: box.left + SIZE / 2, y: box.top + SIZE / 2 };
       const away = {
@@ -102,13 +122,23 @@ export function Fly({ gone }: { gone: string }) {
       };
       run([here, away], SPEED * 14, false);
       setStatus(gone);
-      later(60000, spawn);
+      try {
+        sessionStorage.setItem(SHOOED, "1");
+      } catch {
+        // no storage: gone for this page view only
+      }
+    };
+    // the keyboard's way to shoo it, as the sprite takes no focus
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !fly.hidden) shoo.current();
     };
 
     later(12000 + Math.random() * 8000, spawn);
+    document.addEventListener("keydown", onKey);
     return () => {
       clearTimeout(timer);
       cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", onKey);
     };
   }, [gone]);
 
@@ -123,12 +153,13 @@ export function Fly({ gone }: { gone: string }) {
         aria-hidden="true"
         onClick={() => shoo.current()}
       >
-        {/* biome-ignore lint/performance/noImgElement: a tiny decorative sprite moved every frame. */}
+        {/* biome-ignore lint/performance/noImgElement: a tiny decorative sprite moved every frame; lazy, as the button stays hidden until the first visit. */}
         <img
           src={flySprite.src}
           width={SIZE}
           height={SIZE}
           alt=""
+          loading="lazy"
           draggable={false}
         />
       </button>

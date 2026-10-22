@@ -28,29 +28,6 @@
 ) {
   min-height: 380px;
 }
-.bonk:is(
-    [data-phase="armed"],
-    [data-phase="loading"],
-    [data-phase="failed"],
-    [data-phase="show"],
-    [data-phase="reloading"]
-  )
-  .bonk-content {
-  visibility: hidden;
-}
-.bonk[data-phase="loaded"] .bonk-content {
-  animation: bonk-pop 520ms var(--ease-out);
-}
-@keyframes bonk-pop {
-  from {
-    opacity: 0;
-    scale: 0.96;
-    filter: blur(6px);
-  }
-  45% {
-    scale: 1.012;
-  }
-}
 .bonk-overlay {
   position: absolute;
   inset: 0;
@@ -72,6 +49,11 @@
   justify-items: center;
   gap: 12px;
   text-align: center;
+}
+/* where a reader's focus waits while the door goes (BonkRetry): a place,
+   not a control, so no ring round the card */
+.bonk .bonk-card:focus {
+  outline: none;
 }
 .bonk[data-shaking] .bonk-card {
   animation: bonk-shake 300ms steps(6) both;
@@ -205,7 +187,7 @@
   color: var(--primary-foreground);
   -webkit-tap-highlight-color: transparent;
 }
-.bonk-door:disabled {
+.bonk-door[aria-disabled="true"] {
   cursor: default;
 }
 .bonk-door-hole {
@@ -235,19 +217,26 @@
     background-color var(--duration-fast);
   backface-visibility: hidden;
 }
-.bonk-door:not(:disabled):hover .bonk-door-leaf {
+.bonk-door:not([aria-disabled="true"]):hover .bonk-door-leaf {
   background: var(--primary-hover);
 }
+/* pressed for the visitor (BonkRetry on cue): held down a beat */
+.bonk-door[data-pressed] .bonk-door-leaf {
+  background: var(--primary-hover);
+  scale: 0.95;
+  animation: none;
+}
+/* failed, the door calls a few times and then rests */
 .bonk[data-phase="failed"] .bonk-door::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   box-shadow: 0 0 0 0 color-mix(in srgb, var(--foreground) 45%, transparent);
-  animation: bonk-pulse 1.4s var(--ease-out) infinite;
+  animation: bonk-pulse 1.4s var(--ease-out) 3;
 }
 .bonk[data-phase="failed"] .bonk-door-leaf {
-  animation: bonk-throb 1.4s var(--ease-out) infinite;
+  animation: bonk-throb 1.4s var(--ease-out) 3;
 }
 @keyframes bonk-pulse {
   70%,
@@ -309,29 +298,6 @@
     rotate: -12deg;
   }
 }
-.bonk-replay {
-  margin-top: 28px;
-  text-align: center;
-}
-.bonk-replay button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 14px;
-  border: 0;
-  background: none;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted-foreground);
-  border-radius: var(--radius-pill);
-}
-.bonk-replay button:hover {
-  color: var(--foreground);
-}
-
 /* The puppet and its comic lettering sit on the page, above everything. */
 .sahur-layer {
   position: absolute;

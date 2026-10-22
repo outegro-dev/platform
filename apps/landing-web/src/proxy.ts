@@ -33,16 +33,18 @@ export function proxy(request: NextRequest) {
   const gtmHits = env.GTM_ID
     ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com"
     : "";
+  // Nothing unless listed: the pages embed no frames, media or manifest and
+  // start no workers.
   const csp = [
-    "default-src 'self'",
+    "default-src 'none'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${gtmScript}${dev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob:${gtmHits}`,
     "font-src 'self'",
     `connect-src 'self'${gtmHits}${dev ? " ws: wss:" : ""}`,
-    "worker-src 'self' blob:",
+    "worker-src 'none'",
     "object-src 'none'",
-    "base-uri 'self'",
+    "base-uri 'none'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     ...(https ? ["upgrade-insecure-requests"] : []),
@@ -57,14 +59,15 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    {
-      // Every page, but not build assets, probes, generated images or
-      // files. The dot is escaped: a bare "." matched any path but "/".
-      source: "/((?!_next/static|_next/image|health|og|icon|.*\\..*).*)",
-      missing: [
-        { type: "header", key: "next-router-prefetch" },
-        { type: "header", key: "purpose", value: "prefetch" },
-      ],
-    },
+    // Every address but the routes that answer with a file: build assets,
+    // the image optimiser, the probes, the share cards (/og/ru is the one
+    // other language; a matcher must be a literal), the icons and the
+    // metadata files. Each is matched whole, so a scanner's /wp-login.php,
+    // /ogre or /og/de gets the 404 page under the CSP like any other unknown
+    // address. The dots are escaped: a bare "." is any character.
+    // Prefetches too, unlike Next's CSP guide: a page fetched ahead can be
+    // the one the browser then shows, so no request header may take the
+    // policy off it (silent sign-in leaves prefetches alone).
+    "/((?!_next/static/|_next/image$|health(?:/deep)?$|og(?:/ru)?$|icon$|apple-icon$|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$).*)",
   ],
 };

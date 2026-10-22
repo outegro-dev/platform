@@ -1,15 +1,15 @@
 import {
-  type BufferGeometry,
+  BufferGeometry,
   Color,
   DirectionalLight,
   DoubleSide,
+  Float32BufferAttribute,
   Group,
   type Material,
   MathUtils,
   Mesh,
   MeshBasicMaterial,
   type PerspectiveCamera,
-  Plane,
   PlaneGeometry,
   ShadowMaterial,
   Shape,
@@ -29,6 +29,8 @@ import {
   LINED_TILE,
   linedPaper,
   PAPER_BACK,
+  PATH_TILE,
+  pathStrip,
   SEA_TILE,
   seaPaper,
   signText,
@@ -37,19 +39,20 @@ import {
 
 /*
  * A pop-up book diorama on notebook paper, one station per step of the work:
- * a workshop and a treasure map, an easel under a cloud, a ship in its
- * scaffolding, a lighthouse and a rocket, a pier. The camera pans along the
+ * a workshop and a treasure map (and a bicycle that rides a path from there,
+ * round the front of the easel, to the scaffolding), an easel under a cloud,
+ * a ship in its scaffolding, a lighthouse and a rocket, a pier. The camera pans along the
  * stations with the scroll; props fold up from the page as it approaches.
  *
  * Everything is scrubbed by the scroll: the camera, how far each card has
- * unfolded, the ship being built, launched and moored, the rocket, the
+ * unfolded, the bicycle's ride, the ship launched and moored, the rocket, the
  * waves and the sun. The camera and the voyages move smoothly so they track
  * the wheel; the cards follow on twos (12 fps) through a stiff spring, which
  * adds the overshoot, and the boiling jitter and bobbing tick at 12 fps too,
  * like stop-motion.
  */
 
-export const STATIONS = [0, 9.5, 19, 28.5, 38] as const;
+const STATIONS = [0, 9.5, 19, 28.5, 38] as const;
 /** Where a narrow (phone) frame centres on each station. */
 const PHONE_FOCUS = [0.7, 0.3, 0, 0.1, -0.15] as const;
 const LAST = STATIONS.length - 1;
@@ -68,6 +71,68 @@ const DOCK = { x: STATIONS[2] + 0.05, y: 0.6 };
 // Its stern keeps clear of the caption card, its bow tucks behind the pier.
 const MOOR_X = STATIONS[4] - 1.6;
 const PIER = { x: STATIONS[4] + 1.1, y: -0.38, z: 1.3, width: 4.6 };
+/**
+ * The bicycle: it leans by the tree, rides its path from the workshop round
+ * the front of the easel (from `start` to `arrive`, in stations of scroll)
+ * and stops behind the scaffolding's left tower, where the ship already
+ * stands, and folds away there (`hide`).
+ */
+const BIKE = {
+  z: -0.95,
+  from: 2.0,
+  to: STATIONS[2] - 2.0,
+  start: 0.12,
+  arrive: 1.7,
+  hide: 1.75,
+  /** How far towards the viewer the lane swerves at the easel. */
+  swerve: 1.55,
+};
+const EASEL_X = STATIONS[1] - 0.1;
+const PATH = { from: 1.3, to: STATIONS[2] - 1.2, width: 0.78 };
+/** The bicycle's lane: behind the stations, round the front of the easel. */
+const laneZ = (x: number) =>
+  BIKE.z + BIKE.swerve * Math.exp(-(((x - EASEL_X) / 2.4) ** 2));
+
+/**
+ * A ribbon lying on the floor along a lane, `width` across, its u running
+ * along its length in tiles of `tile`, so a texture runs round the bends.
+ */
+function laneRibbon(
+  from: number,
+  to: number,
+  width: number,
+  lane: (x: number) => number,
+  tile: number,
+) {
+  const steps = 160;
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const index: number[] = [];
+  let length = 0;
+  let px = from;
+  let pz = lane(from);
+  for (let i = 0; i <= steps; i++) {
+    const x = from + ((to - from) * i) / steps;
+    const z = lane(x);
+    length += Math.hypot(x - px, z - pz);
+    // across the lane: the normal of its tangent (1, dz) on the floor
+    const dz = (lane(x + 0.01) - lane(x - 0.01)) / 0.02;
+    const k = width / 2 / Math.hypot(1, dz);
+    positions.push(x - dz * k, 0, z + k, x + dz * k, 0, z - k);
+    uvs.push(length / tile, 0, length / tile, 1);
+    if (i > 0) {
+      const a = (i - 1) * 2;
+      index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+    px = x;
+    pz = z;
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(index);
+  return geometry;
+}
 /** The front of a station, where phones stand it on the caption card. */
 const FRONT_Z = 1.4;
 const front = new Vector3();
@@ -88,7 +153,7 @@ const hash = (a: number, b: number) => {
   const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
-export const coastX = (z: number) =>
+const coastX = (z: number) =>
   COAST + Math.sin(z * 1.3) * 0.5 + Math.sin(z * 3.1 + 1) * 0.22;
 
 const aspectOf = (name: SpriteName) =>
@@ -305,17 +370,16 @@ export class Diorama {
   private readonly waves: Card[] = [];
   private readonly disposables: { dispose(): void }[] = [];
   private readonly light = new DirectionalLight(0xffffff, 1);
-  private readonly shipClip = new Plane(new Vector3(0, -1, 0), 1000);
   private readonly ship: Card;
   private readonly rocket: Card;
   private readonly lighthouse: Card;
   private readonly island: Card;
   private readonly tree: Card;
+  private readonly bike: Card;
   private readonly beam: Mesh;
   private readonly beamMaterial: MeshBasicMaterial;
   private readonly gull: Mesh;
   private readonly sun: Hanger;
-  private readonly shipHeight: number;
   private readonly gullDeck: number;
   private time = 0;
   private frame = -1;
@@ -325,6 +389,7 @@ export class Diorama {
   private atSea = 0;
   private slide = 0;
   private flight = 0;
+  private ride = 0;
 
   constructor(maps: Maps, sign: Texture | null, shadowSize: number) {
     for (const map of Object.values(maps)) this.own(map);
@@ -556,6 +621,42 @@ export class Diorama {
       },
     );
 
+    // The bicycle's path, lying on the land from the workshop round the
+    // front of the easel to the scaffolding, and the bicycle on it, facing
+    // the way it goes.
+    const path = new Mesh(
+      this.own(
+        laneRibbon(
+          PATH.from,
+          PATH.to,
+          PATH.width,
+          (x) => laneZ(x) + 0.06,
+          PATH_TILE,
+        ),
+      ),
+      this.own(
+        new MeshBasicMaterial({
+          map: this.own(pathStrip()),
+          transparent: true,
+          depthWrite: false,
+          side: DoubleSide,
+        }),
+      ),
+    );
+    path.position.y = 0.016;
+    this.root.add(path);
+    this.bike = add(
+      "bike",
+      { h: 1.25 },
+      {
+        at: [BIKE.from, 0.02, BIKE.z],
+        range: [ENTRY, BIKE.hide],
+        fold: -1,
+        flip: true,
+        boil: 0.9,
+      },
+    );
+
     // 2 · Design: the easel (and a cloud, see the hangers below).
     add(
       "easel",
@@ -573,18 +674,14 @@ export class Diorama {
       },
     );
 
-    // 3 · Development: scaffolding with the ship inside, a server rack.
-    // The scaffolding folds away as the ship slides out of it.
+    // 3 · Development: scaffolding with the ship standing in it from the
+    // start, a server rack. The scaffolding folds away as the ship slides
+    // out of it.
     add(
       "scaffold",
       { w: 6.4 },
       { at: [STATIONS[2], 0.02, -0.25], range: [1.6, 2.3] },
     );
-    const shipMaterial = this.own(cardMaterial(maps.ship));
-    shipMaterial.clippingPlanes = [this.shipClip];
-    shipMaterial.clipShadows = true;
-    const shipSize = size("ship", { w: 3.4 });
-    this.shipHeight = shipSize.h;
     this.ship = add(
       "ship",
       { w: 3.4 },
@@ -593,7 +690,6 @@ export class Diorama {
         range: [1.6, 99],
         boil: 0.8,
       },
-      shipMaterial,
     );
     add(
       "server",
@@ -912,6 +1008,10 @@ export class Diorama {
     this.ship.offset.y = this.atSea * Math.sin(t * 2.4 + s * 4) * rock;
     this.ship.tilt = this.atSea * Math.sin(t * 1.7 + s * 5) * rock + this.slide;
     this.tree.tilt = Math.sin(t * 1.4) * 0.02;
+    // On the way the bicycle bumps along the path.
+    const riding = this.ride > 0 && this.ride < 1 && this.speed > 0;
+    this.bike.offset.y = riding ? Math.abs(Math.sin(t * 9)) * 0.035 : 0;
+    this.bike.tilt = riding ? Math.sin(t * 7) * 0.02 : 0;
     this.island.tilt = Math.sin(t * 1.2 + 1) * 0.015;
     this.rocket.tilt = this.flight > 0 ? (hash(frame, 99) - 0.5) * 0.09 : 0;
 
@@ -950,12 +1050,12 @@ export class Diorama {
 
   /** Scroll-driven placement, every rendered frame (smooth, not stepped). */
   private place(s: number, cx: number, mobile: boolean, sky: number) {
-    // The ship: built plank by plank while you stay at Development,
-    const reveal = clamp01((s - 1.55) / 0.6);
-    const built = Math.floor(reveal * 8) / 8;
-    this.shipClip.constant =
-      reveal >= 1 ? 1000 : this.ship.base.y + built * this.shipHeight;
-    // then slides down the slipway past the lighthouse and sails to the pier.
+    // The bicycle rides its path to the scaffolding.
+    this.ride = clamp01((s - BIKE.start) / (BIKE.arrive - BIKE.start));
+    const bx = MathUtils.lerp(BIKE.from, BIKE.to, this.ride);
+    this.bike.base.set(bx, 0.02, laneZ(bx));
+    // The ship stands in the scaffolding, then slides down the slipway past
+    // the lighthouse and sails to the pier.
     let x = DOCK.x;
     if (s > 2.3 && s <= 3.1) {
       x = MathUtils.lerp(DOCK.x, STATIONS[3] + 1.3, smooth(2.3, 3.1, s));
@@ -1005,8 +1105,14 @@ export class Diorama {
   }
 }
 
-/** Loads the sprites and the sign, then builds the diorama. */
-export async function createDiorama(renderer: WebGLRenderer) {
+/**
+ * Loads the sprites and the sign (its lines in the page's language), then
+ * builds the diorama.
+ */
+export async function createDiorama(
+  renderer: WebGLRenderer,
+  lines = ["PIER", "No. 1"],
+) {
   const loader = new TextureLoader();
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const names = Object.keys(sprites) as SpriteName[];
@@ -1019,7 +1125,7 @@ export async function createDiorama(renderer: WebGLRenderer) {
         return map;
       }),
     ),
-    signText(["ПРИЧАЛ", "№1"]).catch(() => null),
+    signText(lines).catch(() => null),
   ]);
   const maps = {} as Maps;
   names.forEach((name, i) => {

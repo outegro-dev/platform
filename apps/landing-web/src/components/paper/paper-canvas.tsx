@@ -2,30 +2,48 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { type RefObject, useEffect, useRef, useState } from "react";
-import type { PerspectiveCamera } from "three";
+import {
+  getConsoleFunction,
+  type PerspectiveCamera,
+  setConsoleFunction,
+} from "three";
 import { type Caption, createDiorama, type Diorama } from "./diorama";
 import { PAPER } from "./textures";
 
 const FPS = 12;
 
+// R3F 9 keeps its frame time on THREE.Clock, deprecated since r183, and
+// three warns about it for every canvas; nothing here can act on that, so
+// that one line stays out of the console and the rest goes on as before
+const tell = getConsoleFunction();
+setConsoleFunction((type, message, ...params) => {
+  if (message.startsWith("THREE.Clock:")) return;
+  if (tell) tell(type, message, ...params);
+  else console[type](message, ...params);
+});
+
 function Scene({
   progress,
   caption,
   active,
+  sign,
   onReady,
 }: {
   progress: RefObject<number>;
   caption: RefObject<Caption>;
   active: boolean;
+  sign?: string[];
   onReady: () => void;
 }) {
   const { gl, scene, invalidate } = useThree();
   const [world, setWorld] = useState<Diorama | null>(null);
+  // the sign's lines as one value: a new language builds the scene anew
+  const lines = sign?.join("\n");
 
   useEffect(() => {
     let cancelled = false;
     let built: Diorama | null = null;
-    createDiorama(gl).then(
+    createDiorama(gl, lines?.split("\n")).then(
       (diorama) => {
         if (cancelled) {
           diorama.dispose();
@@ -46,7 +64,7 @@ function Scene({
         built.dispose();
       }
     };
-  }, [gl, scene]);
+  }, [gl, scene, lines]);
 
   // The first frames, once useFrame below sees the world (a frame requested
   // before this commit would find none and end the on-demand loop).
@@ -99,6 +117,7 @@ function Scene({
  */
 export default function PaperCanvas({
   active,
+  sign,
   dpr,
   progress,
   caption,
@@ -106,6 +125,7 @@ export default function PaperCanvas({
   onLost,
 }: {
   active: boolean;
+  sign?: string[];
   dpr: number;
   progress: RefObject<number>;
   caption: RefObject<Caption>;
@@ -127,7 +147,6 @@ export default function PaperCanvas({
       }}
       onCreated={({ gl }) => {
         gl.setClearColor(PAPER, 1);
-        gl.localClippingEnabled = true;
         gl.domElement.addEventListener("webglcontextlost", onLost, {
           once: true,
         });
@@ -138,6 +157,7 @@ export default function PaperCanvas({
         progress={progress}
         caption={caption}
         active={active}
+        sign={sign}
         onReady={onReady}
       />
     </Canvas>

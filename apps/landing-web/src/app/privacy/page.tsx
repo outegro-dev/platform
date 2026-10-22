@@ -1,14 +1,16 @@
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { CONSENT_COOKIE, parseConsent } from "@/components/consent/consent";
 import { ConsentSettings } from "@/components/consent/consent-settings";
 import { EmailAddress, EmailLink } from "@/components/email-link";
-import { LocaleSwitcher } from "@/components/locale-switcher";
+import { Header } from "@/components/header";
 import { SiteFooter } from "@/components/site-footer";
 import { env } from "@/lib/env";
 import { openGraph } from "@/lib/metadata";
+import { sso } from "@/lib/sso";
+import "./privacy.css";
 
 type Section = { title: string; items: string[] };
 
@@ -27,6 +29,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// the main page's cream paper, which this page is printed on too
+export const viewport: Viewport = { themeColor: "#f6eede" };
+
 /**
  * Plain-language privacy notice; Google sign-in and payments link here, and
  * the consent note links to its #analytics settings.
@@ -37,13 +42,13 @@ export default async function Privacy() {
   const consent = parseConsent((await cookies()).get(CONSENT_COOKIE)?.value);
   return (
     <>
+      <Header accounts={sso !== null} />
       <main id="main" className="legal og-container">
         <div className="legal-top" id="top">
           <a href="/" className="legal-back">
             <ArrowLeftIcon aria-hidden="true" />
             {t("back")}
           </a>
-          <LocaleSwitcher />
         </div>
         <header className="legal-head">
           <p className="og-eyebrow">{t("eyebrow")}</p>

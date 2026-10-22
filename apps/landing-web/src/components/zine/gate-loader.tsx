@@ -4,12 +4,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import "./gate-loader.css";
 
-type Copy = { pier: string; opening: string };
-
 /**
- * «Ворота Причала №1»: on every page load two rusty port gate leaves close
- * the page, a stamp counts 3·2·1, a hinge bolt pops, the left leaf falls at
- * the viewer and the right one slides away. The page is rendered underneath
+ * The port gates: on every page load two rusty gate leaves close the page,
+ * nothing written on them; a hinge bolt pops, the padlock opens, the left
+ * leaf falls at the viewer and the right one slides away. The page is rendered underneath
  * and the show is pure CSS from the server markup, so a visitor without
  * scripting is never stuck. A click or Esc skips it and keeps it away for
  * the rest of the browser session (the cookie the layout checks); bots never
@@ -19,24 +17,16 @@ type Copy = { pier: string; opening: string };
  */
 export function GateLoader({
   cookie,
-  ...copy
-}: Copy & {
+}: {
   /** the session cookie a skip sets and the layout checks */
   cookie: string;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(() => pathname.startsWith("/design-system"));
-  return open ? null : (
-    <Gate cookie={cookie} onOpen={() => setOpen(true)} {...copy} />
-  );
+  return open ? null : <Gate cookie={cookie} onOpen={() => setOpen(true)} />;
 }
 
-function Gate({
-  cookie,
-  pier,
-  opening,
-  onOpen,
-}: Copy & { cookie: string; onOpen: () => void }) {
+function Gate({ cookie, onOpen }: { cookie: string; onOpen: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [skipped, setSkipped] = useState(false);
 
@@ -60,9 +50,19 @@ function Gate({
     gate.addEventListener("pointerdown", skip);
     gate.addEventListener("animationend", onEnd);
     document.addEventListener("keydown", onKey);
-    // hydrated after the show, or hidden by reduced motion: nothing left to wait for
-    if (gate.getAnimations().every((a) => a.playState === "finished")) onOpen();
+    // hydrated after the show, or hidden by reduced motion: nothing left to
+    // wait for. Asked once a frame has computed the gate's style, so the
+    // question never forces it in the middle of hydration.
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => {
+        if (gate.getAnimations().every((a) => a.playState === "finished"))
+          onOpen();
+      });
+    });
     return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
       gate.removeEventListener("pointerdown", skip);
       gate.removeEventListener("animationend", onEnd);
       document.removeEventListener("keydown", onKey);
@@ -81,21 +81,8 @@ function Gate({
         <span className="gate-hinge is-top" />
         <span className="gate-hinge is-bottom" />
         <span className="gate-hasp" />
-        <div className="gate-sign">
-          <span className="gate-sign-name">{pier}</span>
-          <span className="gate-sign-note">{opening}</span>
-        </div>
       </div>
-      <div className="gate-leaf is-right">
-        <div className="gate-notice">
-          <span className="tape gate-tape" />
-          <span className="gate-count">
-            <span>3</span>
-            <span>2</span>
-            <span>1</span>
-          </span>
-        </div>
-      </div>
+      <div className="gate-leaf is-right" />
       <svg className="gate-lock" viewBox="0 0 56 76" aria-hidden="true">
         <g className="gate-shackle">
           <path className="is-ink" d="M16 40V22a12 12 0 0 1 24 0v18" />

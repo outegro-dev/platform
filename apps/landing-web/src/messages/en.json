@@ -1,142 +1,85 @@
 {
   "meta": {
     "title": "Nick Lukashik — Senior full-stack engineer",
-    "description": "Senior full-stack engineer. Web products built turnkey — interface design, frontend, backend, payments, infrastructure and monitoring, from the idea to launch and support."
-  },
-  "loader": {
-    "pier": "Pier No. 1",
-    "opening": "Now opening"
+    "description": "Senior full-stack engineer. Web products built turnkey — interface design, frontend, backend, payments, infrastructure and monitoring, from the idea to launch and support.",
+    "imageAlt": "An old magazine cover by Nick Lukashik: “I’ll build the whole thing.”, the end of the headline cut out of newspapers, the Outegro magazine lying beside it and a torn red strip along the bottom: ideas, code, payments, users, real products."
   },
   "nav": {
     "projects": "Projects",
-    "platform": "Platform",
-    "services": "Services",
     "process": "Process",
-    "stack": "Stack",
-    "faq": "FAQ",
-    "contact": "Contact",
     "menu": "Open navigation",
     "close": "Close navigation",
-    "home": "Nick Lukashik, back to top",
-    "homePage": "Nick Lukashik, main page",
+    "toTop": "back to top",
+    "toHome": "main page",
+    "by": "by",
     "skip": "Skip to content",
     "language": "Language",
     "sections": "Sections",
     "book": "Book a call",
-    "bookShort": "Call",
-    "bookHint": "30 minutes, pick a time that suits you"
+    "bookHint": "30 minutes, pick a time that suits you",
+    "talk": "Let’s talk"
   },
   "projects": {
-    "index": "02",
     "label": "Projects",
     "title": "Built, shipped",
     "titleAccent": "and live.",
     "name": "Battleship",
-    "status": "Live",
     "summary": "Classic Battleship, online — the first product on my platform. Designed, built and run end to end: interface, game server, payments and infrastructure.",
-    "play": "Play Battleship",
-    "howBuilt": "How it is built",
-    "featuresTitle": "What it does",
-    "features": [
-      "Real-time matches over WebSocket that survive a dropped connection",
-      "Four bots, from random shots to a probability map",
-      "Quick matches by Elo rating and private rooms by link",
-      "Leaderboard, player stats, a shot heatmap and match replays",
-      "A Premium subscription and a one-time Silver Fleet, paid through Lava",
-      "A multilingual interface, on a desktop and on a phone"
+    "play": "Play",
+    "rulesTitle": "How it works",
+    "rules": [
+      {
+        "cell": "A1",
+        "term": "Live 1-on-1",
+        "text": "Matches run in real time and survive a dropped connection."
+      },
+      {
+        "cell": "B2",
+        "term": "4 bots",
+        "text": "From random shots to a probability map."
+      },
+      {
+        "cell": "C3",
+        "term": "Elo rating",
+        "text": "A quick match with an equal opponent, or a room by link."
+      },
+      {
+        "cell": "D4",
+        "term": "Stats",
+        "text": "Leaderboard, shot heatmap, match replays."
+      },
+      {
+        "cell": "E5",
+        "term": "Premium",
+        "text": "Subscription and purchases via Lava."
+      },
+      {
+        "cell": "F6",
+        "term": "Multilingual",
+        "text": "On desktop and on a phone."
+      }
     ],
-    "account": "One account at <id>id.outegro.dev</id> works across every outegro.dev app; purchases and subscriptions are managed at <pay>pay.outegro.dev</pay>.",
     "stackTitle": "Runs on",
     "stack": ["Next.js", "NestJS", "WebSocket", "PostgreSQL", "Kubernetes"],
     "note": "Screens from a local build with test data.",
     "shots": {
       "battle": {
-        "caption": "A match against the Expert bot",
+        "caption": "Against the Expert bot",
         "alt": "Battleship in a desktop browser: a match against the Expert bot. Your fleet on the left has taken two hits; in enemy waters on the right two ships are sunk and a third is hit."
       },
-      "lobby": {
-        "caption": "The lobby on a phone",
-        "alt": "Battleship on a phone: the lobby with the player’s rating card and the first way to play, a match against a bot."
-      },
       "placement": {
-        "caption": "Fleet placement: drag, tap or keyboard",
+        "caption": "Fleet placement",
         "alt": "Fleet placement: four ships on the board, the next one shown in green where it will land, and the rest of the fleet in the tray."
       },
       "leaderboard": {
-        "caption": "Elo leaderboard, all time or this week",
+        "caption": "Elo leaderboard",
         "alt": "The leaderboard: rank, rating, wins, matches and win rate of the top players, with your own place next to the table."
       },
       "profile": {
-        "caption": "Profile: stats and a shot heatmap",
+        "caption": "Profile and stats",
         "alt": "A player profile: matches, wins, win rate, accuracy, best streak and moves to win, a shot heatmap and wins against each bot level."
       }
-    },
-    "marks": {
-      "bot": "plays by a probability map",
-      "sunk": "sunk!",
-      "elo": "Elo rating"
     }
-  },
-  "platform": {
-    "index": "03",
-    "label": "Platform",
-    "title": "One platform",
-    "titleAccent": "under every app.",
-    "intro": "Battleship runs on a platform I built and operate: one account, notifications, payments and an operator console shared by every outegro.dev app — on a single K3s node behind Cloudflare.",
-    "live": "Running in production",
-    "layers": [
-      {
-        "name": "For users",
-        "items": [
-          {
-            "name": "Sign-in",
-            "result": "One account for every app: an email code or Google, active sessions, a security page and Telegram linking."
-          },
-          {
-            "name": "Notifications",
-            "result": "Multilingual email and Telegram messages, with billing and security templates."
-          },
-          {
-            "name": "Payments",
-            "result": "One-time purchases and subscriptions through Lava, with receipts, refunds, reconciliation and protection from paying twice."
-          }
-        ]
-      },
-      {
-        "name": "For operators",
-        "items": [
-          {
-            "name": "Operator console",
-            "result": "Users, roles, payments, notifications and game moderation, with an audit log of operator actions."
-          },
-          {
-            "name": "Monitoring",
-            "result": "Metrics and logs from every service, with Telegram alerts for failing pods, expiring certificates, stale backups and stuck queues."
-          },
-          {
-            "name": "Delivery",
-            "result": "Every change is linted, type-checked, tested and built; Argo CD rolls it out from Git, and a rollback is a revert."
-          }
-        ]
-      },
-      {
-        "name": "Underneath",
-        "items": [
-          {
-            "name": "Data",
-            "result": "PostgreSQL with a database per service, continuous WAL archiving and daily backups to Cloudflare R2. Restore is tested: all four databases rebuilt from backup in 81 seconds."
-          },
-          {
-            "name": "Messaging",
-            "result": "Events between services go through an outbox and an inbox: none are lost, none are applied twice."
-          },
-          {
-            "name": "Cluster",
-            "result": "One K3s node behind Cloudflare, with TLS certificates renewed automatically and secrets sealed in Git."
-          }
-        ]
-      }
-    ]
   },
   "bonk": {
     "loading": [
@@ -144,7 +87,9 @@
       "Waiting for the server…",
       "Almost there…"
     ],
+    "request": "GET /blocks/desktop",
     "pending": "pending",
+    "ok": "200 OK · 3 ms",
     "progressLabel": "Loading the block",
     "errorTitle": "This block failed to load",
     "errorBody": "504 Gateway Timeout — the server dozed off.",
@@ -152,58 +97,36 @@
     "knock": "TUNG!",
     "shout": "SAHUR!",
     "hit": "BONK!",
-    "reloading": "Reloading at bonk speed",
-    "replay": "Break the block again"
+    "reloading": "Reloading at bonk speed"
   },
   "services": {
-    "index": "04",
     "title": "What I can build",
     "titleAccent": "for you.",
     "intro": "6+ years in the JavaScript ecosystem. You bring an idea or an existing product; I take it through design, code, payments and infrastructure to launch, and stay for support. One engineer for the whole chain: no handoffs, one person answerable for the result.",
-    "items": [
-      {
-        "title": "Web products and SaaS",
-        "body": "Customer-facing apps with accounts, subscriptions, notifications and an admin panel behind them.",
-        "stack": ["Next.js", "NestJS", "PostgreSQL"],
-        "proof": "Live: battleship.outegro.dev",
-        "href": "https://battleship.outegro.dev"
+    "desktop": {
+      "start": "start",
+      "icons": {
+        "battleship": "Battleship",
+        "account": "Account",
+        "stack": "Stack",
+        "bin": "Recycle Bin"
       },
-      {
-        "title": "Payments and subscriptions",
-        "body": "Checkout, one-time purchases and subscriptions, receipts and refunds — reconciled with the provider, so money and access never drift apart.",
-        "stack": ["Lava", "Webhooks"],
-        "proof": "Live: the Battleship shop",
-        "href": "https://battleship.outegro.dev/shop"
+      "notepad": {
+        "file": "What I can build.txt",
+        "app": "Notepad",
+        "menu": ["File", "Edit", "Format", "View", "Help"]
       },
-      {
-        "title": "Accounts and sign-in",
-        "body": "Single sign-on across your apps with email codes and Google, plus active sessions and a security page for your users.",
-        "stack": ["SSO", "OAuth 2.0"],
-        "proof": "Live: id.outegro.dev",
-        "href": "https://id.outegro.dev"
-      },
-      {
-        "title": "Real-time and interactive",
-        "body": "WebSocket apps and games, fast and accessible interfaces, and 3D in the browser where it serves the product.",
-        "stack": ["WebSocket", "Three.js"],
-        "proof": "Live: Battleship and this site"
-      },
-      {
-        "title": "Internal tools and integrations",
-        "body": "Admin consoles with roles and an audit log, Telegram and email notifications, integrations with payment and email providers.",
-        "stack": ["Next.js", "Telegram"],
-        "proof": "Live: the outegro.dev operator console"
-      },
-      {
-        "title": "Infrastructure and DevOps",
-        "body": "Kubernetes, CI/CD with GitOps, monitoring, alerts and backups with a tested restore — set up so a release is a merge and a rollback is a revert.",
-        "stack": ["Kubernetes", "Argo CD", "Prometheus"],
-        "proof": "Live: every outegro.dev app"
+      "stack": {
+        "app": "Explorer",
+        "title": "Stack",
+        "address": "Address",
+        "path": "C:\\outegro\\stack",
+        "menu": ["File", "Edit", "View", "Favorites", "Tools", "Help"],
+        "more": "Each one in detail on the stack menu"
       }
-    ]
+    }
   },
   "process": {
-    "index": "05",
     "label": "Process",
     "title": "Clear steps,",
     "titleAccent": "visible progress.",
@@ -236,93 +159,17 @@
         "see": "Regular releases and a clear list of what comes next."
       }
     ],
-    "ai": "AI coding agents take the routine; contracts, tests and my review decide what ships."
-  },
-  "engagement": {
-    "index": "06",
-    "title": "Yours to keep,",
-    "titleAccent": "from day one.",
-    "deliverablesTitle": "What you get",
-    "deliverables": [
-      {
-        "title": "Source code in your repository",
-        "body": "Your account and the full history, from the first commit."
-      },
-      {
-        "title": "Tests",
-        "body": "Unit, integration and end-to-end tests that run on every change."
-      },
-      {
-        "title": "Documentation",
-        "body": "Architecture, setup, operations and the decisions behind them."
-      },
-      {
-        "title": "CI/CD",
-        "body": "Every change checked, built and deployed automatically."
-      },
-      {
-        "title": "Monitoring",
-        "body": "Metrics, logs and alerts, in place before launch."
-      },
-      {
-        "title": "Handover",
-        "body": "A walkthrough for your team, with every account and access in your name."
-      }
-    ],
-    "formatsTitle": "Ways to work",
-    "formats": [
-      {
-        "title": "A project",
-        "body": "A product or a feature from idea to launch, with an agreed scope, plan and estimate."
-      },
-      {
-        "title": "Long-term work",
-        "body": "Ongoing development, infrastructure and support, as part of your team."
-      },
-      {
-        "title": "Audit or rescue",
-        "body": "A review of an existing product — code, performance, security, infrastructure — with a prioritised plan, and hands-on fixes if you need them."
-      }
-    ],
-    "cta": "Discuss your project"
-  },
-  "faq": {
-    "index": "07",
-    "label": "Letters to the editor",
-    "title": "Your questions,",
-    "titleAccent": "straight answers.",
-    "intro": "What people usually ask before we start.",
-    "answer": "The editor replies",
-    "items": [
-      {
-        "q": "Who owns the code and the accounts?",
-        "a": "You do, from day one. The repository, the domain, hosting, payment and email services are set up in your name or your company’s, and I work in them as an invited member. All the code and its full history stay in your repository."
-      },
-      {
-        "q": "What if the developer disappears?",
-        "a": "The project does not hang on one person. Documentation on the architecture, setup and operations, tests and automated builds are part of the work, not an extra. You hold every access from the start, so your team or another engineer can pick it up. And when we wrap up, I hand the project over and walk your team through it."
-      },
-      {
-        "q": "Will you sign an NDA?",
-        "a": "Yes. If the task cannot be described without a non-disclosure agreement, send me yours and we sign it before getting into the details."
-      },
-      {
-        "q": "How much does it cost, and can I pay in parts?",
-        "a": "It depends on the scope and the format: a project is priced by estimate, long-term work by the month, an audit at a fixed price. Bigger work is split into stages and paid stage by stage, and every stage ends with something you can open and check. We settle the exact amount and the payment schedule after a short call about the task."
-      },
-      {
-        "q": "Who makes changes and supports the product after launch?",
-        "a": "We can keep going as long-term work: fixes, improvements, new features and an eye on metrics and alerts. Or your own team takes over — by then it has everything it needs: the code, documentation, tests and access."
-      },
-      {
-        "q": "How fast do you reply?",
-        "a": "Usually within a day. If you would rather talk, book a call: 30 minutes at a time that suits you."
-      }
-    ],
-    "more": "Didn’t find your question? Ask it on a call."
+    "ai": "AI coding agents take the routine; contracts, tests and my review decide what ships.",
+    "window": "Process",
+    "loading": "Starting: Process",
+    "levels": "Loading levels",
+    "start": "Scroll to start the game",
+    "startStatic": "All levels unlocked",
+    "scene": "A paper pop-up diorama: as you scroll, a bicycle rides past a workshop with a treasure map, an easel, a ship in its scaffolding, a lighthouse and a rocket to Pier No. 1, where the ship moors.",
+    "sign": ["PIER", "No. 1"]
   },
   "contact": {
-    "index": "08",
+    "index": "16",
     "label": "Contact",
     "title": "Good things start",
     "titleAccent": "with a conversation.",
@@ -706,7 +553,10 @@
     }
   },
   "auth": {
-    "errorTitle": "Sign-in didn't finish",
+    "meta": {
+      "title": "Sign-in didn’t finish — Nick Lukashik"
+    },
+    "errorTitle": "Sign-in didn’t finish",
     "reasons": {
       "state_mismatch": "The sign-in link expired or was opened in another browser.",
       "missing_code": "The sign-in page did not send a code back.",
@@ -717,126 +567,438 @@
     "retry": "Try again",
     "home": "Back to the main page"
   },
-  "zine": {
-    "issue": "Issue #1 · October 2026 · outegro.dev",
-    "price": "Price: let’s talk",
-    "mast": "Nick Lukashik",
-    "tagline": "the magazine about products built start to finish",
-    "headline": "I’ll build the whole thing",
-    "lead": "Design, frontend, backend, payments, infrastructure and monitoring — one engineer from the first sketch to production. Everything in this issue is live, and every claim is one click away.",
-    "read": "Read the issue",
-    "write": "Write to the editor",
-    "coverAlt": "A cover in the style of an old popular-science magazine: an engineer's desk at night, a monitor with a battleship game, a wooden toy ship and a glass of tea in a metal holder.",
-    "coverlines": [
+  "notFound": {
+    "meta": {
+      "title": "Page not found — Nick Lukashik"
+    },
+    "kicker": "Misprint",
+    "title": "This page isn’t in this issue",
+    "body": "The link may have a typo, or the page has moved. Everything else is where it was: the cover, the projects and the stack menu.",
+    "home": "Main page",
+    "stack": "Stack menu"
+  },
+  "column": {
+    "index": "08",
+    "label": "Editor’s column",
+    "title": "How I became",
+    "titleAccent": "a programmer.",
+    "text": [
+      "Hi, I’m Nick! I’ve been writing code since I was 12. It started with websites for Counter-Strike servers (HTML, CSS, JS, PHP), so headshots have been part of my life for a long time :) From 2016 I was already building Counter-Strike projects to order: roulette and jackpot sites, Steam trade bots, a browser extension with skin prices. Somehow it never stopped.",
+      "Now it’s 6+ years of commercial full-stack work, mostly TypeScript, React, Next.js and Node.js with Postgres. I joined my first company in January 2020, before university even started, and then studied at MIREA alongside the job.",
+      "Right now I’m at Printify, a big print-on-demand platform, where I work on both the frontend and the APIs. At one point I took a whole B2B ordering product from an idea to production with a small team. That’s the kind of work I like most: you own something end to end and then actually watch people use it. Alongside that I’m an AI full-stack engineer at Toggle, building LLM products: from a self-hosted open-source model on GPUs to RAG and MCP agents.",
+      "I’m pretty AI-first in how I work. I use coding agents for most of the code, with my own rules and skills for them, and Jira and Confluence plugged in through MCP. I still review every step myself, because the agent is fast but I’m the one who gets the call when prod breaks :)",
+      "For fun I run my own platform, outegro.dev, on a Kubernetes cluster I set up myself. I’m the only DevOps, the on-call and the person who gets paged there. It’s my playground where I try things out before I bring them to work.",
+      "I like to keep learning. My favorite way is to take a service I already know well and rewrite it from scratch in something new. Lately that’s been Go and Rust. That’s how my platform’s watchdog got rewritten, and its drawing is in the hobby club below."
+    ],
+    "sign": "Nick",
+    "signRole": "editor-in-chief"
+  },
+  "club": {
+    "index": "10",
+    "label": "Hobby club",
+    "title": "Made",
+    "titleAccent": "by hand.",
+    "intro": "Drawings of things I built and wrote myself, outside the day job. Feel free to try this at home.",
+    "sheet": "Sheet {n}",
+    "diagram": "Diagram",
+    "cards": [
       {
-        "kicker": "Exclusive",
-        "text": "One person built online Battleship: 4 bots, Elo ratings and real payments",
-        "page": "02"
+        "id": "bike",
+        "title": "A bike built from parts",
+        "figure": "Fig. 1. The bike, general view",
+        "alt": "A blue-ink drawing of a bicycle from the side: two wheels, the frame, the saddle and the handlebar.",
+        "body": "I built my own bike from parts. I love long rides and cycling trips on it.",
+        "parts": [],
+        "notes": [
+          "on the bike I try to shave off seconds, at work milliseconds",
+          "if the brakes don’t work, nothing else matters"
+        ]
       },
       {
-        "kicker": "Record",
-        "text": "Four databases back from backup in 81 seconds",
-        "page": "03"
+        "id": "extension",
+        "title": "A price extension for skin trading",
+        "figure": "Fig. 2. The browser window, general view",
+        "alt": "A blue-ink drawing of a browser window: three item cards, each with a price tag in two halves, and an extension icon in the corner.",
+        "body": "From the years I built Counter-Strike projects to order, 2016–2020. A browser extension took item prices from csgolounge.com and market.csgo.com and showed both right on the trading pages.",
+        "parts": [
+          ["csgolounge.com", "market.csgo.com"],
+          "a browser extension",
+          "both prices on the trading page"
+        ],
+        "notes": []
       },
       {
-        "kicker": "Exposed",
-        "text": "Why one block in this issue crashes with a 504",
-        "page": "03"
+        "id": "watchdog",
+        "title": "One watchdog, two breeds",
+        "figure": "Fig. 3. The watchdog’s kennel",
+        "alt": "A blue-ink drawing of a doghouse with a bowl and a bone by the door.",
+        "body": "Every 5 minutes the watchdog makes its rounds of my platform: pods, the node, certificates, backups, Argo CD and HTTP checks, and it sends alerts and a daily digest to Telegram. Production runs the shell version. From the same spec I rewrote it from scratch twice, in Go and in Rust, with a DRY_RUN shadow mode.",
+        "parts": ["one spec", ["Go", "Rust"], "Telegram"],
+        "notes": ["woof! every 5 minutes"]
+      }
+    ]
+  },
+  "incidents": {
+    "index": "12",
+    "label": "Incident report",
+    "title": "What broke",
+    "titleAccent": "and how it got fixed.",
+    "intro": "Tales from production: short notes on what broke on my watch and what was done about it.",
+    "masthead": "Incidents",
+    "measures": "Action taken:",
+    "byline": "As told by an eyewitness.",
+    "notes": [
+      {
+        "place": "Production",
+        "title": "Minor version runs riot",
+        "text": "A minor Bun release broke next-auth right in production. Rolling back did not help: the old builds had already been overwritten. The bug was reproduced on dev, Bun went back to the previous version, and later the fix landed upstream.",
+        "measures": "versions are now pinned like life depends on it."
       },
       {
-        "kicker": "Prices",
-        "text": "What a turnkey product really costs",
-        "page": "06"
+        "place": "id.outegro.dev",
+        "title": "Post-quantum signature too big for the door",
+        "text": "On Node 24, SimpleWebAuthn offered the ML-DSA-44 algorithm first. Its signature weighs 3.2 KB, and passkey sign-in broke.",
+        "measures": "passkey registration is pinned to ES256, EdDSA and RS256."
+      },
+      {
+        "place": "outegro.dev",
+        "title": "Eleven apps go out at once",
+        "text": "During a full rollout of all 11 apps the server lost its way out to the internet: load average around 68, image pulls failing. Then it all came back by itself.",
+        "measures": "none, the server caught its breath and went back to work on its own."
+      },
+      {
+        "place": "Home",
+        "title": "Load test chokes the home internet",
+        "text": "A load test ran from home, from one IP, through Cloudflare. Cloudflare started dropping connections, and the home link, about 460 KB/s, filled up completely.",
+        "measures": "load tests now run on the server itself, straight at the origin."
+      },
+      {
+        "place": "CRM",
+        "title": "Late webhook rewrites history",
+        "text": "Messaging webhooks arrived out of order, and a delayed callback overwrote newer CRM state.",
+        "measures": "events got versions and updates became idempotent. A latecomer can’t overwrite anything now."
+      },
+      {
+        "place": "Checkout",
+        "title": "One slow carrier holds up the whole checkout",
+        "text": "A single slow delivery provider could hang the entire checkout.",
+        "measures": "bounded timeouts, a circuit breaker and controlled retries. A slow carrier now only slows itself down."
+      }
+    ]
+  },
+  "record": {
+    "index": "14",
+    "label": "Employment record book",
+    "title": "Where I’ve worked",
+    "titleAccent": "and what I got done.",
+    "intro": "Building to order since 2016, on staff for over 6 years, since January 2020. Every entry comes from my résumé.",
+    "book": "Employment record book",
+    "fields": [
+      {
+        "label": "Surname",
+        "value": "Lukashik"
+      },
+      {
+        "label": "Name",
+        "value": "Nick"
+      },
+      {
+        "label": "Education",
+        "value": "higher: MIREA, Bachelor’s in Computer Science, 2020–2024"
+      },
+      {
+        "label": "Occupation",
+        "value": "software engineer"
       }
     ],
-    "burst": "New!",
-    "burstText": "edu.outegro.dev went live on October 6",
-    "tagPrice": "$999.99",
-    "tagNote": "marked down",
-    "tickerLabel": "Breaking",
-    "ticker": [
-      "Battleship has been in production since September 29",
-      "One account on id.outegro.dev works in every app",
-      "Payments through Lava: receipts, refunds and provider reconciliation",
-      "Every database comes back from backup in 81 seconds",
-      "A watchdog checks the cluster every 5 minutes and reports to Telegram",
-      "The books “Node.js inside out” and “SQL inside out” live on edu.outegro.dev",
-      "Every app is multilingual",
-      "Tests against real PostgreSQL, Valkey and RabbitMQ on every change"
+    "signature": "Holder’s signature",
+    "seal": "Outegro magazine · Issue No. 1 · Editorial office ·",
+    "jobsTitle": "Employment record",
+    "columns": {
+      "number": "Entry",
+      "date": "Dates",
+      "record": "Record of employment",
+      "basis": "Source"
+    },
+    "basis": "résumé",
+    "thanks": "Commended for:",
+    "stamp": "Since 2016",
+    "cvLink": "The full version: a one-page résumé to print",
+    "jobs": [
+      {
+        "period": "2016 – 2020",
+        "hired": "Worked as an independent developer",
+        "product": "Counter-Strike roulette and jackpot sites set up to order, Steam trade bots and skin-trading tools.",
+        "done": [
+          "Steam trade bots with automated trade-offer confirmation and the then-new Steam Guard mobile confirmations.",
+          "Custom visualisations for trading on csgolounge.com, so listings and trade offers were easier to read and compare."
+        ]
+      },
+      {
+        "period": "01.2020 – 01.2021",
+        "hired": "Joined AdviceSolution as a Software Engineer",
+        "product": "Customer-facing service pages, technical knowledge tools and business integrations.",
+        "done": []
+      },
+      {
+        "period": "01.2021 – 02.2022",
+        "hired": "Joined FridayTech as a Full-Stack Engineer",
+        "product": "E-commerce logistics and fulfillment platform for Latin America.",
+        "done": [
+          "A Node.js BFF for checkout: roughly seven backend dependencies moved server-side, about two browser requests left.",
+          "A React component library adopted by three teams."
+        ]
+      },
+      {
+        "period": "02.2022 – 02.2023",
+        "hired": "Joined Kommo as a Software Engineer",
+        "product": "Global CRM platform for small and midsize businesses.",
+        "done": [
+          "A lead-notification wizard: typical setup down from more than 30 minutes to under 5.",
+          "Telegram and WhatsApp provider modules unified behind one shared contract."
+        ]
+      },
+      {
+        "period": "03.2023 – present",
+        "hired": "Joined Printify as a Full-Stack Engineer",
+        "product": "Print-on-demand e-commerce platform, 1M+ monthly users platform-wide.",
+        "done": [
+          "A new B2B ordering platform from requirements to production; the new revenue stream reached profitability in roughly 3 months.",
+          "Three back-office workflows consolidated into one operations platform; employee onboarding down from around 3 weeks to 1 week."
+        ]
+      },
+      {
+        "period": "04.2025 – present",
+        "hired": "Joined Toggle as an AI Full-Stack Engineer, alongside Printify",
+        "product": "Applied LLM products, agentic workflows and GPU inference.",
+        "done": [
+          "A conversational AI SaaS on a self-hosted open-source LLM, since commercial APIs could not meet its content requirements: GPU inference and a Node.js API with retries and graceful degradation.",
+          "An MCP support agent with scoped, read-only tools that files structured Jira reports."
+        ]
+      }
+    ]
+  },
+  "cv": {
+    "meta": {
+      "title": "Résumé · Nick Lukashik",
+      "description": "Nick Lukashik’s one-page résumé: senior full-stack engineer, experience, skills and education. An offprint ready to print."
+    },
+    "kicker": "Offprint",
+    "from": "from Outegro magazine · Issue No. 1 · October 2026",
+    "back": "Back to the issue",
+    "print": "Print or save as PDF",
+    "name": "Nick Lukashik",
+    "role": "Senior Full-Stack Engineer · AI",
+    "links": "Links",
+    "sections": {
+      "about": "About",
+      "experience": "Experience",
+      "skills": "Skills",
+      "education": "Education & Languages"
+    },
+    "about": [
+      "<b>Senior Full-Stack Engineer with 6+ years of commercial experience</b> building SaaS, CRM and e-commerce products with React, Next.js, Node.js and NestJS. I turn ambiguous requirements into shipped systems, owning delivery from product discovery and architecture through implementation and production support. I am particularly effective where complex state, inconsistent providers, retries, cache invalidation and system boundaries meet.",
+      "My work combines <b>product ownership and systems reliability</b>: launching a profitable B2B revenue stream, simplifying operational workflows and designing dependable APIs. Today I also build <b>LLM products and agents in production</b>: self-hosted GPU inference, RAG and MCP agents with human-in-the-loop workflows. I work agent-first with Claude Code and Codex, owning architecture, review and outcomes."
     ],
+    "jobs": [
+      {
+        "company": "Toggle",
+        "role": "AI Full-Stack Engineer",
+        "period": "Apr 2025 – Present",
+        "product": "Applied LLM products, agentic workflows and GPU inference",
+        "items": [
+          "Built a <b>conversational AI SaaS on a self-hosted open-source LLM</b>, since commercial APIs could not meet its content requirements: GPU inference on Vast.ai, Dockerized model serving and a Node.js API with retries and graceful degradation.",
+          "Engineered an <b>MCP-powered AI support agent</b> that retrieves account and product context through scoped, read-only tools, classifies incidents and files structured Jira reports with reproduction steps and evidence."
+        ]
+      },
+      {
+        "company": "Printify",
+        "role": "Full-Stack Engineer",
+        "period": "Mar 2023 – Present",
+        "product": "Print-on-demand e-commerce platform; 1M+ monthly users (platform-wide)",
+        "items": [
+          "<b>Led end-to-end technical delivery of a new B2B ordering platform</b> using Next.js, NestJS and PostgreSQL, from requirements and API boundaries to release and production support; the new revenue stream <b>reached profitability in roughly 3 months</b>.",
+          "Consolidated <b>three independent back-office workflows into one operations platform</b>, centralizing validation and business rules and reducing employee onboarding from <b>around 3 weeks to 1 week</b>.",
+          "Built an <b>SEO content management service for 10,000+ product pages</b>, enabling marketing to maintain catalog metadata and content without engineering support."
+        ]
+      },
+      {
+        "company": "Kommo",
+        "role": "Software Engineer",
+        "period": "Feb 2022 – Feb 2023",
+        "product": "Global CRM platform for small and midsize businesses",
+        "items": [
+          "Reworked a complex multi-step lead-notification wizard: simplified transitions, validation and feedback, bringing typical setup time from <b>more than 30 minutes to under 5 minutes</b>."
+        ]
+      },
+      {
+        "company": "FridayTech",
+        "role": "Full-Stack Engineer",
+        "period": "Jan 2021 – Feb 2022",
+        "product": "E-commerce logistics and fulfillment platform for Latin America",
+        "items": [
+          "Designed a <b>Node.js BFF for checkout</b>, moving orchestration of roughly seven backend dependencies server-side and reducing browser requests to <b>about two</b> behind a stable API contract.",
+          "Developed a <b>reusable React component library adopted by three teams</b>, standardizing shared interface patterns across customer and back-office products."
+        ]
+      },
+      {
+        "company": "AdviceSolution",
+        "role": "Software Engineer",
+        "period": "Jan 2020 – Jan 2021",
+        "product": "Customer-facing service pages, technical knowledge tools and business integrations",
+        "items": []
+      },
+      {
+        "company": "Independent Developer",
+        "role": "Counter-Strike & Steam Projects",
+        "period": "2016 – 2020",
+        "product": "Roulette and jackpot sites set up to order, Steam trade bots and skin-trading tools",
+        "items": [
+          "Built <b>Steam trade bots</b>: automated trade-offer confirmation and integration of the then-new Steam Guard mobile confirmations, so bots could verify and accept trades without manual steps.",
+          "Developed a <b>browser extension</b> that merged item prices from csgolounge.com and market.csgo.com and showed them directly on trading pages."
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "label": "Frontend",
+        "items": "JavaScript, TypeScript, React, Next.js, Angular, Vue, HTML5/CSS3, Tailwind CSS, Redux Toolkit, TanStack Query, Apollo Client"
+      },
+      {
+        "label": "Backend",
+        "items": "TypeScript, Node.js, NestJS, Express, Python, PHP, REST, GraphQL, tRPC, Microservices, BFF, JWT, OAuth"
+      },
+      {
+        "label": "Data & Messaging",
+        "items": "PostgreSQL, MySQL, MongoDB, Redis, RabbitMQ, Kafka, Vector Databases"
+      },
+      {
+        "label": "AI & Developer Tools",
+        "items": "Self-hosted LLMs, MCP, RAG, GPU Inference, Agent Workflows, Prompt Design, Claude Code, Codex, Cursor, Kimi"
+      },
+      {
+        "label": "Engineering Quality",
+        "items": "Jest, Vitest, Playwright, Unit / Integration / E2E Testing, Code Review"
+      },
+      {
+        "label": "Cloud & Observability",
+        "items": "Docker Compose, Kubernetes, Helm, AWS, GCP, GitHub Actions, GitLab CI/CD, Sentry, Prometheus, Grafana, Linux"
+      }
+    ],
+    "education": {
+      "school": "MIREA - Technological University",
+      "degree": "Bachelor’s Degree, Computer Science",
+      "period": "Sep 2020 – May 2024"
+    },
+    "imprint": "Printed from outegro.dev. Print run: 1 copy.",
+    "contactLink": "One-page résumé: an offprint ready to print",
+    "languages": "English: C1, full professional proficiency · Russian: native"
+  },
+  "zine": {
+    "poster": {
+      "mast": "Outegro",
+      "issue": "Issue No. 1",
+      "date": "October 2026"
+    },
+    "band": {
+      "steps": ["Ideas", "Code", "Payments", "Users", "Real products"]
+    },
+    "headlineLead": "I’ll build the",
+    "headlineCut": "whole thing.",
+    "lede": [
+      "From first idea to live product.",
+      "Design, code, payments and launch."
+    ],
+    "explore": "Explore my work",
+    "discuss": "Discuss a project",
+    "form": {
+      "title": "About me",
+      "subtitle": "for friends",
+      "photo": "Nick Lukashik in the mountains, a towel tied against the wind",
+      "me": "that’s me",
+      "name": {
+        "q": "What’s your name?",
+        "a": "Nick Lukashik"
+      },
+      "job": {
+        "q": "What do you do?",
+        "a": "One engineer for the whole product, from idea to production"
+      },
+      "toys": {
+        "q": "Favourite toys?",
+        "items": [
+          {
+            "craft": "Frontend",
+            "a": "Next.js, React, TypeScript"
+          },
+          {
+            "craft": "Backend",
+            "a": "NestJS, PostgreSQL, RabbitMQ"
+          }
+        ]
+      }
+    },
+    "coverAlt": "A cover in the style of an old popular-science magazine: an engineer’s desk at night, a brass lamp, a monitor with a Battleship game, a wooden toy ship, a notebook with a ticked list, posters of the Moon and a space shuttle, and a glass of tea in a holder.",
     "tocTitle": "In this issue",
+    "turn": {
+      "cue": "Scroll to turn",
+      "spread": "Spread {n} of {total}"
+    },
     "toc": [
       {
-        "title": "Report: Battleship",
+        "title": "About me: a page for friends",
+        "href": "#about",
+        "page": "cover"
+      },
+      {
+        "title": "Report from the shipyard: Battleship",
         "href": "#projects",
         "page": "02"
       },
       {
-        "title": "Diagram: how the platform works",
-        "href": "#platform",
-        "page": "03"
-      },
-      {
-        "title": "Classifieds: what I can build",
+        "title": "Computer club: what I build, with what",
         "href": "#services",
         "page": "04"
       },
       {
-        "title": "Cartoon in the margins: how the work goes",
+        "title": "Bike ride: from the idea to Pier No. 1",
         "href": "#process",
-        "page": "05"
-      },
-      {
-        "title": "Price tags and the receipt",
-        "href": "#engagement",
         "page": "06"
       },
       {
-        "title": "Letters to the editor: questions and answers",
-        "href": "#faq",
-        "page": "07"
+        "title": "Editor’s column: how I became a programmer",
+        "href": "#column",
+        "page": "08"
       },
       {
-        "title": "Coupon: a free call",
+        "title": "Hobby club: drawings on graph paper",
+        "href": "#club",
+        "page": "10"
+      },
+      {
+        "title": "Incident report: tales from production",
+        "href": "#incidents",
+        "page": "12"
+      },
+      {
+        "title": "Employment record book: on the job since 2016",
+        "href": "#record",
+        "page": "14"
+      },
+      {
+        "title": "Write to the editor: a free-call coupon",
         "href": "#contact",
-        "page": "08"
+        "page": "16"
       }
     ],
-    "stampLive": "Live",
-    "stampPaid": "Accepted",
-    "adsTitle": "Classifieds",
-    "adsNote": "Click an ad to message me on Telegram. The tabs tear off.",
-    "adWrite": "Message me on Telegram: {title}",
-    "tagsTitle": "Price tags",
-    "tagsNote": "The price depends on the scope: you get a number after a short call about the task.",
-    "tagWas": "$999.99",
-    "tags": ["estimate", "monthly", "fixed price"],
-    "receiptTitle": "Receipt",
-    "receiptNumber": "Receipt No. 0001",
-    "receiptIncluded": "included",
-    "receiptTotal": "Total",
-    "receiptTotalValue": "a product in production",
-    "receiptThanks": "Thank you for your purchase! The code and the access are yours.",
     "couponTitle": "Coupon",
-    "couponOffer": "A free 30-minute call",
-    "couponFine": "Valid for the bearer: we'll go through the task, the timeline and the cost. No strings attached.",
+    "couponOffer": "A free 30-⁠minute call",
+    "couponFine": "Valid for the bearer: we’ll go through the task, the timeline and the cost. No strings attached.",
     "couponCut": "Cut out the coupon",
     "couponCut2": "Coupon cut out. The contacts are right below.",
     "flyGone": "Fly shooed away",
     "imprint": "Editor-in-chief, author, layout and courier — Nick Lukashik. Print run: 1 copy. The editors are not responsible for the actions of Tung Tung Tung Sahur.",
-    "consoleNote": "If you are reading this, we will get along. I wrote this site and the platform behind it: https://github.com/coping-barrel. Say hi: https://t.me/coping_barrel",
-    "boatLabel": "Issue navigation",
-    "dontPress": {
-      "button": "Do not press",
-      "note": "Seriously. It all breaks.",
-      "hint": "a rollback is a revert",
-      "sahur": "Seriously?",
-      "command": "git revert HEAD",
-      "output": "[master 4f2c1e9] Revert “Someone pressed the button”",
-      "revert": "Roll back",
-      "rew": "◂◂ REWIND",
-      "done": "Rolled back in {seconds} s. Same in production: a release is a merge, a rollback is a revert.",
-      "reduced": "Button pressed, but reduced motion is on, so nothing fell. The rollback would still be a revert."
-    }
+    "consoleShout": "TUNG TUNG TUNG SAHUR",
+    "consoleNote": "If you are reading this, we will get along. I wrote this site and the platform behind it: https://github.com/coping-barrel. Say hi: https://t.me/coping_barrel"
   }
 }

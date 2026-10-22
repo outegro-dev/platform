@@ -344,8 +344,35 @@ function cssFamily(name: string) {
 }
 
 /**
- * "ПРИЧАЛ №1" for the blank pier sign. Tries the page's wide heavy face
- * (Unbounded 900 behind --og-sign-*), falls back to a system black weight.
+ * The bicycle's path across the land: a strip of sandy paper with pencilled
+ * edges and a dashed middle line, tiled along its length (PATH_TILE world
+ * units a tile).
+ */
+export function pathStrip() {
+  const width = 512;
+  const height = 96;
+  const { element, ctx } = canvas(width, height);
+  const random = rng(77);
+  ctx.fillStyle = "#e9cf98";
+  ctx.fillRect(0, 12, width, height - 24);
+  grain(ctx, width, height, 78, 1.4);
+  ctx.strokeStyle = "rgba(120, 86, 40, 0.75)";
+  ctx.lineWidth = 3;
+  wobblyLine(ctx, 0, width, 13, random, 3);
+  wobblyLine(ctx, 0, width, height - 13, random, 3);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
+  ctx.lineWidth = 5;
+  ctx.setLineDash([34, 30]);
+  wobblyLine(ctx, 0, width, height / 2, random, 2);
+  ctx.setLineDash([]);
+  return texture(element);
+}
+export const PATH_TILE = 3.2;
+
+/**
+ * The pier's name ("PIER No. 1", «ПРИЧАЛ № 1») for the blank pier sign.
+ * Tries the page's wide heavy face (Unbounded 900 behind --og-sign-*, both
+ * scripts), falls back to a system black weight.
  */
 export async function signText(lines: string[]) {
   const families = [

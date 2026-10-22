@@ -1,4 +1,5 @@
 import type { StaticImageData } from "next/image";
+import bike from "@/assets/paper/bike.webp";
 import cloud from "@/assets/paper/cloud.webp";
 import easel from "@/assets/paper/easel.webp";
 import house from "@/assets/paper/house.webp";
@@ -19,6 +20,7 @@ import tree from "@/assets/paper/tree.webp";
  * longest side 640 px, trimmed to the sticker edge).
  */
 export const sprites = {
+  bike,
   cloud,
   easel,
   house,

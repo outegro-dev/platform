@@ -1,11 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
-import {
-  type BrowserContext,
-  expect,
-  type Locator,
-  type Page,
-  test,
-} from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+import { expect, locales, seriousViolations, test, watch } from "./support";
 
 /*
  * The kit specimen (/design-system) prints every @outegro/ui component in
@@ -13,33 +7,9 @@ import {
  * these checks run the kit's level switch, tabs, toggle groups, progress,
  * copy buttons, notices and state panels, the coupon and the tear-offs in
  * real engines. The page is in English whatever the reader's language.
+ * The specimen opens without the gates anyway; the reader's session cookie
+ * (see support.ts) keeps every run the same.
  */
-
-const BASE = "http://localhost:3100";
-
-// The specimen opens without the gates anyway; the session cookie keeps
-// every run the same.
-test.use({
-  storageState: {
-    cookies: [
-      {
-        name: "og_gate",
-        value: "1",
-        domain: "localhost",
-        path: "/",
-        expires: -1,
-        httpOnly: false,
-        secure: false,
-        sameSite: "Lax",
-      },
-    ],
-    origins: [],
-  },
-});
-
-async function useLocale(context: BrowserContext, locale: "en" | "ru") {
-  await context.addCookies([{ name: "og_locale", value: locale, url: BASE }]);
-}
 
 /** Hydrated: the contrast list has measured every pair in this browser. */
 async function hydrated(page: Page) {
@@ -81,6 +51,8 @@ function cutOff(page: Page) {
  */
 function touchTarget(element: Locator) {
   return element.evaluate((el) => {
+    // On screen: the hit test asks the browser what lies at a point.
+    el.scrollIntoView({ block: "center", behavior: "instant" });
     // Measured straight: the loud level glues controls on crooked (and
     // turns them on hover); the target turns with the control.
     const html = el as HTMLElement;
@@ -123,51 +95,41 @@ function touchTarget(element: Locator) {
   });
 }
 
-async function seriousViolations(page: Page) {
-  const scan = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-    .analyze();
-  return scan.violations
-    .filter((v) => v.impact === "serious" || v.impact === "critical")
-    .map((v) => ({
-      id: v.id,
-      targets: v.nodes.slice(0, 5).map((node) => node.target.join(" ")),
-    }));
-}
+for (const lang of locales) {
+  test.describe(`${lang} reader`, () => {
+    test.use({ lang });
 
-for (const locale of ["en", "ru"] as const) {
-  test(`${locale} reader: the specimen stays in English, is noindex, passes axe at both levels and fits every phone`, async ({
-    page,
-    context,
-  }) => {
-    test.setTimeout(90_000);
-    await useLocale(context, locale);
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/design-system");
-    await expect(page.locator("main")).toHaveAttribute("lang", "en");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Kit specimen",
-    );
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
-      "content",
-      /noindex/,
-    );
-    await hydrated(page);
-    expect(await seriousViolations(page), "loud").toEqual([]);
-    await page
-      .getByRole("radiogroup", { name: "Level" })
-      .getByRole("radio", { name: "Calm" })
-      .click();
-    await expect(
-      page.locator('#kit [data-theme="zine-calm"]').first(),
-    ).toBeVisible();
-    expect(await seriousViolations(page), "calm").toEqual([]);
-    for (const width of [320, 360, 390, 768, 1280]) {
-      await page.setViewportSize({ width, height: 900 });
-      await expect
-        .poll(() => cutOff(page), { message: `Cut off at ${width}` })
-        .toEqual([]);
-    }
+    test("the specimen stays in English, is noindex, passes axe at both levels and fits every phone", async ({
+      page,
+    }) => {
+      test.setTimeout(90_000);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/design-system");
+      await expect(page.locator("main")).toHaveAttribute("lang", "en");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        "Kit specimen",
+      );
+      await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+        "content",
+        /noindex/,
+      );
+      await hydrated(page);
+      expect(await seriousViolations(page), "loud").toEqual([]);
+      await page
+        .getByRole("radiogroup", { name: "Level" })
+        .getByRole("radio", { name: "Calm" })
+        .click();
+      await expect(
+        page.locator('#kit [data-theme="zine-calm"]').first(),
+      ).toBeVisible();
+      expect(await seriousViolations(page), "calm").toEqual([]);
+      for (const width of [320, 360, 390, 768, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect
+          .poll(() => cutOff(page), { message: `Cut off at ${width}` })
+          .toEqual([]);
+      }
+    });
   });
 }
 
@@ -359,8 +321,14 @@ test("tabs: arrows select, the strip scrolls on a phone, manual mode waits for E
     await expect
       .poll(() => views.evaluate((el) => el.scrollLeft))
       .toBeGreaterThan(0);
+  // the strip glides there: a few pixels in, the tab still pokes out
+  await expect
+    .poll(async () => {
+      const box = await interview.boundingBox();
+      return (box?.x ?? 0) + (box?.width ?? 0);
+    })
+    .toBeLessThanOrEqual(360);
   const box = await interview.boundingBox();
-  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(360);
   expect(await page.evaluate(() => window.scrollX)).toBe(0);
   expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
 
@@ -418,14 +386,13 @@ test("compact buttons and toggles keep a 44 px touch target at their drawn size"
     ':is([data-slot="button"], [data-slot="toggle-group-item"]):not(:disabled, [aria-disabled="true"], [data-pending])',
   );
   expect(await controls.count()).toBeGreaterThan(20);
-  for (const control of await controls.all()) {
-    await control.evaluate((el) =>
-      el.scrollIntoView({ block: "center", behavior: "instant" }),
-    );
+  // scores of controls: their names read at once, one call to measure each
+  const names = await controls.evaluateAll((els) =>
+    els.map((el) => el.getAttribute("aria-label") ?? el.textContent),
+  );
+  for (const [i, control] of (await controls.all()).entries()) {
     const target = await touchTarget(control);
-    const name =
-      (await control.getAttribute("aria-label")) ??
-      (await control.textContent());
+    const name = names[i];
     expect(target.height, `height of ${name}`).toBeGreaterThanOrEqual(44);
     expect(target.width, `width of ${name}`).toBeGreaterThanOrEqual(44);
     expect(target.hitsAbove && target.hitsBelow, `hit test of ${name}`).toBe(
@@ -585,6 +552,61 @@ test("the magazine furniture: the coupon cuts out, the tear-offs stay paper", as
     "data-state",
     "cut",
   );
+});
+
+test("the calm islands read in Manrope, a calm dialog opened at <body> too", async ({
+  page,
+}) => {
+  await page.goto("/design-system");
+  await hydrated(page);
+  const manrope = () =>
+    page.evaluate(async () => {
+      await document.fonts.ready;
+      return [...document.fonts]
+        .filter(
+          (face) =>
+            face.status === "loaded" &&
+            /manrope/i.test(face.family) &&
+            !/fallback/i.test(face.family),
+        )
+        .map((face) => face.family.replaceAll('"', ""));
+    });
+  const setIn = (locator: Locator) =>
+    locator.evaluate((el) => getComputedStyle(el).fontFamily);
+  // the paragraph read at the calm level
+  const calm = page.locator('#faces div[data-theme="zine-calm"] p').first();
+  await expect.poll(manrope).not.toEqual([]);
+  const families = await manrope();
+  const reading = await setIn(calm);
+  expect(families.some((family) => reading.includes(family))).toBe(true);
+  const level = page.getByRole("radiogroup", { name: "Level" });
+  await level.getByRole("radio", { name: "Calm" }).click();
+  await expect(level.getByRole("radio", { name: "Calm" })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
+  await page.getByRole("button", { name: "What is new" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toHaveAttribute("data-theme", "zine-calm");
+  const inDialog = await setIn(dialog.getByText(/Payments moved/));
+  expect(families.some((family) => inDialog.includes(family))).toBe(true);
+});
+
+test("the labs (the paper ride, the bonk storyboard) open clean and stay out of search", async ({
+  page,
+}) => {
+  const seen = await watch(page);
+  for (const path of ["/design-system/paper", "/design-system/sahur"]) {
+    const response = await page.goto(path);
+    expect(response?.status(), path).toBe(200);
+    await expect(page.locator('meta[name="robots"]'), path).toHaveAttribute(
+      "content",
+      /noindex/,
+    );
+    await expect(page.getByRole("main"), path).toBeVisible();
+  }
+  expect(seen.errors).toEqual([]);
+  expect(await seen.csp()).toEqual([]);
 });
 
 for (const [name, viewport] of [

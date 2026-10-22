@@ -1,449 +1,192 @@
-import { Badge } from "@outegro/ui/badge";
 import { Button } from "@outegro/ui/button";
 import {
-  ArrowDownIcon,
+  ArrowRightIcon,
   ArrowUpRightIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import Image from "next/image";
-import { getTranslations } from "next-intl/server";
-import cover from "@/assets/zine/cover.webp";
-import { BoatBar } from "@/components/boat/boat-bar";
-import { BonkRetry } from "@/components/bonk/bonk-retry";
-import { ContactDialog } from "@/components/contact-dialog";
+import type { Viewport } from "next";
+import Image, { getImageProps } from "next/image";
+import { getLocale, getTranslations } from "next-intl/server";
+import { preload } from "react-dom";
+import cutEn from "@/assets/cover/cut-en.webp";
+import cutRu from "@/assets/cover/cut-ru.webp";
+import magazine from "@/assets/cover/magazine.webp";
+import scrap from "@/assets/cover/scrap.webp";
+import strip from "@/assets/cover/strip.webp";
 import { ContactLinks } from "@/components/contact-links";
+import { Os } from "@/components/desktop/os";
 import { Header } from "@/components/header";
-import { PaperJourney } from "@/components/paper/paper-journey";
-import { ProjectShowcase } from "@/components/project-showcase";
+import { EditorColumn } from "@/components/personality/editor-column";
+import { HobbyClub } from "@/components/personality/hobby-club";
+import { IncidentReport } from "@/components/personality/incident-report";
+import { LabourBook } from "@/components/personality/labour-book";
 import { RevealObserver } from "@/components/reveal-observer";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
-import { Barcode, PriceTag, Ticker } from "@/components/zine/bits";
 import { CatPaw } from "@/components/zine/cat-paw";
 import { Coupon } from "@/components/zine/coupon";
-import { DontPress } from "@/components/zine/dont-press";
 import { Fly } from "@/components/zine/fly";
+import { Issue } from "@/components/zine/issue";
+import { LateFaces } from "@/components/zine/late-faces";
 import { Mischief } from "@/components/zine/mischief";
-import { generator, seed, tilt } from "@/components/zine/random";
-import { Ransom } from "@/components/zine/ransom";
-import { Receipt } from "@/components/zine/receipt";
-import { Stamp } from "@/components/zine/stamp";
-import { TearOffs } from "@/components/zine/tear-offs";
 import { calendly, contacts } from "@/lib/contact";
 import { sso } from "@/lib/sso";
 
-type Layer = {
-  name: string;
-  items: { name: string; result: string }[];
-};
-type Service = {
-  title: string;
-  body: string;
-  stack: string[];
-  proof: string;
-  href?: string;
-};
-type Step = { title: string; body: string; see: string };
-type Point = { title: string; body: string };
-type Coverline = { kicker: string; text: string; page: string };
-type TocItem = { title: string; href: string; page: string };
-type Letter = { q: string; a: string };
+// the vintage cover's cream paper, which runs down the whole page; the
+// other pages keep the zine paper of the layout
+export const viewport: Viewport = { themeColor: "#f6eede" };
 
-// Hosts of the running platform, shown as proof in the Platform section.
-const hosts = [
-  "outegro.dev",
-  "id.outegro.dev",
-  "battleship.outegro.dev",
-  "pay.outegro.dev",
-  "admin.outegro.dev",
-  "edu.outegro.dev",
-];
-const telegram = contacts.find((c) => c.key === "telegram") ?? contacts[0];
-/** A seeded crooked angle per block, the same on every render. */
-const crooked = (key: string, max = 2.4) =>
-  ({
-    "--tilt": `${tilt(generator(seed(key)), max)}deg`,
-  }) as React.CSSProperties;
+type TocItem = { title: string; href: string; page: string };
+
+// a phone has the magazine a little wider than the screen (zine-page.css)
+const magazineSizes =
+  "(max-width: 767px) calc(100vw + 24px), (max-aspect-ratio: 4/5) 48vw, 54vw";
 
 export default async function Home() {
+  // the magazine is a wide cover's largest paint: there it is fetched first.
+  // A phone (and an upright tablet, where it lies small) keeps the image's
+  // own preload: raised there, it held the rest of the first screen back
+  const { props: magazineProps } = getImageProps({
+    src: magazine,
+    alt: "",
+    sizes: magazineSizes,
+  });
+  preload(magazineProps.src, {
+    as: "image",
+    imageSrcSet: magazineProps.srcSet,
+    imageSizes: "(max-aspect-ratio: 4/5) 48vw, 54vw",
+    fetchPriority: "high",
+    media: "(min-width: 768px) and (min-aspect-ratio: 4/5)",
+  });
   const t = await getTranslations();
-  const layers = t.raw("platform.layers") as Layer[];
-  const services = t.raw("services.items") as Service[];
-  const steps = t.raw("process.steps") as Step[];
-  const deliverables = t.raw("engagement.deliverables") as Point[];
-  const formats = t.raw("engagement.formats") as Point[];
-  const letters = t.raw("faq.items") as Letter[];
-  const coverlines = t.raw("zine.coverlines") as Coverline[];
   const toc = t.raw("zine.toc") as TocItem[];
-  const ticker = t.raw("zine.ticker") as string[];
-  const tags = t.raw("zine.tags") as string[];
-  const pageHref = (page: string) =>
-    toc.find((item) => item.page === page)?.href ?? "#projects";
+  const steps = t.raw("zine.band.steps") as string[];
+  const lede = t.raw("zine.lede") as string[];
+  // "Discuss a project" opens a chat with the owner in Telegram
+  const telegram = contacts.find((c) => c.key === "telegram")?.href;
+  const locale = await getLocale();
   // The main call to action everywhere on the page: a 30-minute Calendly slot.
-  const bookCall = (describedBy?: string) => (
+  const bookCall = () => (
     <Button asChild size="lg">
-      <a
-        href={calendly}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-describedby={describedBy}
-      >
+      <a href={calendly} target="_blank" rel="noopener noreferrer">
         {t("nav.book")}
-        <ArrowUpRightIcon />
+        <ArrowUpRightIcon aria-hidden="true" />
       </a>
     </Button>
   );
 
   return (
     <>
-      <Header accounts={sso !== null} />
+      <Header home accounts={sso !== null} />
       <main id="main">
-        <section
-          className="cover og-container"
-          id="top"
-          aria-labelledby="hero-title"
-        >
-          <p className="cover-strip">
-            <span>{t("zine.issue")}</span>
-            <span>{t("zine.price")}</span>
-          </p>
-          <p className="cover-mast" aria-hidden="true">
-            {t("zine.mast")}
-          </p>
-          <p className="cover-tagline">{t("zine.tagline")}</p>
-
-          <div className="cover-grid">
-            <div className="cover-copy">
-              <h1 id="hero-title" className="cover-headline">
-                <Ransom text={t("zine.headline")} />
-              </h1>
-              <p className="cover-lead">{t("zine.lead")}</p>
-              <ul className="coverlines">
-                {coverlines.map((line) => (
-                  <li key={line.text} style={crooked(line.text, 1.2)}>
-                    <a href={pageHref(line.page)}>
-                      <span className="coverline-kicker">{line.kicker}</span>
-                      <span className="coverline-text">{line.text}</span>
-                      <span className="coverline-page">{line.page}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <div className="cover-actions">
-                {bookCall("cover-book-hint")}
-                <Button asChild size="lg" variant="outline">
-                  <a href="#projects">
-                    {t("zine.read")}
-                    <ArrowDownIcon />
-                  </a>
-                </Button>
-                <ContactDialog variant="outline" label={t("zine.write")}>
-                  <ContactLinks compact />
-                </ContactDialog>
-              </div>
-              <p id="cover-book-hint" className="cover-hint">
-                {t("nav.bookHint")}
-              </p>
-            </div>
-
-            <figure className="cover-art">
+        <section className="cover" id="top" aria-labelledby="hero-title">
+          {/* printing ink: the headline's edges a little rough, a few specks
+              of paper showing through */}
+          <svg className="sr-only" aria-hidden="true" focusable="false">
+            <filter id="cover-ink">
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.8"
+                numOctaves="3"
+                seed="7"
+                result="grain"
+              />
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="grain"
+                scale="2"
+                xChannelSelector="R"
+                yChannelSelector="G"
+                result="rough"
+              />
+              <feColorMatrix
+                in="grain"
+                values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 18 -13.6"
+                result="specks"
+              />
+              <feComposite in="rough" in2="specks" operator="out" />
+            </filter>
+          </svg>
+          <div className="cover-copy og-container">
+            <h1 id="hero-title" className="cover-headline">
+              <span className="cover-lead">{t("zine.headlineLead")}</span>{" "}
+              <span className="sr-only">{t("zine.headlineCut")}</span>
+              {/* the end cut out of magazines, a picture in each language;
+                  a tablet held upright has its own cover (zine-page.css,
+                  the cut across the column there), the pictures sized for
+                  it next to the phone's */}
               <Image
-                src={cover}
-                alt={t("zine.coverAlt")}
-                sizes="(max-width: 767px) 92vw, 44vw"
+                src={locale === "ru" ? cutRu : cutEn}
+                alt=""
+                className="cover-cut"
+                sizes="(max-width: 767px) 90vw, (max-aspect-ratio: 4/5) 91vw, 46vw"
                 preload
-                fetchPriority="high"
-                quality={75}
-                placeholder="empty"
               />
-              <span className="tape is-top" aria-hidden="true" />
-              <span className="tape is-bottom" aria-hidden="true" />
-              <p className="burst">
-                <b>{t("zine.burst")}</b>
-                <span>{t("zine.burstText")}</span>
-              </p>
-              <PriceTag
-                className="cover-tag"
-                price={t("zine.tagPrice")}
-                note={t("zine.tagNote")}
-              />
-              <Barcode code="4 607001 770011" />
-            </figure>
-          </div>
-        </section>
-
-        <Ticker label={t("zine.tickerLabel")} items={ticker} />
-
-        <nav className="toc og-container" aria-labelledby="toc-title">
-          <h2 id="toc-title" className="toc-title">
-            {t("zine.tocTitle")}
-          </h2>
-          <ol>
-            {toc.map((item) => (
-              <li key={item.href}>
-                <a href={item.href}>
-                  <span className="toc-name">{item.title}</span>
-                  <span className="toc-dots" aria-hidden="true" />
-                  <span className="toc-page">{item.page}</span>
-                </a>
-              </li>
-            ))}
-          </ol>
-        </nav>
-
-        <section
-          id="projects"
-          className="projects og-container section-space"
-          aria-labelledby="projects-title"
-        >
-          <SectionHeading
-            id="projects-title"
-            index={t("projects.index")}
-            label={t("projects.label")}
-            title={t("projects.title")}
-            accent={t("projects.titleAccent")}
-          />
-          <div className="stamped">
-            <ProjectShowcase />
-            <Stamp text={t("zine.stampLive")} className="project-stamp" />
-          </div>
-        </section>
-
-        <section
-          id="platform"
-          className="platform"
-          data-tone="dark"
-          aria-labelledby="platform-title"
-        >
-          <div className="og-container section-space">
-            <SectionHeading
-              id="platform-title"
-              index={t("platform.index")}
-              label={t("platform.label")}
-              title={t("platform.title")}
-              accent={t("platform.titleAccent")}
-            />
-            <div className="platform-intro" data-reveal>
-              <p>{t("platform.intro")}</p>
-              <div className="platform-live">
-                <p className="live-status">
-                  <span className="live-dot" aria-hidden="true" />
-                  {t("platform.live")}
-                </p>
-                <ul className="platform-hosts">
-                  {hosts.map((host) => (
-                    <li key={host}>{host}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <BonkRetry>
-              <div className="platform-grid">
-                {layers.map((layer, i) => (
-                  <div
-                    key={layer.name}
-                    className="platform-layer"
-                    style={crooked(layer.name, 0.6)}
-                  >
-                    <h3 className="og-eyebrow">
-                      <span>0{i + 1}</span> {layer.name}
-                    </h3>
-                    <ul>
-                      {layer.items.map((item) => (
-                        <li key={item.name} className="platform-node">
-                          <h4>{item.name}</h4>
-                          <p>{item.result}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </BonkRetry>
-            <DontPress
-              labels={
-                t.raw("zine.dontPress") as React.ComponentProps<
-                  typeof DontPress
-                >["labels"]
-              }
-            />
-          </div>
-        </section>
-
-        <section
-          id="services"
-          className="services og-container section-space"
-          aria-labelledby="services-title"
-        >
-          <SectionHeading
-            id="services-title"
-            index={t("services.index")}
-            label={t("zine.adsTitle")}
-            title={t("services.title")}
-            accent={t("services.titleAccent")}
-          />
-          <p className="section-lead" data-reveal>
-            {t("services.intro")}
-          </p>
-          <p className="ads-note">{t("zine.adsNote")}</p>
-          {/* Each ad is one link to Telegram (stretched over the card); the
-              proof links sit above it, so nothing is nested. */}
-          <ol className="ads">
-            {services.map((item, i) => (
-              <li
-                key={item.title}
-                className={`ad is-${i % 3}`}
-                style={crooked(item.title, 1.2)}
-              >
-                <div className="ad-sheet">
-                  <h3 className="ad-title">
-                    <a
-                      className="ad-link"
-                      href={telegram.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={t("zine.adWrite", { title: item.title })}
-                    >
-                      {item.title}
-                    </a>
-                  </h3>
-                  <p className="ad-body">{item.body}</p>
-                  <ul className="badge-list">
-                    {item.stack.map((tech) => (
-                      <li key={tech}>
-                        <Badge>{tech}</Badge>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="ad-proof">
-                    {item.href ? (
-                      <a href={item.href}>{item.proof}</a>
-                    ) : (
-                      item.proof
-                    )}
-                  </p>
-                </div>
-                <TearOffs
-                  href={telegram.href}
-                  handle={telegram.handle}
-                  seedText={item.title}
-                />
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section
-          id="process"
-          className="process section-space"
-          aria-labelledby="process-title"
-        >
-          <div className="og-container">
-            <SectionHeading
-              id="process-title"
-              index={t("process.index")}
-              label={t("process.label")}
-              title={t("process.title")}
-              accent={t("process.titleAccent")}
-            />
-            <p className="section-lead" data-reveal>
-              {t("process.intro")}
-            </p>
-          </div>
-          {/* the steps as a scroll-driven paper cartoon (React Three Fiber) */}
-          <PaperJourney
-            steps={steps}
-            labels={{ youSee: t("process.youSee") }}
-          />
-          <p className="process-ai og-container" data-reveal>
-            {t("process.ai")}
-          </p>
-        </section>
-
-        <section
-          id="engagement"
-          className="engagement og-container section-space"
-          aria-labelledby="engagement-title"
-        >
-          <SectionHeading
-            id="engagement-title"
-            index={t("engagement.index")}
-            label={t("zine.tagsTitle")}
-            title={t("engagement.title")}
-            accent={t("engagement.titleAccent")}
-          />
-          <h3 className="engagement-subtitle">
-            {t("engagement.formatsTitle")}
-          </h3>
-          <CatPaw>
-            <ol className="price-tags">
-              {formats.map((item, i) => (
-                <li key={item.title} style={crooked(item.title, 2)}>
-                  <PriceTag price={tags[i] ?? ""} was={t("zine.tagWas")}>
-                    <h4 className="price-title">{item.title}</h4>
-                    <p className="price-body">{item.body}</p>
-                  </PriceTag>
-                </li>
+            </h1>
+            <p className="cover-lede">
+              {lede.map((line) => (
+                <span key={line}>{line}</span>
               ))}
-            </ol>
-          </CatPaw>
-          <p className="tags-note">{t("zine.tagsNote")}</p>
+            </p>
+            <div className="cover-actions">
+              <a className="cover-button is-red" href="#projects">
+                {t("zine.explore")}
+                <ArrowUpRightIcon aria-hidden="true" />
+              </a>
+              <a
+                className="cover-button"
+                href={telegram}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("zine.discuss")}
+              </a>
+            </div>
+          </div>
 
-          <h3 className="engagement-subtitle">
-            {t("engagement.deliverablesTitle")}
-          </h3>
-          <Receipt
-            title={t("zine.receiptTitle")}
-            number={t("zine.receiptNumber")}
-            items={deliverables}
-            included={t("zine.receiptIncluded")}
-            total={t("zine.receiptTotal")}
-            totalValue={t("zine.receiptTotalValue")}
-            thanks={t("zine.receiptThanks")}
-            stamp={t("zine.stampPaid")}
-          />
-          <div className="engagement-cta">
-            {bookCall()}
-            <ContactDialog variant="outline" label={t("engagement.cta")}>
-              <ContactLinks compact />
-            </ContactDialog>
+          {/* the magazine lying on the page, its cover marked for the book
+              that flies off it (IssueFlight) */}
+          <div className="cover-mag">
+            <Image
+              src={magazine}
+              alt={t("zine.coverAlt")}
+              sizes={magazineSizes}
+              preload
+            />
+            <span className="cover-art" aria-hidden="true" />
+          </div>
+
+          {/* the torn strip: the way of the work, and where it ends. A phone
+              fills a band of a fixed height with it, some 760px of the
+              picture whatever the screen's width */}
+          <div className="cover-band">
+            <Image
+              src={strip}
+              alt=""
+              className="cover-strip"
+              sizes="(max-width: 767px) 760px, (max-aspect-ratio: 4/5) 88vw, 66vw"
+            />
+            <Image src={scrap} alt="" className="cover-scrap" sizes="7vw" />
+            <div className="cover-band-inner og-container">
+              <ol className="cover-steps">
+                {steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </div>
           </div>
         </section>
 
-        <section
-          id="faq"
-          className="faq og-container section-space"
-          aria-labelledby="faq-title"
-        >
-          <SectionHeading
-            id="faq-title"
-            index={t("faq.index")}
-            label={t("faq.label")}
-            title={t("faq.title")}
-            accent={t("faq.titleAccent")}
-          />
-          <p className="section-lead" data-reveal>
-            {t("faq.intro")}
-          </p>
-          {/* letters to the editor: every answer is in the markup, no toggles */}
-          <ol className="letters">
-            {letters.map((letter, i) => (
-              <li key={letter.q} className="letter">
-                <span className="letter-stamp" aria-hidden="true">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <h3 className="letter-q">{letter.q}</h3>
-                <p className="letter-by" aria-hidden="true">
-                  {t("faq.answer")}
-                </p>
-                <p className="letter-a">{letter.a}</p>
-              </li>
-            ))}
-          </ol>
-          <div className="faq-more">
-            <p>{t("faq.more")}</p>
-            {bookCall()}
-          </div>
-        </section>
+        <Issue toc={toc} />
+
+        <Os />
+
+        {/* the back pages, where the person is: the editor's column, the
+            hobby club, the police blotter of production and the
+            employment record book, which leads on to the résumé */}
+        <EditorColumn />
+        <HobbyClub />
+        <IncidentReport />
+        <LabourBook />
 
         <section
           id="contact"
@@ -457,25 +200,42 @@ export default async function Home() {
             title={t("contact.title")}
             accent={t("contact.titleAccent")}
           />
-          <p className="section-lead">{t("contact.description")}</p>
-          <Coupon
-            title={t("zine.couponTitle")}
-            offer={t("zine.couponOffer")}
-            fine={t("zine.couponFine")}
-            cut={t("zine.couponCut")}
-            done={t("zine.couponCut2")}
-            action={bookCall()}
-          >
-            <ContactLinks />
-            <p className="og-eyebrow contact-where">{t("contact.reply")}</p>
-          </Coupon>
+          {/* the coupon and the booked call on the left; every other way to
+              write on the right, from the lead's height down */}
+          <div className="contact-grid">
+            <div className="contact-main">
+              <p className="section-lead">{t("contact.description")}</p>
+              {/* the paw sets the coupon straight as soon as the e-mail line shows */}
+              <CatPaw cue=".contact-side .contact-links > li:first-child">
+                <Coupon
+                  title={t("zine.couponTitle")}
+                  offer={t("zine.couponOffer")}
+                  fine={t("zine.couponFine")}
+                  cut={t("zine.couponCut")}
+                  done={t("zine.couponCut2")}
+                  action={bookCall()}
+                >
+                  <ContactLinks part="call" />
+                </Coupon>
+              </CatPaw>
+            </div>
+            <div className="contact-side">
+              <ContactLinks part="rest" />
+              <p className="og-eyebrow contact-where">{t("contact.reply")}</p>
+              {/* the résumé on one page, to print or pass on */}
+              <a href="/cv" className="contact-cv">
+                {t("cv.contactLink")}
+                <ArrowRightIcon aria-hidden="true" />
+              </a>
+            </div>
+          </div>
         </section>
       </main>
       <SiteFooter />
       <RevealObserver />
-      <BoatBar label={t("zine.boatLabel")} stops={toc} />
+      <LateFaces />
       <Fly gone={t("zine.flyGone")} />
-      <Mischief note={t("zine.consoleNote")} />
+      <Mischief shout={t("zine.consoleShout")} note={t("zine.consoleNote")} />
     </>
   );
 }

@@ -6,15 +6,16 @@ const IDLE_MS = 25000;
 
 /**
  * Small pranks with no UI of their own:
- *   - leave the page alone for a while and it dozes off: the cut-out letters
- *     come unglued and sag (html[data-dozing]); any input wakes it with a jolt;
- *   - a note for whoever opens the console.
+ *   - leave the page alone for a while and it dozes off: the photo in the
+ *     friends' form snores (html[data-dozing]); any input wakes it with a jolt;
+ *   - a shout and a note for whoever opens the console.
  */
-export function Mischief({ note }: { note: string }) {
+export function Mischief({ shout, note }: { shout: string; note: string }) {
   useEffect(() => {
     console.log(
-      "%c ТУНГ ТУНГ ТУНГ САХУР %c\n%s",
+      "%c %s %c\n%s",
       "font: 900 28px sans-serif; color: #fbf6e8; background: #d8382a; padding: 6px 10px;",
+      shout,
       "",
       note,
     );
@@ -40,6 +41,6 @@ export function Mischief({ note }: { note: string }) {
       for (const type of events) window.removeEventListener(type, wake);
       root.removeAttribute("data-dozing");
     };
-  }, [note]);
+  }, [shout, note]);
   return null;
 }

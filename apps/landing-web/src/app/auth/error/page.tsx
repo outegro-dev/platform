@@ -4,8 +4,9 @@ import {
   ArrowClockwiseIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { getTranslations } from "next-intl/server";
+import { unlisted } from "@/lib/metadata";
 
 const reasons = [
   "state_mismatch",
@@ -19,9 +20,12 @@ const reasonOf = (raw: unknown): Reason =>
   reasons.find((reason) => reason === raw) ?? "unknown";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("auth");
-  return { title: t("errorTitle"), robots: { index: false } };
+  const t = await getTranslations("auth.meta");
+  return unlisted({ title: t("title") });
 }
+
+// the main page's cream paper, which this page is printed on too
+export const viewport: Viewport = { themeColor: "#f6eede" };
 
 /** Where a failed sign-in the visitor asked for lands: what went wrong and a way back. */
 export default async function AuthErrorPage({
@@ -30,7 +34,10 @@ export default async function AuthErrorPage({
   const t = await getTranslations("auth");
   const reason = reasonOf((await searchParams).reason);
   return (
-    <main id="main" className="og-container grid min-h-svh place-items-center">
+    <main
+      id="main"
+      className="auth-error og-container grid min-h-svh place-items-center"
+    >
       <StatePanel
         tone="danger"
         live="assertive"

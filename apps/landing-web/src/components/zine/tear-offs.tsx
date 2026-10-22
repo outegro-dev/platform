@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { generator, seed } from "./random";
 
+const TABS = 6;
+
 /** A torn paper edge: the bottom of a stub, jagged at seeded heights. */
 function ragged(next: () => number) {
   const edge = ["0 0", "100% 0"];
@@ -22,25 +24,23 @@ export function TearOffs({
   href,
   handle,
   seedText,
-  count = 6,
 }: {
   href: string;
   handle: string;
   seedText: string;
-  count?: number;
 }) {
   const [torn, setTorn] = useState<number[]>([]);
   const next = generator(seed(seedText));
   const stubs = new Map<number, string>();
   const missing = 1 + Math.floor(next() * 3);
   while (stubs.size < missing) {
-    const i = Math.floor(next() * count);
+    const i = Math.floor(next() * TABS);
     if (!stubs.has(i)) stubs.set(i, ragged(next));
   }
 
   return (
     <ul className="tear-offs" aria-hidden="true">
-      {Array.from({ length: count }, (_, i) => {
+      {Array.from({ length: TABS }, (_, i) => {
         const stub = stubs.get(i);
         return stub ? (
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed strips; the position is the identity.
