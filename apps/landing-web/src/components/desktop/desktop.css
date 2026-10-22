@@ -485,9 +485,13 @@ html:has(.site-header[data-hidden]) .desktop-icon {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.os:not([data-stage]) .xp-tasks .is-game,
-.os[data-game] .xp-tasks .is-game {
+/* on the taskbar where the game is not staged; staged, only once it runs,
+   its place kept meanwhile: the game's window zooms out of it (OsStage) */
+.os .xp-tasks .is-game {
   display: flex;
+}
+.os[data-stage]:not([data-game]) .xp-tasks .is-game {
+  visibility: hidden;
 }
 /* minimised, every program is a button again; the game is the one open */
 .os[data-minimised] .xp-tasks > .is-active {
@@ -719,24 +723,65 @@ html:has(.site-header[data-hidden]) .desktop-icon {
   transition: width var(--boot, 1.4s) steps(14, end);
 }
 .os[data-stage] .os-game-layer {
+  /* where the game's window stands, and its outline lands */
+  --game-inset: 14px clamp(16px, 2vw, 32px) 48px;
   z-index: 3;
-  padding: 14px clamp(16px, 2vw, 32px) 48px;
+  padding: var(--game-inset);
   pointer-events: none;
 }
+/* the window opens at its size, never scaled: the cartoon in it sizes its
+   canvas by its box on screen (React Three Fiber), and a window scaled up
+   from small left it drawn small in a corner until the next scroll. It
+   shows over its outline once that has zoomed out of the taskbar button;
+   closed, it simply fades. Positioned, to be painted over the outline */
 .os[data-stage] .os-game {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   pointer-events: auto;
   opacity: 0;
-  scale: 0.25;
-  transition:
-    opacity 260ms ease-out,
-    scale 420ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  transition: opacity 160ms ease-out;
 }
 .os[data-stage][data-game] .os-game {
   opacity: 1;
-  scale: 1;
+  transition-delay: 200ms;
+}
+/* the outline: the window's frame and title bar on the title screen's
+   paper, flying from the button (OsStage sets --zoom-from) to the window's
+   place, where it holds till the window is over it */
+.os-zoom {
+  display: none;
+}
+.os[data-stage] .os-zoom {
+  position: absolute;
+  inset: var(--game-inset);
+  display: block;
+  border: 3px solid var(--xp-frame);
+  border-top: 0;
+  border-radius: 8px 8px 0 0;
+  background:
+    linear-gradient(to bottom, #0997ff, #0053ee 8%, #0050ee 40%, #0066ff 88%)
+    top / 100% 28px no-repeat,
+    var(--paper-white);
+  box-shadow: 2px 4px 12px rgb(0 0 0 / 40%);
+  opacity: 0;
+  transform-origin: 0 0;
+}
+.os[data-stage][data-game] .os-zoom {
+  animation: os-zoom 400ms;
+}
+@keyframes os-zoom {
+  from {
+    opacity: 1;
+    transform: var(--zoom-from, translate(37.5%, 37.5%) scale(0.25));
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  65%,
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .os[data-stage]:not([data-game]) .os-game {
   pointer-events: none;

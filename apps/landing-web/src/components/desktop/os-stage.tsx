@@ -20,7 +20,8 @@ const INTRO = 0.08;
 const STAGGER = 0.3;
 /** The loader, from the windows down to the game's window opening (ms). */
 const BOOT_MS = 1400;
-/** And the window's opening, after which the loader is gone (ms). */
+/** And the window's opening (its outline's flight out of the taskbar, the
+ * window's fade over it: desktop.css), after which the loader is gone (ms). */
 const OPEN_MS = 450;
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
@@ -31,7 +32,9 @@ const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
  * motion and plays it by scroll: the windows of the desktop shrink into
  * their taskbar buttons; once they are down the game loads by itself, the
  * loader filling over BOOT_MS whatever the scroll does, and its window
- * opens; its title screen then gives way to the cartoon by scroll.
+ * opens: its outline zooms out of its taskbar button, the window itself
+ * shows at its size (scaled, it would have the cartoon's canvas measured
+ * small); its title screen then gives way to the cartoon by scroll.
  * Scrolled back up over the windows, the game closes and they open again.
  * The #services and #process anchors move onto the marks, which span their
  * acts. Both acts stay readable throughout; a desktop link that takes
@@ -42,10 +45,21 @@ export function OsStage() {
     const os = document.querySelector<HTMLElement>(".os");
     const desktop = os?.querySelector<HTMLElement>(".desktop");
     const game = os?.querySelector<HTMLElement>(".os-game");
+    const zoom = os?.querySelector<HTMLElement>(".os-zoom");
     const taskbar = os?.querySelector<HTMLElement>(".xp-taskbar");
+    const gameButton = taskbar?.querySelector<HTMLElement>(".is-game");
     const servicesMark = os?.querySelector<HTMLElement>(".os-mark.is-services");
     const processMark = os?.querySelector<HTMLElement>(".os-mark.is-process");
-    if (!os || !desktop || !game || !taskbar || !servicesMark || !processMark)
+    if (
+      !os ||
+      !desktop ||
+      !game ||
+      !zoom ||
+      !taskbar ||
+      !gameButton ||
+      !servicesMark ||
+      !processMark
+    )
       return;
     const windows = [...desktop.querySelectorAll<HTMLElement>(".xp-window")];
     const buttons = [
@@ -65,12 +79,26 @@ export function OsStage() {
     let opening = 0;
     let booted = false;
 
+    // the game window's outline starts on its taskbar button: from the
+    // outline's place (the window's) onto the button's box. The button's
+    // place is kept while hidden, so both are there to measure before the
+    // flight starts
+    const aim = () => {
+      const from = gameButton.getBoundingClientRect();
+      const to = zoom.getBoundingClientRect();
+      if (!from.width || !to.width || !to.height) return;
+      zoom.style.setProperty(
+        "--zoom-from",
+        `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width}, ${from.height / to.height})`,
+      );
+    };
     const boot = () => {
       if (loading || booted) return;
       os.toggleAttribute("data-loading", true);
       loading = window.setTimeout(() => {
         loading = 0;
         booted = true;
+        aim();
         os.toggleAttribute("data-game", true);
         opening = window.setTimeout(
           () => os.removeAttribute("data-loading"),
@@ -156,6 +184,7 @@ export function OsStage() {
       delete os.dataset.stage;
       os.removeAttribute("data-minimised");
       for (const name of ["--intro", "--boot"]) os.style.removeProperty(name);
+      zoom.style.removeProperty("--zoom-from");
       for (const win of windows) {
         win.style.transform = "";
         win.style.filter = "";

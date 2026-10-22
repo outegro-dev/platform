@@ -55,6 +55,9 @@ export async function Os() {
       </div>
       <span className="os-mark is-process" aria-hidden="true" />
       <div className="os-game-layer">
+        {/* staged, the game's window as it zooms out of its taskbar button:
+            an outline, so the window itself opens at its size (OsStage) */}
+        <span className="os-zoom" aria-hidden="true" />
         <section
           id="process"
           className="xp-window os-game"
