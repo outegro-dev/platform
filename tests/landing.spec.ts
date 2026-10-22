@@ -2100,6 +2100,7 @@ test("every page announces the share card of its language: a 1200×630 PNG other
     ["/", "", (t: Messages) => t.meta.title],
     ["/stack", "/stack", (t: Messages) => t.stackPage.meta.title],
     ["/privacy", "/privacy", (t: Messages) => t.privacy.meta.title],
+    ["/cv", "/cv", (t: Messages) => t.cv.meta.title],
   ] as const;
   const cards = new Set<string>();
   for (const lang of locales) {
@@ -2236,7 +2237,7 @@ test("the cover and the screenshots come as WebP even to a browser that takes AV
   }
 });
 
-test("robots.txt and sitemap.xml: the three pages indexed, the people's routes left out", async ({
+test("robots.txt and sitemap.xml: the four pages indexed, the people's routes left out", async ({
   request,
 }) => {
   const robots = await request.get("/robots.txt");
@@ -2260,6 +2261,7 @@ test("robots.txt and sitemap.xml: the three pages indexed, the people's routes l
   expect(urls).toEqual([
     "https://outegro.dev/",
     "https://outegro.dev/stack",
+    "https://outegro.dev/cv",
     "https://outegro.dev/privacy",
   ]);
   // each page listed is open to crawlers, answers, names itself canonical
@@ -2531,4 +2533,717 @@ test.describe("the gates", () => {
     await expect(page.locator(".gate")).toBeHidden();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
+});
+
+// ─── The desktop's windows ───────────────────────────────────
+
+/** A box on screen as [left, top, width, height], to the pixel. */
+type Box = [number, number, number, number];
+
+/** How far apart two boxes are: their farthest side, in px. */
+const apart = (a: Box, b: Box) =>
+  Math.max(...a.map((value, i) => Math.abs(value - b[i])));
+
+test("desktop: the game's window opens at its size, its outline out of the taskbar button, the cartoon in it as large from the first frame", async ({
+  page,
+}) => {
+  // The game's window holds what measures itself: the cartoon's canvas
+  // takes its size from its box on screen. Scaled up as it opened, the
+  // window had the cartoon drawn in a small corner of it till the next
+  // scroll. Only its outline flies now, from the game's taskbar button;
+  // the window shows over it at its size.
+  test.setTimeout(60_000);
+  await page.setViewportSize(desktop);
+  await page.goto("/");
+  await hydrated(page);
+  const os = page.locator(".os");
+  await expect(os).toHaveAttribute("data-stage", "");
+  // the desktop's first screen: its windows up, the game's closed
+  await os.evaluate((el) =>
+    window.scrollTo({
+      top: el.getBoundingClientRect().top + window.scrollY,
+      behavior: "instant",
+    }),
+  );
+  // a real GPU draws the cartoon behind the closed window, as it does for
+  // a reader of the desktop; a software one lays it out as paper notes
+  await expect(
+    page.locator(".os-game .pj:is([data-ready], [data-mode='static'])"),
+  ).toHaveCount(1);
+  const live = (await page.locator(".os-game .pj[data-ready]").count()) > 0;
+  // every frame from here on, and the outline's flight, stopped the moment
+  // it starts and looked at all along its way before it goes on
+  await page.evaluate(() => {
+    const os = document.querySelector<HTMLElement>(".os");
+    const game = document.querySelector<HTMLElement>(".os-game");
+    const zoom = document.querySelector<HTMLElement>(".os-zoom");
+    const button = document.querySelector<HTMLElement>(".xp-tasks > .is-game");
+    if (!os || !game || !zoom || !button) throw new Error("No game window");
+    const box = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return [r.left, r.top, r.width, r.height].map(Math.round);
+    };
+    const seen = {
+      frames: [] as {
+        shown: boolean;
+        window: number[];
+        canvas: number[] | null;
+        stage: number[] | null;
+      }[],
+      flight: null as null | {
+        button: number[];
+        window: number[];
+        path: number[][];
+      },
+    };
+    Object.defineProperty(window, "gameOpening", { value: seen });
+    const look = () => {
+      const canvas = game.querySelector("canvas");
+      const stage = canvas?.closest(".pj-stage");
+      seen.frames.push({
+        shown: Number(getComputedStyle(game).opacity) > 0,
+        window: box(game),
+        canvas: canvas ? box(canvas).slice(2) : null,
+        stage: stage ? box(stage).slice(2) : null,
+      });
+      requestAnimationFrame(look);
+    };
+    requestAnimationFrame(look);
+    new MutationObserver((_, observer) => {
+      if (!os.hasAttribute("data-game")) return;
+      observer.disconnect();
+      const [flight] = zoom.getAnimations();
+      if (!flight) return;
+      flight.pause();
+      const end = Number(flight.effect?.getComputedTiming().endTime) - 1;
+      const path = Array.from({ length: 21 }, (_, i) => {
+        flight.currentTime = (end * i) / 20;
+        return box(zoom);
+      });
+      flight.currentTime = 0;
+      flight.play();
+      seen.flight = { button: box(button), window: box(game), path };
+    }).observe(os, { attributes: true, attributeFilter: ["data-game"] });
+  });
+  // read on down: the windows go down into the taskbar, the game loads by
+  // itself and opens; then all its opening plays out
+  await scrollTill(page, 60, ".os[data-minimised]");
+  await expect(os).toHaveAttribute("data-game", "");
+  await expect(os).not.toHaveAttribute("data-loading", "");
+  await still(page);
+  await settle(page);
+
+  const { frames, flight } = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          gameOpening: {
+            frames: {
+              shown: boolean;
+              window: Box;
+              canvas: number[] | null;
+              stage: number[] | null;
+            }[];
+            flight: { button: Box; window: Box; path: Box[] } | null;
+          };
+        }
+      ).gameOpening,
+  );
+  const shown = frames.filter((frame) => frame.shown);
+  expect(shown.length, "frames with the window showing").toBeGreaterThan(0);
+  // on the frames it shows, the window is the size it ends at
+  const size = (box: Box) => `${box[2]}×${box[3]}`;
+  const final = size(shown[shown.length - 1].window);
+  expect(
+    [...new Set(shown.map((frame) => size(frame.window)))],
+    "the window's sizes as it shows",
+  ).toEqual([final]);
+  // and the cartoon in it fills its stage on each of them
+  if (live)
+    expect(
+      shown
+        .filter(
+          (frame) =>
+            !frame.canvas || frame.canvas.join() !== frame.stage?.join(),
+        )
+        .map(
+          (frame) => `${frame.canvas?.join("×")} in ${frame.stage?.join("×")}`,
+        ),
+      "the cartoon drawn smaller than its stage",
+    ).toEqual([]);
+  // the outline: from the button to the window's place, only ever growing
+  expect(flight, "the outline's flight").not.toBeNull();
+  if (!flight) return;
+  expect(apart(flight.path[0], flight.button)).toBeLessThanOrEqual(1);
+  expect(
+    apart(flight.path[flight.path.length - 1], flight.window),
+  ).toBeLessThanOrEqual(1);
+  const shrinks = flight.path.filter(
+    (box, i) =>
+      i > 0 &&
+      (box[2] < flight.path[i - 1][2] || box[3] < flight.path[i - 1][3]),
+  );
+  expect(shrinks, "the outline smaller than a moment before").toEqual([]);
+});
+
+// ─── The back pages and the résumé ───────────────────────────
+
+/**
+ * What of a part of the page runs past the sides of the screen: every
+ * element's box and every run of its text (a long word overflows its box),
+ * but for what is drawn to hang over (a stamp and its tool, the drawings).
+ */
+function runsOff(page: Page, selector: string) {
+  return page.locator(selector).evaluate((root) => {
+    const width = document.documentElement.clientWidth;
+    const off: string[] = [];
+    for (const el of [root, ...root.querySelectorAll("*")]) {
+      if (el.closest(".stamp, svg")) continue;
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      for (const box of [
+        el.getBoundingClientRect(),
+        range.getBoundingClientRect(),
+      ])
+        if (box.width && (box.left < -0.5 || box.right > width + 0.5)) {
+          off.push(
+            `${el.tagName.toLowerCase()}.${el.className} ${Math.round(box.left)}..${Math.round(box.right)}`,
+          );
+          break;
+        }
+    }
+    return off;
+  });
+}
+
+for (const lang of locales)
+  test.describe(lang, () => {
+    test.use({ lang });
+    const t = messages[lang];
+    /** A line of the résumé as it reads: its bold runs are only marked. */
+    const plain = (line: string) => line.replace(/<\/?b>/g, "");
+
+    test("the back pages: the editor's column signed by hand, the hobby club's sheets, the incident report and the record book", async ({
+      page,
+    }) => {
+      const seen = await watch(page);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/");
+      await hydrated(page);
+
+      // the column: every paragraph, the signature under them
+      const column = page.getByRole("region", {
+        name: twoPart(t.column.title, t.column.titleAccent),
+      });
+      await expect(column).toHaveAttribute("id", "column");
+      for (const paragraph of t.column.text)
+        await expect(column).toContainText(paragraph);
+      await expect(column.locator(".column-name")).toHaveText(t.column.sign);
+
+      // the hobby club: a sheet per thing, its drawing named, the parts in
+      // order, the one still being built stamped so
+      const club = page.getByRole("region", {
+        name: twoPart(t.club.title, t.club.titleAccent),
+      });
+      const sheets = club.getByRole("article");
+      await expect(sheets).toHaveCount(t.club.cards.length);
+      for (const [i, card] of t.club.cards.entries()) {
+        const sheet = sheets.nth(i);
+        await expect(sheet).toHaveAccessibleName(card.title);
+        await expect(
+          sheet.getByRole("img", { name: card.alt, exact: true }),
+        ).toBeVisible();
+        await expect(sheet).toContainText(card.figure);
+        await expect(sheet).toContainText(card.body);
+        for (const part of (card.parts as (string | string[])[]).flat())
+          await expect(sheet).toContainText(part);
+        for (const note of card.notes as string[])
+          await expect(sheet).toContainText(note);
+        // a thing still being built is stamped so; nothing else is
+        const { status } = card as { status?: string };
+        if (status)
+          await expect(sheet.locator(".stamp-mark")).toHaveText(status);
+        else await expect(sheet.locator(".stamp-mark")).toHaveCount(0);
+      }
+
+      // the blotter: each note with its headline and the action taken, and
+      // no employer named anywhere in it
+      const blotter = page.getByRole("region", {
+        name: twoPart(t.incidents.title, t.incidents.titleAccent),
+      });
+      await expect(blotter.getByRole("heading", { level: 3 })).toHaveText(
+        t.incidents.notes.map((note) => note.title),
+      );
+      for (const note of t.incidents.notes)
+        await expect(blotter).toContainText(note.measures);
+      const told = (await blotter.textContent()) ?? "";
+      for (const job of t.cv.jobs)
+        expect(told, "an employer named in the blotter").not.toContain(
+          job.company,
+        );
+
+      // the record book: the title page filled in, an entry per job in
+      // order, each from the résumé, and the way to the whole of it
+      const record = page.getByRole("region", {
+        name: twoPart(t.record.title, t.record.titleAccent),
+      });
+      const fields = record.locator(".record-fields");
+      await expect(fields.getByRole("term")).toHaveText(
+        t.record.fields.map((field) => field.label),
+      );
+      await expect(fields.getByRole("definition")).toHaveText(
+        t.record.fields.map((field) => field.value),
+      );
+      await expect(record.getByRole("heading", { level: 4 })).toHaveText(
+        t.record.jobs.map((job) => job.hired),
+      );
+      for (const job of t.record.jobs) {
+        await expect(record).toContainText(job.period);
+        for (const line of job.done as string[])
+          await expect(record).toContainText(line);
+      }
+      await expect(
+        record.getByRole("link", { name: t.record.cvLink }),
+      ).toHaveAttribute("href", "/cv");
+      // and the contacts lead to the résumé too
+      await expect(
+        page.locator("#contact").getByRole("link", { name: t.cv.contactLink }),
+      ).toHaveAttribute("href", "/cv");
+      // the languages stay on /cv: the landing names none
+      await expect(page.locator("main")).not.toContainText(t.cv.languages);
+      await expect(page.locator("main")).not.toContainText("C1");
+
+      for (const part of ["#column", "#club", "#incidents", "#record"])
+        expect(await seriousViolations(page, part), part).toEqual([]);
+      expect(seen.errors).toEqual([]);
+      expect(await seen.csp()).toEqual([]);
+    });
+
+    test("/cv: the one-page résumé in this language, its links, open to search", async ({
+      page,
+    }) => {
+      const seen = await watch(page);
+      await page.goto("/cv");
+      await expect(page.locator("html")).toHaveAttribute("lang", lang);
+      await expect(page).toHaveTitle(t.cv.meta.title);
+      await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+        "href",
+        "https://outegro.dev/cv",
+      );
+
+      const sheet = page.getByRole("article", { name: t.cv.name });
+      await expect(sheet).toHaveAttribute("data-theme", "zine-calm");
+      await expect(
+        page.getByRole("heading", { level: 1, name: t.cv.name }),
+      ).toBeVisible();
+      await expect(sheet).toContainText(t.cv.kicker);
+      await expect(sheet).toContainText(t.cv.role);
+      await expect(sheet.getByRole("heading", { level: 2 })).toHaveText(
+        Object.values(t.cv.sections),
+      );
+      // each job in order, in the résumé's own words
+      await expect(sheet.getByRole("heading", { level: 3 })).toHaveText(
+        t.cv.jobs.map((job) => `${job.company} · ${job.role}`),
+      );
+      for (const job of t.cv.jobs)
+        for (const item of job.items as string[])
+          await expect(sheet).toContainText(plain(item));
+      for (const paragraph of t.cv.about)
+        await expect(sheet).toContainText(plain(paragraph));
+      for (const skill of t.cv.skills)
+        await expect(sheet).toContainText(skill.items);
+      await expect(sheet).toContainText(t.cv.education.school);
+      // the languages, which only this page names
+      await expect(sheet).toContainText(t.cv.languages);
+
+      // exactly the site and the ways to write of the main page, each off
+      // the site in a tab of its own; no phone
+      const links = sheet.getByRole("list", { name: t.cv.links });
+      await expect
+        .poll(() => hrefs(links.getByRole("link")))
+        .toEqual([
+          "https://outegro.dev",
+          `mailto:${EMAIL}`,
+          TELEGRAM,
+          LINKEDIN,
+          GITHUB,
+        ]);
+      for (const href of ["https://outegro.dev", TELEGRAM, LINKEDIN, GITHUB])
+        await expectNewTab(links.locator(`a[href="${href}"]`));
+      await expect(sheet.locator('a[href^="tel:"]')).toHaveCount(0);
+      await expect(page.getByRole("link", { name: t.cv.back })).toHaveAttribute(
+        "href",
+        "/",
+      );
+      await expect(
+        page.getByRole("button", { name: t.cv.print }),
+      ).toBeVisible();
+
+      expect(await seriousViolations(page)).toEqual([]);
+      expect(seen.errors).toEqual([]);
+      expect(await seen.csp()).toEqual([]);
+    });
+
+    test("/cv on paper: the sheet alone, on one A4 page", async ({
+      page,
+      browserName,
+    }) => {
+      await page.goto("/cv");
+      await page.evaluate(() => document.fonts.ready);
+      // the offprint's own page box, named so no other page prints on it
+      expect(
+        await page.evaluate(() =>
+          [...document.styleSheets].some((sheet) => {
+            try {
+              return [...sheet.cssRules].some(
+                (rule) =>
+                  rule instanceof CSSPageRule &&
+                  rule.selectorText === "cv" &&
+                  /^a4$/i.test(rule.style.getPropertyValue("size")),
+              );
+            } catch {
+              return false;
+            }
+          }),
+        ),
+      ).toBe(true);
+      await page.emulateMedia({ media: "print" });
+      await expect(page.locator(".cv-sheet")).toHaveCSS("page", "cv");
+      await expect(page.locator(".cv-sheet")).toBeVisible();
+      for (const chrome of [".site-header", ".site-footer", ".cv-tools"])
+        await expect(page.locator(chrome), chrome).toBeHidden();
+      test.skip(browserName !== "chromium", "page.pdf is Chromium's.");
+      const pdf = (await page.pdf({ preferCSSPageSize: true })).toString(
+        "latin1",
+      );
+      expect(pdf.match(/\/Type\s*\/Page[^s]/g) ?? []).toHaveLength(1);
+    });
+
+    for (const width of [320, 390, 1440])
+      test(`${width}px: the back pages and /cv run off neither side`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.setViewportSize({ width, height: 800 });
+        await page.goto("/");
+        await hydrated(page);
+        await page.evaluate(() => document.fonts.ready);
+        for (const part of ["#column", "#club", "#incidents", "#record"]) {
+          await centre(page.locator(part));
+          await still(page);
+          expect(await runsOff(page, part), part).toEqual([]);
+        }
+        await page.goto("/cv");
+        await page.evaluate(() => document.fonts.ready);
+        expect(await runsOff(page, "#main"), "/cv").toEqual([]);
+      });
+  });
+
+// ─── The issue's pages, turned by the scroll ─────────────────
+
+/** The issue now: where it starts on the page, its height, a screen's. */
+function issueStage(page: Page) {
+  return page.evaluate(() => {
+    const box = document.querySelector(".issue")?.getBoundingClientRect();
+    if (!box) throw new Error("No issue on the page");
+    return { top: box.top + scrollY, height: box.height, screen: innerHeight };
+  });
+}
+
+/**
+ * How the issue's pages lie: the scroll, in screens past where the issue
+ * is pinned; how far each leaf is over (0 flat on the right, 1 over on the
+ * left); the corner against fully peeled back; and how full the cue's
+ * rule is.
+ */
+function pagesNow(page: Page) {
+  return page.evaluate(() => {
+    const matrix = (selector: string) => {
+      const el = document.querySelector(selector);
+      if (!el) throw new Error(`No ${selector} on the page`);
+      const transform = getComputedStyle(el).transform;
+      return new DOMMatrix(transform === "none" ? undefined : transform);
+    };
+    const over = (selector: string) =>
+      Math.acos(Math.max(-1, Math.min(1, matrix(selector).m11))) / Math.PI;
+    const top =
+      (document.querySelector(".issue")?.getBoundingClientRect().top ?? 0) +
+      scrollY;
+    return {
+      after: (scrollY - top) / innerHeight,
+      contents: over(".is-contents-leaf"),
+      report: over(".is-report-leaf"),
+      corner: matrix(".book-curl").m11,
+      filled: matrix(".issue-turn-bar").a,
+    };
+  });
+}
+
+/**
+ * Until the issue's pages and the scroll lie still: the pages catch up with
+ * the scroll over a few frames rather than at once.
+ */
+function pagesStill(page: Page) {
+  return page.evaluate(
+    () =>
+      new Promise<void>((done) => {
+        const parts = [
+          ".is-contents-leaf",
+          ".is-report-leaf",
+          ".book-curl",
+          ".issue-turn-bar",
+        ].map((selector) => document.querySelector(selector));
+        let last = "";
+        let same = 0;
+        const look = () => {
+          const now = [
+            Math.round(scrollY),
+            ...parts.map((el) => (el ? getComputedStyle(el).transform : "")),
+          ].join();
+          same = now === last ? same + 1 : 0;
+          last = now;
+          if (same >= 12) done();
+          else requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      }),
+  );
+}
+
+/** Instantly, as a script would: the stage's own easing still plays. */
+function scrollToY(page: Page, y: number) {
+  return page.evaluate(
+    (y) => window.scrollTo({ top: y, behavior: "instant" }),
+    y,
+  );
+}
+
+test("desktop: the scroll turns the issue's pages bit by bit, the corner first, and a cue under the spread says what the scroll does", async ({
+  page,
+}) => {
+  // Wide, with motion, the issue is a scroll stage: two turns, each the
+  // right page's corner peeling back and then its leaf going over, every
+  // bit of the scroll moving one or the other; then the broken page.
+  test.setTimeout(60_000);
+  const t = messages.en.zine.turn;
+  await page.setViewportSize(desktop);
+  await page.goto("/");
+  await hydrated(page);
+  const issue = page.locator("#about");
+  await expect(issue).toHaveAttribute("data-flight", "");
+  // short: under two screens of scrolling past the pinned spread
+  const { top, height, screen } = await issueStage(page);
+  expect((height - screen) / screen).toBeLessThan(2);
+
+  await scrollToY(page, top);
+  await pagesStill(page);
+  // for the eyes only (the pages themselves are read in order): what the
+  // scroll does, which spread lies open, the rule at its start
+  const cue = issue.locator(".issue-turn");
+  await expect(cue).toHaveAttribute("aria-hidden", "true");
+  await expect(cue).toHaveCSS("opacity", "1");
+  await expect(cue).toContainText(t.cue);
+  const spread = (n: number) =>
+    cue.getByText(t.spread.replace("{n}", `${n}`).replace("{total}", "2"));
+  await expect(spread(1)).toBeVisible();
+  await expect(spread(2)).toBeHidden();
+  let was = await pagesNow(page);
+  expect(was.contents).toBe(0);
+  expect(was.filled).toBeCloseTo(0, 2);
+  // the right page's corner dog-eared: it is a page to turn
+  expect(was.corner).toBeGreaterThan(0.2);
+
+  // down to the report 30px at a time: the corner peels back while the
+  // leaf lies flat, then the leaf goes over, never back, never in a leap
+  const peeled: number[] = [];
+  const leaps: string[] = [];
+  for (let y = top + 30; y < top + 0.7 * screen; y += 30) {
+    await scrollToY(page, y);
+    await pagesStill(page);
+    const now = await pagesNow(page);
+    const where = now.after.toFixed(2);
+    if (now.contents < was.contents - 1e-3 || now.filled < was.filled - 1e-3)
+      leaps.push(`back at ${where}`);
+    if (now.contents - was.contents > 0.15)
+      leaps.push(
+        `over by ${(now.contents - was.contents).toFixed(2)} at ${where}`,
+      );
+    if (now.contents === 0) peeled.push(now.corner);
+    was = now;
+  }
+  expect(leaps).toEqual([]);
+  expect(peeled.length).toBeGreaterThan(3);
+  expect(peeled[peeled.length - 1]).toBeGreaterThan(peeled[0] * 2);
+  // at the report: the contents leaf over, the count on, the rule half full
+  await scrollToY(page, top + 0.7 * screen);
+  await pagesStill(page);
+  was = await pagesNow(page);
+  expect(was.contents).toBeCloseTo(1, 2);
+  expect(was.report).toBe(0);
+  expect(was.filled).toBeCloseTo(0.5, 2);
+  await expect(spread(2)).toBeVisible();
+  await expect(spread(1)).toBeHidden();
+
+  // a notch of the wheel with no smooth scrolling (a jump of 90px) is
+  // glided over: frame by frame the leaf goes a part of the way further
+  await scrollToY(page, top + 0.95 * screen);
+  await pagesStill(page);
+  const start = (await pagesNow(page)).report;
+  const frames = await page.evaluate(
+    async (y) => {
+      const leaf = document.querySelector(".is-report-leaf");
+      if (!leaf) throw new Error("No report leaf");
+      const over = () => {
+        const transform = getComputedStyle(leaf).transform;
+        const m11 = new DOMMatrix(transform === "none" ? undefined : transform)
+          .m11;
+        return Math.acos(Math.max(-1, Math.min(1, m11))) / Math.PI;
+      };
+      window.scrollTo({ top: y, behavior: "instant" });
+      const seen: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        await new Promise(requestAnimationFrame);
+        seen.push(over());
+      }
+      return seen;
+    },
+    top + 1.05 * screen,
+  );
+  await pagesStill(page);
+  const end = (await pagesNow(page)).report;
+  expect(end - start).toBeGreaterThan(0.2);
+  expect(frames[0] - start).toBeLessThan((end - start) * 0.6);
+  for (let i = 1; i < frames.length; i++)
+    expect(frames[i]).toBeGreaterThanOrEqual(frames[i - 1]);
+});
+
+test("desktop: a leaf the wheel leaves partly over settles on a spread, a notch only lifts the corner, and a key turns a whole leaf", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize(desktop);
+  await page.goto("/");
+  await hydrated(page);
+  await expect(page.locator("#about")).toHaveAttribute("data-flight", "");
+  const { top } = await issueStage(page);
+  await scrollToY(page, top);
+  await pagesStill(page);
+  await page.mouse.move(desktop.width / 2, desktop.height / 2);
+  const after = async () => (await pagesNow(page)).after;
+
+  // a notch: the corner lifts and stays so, the spread still there to read
+  await page.mouse.wheel(0, 100);
+  await expect.poll(after).toBeGreaterThan(0.05);
+  await pagesStill(page);
+  let now = await pagesNow(page);
+  expect(now.contents).toBe(0);
+  expect(now.after).toBeLessThan(0.25);
+  // two more and the leaf is on its way: stopped there, it goes on over
+  // and the report lies open
+  await page.mouse.wheel(0, 100);
+  await page.mouse.wheel(0, 100);
+  await expect.poll(after, { timeout: 5_000 }).toBeCloseTo(0.7, 2);
+  await pagesStill(page);
+  now = await pagesNow(page);
+  expect(now.contents).toBeCloseTo(1, 2);
+  expect(now.report).toBe(0);
+  // a notch back up: the leaf goes back over onto the contents
+  await page.mouse.wheel(0, -100);
+  await expect.poll(after, { timeout: 5_000 }).toBeCloseTo(0, 2);
+  await pagesStill(page);
+  expect((await pagesNow(page)).contents).toBe(0);
+
+  // the keys: a whole leaf a press, to the broken page and back
+  for (const [key, to] of [
+    ["ArrowDown", 0.7],
+    ["PageDown", 1.3],
+    ["ArrowUp", 0.7],
+    ["PageUp", 0],
+  ] as const) {
+    await page.keyboard.press(key);
+    await expect
+      .poll(after, { timeout: 5_000, message: key })
+      .toBeCloseTo(to, 2);
+  }
+  await pagesStill(page);
+  now = await pagesNow(page);
+  expect([now.contents, now.report]).toEqual([0, 0]);
+});
+
+test("desktop, reduced motion: the issue lies open and still, its pages in reading order and every link on the keyboard's way", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize(desktop);
+  await page.goto("/");
+  await hydrated(page);
+  const issue = page.locator("#about");
+  // no stage: nothing pinned or turned, no corner, no cue
+  await expect(issue).not.toHaveAttribute("data-flight");
+  await expect(issue.locator(".issue-turn")).toBeHidden();
+  await expect(issue.locator(".book-curl")).toBeHidden();
+  expect(
+    await issue
+      .locator(".book-leaf")
+      .evaluateAll((els) => els.map((el) => getComputedStyle(el).transform)),
+  ).toEqual(["none", "none", "none"]);
+  // the spreads one under the other: the inside of the cover by the
+  // contents, then the report's two pages
+  const sheets = await issue
+    .locator(".is-inside, .is-contents, .is-story, .is-screens")
+    .evaluateAll((els) =>
+      els.map((el) => {
+        const box = el.getBoundingClientRect();
+        return { left: box.left, top: box.top + scrollY, width: box.width };
+      }),
+    );
+  expect(sheets).toHaveLength(4);
+  const [inside, contents, story, screens] = sheets;
+  for (const sheet of sheets) expect(sheet.width).toBeGreaterThan(300);
+  expect(Math.abs(inside.top - contents.top)).toBeLessThan(2);
+  expect(inside.left).toBeLessThan(contents.left);
+  expect(Math.abs(story.top - screens.top)).toBeLessThan(2);
+  expect(story.top).toBeGreaterThan(contents.top);
+  expect(story.left).toBeLessThan(screens.left);
+  await expect(issue.locator("#toc-title")).toBeVisible();
+  await expect(issue.locator("#projects-title")).toBeVisible();
+  // Tab goes from link to link in the order the pages are read, each shown
+  // where it lies
+  const stops = await issue.evaluate((root) =>
+    [
+      ...root.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])",
+      ),
+    ]
+      .filter((el) => el.checkVisibility() && !el.closest("[inert]"))
+      .map((el, i) => {
+        el.dataset.stop = `${i}`;
+        return `${i}`;
+      }),
+  );
+  expect(stops.length).toBeGreaterThan(3);
+  await issue.locator('[data-stop="0"]').focus();
+  for (const stop of stops) {
+    if (stop !== "0") await page.keyboard.press("Tab");
+    const here = issue.locator(`[data-stop="${stop}"]`);
+    await expect(here).toBeFocused();
+    await expect(here).toBeInViewport();
+  }
+  // and nothing in it moves
+  await still(page);
+  expect(
+    await issue.evaluate((root) =>
+      document
+        .getAnimations()
+        .filter(
+          (a) =>
+            a.playState === "running" &&
+            a.effect instanceof KeyframeEffect &&
+            a.effect.target instanceof Element &&
+            root.contains(a.effect.target),
+        )
+        .map((a) => (a as CSSAnimation).animationName),
+    ),
+  ).toEqual([]);
 });

@@ -1,5 +1,8 @@
 import { Button } from "@outegro/ui/button";
-import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import type { Viewport } from "next";
 import Image, { getImageProps } from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -12,6 +15,10 @@ import strip from "@/assets/cover/strip.webp";
 import { ContactLinks } from "@/components/contact-links";
 import { Os } from "@/components/desktop/os";
 import { Header } from "@/components/header";
+import { EditorColumn } from "@/components/personality/editor-column";
+import { HobbyClub } from "@/components/personality/hobby-club";
+import { IncidentReport } from "@/components/personality/incident-report";
+import { LabourBook } from "@/components/personality/labour-book";
 import { RevealObserver } from "@/components/reveal-observer";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
@@ -173,6 +180,14 @@ export default async function Home() {
 
         <Os />
 
+        {/* the back pages, where the person is: the editor's column, the
+            hobby club, the police blotter of production and the
+            employment record book, which leads on to the résumé */}
+        <EditorColumn />
+        <HobbyClub />
+        <IncidentReport />
+        <LabourBook />
+
         <section
           id="contact"
           className="contact og-container section-space"
@@ -207,6 +222,11 @@ export default async function Home() {
             <div className="contact-side">
               <ContactLinks part="rest" />
               <p className="og-eyebrow contact-where">{t("contact.reply")}</p>
+              {/* the résumé on one page, to print or pass on */}
+              <a href="/cv" className="contact-cv">
+                {t("cv.contactLink")}
+                <ArrowRightIcon aria-hidden="true" />
+              </a>
             </div>
           </div>
         </section>

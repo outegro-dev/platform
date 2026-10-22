@@ -169,7 +169,7 @@
     "sign": ["PIER", "No. 1"]
   },
   "contact": {
-    "index": "08",
+    "index": "16",
     "label": "Contact",
     "title": "Good things start",
     "titleAccent": "with a conversation.",
@@ -577,6 +577,323 @@
     "home": "Main page",
     "stack": "Stack menu"
   },
+  "column": {
+    "index": "08",
+    "label": "Editor’s column",
+    "title": "How I became",
+    "titleAccent": "a programmer.",
+    "text": [
+      "Hi, I’m Nick! I’ve been writing code since I was 12. It started with websites for Counter-Strike servers (HTML, CSS, JS, PHP), so headshots have been part of my life for a long time :) From 2016 I was already building Counter-Strike projects to order: roulette and jackpot sites, Steam trade bots, a browser extension with skin prices. Somehow it never stopped.",
+      "Now it’s 6+ years of commercial full-stack work, mostly TypeScript, React, Next.js and Node.js with Postgres. I joined my first company in January 2020, before university even started, and then studied at MIREA alongside the job.",
+      "Right now I’m at Printify, a big print-on-demand platform, where I work on both the frontend and the APIs. At one point I took a whole B2B ordering product from an idea to production with a small team. That’s the kind of work I like most: you own something end to end and then actually watch people use it. Alongside that I’m an AI full-stack engineer at Toggle, building LLM products: from a self-hosted open-source model on GPUs to RAG and MCP agents.",
+      "I’m pretty AI-first in how I work. I use coding agents for most of the code, with my own rules and skills for them, and Jira and Confluence plugged in through MCP. I still review every step myself, because the agent is fast but I’m the one who gets the call when prod breaks :)",
+      "For fun I run my own platform, outegro.dev, on a Kubernetes cluster I set up myself. I’m the only DevOps, the on-call and the person who gets paged there. It’s my playground where I try things out before I bring them to work.",
+      "I like to keep learning. My favorite way is to take a service I already know well and rewrite it from scratch in something new. Lately that’s been Go and Rust. That’s how my platform’s watchdog got rewritten, and its drawing is in the hobby club below."
+    ],
+    "sign": "Nick",
+    "signRole": "editor-in-chief"
+  },
+  "club": {
+    "index": "10",
+    "label": "Hobby club",
+    "title": "Made",
+    "titleAccent": "by hand.",
+    "intro": "Drawings of things I built and wrote myself, outside the day job. Feel free to try this at home.",
+    "sheet": "Sheet {n}",
+    "diagram": "Diagram",
+    "cards": [
+      {
+        "id": "bike",
+        "title": "A bike built from parts",
+        "figure": "Fig. 1. The bike, general view",
+        "alt": "A blue-ink drawing of a bicycle from the side: two wheels, the frame, the saddle and the handlebar.",
+        "body": "I built my own bike from parts. I love long rides and cycling trips on it.",
+        "parts": [],
+        "notes": [
+          "on the bike I try to shave off seconds, at work milliseconds",
+          "if the brakes don’t work, nothing else matters"
+        ]
+      },
+      {
+        "id": "extension",
+        "title": "A price extension for skin trading",
+        "figure": "Fig. 2. The browser window, general view",
+        "alt": "A blue-ink drawing of a browser window: three item cards, each with a price tag in two halves, and an extension icon in the corner.",
+        "body": "From the years I built Counter-Strike projects to order, 2016–2020. A browser extension took item prices from csgolounge.com and market.csgo.com and showed both right on the trading pages.",
+        "parts": [
+          ["csgolounge.com", "market.csgo.com"],
+          "a browser extension",
+          "both prices on the trading page"
+        ],
+        "notes": []
+      },
+      {
+        "id": "watchdog",
+        "title": "One watchdog, two breeds",
+        "figure": "Fig. 3. The watchdog’s kennel",
+        "alt": "A blue-ink drawing of a doghouse with a bowl and a bone by the door.",
+        "body": "Every 5 minutes the watchdog makes its rounds of my platform: pods, the node, certificates, backups, Argo CD and HTTP checks, and it sends alerts and a daily digest to Telegram. Production runs the shell version. From the same spec I rewrote it from scratch twice, in Go and in Rust, with a DRY_RUN shadow mode.",
+        "parts": ["one spec", ["Go", "Rust"], "Telegram"],
+        "notes": ["woof! every 5 minutes"]
+      }
+    ]
+  },
+  "incidents": {
+    "index": "12",
+    "label": "Incident report",
+    "title": "What broke",
+    "titleAccent": "and how it got fixed.",
+    "intro": "Tales from production: short notes on what broke on my watch and what was done about it.",
+    "masthead": "Incidents",
+    "measures": "Action taken:",
+    "byline": "As told by an eyewitness.",
+    "notes": [
+      {
+        "place": "Production",
+        "title": "Minor version runs riot",
+        "text": "A minor Bun release broke next-auth right in production. Rolling back did not help: the old builds had already been overwritten. The bug was reproduced on dev, Bun went back to the previous version, and later the fix landed upstream.",
+        "measures": "versions are now pinned like life depends on it."
+      },
+      {
+        "place": "id.outegro.dev",
+        "title": "Post-quantum signature too big for the door",
+        "text": "On Node 24, SimpleWebAuthn offered the ML-DSA-44 algorithm first. Its signature weighs 3.2 KB, and passkey sign-in broke.",
+        "measures": "passkey registration is pinned to ES256, EdDSA and RS256."
+      },
+      {
+        "place": "outegro.dev",
+        "title": "Eleven apps go out at once",
+        "text": "During a full rollout of all 11 apps the server lost its way out to the internet: load average around 68, image pulls failing. Then it all came back by itself.",
+        "measures": "none, the server caught its breath and went back to work on its own."
+      },
+      {
+        "place": "Home",
+        "title": "Load test chokes the home internet",
+        "text": "A load test ran from home, from one IP, through Cloudflare. Cloudflare started dropping connections, and the home link, about 460 KB/s, filled up completely.",
+        "measures": "load tests now run on the server itself, straight at the origin."
+      },
+      {
+        "place": "CRM",
+        "title": "Late webhook rewrites history",
+        "text": "Messaging webhooks arrived out of order, and a delayed callback overwrote newer CRM state.",
+        "measures": "events got versions and updates became idempotent. A latecomer can’t overwrite anything now."
+      },
+      {
+        "place": "Checkout",
+        "title": "One slow carrier holds up the whole checkout",
+        "text": "A single slow delivery provider could hang the entire checkout.",
+        "measures": "bounded timeouts, a circuit breaker and controlled retries. A slow carrier now only slows itself down."
+      }
+    ]
+  },
+  "record": {
+    "index": "14",
+    "label": "Employment record book",
+    "title": "Where I’ve worked",
+    "titleAccent": "and what I got done.",
+    "intro": "Building to order since 2016, on staff for over 6 years, since January 2020. Every entry comes from my résumé.",
+    "book": "Employment record book",
+    "fields": [
+      {
+        "label": "Surname",
+        "value": "Lukashik"
+      },
+      {
+        "label": "Name",
+        "value": "Nick"
+      },
+      {
+        "label": "Education",
+        "value": "higher: MIREA, Bachelor’s in Computer Science, 2020–2024"
+      },
+      {
+        "label": "Occupation",
+        "value": "software engineer"
+      }
+    ],
+    "signature": "Holder’s signature",
+    "seal": "Outegro magazine · Issue No. 1 · Editorial office ·",
+    "jobsTitle": "Employment record",
+    "columns": {
+      "number": "Entry",
+      "date": "Dates",
+      "record": "Record of employment",
+      "basis": "Source"
+    },
+    "basis": "résumé",
+    "thanks": "Commended for:",
+    "stamp": "Since 2016",
+    "cvLink": "The full version: a one-page résumé to print",
+    "jobs": [
+      {
+        "period": "2016 – 2020",
+        "hired": "Worked as an independent developer",
+        "product": "Counter-Strike roulette and jackpot sites set up to order, Steam trade bots and skin-trading tools.",
+        "done": [
+          "Steam trade bots with automated trade-offer confirmation and the then-new Steam Guard mobile confirmations.",
+          "Custom visualisations for trading on csgolounge.com, so listings and trade offers were easier to read and compare."
+        ]
+      },
+      {
+        "period": "01.2020 – 01.2021",
+        "hired": "Joined AdviceSolution as a Software Engineer",
+        "product": "Customer-facing service pages, technical knowledge tools and business integrations.",
+        "done": []
+      },
+      {
+        "period": "01.2021 – 02.2022",
+        "hired": "Joined FridayTech as a Full-Stack Engineer",
+        "product": "E-commerce logistics and fulfillment platform for Latin America.",
+        "done": [
+          "A Node.js BFF for checkout: roughly seven backend dependencies moved server-side, about two browser requests left.",
+          "A React component library adopted by three teams."
+        ]
+      },
+      {
+        "period": "02.2022 – 02.2023",
+        "hired": "Joined Kommo as a Software Engineer",
+        "product": "Global CRM platform for small and midsize businesses.",
+        "done": [
+          "A lead-notification wizard: typical setup down from more than 30 minutes to under 5.",
+          "Telegram and WhatsApp provider modules unified behind one shared contract."
+        ]
+      },
+      {
+        "period": "03.2023 – present",
+        "hired": "Joined Printify as a Full-Stack Engineer",
+        "product": "Print-on-demand e-commerce platform, 1M+ monthly users platform-wide.",
+        "done": [
+          "A new B2B ordering platform from requirements to production; the new revenue stream reached profitability in roughly 3 months.",
+          "Three back-office workflows consolidated into one operations platform; employee onboarding down from around 3 weeks to 1 week."
+        ]
+      },
+      {
+        "period": "04.2025 – present",
+        "hired": "Joined Toggle as an AI Full-Stack Engineer, alongside Printify",
+        "product": "Applied LLM products, agentic workflows and GPU inference.",
+        "done": [
+          "A conversational AI SaaS on a self-hosted open-source LLM, since commercial APIs could not meet its content requirements: GPU inference and a Node.js API with retries and graceful degradation.",
+          "An MCP support agent with scoped, read-only tools that files structured Jira reports."
+        ]
+      }
+    ]
+  },
+  "cv": {
+    "meta": {
+      "title": "Résumé · Nick Lukashik",
+      "description": "Nick Lukashik’s one-page résumé: senior full-stack engineer, experience, skills and education. An offprint ready to print."
+    },
+    "kicker": "Offprint",
+    "from": "from Outegro magazine · Issue No. 1 · October 2026",
+    "back": "Back to the issue",
+    "print": "Print or save as PDF",
+    "name": "Nick Lukashik",
+    "role": "Senior Full-Stack Engineer · AI",
+    "links": "Links",
+    "sections": {
+      "about": "About",
+      "experience": "Experience",
+      "skills": "Skills",
+      "education": "Education & Languages"
+    },
+    "about": [
+      "<b>Senior Full-Stack Engineer with 6+ years of commercial experience</b> building SaaS, CRM and e-commerce products with React, Next.js, Node.js and NestJS. I turn ambiguous requirements into shipped systems, owning delivery from product discovery and architecture through implementation and production support. I am particularly effective where complex state, inconsistent providers, retries, cache invalidation and system boundaries meet.",
+      "My work combines <b>product ownership and systems reliability</b>: launching a profitable B2B revenue stream, simplifying operational workflows and designing dependable APIs. Today I also build <b>LLM products and agents in production</b>: self-hosted GPU inference, RAG and MCP agents with human-in-the-loop workflows. I work agent-first with Claude Code and Codex, owning architecture, review and outcomes."
+    ],
+    "jobs": [
+      {
+        "company": "Toggle",
+        "role": "AI Full-Stack Engineer",
+        "period": "Apr 2025 – Present",
+        "product": "Applied LLM products, agentic workflows and GPU inference",
+        "items": [
+          "Built a <b>conversational AI SaaS on a self-hosted open-source LLM</b>, since commercial APIs could not meet its content requirements: GPU inference on Vast.ai, Dockerized model serving and a Node.js API with retries and graceful degradation.",
+          "Engineered an <b>MCP-powered AI support agent</b> that retrieves account and product context through scoped, read-only tools, classifies incidents and files structured Jira reports with reproduction steps and evidence."
+        ]
+      },
+      {
+        "company": "Printify",
+        "role": "Full-Stack Engineer",
+        "period": "Mar 2023 – Present",
+        "product": "Print-on-demand e-commerce platform; 1M+ monthly users (platform-wide)",
+        "items": [
+          "<b>Led end-to-end technical delivery of a new B2B ordering platform</b> using Next.js, NestJS and PostgreSQL, from requirements and API boundaries to release and production support; the new revenue stream <b>reached profitability in roughly 3 months</b>.",
+          "Consolidated <b>three independent back-office workflows into one operations platform</b>, centralizing validation and business rules and reducing employee onboarding from <b>around 3 weeks to 1 week</b>.",
+          "Built an <b>SEO content management service for 10,000+ product pages</b>, enabling marketing to maintain catalog metadata and content without engineering support."
+        ]
+      },
+      {
+        "company": "Kommo",
+        "role": "Software Engineer",
+        "period": "Feb 2022 – Feb 2023",
+        "product": "Global CRM platform for small and midsize businesses",
+        "items": [
+          "Reworked a complex multi-step lead-notification wizard: simplified transitions, validation and feedback, bringing typical setup time from <b>more than 30 minutes to under 5 minutes</b>."
+        ]
+      },
+      {
+        "company": "FridayTech",
+        "role": "Full-Stack Engineer",
+        "period": "Jan 2021 – Feb 2022",
+        "product": "E-commerce logistics and fulfillment platform for Latin America",
+        "items": [
+          "Designed a <b>Node.js BFF for checkout</b>, moving orchestration of roughly seven backend dependencies server-side and reducing browser requests to <b>about two</b> behind a stable API contract.",
+          "Developed a <b>reusable React component library adopted by three teams</b>, standardizing shared interface patterns across customer and back-office products."
+        ]
+      },
+      {
+        "company": "AdviceSolution",
+        "role": "Software Engineer",
+        "period": "Jan 2020 – Jan 2021",
+        "product": "Customer-facing service pages, technical knowledge tools and business integrations",
+        "items": []
+      },
+      {
+        "company": "Independent Developer",
+        "role": "Counter-Strike & Steam Projects",
+        "period": "2016 – 2020",
+        "product": "Roulette and jackpot sites set up to order, Steam trade bots and skin-trading tools",
+        "items": [
+          "Built <b>Steam trade bots</b>: automated trade-offer confirmation and integration of the then-new Steam Guard mobile confirmations, so bots could verify and accept trades without manual steps.",
+          "Developed a <b>browser extension</b> that merged item prices from csgolounge.com and market.csgo.com and showed them directly on trading pages."
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "label": "Frontend",
+        "items": "JavaScript, TypeScript, React, Next.js, Angular, Vue, HTML5/CSS3, Tailwind CSS, Redux Toolkit, TanStack Query, Apollo Client"
+      },
+      {
+        "label": "Backend",
+        "items": "TypeScript, Node.js, NestJS, Express, Python, PHP, REST, GraphQL, tRPC, Microservices, BFF, JWT, OAuth"
+      },
+      {
+        "label": "Data & Messaging",
+        "items": "PostgreSQL, MySQL, MongoDB, Redis, RabbitMQ, Kafka, Vector Databases"
+      },
+      {
+        "label": "AI & Developer Tools",
+        "items": "Self-hosted LLMs, MCP, RAG, GPU Inference, Agent Workflows, Prompt Design, Claude Code, Codex, Cursor, Kimi"
+      },
+      {
+        "label": "Engineering Quality",
+        "items": "Jest, Vitest, Playwright, Unit / Integration / E2E Testing, Code Review"
+      },
+      {
+        "label": "Cloud & Observability",
+        "items": "Docker Compose, Kubernetes, Helm, AWS, GCP, GitHub Actions, GitLab CI/CD, Sentry, Prometheus, Grafana, Linux"
+      }
+    ],
+    "education": {
+      "school": "MIREA - Technological University",
+      "degree": "Bachelor’s Degree, Computer Science",
+      "period": "Sep 2020 – May 2024"
+    },
+    "imprint": "Printed from outegro.dev. Print run: 1 copy.",
+    "contactLink": "One-page résumé: an offprint ready to print",
+    "languages": "English: C1, full professional proficiency · Russian: native"
+  },
   "zine": {
     "poster": {
       "mast": "Outegro",
@@ -623,6 +940,10 @@
     },
     "coverAlt": "A cover in the style of an old popular-science magazine: an engineer’s desk at night, a brass lamp, a monitor with a Battleship game, a wooden toy ship, a notebook with a ticked list, posters of the Moon and a space shuttle, and a glass of tea in a holder.",
     "tocTitle": "In this issue",
+    "turn": {
+      "cue": "Scroll to turn",
+      "spread": "Spread {n} of {total}"
+    },
     "toc": [
       {
         "title": "About me: a page for friends",
@@ -645,9 +966,29 @@
         "page": "06"
       },
       {
+        "title": "Editor’s column: how I became a programmer",
+        "href": "#column",
+        "page": "08"
+      },
+      {
+        "title": "Hobby club: drawings on graph paper",
+        "href": "#club",
+        "page": "10"
+      },
+      {
+        "title": "Incident report: tales from production",
+        "href": "#incidents",
+        "page": "12"
+      },
+      {
+        "title": "Employment record book: on the job since 2016",
+        "href": "#record",
+        "page": "14"
+      },
+      {
         "title": "Write to the editor: a free-call coupon",
         "href": "#contact",
-        "page": "08"
+        "page": "16"
       }
     ],
     "couponTitle": "Coupon",
