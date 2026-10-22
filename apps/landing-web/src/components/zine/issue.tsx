@@ -1,3 +1,4 @@
+import { ArrowDownIcon } from "@phosphor-icons/react/dist/ssr";
 import { getTranslations } from "next-intl/server";
 import { BonkRetry } from "@/components/bonk/bonk-retry";
 import { ProjectScreens, ProjectStory } from "@/components/project-showcase";
@@ -22,7 +23,7 @@ type TocItem = { title: string; href: string; page: string };
  * Without script, with reduced motion and on screens under 1024px the two
  * spreads simply lie one under the other. Otherwise IssueFlight flies the
  * first screen's cover here, opening it on the way, and turns the contents
- * leaf as the page scrolls on.
+ * leaf as the page scrolls on, a cue under the spread saying so.
  */
 export async function Issue({ toc }: { toc: TocItem[] }) {
   const t = await getTranslations();
@@ -117,6 +118,25 @@ export async function Issue({ toc }: { toc: TocItem[] }) {
             <div className="book-curl" aria-hidden="true">
               <span />
             </div>
+          </div>
+          {/* in flight, under the spread: the scroll turns the pages, how
+              far the issue is turned and which spread lies open
+              (IssueFlight). The pages themselves are read in order */}
+          <div className="issue-turn" aria-hidden="true">
+            <span className="issue-turn-cue">
+              {t("zine.turn.cue")}
+              <ArrowDownIcon weight="bold" />
+            </span>
+            <span className="issue-turn-track">
+              <span className="issue-turn-bar" />
+            </span>
+            <span className="issue-turn-count">
+              {[1, 2].map((n) => (
+                <span key={n} data-spread={n}>
+                  {t("zine.turn.spread", { n, total: 2 })}
+                </span>
+              ))}
+            </span>
           </div>
         </div>
         {/* instead of the issue, a broken page: the block "failed to load" */}

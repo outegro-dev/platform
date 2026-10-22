@@ -1342,10 +1342,12 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
    motion, screens under 1024px) the two spreads lie one under the other.
    In flight (IssueFlight) the book is fixed and placed by the script: the
    cover flies here from the first screen and opens on the way, the spread
-   is pinned, the contents page lifts its corner and turns over, and the
-   report is read before the stage lets go (--issue-stage of scrolling). */
+   is pinned, the contents page lifts its corner and turns over, then the
+   report's, and the broken page holds before the stage lets go
+   (--issue-stage of scrolling: two turns of 0.7 and 0.6 screens, then
+   0.55 for the broken page; IssueFlight counts on it) */
 .issue {
-  --issue-stage: 385svh;
+  --issue-stage: 185svh;
   /* the blank pages and the broken page: the page's own paper */
   --blank: var(--vintage-paper);
   position: relative;
@@ -2070,12 +2072,6 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   aspect-ratio: 4 / 3;
 }
 .issue[data-flight] .book {
-  --open: 0;
-  --turn: 0;
-  --turn-on: 0;
-  --curl: 0px;
-  --curl-a: 0px;
-  --curl-b: 0px;
   position: fixed;
   z-index: 20;
   top: 0;
@@ -2100,22 +2096,20 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   pointer-events: auto;
 }
 /* the leaves lie over the right page and turn over to the left on the
-   spine; the one turned last lies on top */
+   spine (IssueFlight sets each one's turn, a transform and nothing else, so
+   the pages on it are not styled again); the one turned last lies on top */
 .issue[data-flight] .book-leaf {
   transform-origin: left center;
   transform-style: preserve-3d;
-  transform: rotateY(calc(var(--leaf) * -180deg));
+  will-change: transform;
 }
 .is-cover-leaf {
-  --leaf: var(--open);
   z-index: 5;
 }
 .is-contents-leaf {
-  --leaf: var(--turn);
   z-index: 3;
 }
 .is-report-leaf {
-  --leaf: var(--turn-on);
   z-index: 2;
 }
 .book[data-opened] .is-cover-leaf {
@@ -2139,30 +2133,32 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
     0 14px 0 var(--page-ink, var(--ink));
 }
 /* while the book is shut its pages print no ink round the cover: the
-   outlines come in as it opens, and go again as the broken page starts to
-   come up over the blank pages, before it is a tenth there (IssueFlight
-   sets --inked): no spine shows through its card */
+   outlines come in as it starts to open, and go again as the broken page
+   starts to come up over the blank pages (IssueFlight marks the book
+   inked): no spine shows through its card. The mark is switched, and the
+   pages fade their own outlines, so a frame of the flight never styles the
+   whole book again */
 .issue[data-flight] .book {
-  --inked: 0;
-  --page-ink: color-mix(
-    in srgb,
-    var(--ink) calc(var(--inked) * 100%),
-    transparent
-  );
+  --page-ink: transparent;
+}
+.issue[data-flight] .book[data-inked] {
+  --page-ink: var(--ink);
+}
+.issue[data-flight] :is(.book-sheet, .is-blank) {
+  transition: box-shadow 0.3s ease;
 }
 /* and the report's page, the one the last leaf turns over, goes blank with
    them: no strip of it is seen sliced by an edge no longer drawn, and a
    focus ring on it comes back only with the ink, once the broken page has
    nearly gone */
 .issue[data-flight] .is-story > * {
-  opacity: var(--inked);
+  transition: opacity 0.3s ease;
 }
-.issue[data-flight] .is-story:focus-visible {
-  outline-color: color-mix(
-    in srgb,
-    var(--ring) calc(var(--inked) * 100%),
-    transparent
-  );
+.issue[data-flight] .book:not([data-inked]) .is-story > * {
+  opacity: 0;
+}
+.issue[data-flight] .book:not([data-inked]) .is-story:focus-visible {
+  outline-color: transparent;
 }
 .issue[data-flight] .book-face {
   position: absolute;
@@ -2179,44 +2175,172 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
 .issue[data-flight] .book[data-spent] :is(.book-page, .book-face) {
   pointer-events: none;
 }
-/* the corner: the contents page cut along the fold, and the flap of it
-   folded back over the page, showing the back of the paper */
+/* the turning pages print no outline of their own: the last page's, under
+   them all, is the right page's edge, and a leaf goes over as bare paper */
 .issue[data-flight] :is(.is-contents, .is-screens) {
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% calc(100% - var(--page-curl)),
-    calc(100% - var(--page-curl)) 100%,
-    0 100%
-  );
+  clip-path: inset(0);
 }
-.issue[data-flight] .is-contents {
-  --page-curl: var(--curl-a);
-}
-.issue[data-flight] .is-screens {
-  --page-curl: var(--curl-b);
-}
+/* the corner: the box is the right page's corner peeled right back (22% of
+   the page), scaled from the corner and carried over with its leaf by
+   IssueFlight, a transform alone. Under the fold, the page beneath (the
+   report's, or a blank one under the report's own corner) in the shade of
+   the flap; over it, the flap, the back of the paper */
 .book-curl {
+  --under: var(--paper-white);
   position: absolute;
   z-index: 6;
-  top: calc(100% - var(--curl));
-  left: calc(100% - var(--curl));
-  width: var(--curl);
-  height: var(--curl);
-  filter: drop-shadow(
-    2px 3px 4px color-mix(in srgb, var(--ink) 35%, transparent)
-  );
+  right: 0;
+  bottom: 0;
+  width: 11%;
+  aspect-ratio: 1;
+  transform-origin: 100% 100%;
+  transform: scale(0);
+  will-change: transform;
   pointer-events: none;
+}
+.book-curl[data-under="blank"] {
+  --under: var(--blank);
 }
 .book-curl span {
   position: absolute;
   inset: 0;
+  transform-origin: 100% 100%;
+}
+.book-curl span::before,
+.book-curl span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.book-curl span::before {
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--ink) 24%, var(--under)) 50%,
+    var(--under) 66%
+  );
+}
+.book-curl span::after {
   clip-path: polygon(0 0, 100% 0, 0 100%);
   background: linear-gradient(
     135deg,
     var(--paper-white) 20%,
     var(--paper-deep) 50%
   );
+}
+/* a spread read a while (IssueFlight marks the issue resting once the
+   scroll has been still a moment): its corner lifts a little now and then,
+   the page asking to be turned */
+.issue[data-resting] .book-curl span {
+  animation: book-beckon 4.2s ease-in-out infinite;
+}
+@keyframes book-beckon {
+  0%,
+  36%,
+  100% {
+    scale: 1;
+  }
+  14% {
+    scale: 1.9;
+  }
+  24% {
+    scale: 1.55;
+  }
+}
+
+/* under the spread in flight: «scroll» with a nudging arrow, a rule that
+   fills as the issue is turned (a tick at each spread) and which spread
+   lies open; IssueFlight fades it in as the book lands and out as the
+   broken page comes up, and fills the rule, a transform alone */
+.issue-turn {
+  position: absolute;
+  top: calc(100% + 26px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  translate: -50% 0;
+  font-family: var(--font-plain);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  opacity: 0;
+  pointer-events: none;
+}
+.issue:not([data-flight]) .issue-turn {
+  display: none;
+}
+.issue-turn-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.issue-turn-cue svg {
+  width: 12px;
+  height: 12px;
+}
+.issue[data-resting] .issue-turn-cue svg {
+  animation: issue-turn-nudge 1.6s ease-in-out infinite;
+}
+@keyframes issue-turn-nudge {
+  0%,
+  50%,
+  100% {
+    translate: 0 0;
+  }
+  25% {
+    translate: 0 3px;
+  }
+}
+/* the rule: ticks at the ends and in the middle, the spreads' places */
+.issue-turn-track {
+  position: relative;
+  width: 112px;
+  height: 9px;
+  border-inline: 2px solid var(--ink);
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--ink) 22%, transparent),
+      color-mix(in srgb, var(--ink) 22%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+.issue-turn-track::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  translate: -50% 0;
+  background: var(--ink);
+}
+.issue-turn-bar {
+  position: absolute;
+  top: calc(50% - 1px);
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: left center;
+  transform: scaleX(0);
+  will-change: transform;
+}
+/* both counts in one place, the one that is not open hidden: the line keeps
+   its width as the count goes on */
+.issue-turn-count {
+  display: grid;
+}
+.issue-turn-count > span {
+  grid-area: 1 / 1;
+}
+.issue-turn:not([data-at="2"]) [data-spread="2"],
+.issue-turn[data-at="2"] [data-spread="1"] {
+  visibility: hidden;
 }
 
 /* the broken page: white across the screen over the pinned issue, the
