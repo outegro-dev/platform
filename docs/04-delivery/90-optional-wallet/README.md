@@ -1,22 +1,22 @@
-# Условный этап wallet
+# Кошелёк: грамблсы
 
-Не выполнять до явного выбора владельца и проверки merchant. Расширяет базовый scope и оценку.
+Отдельный сервис wallet-backend с одной валютой «грамблсы» (`GRM`): [ADR-011](../../03-decisions/adr/011-wallet-grumbles.md), [контракт](../../02-contracts/wallet.md). Этап 1 — без денег; этапы 2 и 3 начинаются только по команде владельца. Варианты и история выбора — [wallet-proposal.md](../../03-decisions/wallet-proposal.md).
 
-## Вход и порядок
+## Этапы и порядок
 
-Номера этапов группируют работу. Hard dependencies в карточках определяют настоящий порядок; независимые задачи допустимо выполнять последовательно в любом топологическом порядке. При внешнем blocker перейти к другой ready task, не обходить требования.
+| ID | Этап | Результат | Hard dependencies | Статус |
+|---|---|---|---|---|
+| [W-01](tasks/W-01.md) | 1 | Сервис wallet-backend: схема, журнал и гарантии БД | BE-05, BE-07, ID-06 | review |
+| [W-02](tasks/W-02.md) | 1 | Операции, идемпотентность по ref и API | [W-01](tasks/W-01.md) | review |
+| [W-03](tasks/W-03.md) | 1 | Сверка, метрики и раздел «Кошелёк» в админке | [W-02](tasks/W-02.md), A-03, OPS-04, DS-04 | review |
+| [W-06](tasks/W-06.md) | 1 | Приёмка этапа 1: инварианты на случайных командах | [W-03](tasks/W-03.md) | review |
+| [W-04](tasks/W-04.md) | 2 | Пополнение пакетами через pay | [W-06](tasks/W-06.md), PAY-03, PAY-05, PAY-09 | deferred |
+| [W-05](tasks/W-05.md) | 3 | Покупки за грамблсы: скины Battleship | [W-04](tasks/W-04.md), PAY-06 | deferred |
 
-| ID | Результат | Hard dependencies | Статус |
-|---|---|---|---|
-| [W-01](tasks/W-01.md) | Схема wallet и double-entry ledger | [PAY-05](../05-payments/tasks/PAY-05.md), [PAY-09](../05-payments/tasks/PAY-09.md), [PAY-10](../05-payments/tasks/PAY-10.md) | deferred |
-| [W-02](tasks/W-02.md) | Подтверждённое пополнение | [W-01](tasks/W-01.md), [PAY-03](../05-payments/tasks/PAY-03.md) | deferred |
-| [W-03](tasks/W-03.md) | Reserve, capture и release | [W-02](tasks/W-02.md), [PAY-06](../05-payments/tasks/PAY-06.md) | deferred |
-| [W-04](tasks/W-04.md) | Возвраты, reversal и debt | [W-03](tasks/W-03.md), [PAY-09](../05-payments/tasks/PAY-09.md) | deferred |
-| [W-05](tasks/W-05.md) | Wallet UI и admin commands | [W-04](tasks/W-04.md), [A-03](../06-admin/tasks/A-03.md), [DS-04](../01-landing-design/tasks/DS-04.md) | deferred |
-| [W-06](tasks/W-06.md) | Wallet concurrency и reconciliation acceptance | [W-05](tasks/W-05.md) | deferred |
+Этап 1: W-01 → W-02 → W-03 → W-06. Этап 2: W-04 (пакеты через pay, лоты, возвраты; нужен `GRUMBLE-PACKS`). Этап 3: W-05 (покупки за грамблсы, скины Battleship, решение по Premium; нужен `GRUMBLE-PRICES`). Рулетка ставит те же грамблсы через внутренний API (W-02) и делается в своём сервисе.
 
 ## Выход
 
-Каждая обязательная карточка завершена с report/TC evidence, ошибки и внешний validation статус видны. Для этапов с ожиданием другого сервиса завершать зависимую карточку позже; не подменять API пустым success.
+Каждая карточка завершена с отчётом и доказательствами TC, ошибки и внешние проверки видны. Зависимую карточку другого сервиса завершать позже, не подменяя API пустым success.
 
 [Общие gate-критерии](../../05-quality/release-gates.md) · [Все этапы](../README.md)
