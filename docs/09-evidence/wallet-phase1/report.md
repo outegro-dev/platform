@@ -49,6 +49,8 @@
 | TC-W-06-02 | то же | полная сверка после прогона — 0 расхождений | pass | `acceptance.test.ts` |
 | TC-W-06-03 | то же | повтор всех применённых команд — `replayed`, журнал и балансы без изменений | pass | `acceptance.test.ts` |
 | Локальный запуск | `pnpm infra:up`, `node dist/db/migrate.js`, `node dist/main.js` | health/deep up (postgres, valkey, rabbitmq); credit 1000 → debit 250 → 402 на 5000 → rollback; метрики на 9467 | pass | вывод curl в PR |
+| `pnpm test` | turbo, все пакеты и сервисы (Testcontainers) | 29 из 29 задач, код выхода 0 | pass | — |
+| admin-web e2e | production build + фейковая платформа, Chromium, 2 воркера | весь набор 265 тестов: новые ожидания раздела «Кошелёк» в dashboard и navigation | pass | `apps/admin-web/e2e` |
 | `pnpm lint` | весь репозиторий | код выхода 0 | pass | — |
 | `pnpm typecheck` | turbo, 31 задача | код выхода 0 | pass | — |
 | `python tools/documentation/validate.py` | docs | `pass` | pass | — |

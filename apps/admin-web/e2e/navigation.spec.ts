@@ -15,6 +15,7 @@ test("an owner sees every section", async ({ page }) => {
     "Payments",
     "Battleship",
     "Education",
+    "Wallet",
     "Audit",
     "Monitoring",
   ]);
