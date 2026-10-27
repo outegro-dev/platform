@@ -12,3 +12,7 @@ CREATE ROLE battleship LOGIN PASSWORD 'battleship';
 CREATE DATABASE battleship OWNER battleship;
 CREATE ROLE edu LOGIN PASSWORD 'edu';
 CREATE DATABASE edu OWNER edu;
+CREATE ROLE roulette LOGIN PASSWORD 'roulette';
+CREATE DATABASE roulette OWNER roulette;
+CREATE ROLE fair_roll LOGIN PASSWORD 'fair_roll';
+CREATE DATABASE fair_roll OWNER fair_roll;
