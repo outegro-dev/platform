@@ -31,8 +31,17 @@ function correlateRequest(
  */
 export function configureApp(
   app: NestExpressApplication,
-  options: { excludeFromPrefix?: string[] } = {},
+  options: {
+    excludeFromPrefix?: string[];
+    /**
+     * JSON bodies above this size get 413 (express default 100kb). Set
+     * before the app initialises, it replaces Nest's own JSON parser.
+     */
+    jsonLimit?: string;
+  } = {},
 ) {
+  if (options.jsonLimit)
+    app.useBodyParser("json", { limit: options.jsonLimit });
   app.use(helmet());
   app.use(correlateRequest);
   app.use(app.get(HttpMetrics).middleware);
@@ -57,7 +66,7 @@ export function configureApp(
  */
 export async function bootstrapService(
   module: Type,
-  options: { port: number; excludeFromPrefix?: string[] },
+  options: { port: number; excludeFromPrefix?: string[]; jsonLimit?: string },
 ) {
   const app = await NestFactory.create<NestExpressApplication>(module, {
     bufferLogs: true,
