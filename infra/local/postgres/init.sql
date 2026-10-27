@@ -12,3 +12,5 @@ CREATE ROLE battleship LOGIN PASSWORD 'battleship';
 CREATE DATABASE battleship OWNER battleship;
 CREATE ROLE edu LOGIN PASSWORD 'edu';
 CREATE DATABASE edu OWNER edu;
+CREATE ROLE wallet LOGIN PASSWORD 'wallet';
+CREATE DATABASE wallet OWNER wallet;
