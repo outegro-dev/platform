@@ -25,9 +25,22 @@ describe("navigation by permission", () => {
       "payments",
       "battleship",
       "education",
+      "wallet",
       "audit",
       "monitoring",
     ]);
+  });
+
+  it("keeps the wallet to owners, with its commands", () => {
+    const owner = permissionsOf(["owner"]);
+    expect(tabsFor(owner, sectionTabs.wallet).map((tab) => tab.key)).toEqual([
+      "overview",
+      "wallets",
+      "reconciliation",
+    ]);
+    expect(can(owner, "wallet.adjust")).toBe(true);
+    for (const role of ["support", "billing_operator", "auditor", "edu_editor"])
+      expect(itemsOf(permissionsOf([role])), role).not.toContain("wallet");
   });
 
   it("shows support only what support can read", () => {

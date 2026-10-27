@@ -200,6 +200,45 @@ const screens: Screen[] = [
     path: "/education",
     userAgent: withFailure("fake-down=edu"),
   },
+  { name: "wallet", path: "/wallet" },
+  { name: "wallets", path: "/wallet/wallets" },
+  {
+    name: "wallet-card",
+    path: "/wallet/wallets?state=active",
+    steps: async (page) => {
+      await page.locator("table a.link").first().click();
+      await settle(page);
+    },
+  },
+  {
+    name: "wallet-grant-dialog",
+    englishOnly: true,
+    path: "/wallet/wallets?state=active",
+    skipStability: true,
+    steps: async (page) => {
+      await page.locator("table a.link").first().click();
+      await settle(page);
+      await page.getByRole("button", { name: "Grant", exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Amount").fill("250");
+      await dialog.getByLabel("Reason").fill("Compensation for the outage");
+    },
+  },
+  { name: "wallet-reconciliation", path: "/wallet/reconciliation" },
+  {
+    name: "user-wallet",
+    englishOnly: true,
+    path: "/users?query=mira",
+    steps: async (page) => {
+      await openFirstRow(page);
+      await openTab("Wallet")(page);
+    },
+  },
+  {
+    name: "wallet-not-connected",
+    path: "/wallet",
+    userAgent: withFailure("fake-down=wallet"),
+  },
   { name: "audit", path: "/audit" },
   {
     name: "dashboard-degraded",

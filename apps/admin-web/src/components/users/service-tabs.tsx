@@ -10,11 +10,13 @@ import { DataTable, Time } from "@/components/ui/data";
 import { GrantStatus } from "@/components/ui/grant-status";
 import { Facts, Panel, PanelLink, Stat, Status } from "@/components/ui/layout";
 import { EmptyState, FailureState } from "@/components/ui/states";
+import { WalletCard } from "@/components/wallet/wallet-card";
 import type { UserDetail } from "@/lib/adapters/identity";
 import { bookOfFeature, grantTargetOf, libraryFeature } from "@/lib/education";
 import { grantTargets } from "@/lib/grant-targets";
 import { grantStatus, revocable } from "@/lib/grants";
 import { getLabels } from "@/lib/labels";
+import { can } from "@/lib/permissions";
 import { educationBooks } from "@/lib/queries";
 import { getFormatter } from "@/lib/request";
 import { load } from "@/lib/result";
@@ -564,6 +566,31 @@ export async function EducationTab({ userId }: { userId: string }) {
         )}
       </Panel>
     </div>
+  );
+}
+
+/** The user's grumbles: the same card as the wallet section, commands included. */
+export async function WalletTab({
+  userId,
+  granted,
+  cursor,
+}: {
+  userId: string;
+  granted: ReadonlySet<string>;
+  cursor?: string;
+}) {
+  const t = await getTranslations("users.wallet");
+  return (
+    <WalletCard
+      userId={userId}
+      cursor={cursor}
+      canAdjust={can(granted, "wallet.adjust")}
+      path={`/users/${userId}?tab=wallet`}
+      title={t("title")}
+      action={
+        <PanelLink href={`/wallet/wallets/${userId}`}>{t("open")}</PanelLink>
+      }
+    />
   );
 }
 
