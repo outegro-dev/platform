@@ -4,12 +4,11 @@
 
 ## Единица и лимиты
 
-- Ставки только бесплатными фишками, единица `CHIP`. Фишки нельзя купить, нельзя обменять на `GRM` в любую сторону, нельзя передать.
-- Лимиты стола (конфиг `ROULETTE_*`):
+- Ставки — грамблсами (`GRM`) из кошелька, выигрыш зачисляется туда же (решение владельца 28.10.2026, [ADR-012](../03-decisions/adr/012-roulette.md)).
+- Лимиты стола в грамблсах (конфиг `ROULETTE_*`):
   - ставка от 10 до 100 000;
   - не больше 3 ставок игрока за раунд;
   - выплата на один цвет за раунд не больше 1 000 000.
-- Новый игрок получает 1 000 стартовых фишек (`ROULETTE_STARTER_CHIPS`).
 - Выплаты: красное (1–7) и чёрное (8–14) ×2, зелёное (0) ×14, ставка входит в выплату.
 
 ## Раунд
@@ -29,7 +28,7 @@
 
 | Маршрут | Доступ | Ответ |
 |---|---|---|
-| `GET /v1/me` | вход | `{ userId, nickname, balance, unit: "CHIP" }` |
+| `GET /v1/me` | вход | `{ userId, nickname, balance, unit: "GRM" }`; `balance` — `null`, если кошелёк его не сообщил |
 | `POST /v1/ws-tickets` | вход | `{ ticket, expiresAt }`: одноразовый тикет сокета на 30 с |
 | `GET /v1/rounds?cursor&limit` | публично | `{ items: [{ round, number, color }], nextCursor }`, новые сначала, только `settled` |
 | `GET /v1/rounds/{round}` | публично | `FairRound`: фаза, `commit`, `publicSeed`, `seed`, `number`, `color`, `previousSeed`, число ставок, сумма ставок и выплат |
@@ -54,10 +53,10 @@
 
 | type | Кому | payload |
 |---|---|---|
-| `session.ready` | первым сообщением | игрок (ник, баланс), стол (лимиты, множители, длительности), текущий раунд, свои ставки в нём, последние 20 результатов, `serverTime` |
+| `session.ready` | первым сообщением | игрок (ник, баланс или `null`), стол (лимиты, множители, длительности), текущий раунд, свои ставки в нём, последние 20 результатов, `serverTime` |
 | `round.state` | всем, 4 раза в секунду и на каждой смене фазы | полный снимок `RoundView` |
 | `bet.accepted` | игроку, с `ref`; без `ref` — его другим вкладкам | ставка и баланс после списания |
-| `balance` | игроку, который ставил в раунде | `{ balance, round, payout }` после выплат |
+| `balance` | игроку, который ставил в раунде | `{ balance, round, payout }` после выплат; `balance` — `null`, если кошелёк его не сообщил |
 | `error` | игроку | `{ code, ref }` |
 | `pong` | игроку | `{ t, serverTime }` |
 
@@ -81,14 +80,14 @@
 | `bet_too_small`, `bet_too_large` | Сумма вне лимитов стола |
 | `too_many_bets` | Уже 3 ставки в этом раунде |
 | `table_limit` | Исчерпан лимит выплаты на цвет |
-| `insufficient_funds` | В кошельке не хватает фишек |
+| `insufficient_funds` | В кошельке не хватает грамблсов |
 | `wallet_restricted` | Кошелёк заблокирован |
 | `wallet_unavailable` | Кошелёк не ответил за 2 с; списание откатывается по `ref` |
 | `account_blocked` | Аккаунт заблокирован |
 | `rate_limited` | Превышен бюджет команд сокета |
 | `internal` | Внутренняя ошибка |
 
-Отказ никогда не двигает фишки.
+Отказ никогда не двигает грамблсы.
 
 ## Путь ставки и закрытие
 
@@ -141,24 +140,24 @@
 
 ## Порт кошелька
 
-Что рулетка ждёт от wallet-backend. Пока работает реализация в памяти.
+Рулетка ходит во внутренний API wallet-backend (:4007, PR #143) с сервисным токеном. `WALLET_MODE=memory` — замена для запуска без кошелька, в production запрещена.
 
-| Операция | Запрос | Ответ |
+| Вызов | Тело | Ответ, который берёт рулетка |
 |---|---|---|
-| `debit` | `{ userId, amount, ref, meta: { game: "roulette", round, color } }` | `{ balance }` |
-| `creditBatch` | до 1 000 элементов той же формы | `[{ ref, status: applied \| duplicate }]` |
-| `rollback` | `{ ref }` | `{ status: reversed \| tombstoned }` |
-| `balance` | `userId` и единица `CHIP` | число |
+| `POST /v1/internal/debit` | `{ ref: "roulette:bet:{betId}", userId, unit: "GRM", amount: "250", source: "roulette", objectRef: "round:{k}", meta: { round, color } }` | `balanceAfter` |
+| `POST /v1/internal/credit-batch` | `{ unit: "GRM", source: "roulette", items: [{ ref: "roulette:win:{betId}", userId, amount, objectRef, meta }] }`, до 1 000 строк | `balanceAfter` и `replayed` каждой строки |
+| `POST /v1/internal/rollback` | `{ ref }` | `state: reversed \| tombstoned` |
 
-Ошибки `debit`:
+Суммы — строки целого числа. Ошибки:
 
-| Ответ | Когда |
+| Ответ | Для рулетки |
 |---|---|
-| 402 | Не хватает фишек |
-| 409 | Тот же `ref` с другими данными или списание после отката |
-| 423 | Кошелёк заблокирован |
+| 402 `INSUFFICIENT_FUNDS` | `insufficient_funds` |
+| 423 `WALLET_RESTRICTED` | `wallet_restricted` |
+| 409 `IDEMPOTENCY_CONFLICT` (`conflict` или `rolled_back`) | `round_closed`: ставка опоздала или повтор не совпал |
+| остальное, таймаут 3 с | `wallet_unavailable`, списание откатывается по `ref` |
 
-`rollback` без списания ставит «надгробие». Стартовые фишки — начисление по `ref` вида `chip:starter:{userId}`.
+`rollback` без списания ставит «надгробие», опоздавший `debit` получает 409. Внутреннего чтения баланса у кошелька пока нет (запрошено): до него баланс в `session.ready`, `/v1/me` и `balance` для проигравших — `null`.
 
 ## Valkey рулетки
 

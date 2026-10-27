@@ -40,7 +40,9 @@ export const fairRollConfig = registerAs("fairRoll", () => ({
 
 export const walletConfig = registerAs("wallet", () => ({
   mode: env().WALLET_MODE,
-  starterChips: env().ROULETTE_STARTER_CHIPS,
+  url: env().WALLET_URL,
+  token: env().INTERNAL_API_TOKEN,
+  openingBalance: env().WALLET_MEMORY_OPENING_BALANCE,
 }));
 
 /** Table limits; the multipliers are not settings (ADR-012). */

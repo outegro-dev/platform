@@ -8,8 +8,8 @@ import { SettlementService } from "./rounds/settlement.service.js";
 import {
   type Harness,
   type Instance,
+  OPENING_BALANCE,
   ORIGIN,
-  STARTER_CHIPS,
   startHarness,
 } from "./test/harness.js";
 import { TestSocket } from "./test/socket-client.js";
@@ -40,7 +40,7 @@ describe("rounds", () => {
     await h.advance(0);
     const first = await a.round((view) => view.phase === "betting");
     const player = await a.connect();
-    expect(player.ready.player.balance).toBe(STARTER_CHIPS);
+    expect(player.ready.player.balance).toBe(OPENING_BALANCE);
     expect(player.ready.table).toMatchObject({
       minBet: 10,
       maxBet: 100_000,
@@ -57,7 +57,7 @@ describe("rounds", () => {
     const lose = await player.bet(losing, 50);
     expect(win.ok && lose.ok).toBe(true);
     if (!win.ok || !lose.ok) return;
-    expect(lose.message.payload.balance).toBe(STARTER_CHIPS - 150);
+    expect(lose.message.payload.balance).toBe(OPENING_BALANCE - 150);
 
     // Everyone sees the bets in the next frames.
     await h.advance(250);
@@ -88,10 +88,10 @@ describe("rounds", () => {
     expect(paid.payload).toEqual({
       round: first.round,
       payout,
-      balance: STARTER_CHIPS - 150 + payout,
+      balance: OPENING_BALANCE - 150 + payout,
     });
     expect(await h.wallet.balance(player.userId)).toBe(
-      STARTER_CHIPS - 150 + payout,
+      OPENING_BALANCE - 150 + payout,
     );
 
     const recorded = await h

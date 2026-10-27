@@ -34,7 +34,7 @@ const originList = z
     },
   );
 
-const chips = (fallback: number) =>
+const grumbles = (fallback: number) =>
   z.coerce
     .number()
     .int()
@@ -57,18 +57,38 @@ export const env = defineEnv(
       /** fair-roll-backend inside the cluster. */
       FAIR_ROLL_URL: z.url(),
       INTERNAL_API_TOKEN: z.string().min(32),
-      /** Only the in-memory wallet exists until wallet-backend has its internal API. */
-      WALLET_MODE: z.enum(["memory"]).default("memory"),
-      /** Free chips a new player starts with (owner, 28.10.2026). */
-      ROULETTE_STARTER_CHIPS: chips(1000),
-      ROULETTE_MIN_BET: chips(10),
-      ROULETTE_MAX_BET: chips(100_000),
+      /**
+       * The grumbles wallet: wallet-backend's internal API (`http`), or the
+       * in-memory stand-in for local runs (`memory`, never in production).
+       */
+      WALLET_MODE: z.enum(["memory", "http"]).default("memory"),
+      WALLET_URL: z.url().optional(),
+      /** What a player the in-memory wallet has not seen starts with. */
+      WALLET_MEMORY_OPENING_BALANCE: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .default(1000),
+      /** Table limits (owner, 28.10.2026). */
+      ROULETTE_MIN_BET: grumbles(10),
+      ROULETTE_MAX_BET: grumbles(100_000),
       ROULETTE_BETS_PER_ROUND: z.coerce
         .number()
         .int()
         .min(1)
         .max(20)
         .default(3),
-      ROULETTE_PAYOUT_LIMIT_PER_COLOR: chips(1_000_000),
+      ROULETTE_PAYOUT_LIMIT_PER_COLOR: grumbles(1_000_000),
+    })
+    .refine(
+      (env) => env.WALLET_MODE === "http" || env.NODE_ENV !== "production",
+      {
+        message: "production stakes real grumbles: WALLET_MODE must be http",
+        path: ["WALLET_MODE"],
+      },
+    )
+    .refine((env) => env.WALLET_MODE !== "http" || env.WALLET_URL, {
+      message: "WALLET_MODE=http needs WALLET_URL",
+      path: ["WALLET_URL"],
     }),
 );

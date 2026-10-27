@@ -13,8 +13,8 @@ import {
 
 const at = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
-/** Chips fit a JS number: wallets cap far below 2^53. */
-const chips = (name: string) => bigint(name, { mode: "number" });
+/** Grumbles fit a JS number: wallet amounts stay below 10^15. */
+const grumbles = (name: string) => bigint(name, { mode: "number" });
 
 export const playerStatuses = ["active", "suspended", "deleted"] as const;
 export const roundStatuses = [
@@ -70,8 +70,8 @@ export const rounds = pgTable(
     /** The revealed seed: SHA-256(seed) is the previous round's seed. */
     seed: text("seed"),
     bets: integer("bets").notNull().default(0),
-    staked: chips("staked").notNull().default(0),
-    paidOut: chips("paid_out").notNull().default(0),
+    staked: grumbles("staked").notNull().default(0),
+    paidOut: grumbles("paid_out").notNull().default(0),
   },
   (t) => [
     index("rounds_settled_idx").on(t.id).where(sql`${t.status} = 'settled'`),
@@ -93,9 +93,9 @@ export const bets = pgTable(
     userId: uuid("user_id").notNull(),
     clientBetId: uuid("client_bet_id").notNull(),
     color: text("color", { enum: betColors }).notNull(),
-    amount: chips("amount").notNull(),
+    amount: grumbles("amount").notNull(),
     status: text("status", { enum: betStatuses }).notNull().default("accepted"),
-    payout: chips("payout"),
+    payout: grumbles("payout"),
     createdAt: at("created_at").notNull(),
     settledAt: at("settled_at"),
   },

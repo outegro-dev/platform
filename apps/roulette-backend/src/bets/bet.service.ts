@@ -11,13 +11,14 @@ import { RoundFeed } from "../rounds/round.feed.js";
 import { RoundRepository } from "../rounds/round.repository.js";
 import { RoundStore } from "../rounds/round.store.js";
 import {
+  roundObject,
   WalletError,
   type WalletErrorCode,
   type WalletPort,
 } from "../wallet/wallet.port.js";
 import { BetWriter } from "./bet.writer.js";
 
-/** A refused bet; no chips moved. */
+/** A refused bet; no grumbles moved. */
 export class BetError extends Error {
   constructor(readonly code: RouletteErrorCode) {
     super(code);
@@ -93,6 +94,13 @@ export class BetService {
       color: input.color,
       exposure: exposureOf(input.color, input.amount),
     };
+    const debit = {
+      userId: input.userId,
+      amount: input.amount,
+      ref: betRef(betId),
+      objectRef: roundObject(round),
+      meta: { round, color: input.color },
+    };
     const deadline = performance.now() + DEBIT_TIMEOUT_MS + 1000;
     for (;;) {
       const reserved = await this.store.reserve({
@@ -113,18 +121,19 @@ export class BetService {
           color: recorded.color,
           amount: recorded.amount,
         };
-        return { bet, balance: await this.wallet.balance(input.userId) };
+        // The wallet replays the first debit's answer: the same balance.
+        const { balance } = await withTimeout(
+          this.wallet.debit(debit),
+          DEBIT_TIMEOUT_MS,
+        ).catch(() => {
+          throw new BetError("wallet_unavailable");
+        });
+        return { bet, balance };
       }
       if (performance.now() > deadline)
         throw new BetError("wallet_unavailable");
     }
 
-    const debit = {
-      userId: input.userId,
-      amount: input.amount,
-      ref: betRef(betId),
-      meta: { game: "roulette" as const, round, color: input.color },
-    };
     let balance: number;
     try {
       ({ balance } = await withTimeout(

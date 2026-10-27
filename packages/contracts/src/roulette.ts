@@ -7,8 +7,11 @@ import { isoDateTime } from "./primitives.js";
  * wheel, payouts and the fair roll live in `@outegro/roulette-engine`.
  */
 
-/** Free game chips: never bought, never exchanged for grumbles or between players. */
-export const chipUnit = "CHIP";
+/**
+ * Bets are grumbles from the wallet (owner, 28.10.2026): the same unit the
+ * platform sells and spends, winnings land there too.
+ */
+export const rouletteUnit = "GRM";
 
 export const rouletteColorSchema = z.enum(["red", "black", "green"]);
 export const roulettePhaseSchema = z.enum([
@@ -20,7 +23,8 @@ export const roulettePhaseSchema = z.enum([
 
 const seedHex = z.string().regex(/^[0-9a-f]{64}$/);
 const roundId = z.number().int().positive();
-const chips = z.number().int().nonnegative();
+/** Whole grumbles; wallet amounts stay far below 2^53. */
+const grumbles = z.number().int().nonnegative();
 
 export const tableSchema = z.object({
   minBet: z.number().int().positive(),
@@ -45,12 +49,12 @@ export type TableView = z.infer<typeof tableSchema>;
 export const betLineSchema = z.object({
   betId: z.uuid(),
   nickname: z.string(),
-  amount: chips,
+  amount: grumbles,
 });
 
 export const colorTotalsSchema = z.object({
   count: z.number().int().nonnegative(),
-  sum: chips,
+  sum: grumbles,
   /** The seven biggest bets; the rest is "and N more". */
   top: z.array(betLineSchema).max(7),
 });
@@ -93,13 +97,19 @@ export const ownBetSchema = z.object({
   clientBetId: z.uuid(),
   round: roundId,
   color: rouletteColorSchema,
-  amount: chips,
+  amount: grumbles,
 });
 export type OwnBet = z.infer<typeof ownBetSchema>;
 
+/**
+ * A balance the wallet reported; null when it said nothing this time (the
+ * client keeps its figure or reads the wallet's own `GET /v1/me/wallet`).
+ */
+const knownBalance = grumbles.nullable();
+
 export const roulettePlayerSchema = z.object({
   nickname: z.string(),
-  balance: chips,
+  balance: knownBalance,
 });
 
 // WebSocket protocol. Client: `{ type, seq, payload }`; server: `{ type, payload }`,
@@ -130,7 +140,7 @@ export const rouletteClientMessageSchema = z.discriminatedUnion("type", [
 ]);
 export type RouletteClientMessage = z.infer<typeof rouletteClientMessageSchema>;
 
-/** Codes of refused bets and commands; a refusal never moves chips. */
+/** Codes of refused bets and commands; a refusal never moves grumbles. */
 export const rouletteErrorCodeSchema = z.enum([
   "bad_message",
   "round_closed",
@@ -175,16 +185,16 @@ export const rouletteServerMessageSchema = z.discriminatedUnion("type", [
   serverMessage("round.state", z.object({ round: roundViewSchema })),
   serverMessage(
     "bet.accepted",
-    z.object({ bet: ownBetSchema, balance: chips }),
+    z.object({ bet: ownBetSchema, balance: grumbles }),
   ),
   /** Your balance after a round paid out (or refunded) your bets. */
   serverMessage(
     "balance",
     z.object({
-      balance: chips,
+      balance: knownBalance,
       round: roundId,
       /** What the round paid you, 0 when every bet lost. */
-      payout: chips,
+      payout: grumbles,
     }),
   ),
   serverMessage(
@@ -207,8 +217,8 @@ export type RouletteServerPayload<T extends RouletteServerMessageType> =
 export const rouletteMeSchema = z.object({
   userId: z.uuid(),
   nickname: z.string(),
-  balance: chips,
-  unit: z.literal(chipUnit),
+  balance: knownBalance,
+  unit: z.literal(rouletteUnit),
 });
 export type RouletteMe = z.infer<typeof rouletteMeSchema>;
 
@@ -235,8 +245,8 @@ export const fairRoundSchema = z.object({
   /** The previous round's seed (round 1: the commit). */
   previousSeed: seedHex.nullable(),
   bets: z.number().int().nonnegative(),
-  staked: chips,
-  paidOut: chips,
+  staked: grumbles,
+  paidOut: grumbles,
 });
 export type FairRound = z.infer<typeof fairRoundSchema>;
 

@@ -10,23 +10,26 @@ import {
 type Debit = { input: DebitInput; balance: number; reversed: boolean };
 
 /**
- * The chips wallet in process memory, until wallet-backend has its internal
- * API (ADR-012). It keeps the contract's semantics: refs are unique, a
- * repeat returns the first answer, the same ref with other data is a
- * conflict, a rollback without a debit leaves a tombstone, and a new player
- * gets the starter chips once. Balances die with the process, so the service
- * runs as one replica while this adapter is in use.
+ * The wallet in process memory: tests, and local runs without
+ * wallet-backend. It keeps the contract's semantics: refs are unique, a
+ * repeat returns the first answer, the same ref with another user or amount
+ * is a conflict, a rollback without a debit leaves a tombstone. A player it
+ * has not seen starts with the opening balance, which exists only here:
+ * production refuses this adapter (WALLET_MODE=http).
  */
 export class InMemoryWallet implements WalletPort {
   private readonly logger = new Logger("InMemoryWallet");
   private readonly balances = new Map<string, number>();
   private readonly debits = new Map<string, Debit>();
-  private readonly credits = new Map<string, CreditItem>();
+  private readonly credits = new Map<
+    string,
+    { item: CreditItem; balance: number }
+  >();
   private readonly tombstones = new Set<string>();
 
-  constructor(private readonly starterChips: number) {
+  constructor(private readonly openingBalance: number) {
     this.logger.warn(
-      "Chips live in process memory: one replica, balances reset on restart",
+      "Grumbles live in process memory (development): one replica, balances reset on restart",
     );
   }
 
@@ -47,16 +50,21 @@ export class InMemoryWallet implements WalletPort {
     return { balance };
   }
 
+  /** All or nothing, as in wallet-backend: one conflicting line refuses the batch. */
   async creditBatch(items: CreditItem[]): Promise<CreditResult[]> {
+    for (const item of items) {
+      const previous = this.credits.get(item.ref);
+      if (previous && !sameOperation(previous.item, item))
+        throw new WalletError("conflict");
+    }
     return items.map((item) => {
       const previous = this.credits.get(item.ref);
-      if (previous) {
-        if (!sameOperation(previous, item)) throw new WalletError("conflict");
-        return { ref: item.ref, status: "duplicate" };
-      }
-      this.credits.set(item.ref, item);
-      this.balances.set(item.userId, this.read(item.userId) + item.amount);
-      return { ref: item.ref, status: "applied" };
+      if (previous)
+        return { ref: item.ref, balance: previous.balance, replayed: true };
+      const balance = this.read(item.userId) + item.amount;
+      this.balances.set(item.userId, balance);
+      this.credits.set(item.ref, { item, balance });
+      return { ref: item.ref, balance, replayed: false };
     });
   }
 
@@ -80,20 +88,16 @@ export class InMemoryWallet implements WalletPort {
     return this.read(userId);
   }
 
-  /** The balance, opening the account with the starter chips on first touch. */
+  /** The balance, opening the account on first touch. */
   private read(userId: string): number {
     const balance = this.balances.get(userId);
     if (balance !== undefined) return balance;
-    this.balances.set(userId, this.starterChips);
-    return this.starterChips;
+    this.balances.set(userId, this.openingBalance);
+    return this.openingBalance;
   }
 }
 
+/** The wallet's fingerprint: user and amount (meta and reason do not count). */
 function sameOperation(a: DebitInput, b: DebitInput): boolean {
-  return (
-    a.userId === b.userId &&
-    a.amount === b.amount &&
-    a.meta.round === b.meta.round &&
-    a.meta.color === b.meta.color
-  );
+  return a.userId === b.userId && a.amount === b.amount;
 }

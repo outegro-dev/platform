@@ -7,7 +7,7 @@ import { CLOSE_GRACE_MS } from "./rounds/round.engine.js";
 import {
   type Harness,
   type Instance,
-  STARTER_CHIPS,
+  OPENING_BALANCE,
   startHarness,
 } from "./test/harness.js";
 
@@ -15,7 +15,7 @@ let h: Harness;
 let a: Instance;
 
 beforeAll(async () => {
-  // A low payout limit, so a few starter balances reach it.
+  // A low payout limit, so a few opening balances reach it.
   h = await startHarness({ env: { ROULETTE_PAYOUT_LIMIT_PER_COLOR: "20000" } });
   a = await h.boot("a");
   await h.advance(0);
@@ -80,7 +80,7 @@ describe("bets", () => {
       code: "table_limit",
     });
     // The refusal gave nothing away and took nothing.
-    expect(await h.wallet.balance(second.userId)).toBe(STARTER_CHIPS);
+    expect(await h.wallet.balance(second.userId)).toBe(OPENING_BALANCE);
     expect(await second.bet("green", 400)).toMatchObject({ ok: true });
 
     expect(await second.bet("red", 1000)).toEqual({
@@ -113,8 +113,8 @@ describe("bets", () => {
     expect(second.message.payload.bet.betId).toBe(
       first.message.payload.bet.betId,
     );
-    expect(second.message.payload.balance).toBe(STARTER_CHIPS - 100);
-    expect(await h.wallet.balance(player.userId)).toBe(STARTER_CHIPS - 100);
+    expect(second.message.payload.balance).toBe(OPENING_BALANCE - 100);
+    expect(await h.wallet.balance(player.userId)).toBe(OPENING_BALANCE - 100);
 
     // The same click from a second tab while the first debit is still in flight.
     const tab = await a.connect(player.userId);
@@ -137,7 +137,7 @@ describe("bets", () => {
       tab.answer(fromTab),
     ]);
     expect(a1.ok && a2.ok).toBe(true);
-    expect(await h.wallet.balance(player.userId)).toBe(STARTER_CHIPS - 150);
+    expect(await h.wallet.balance(player.userId)).toBe(OPENING_BALANCE - 150);
 
     const rows = await recordedBets(round.round);
     expect(rows.filter((bet) => bet.userId === player.userId)).toHaveLength(2);
@@ -170,12 +170,12 @@ describe("bets", () => {
     expect(
       (await recordedBets(round.round)).map((bet) => bet.userId),
     ).toContain(player.userId);
-    expect(await h.wallet.balance(player.userId)).toBe(STARTER_CHIPS - 10);
+    expect(await h.wallet.balance(player.userId)).toBe(OPENING_BALANCE - 10);
 
     // After the stop a bet is refused without touching the wallet.
     const late = await player.bet("red", 10);
     expect(late).toEqual({ ok: false, code: "round_closed" });
-    expect(await h.wallet.balance(player.userId)).toBe(STARTER_CHIPS - 10);
+    expect(await h.wallet.balance(player.userId)).toBe(OPENING_BALANCE - 10);
     await player.close();
   });
 
@@ -205,7 +205,7 @@ describe("bets", () => {
       ok: false,
       code: "round_closed",
     });
-    expect(await h.wallet.balance(player.userId)).toBe(STARTER_CHIPS);
+    expect(await h.wallet.balance(player.userId)).toBe(OPENING_BALANCE);
     expect(
       (await recordedBets(round.round)).map((bet) => bet.id),
     ).not.toContain(betId);
@@ -242,11 +242,11 @@ describe("bets", () => {
       const balance = await h.wallet.balance(player.userId);
       if (answer?.ok) {
         expect(recorded.get(player.userId)?.amount).toBe(10 + i);
-        expect(balance).toBe(STARTER_CHIPS - (10 + i));
+        expect(balance).toBe(OPENING_BALANCE - (10 + i));
       } else {
         expect(answer?.code).toBe("round_closed");
         expect(recorded.has(player.userId)).toBe(false);
-        expect(balance).toBe(STARTER_CHIPS);
+        expect(balance).toBe(OPENING_BALANCE);
       }
     }
     for (const player of players) await player.close();

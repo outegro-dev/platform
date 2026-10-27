@@ -29,6 +29,7 @@ import { RoundRepository } from "./rounds/round.repository.js";
 import { RoundStore } from "./rounds/round.store.js";
 import { RoundsController } from "./rounds/rounds.controller.js";
 import { SettlementService } from "./rounds/settlement.service.js";
+import { HttpWallet } from "./wallet/http-wallet.js";
 import { InMemoryWallet } from "./wallet/memory-wallet.js";
 
 const schedulerLog = new Logger("Scheduler");
@@ -51,9 +52,10 @@ const schedulerLog = new Logger("Scheduler");
     {
       provide: WALLET,
       inject: [walletConfig.KEY],
-      // The only adapter until wallet-backend has its internal API (ADR-012).
       useFactory: (wallet: ConfigType<typeof walletConfig>) =>
-        new InMemoryWallet(wallet.starterChips),
+        wallet.mode === "http" && wallet.url
+          ? new HttpWallet(wallet.url, wallet.token)
+          : new InMemoryWallet(wallet.openingBalance),
     },
     {
       provide: FAIR_ROLL,

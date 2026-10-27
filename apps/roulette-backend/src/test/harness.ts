@@ -35,7 +35,7 @@ import { TestSocket } from "./socket-client.js";
 export const ORIGIN = "http://localhost:3007";
 const ISSUER = "http://identity.test";
 const AUDIENCE = "outegro";
-export const STARTER_CHIPS = 1000;
+export const OPENING_BALANCE = 1000;
 
 export type Harness = Awaited<ReturnType<typeof startHarness>>;
 export type Instance = Awaited<ReturnType<Harness["boot"]>>;
@@ -84,7 +84,7 @@ export async function startHarness(
     HTTP_RATE_LIMIT_PER_MINUTE: "100000",
     FAIR_ROLL_URL: "http://127.0.0.1:9",
     INTERNAL_API_TOKEN: "t".repeat(40),
-    ROULETTE_STARTER_CHIPS: String(STARTER_CHIPS),
+    WALLET_MEMORY_OPENING_BALANCE: String(OPENING_BALANCE),
     // Each test file runs in its own module graph, so env() is read afresh.
     ...options.env,
   });
@@ -92,7 +92,7 @@ export async function startHarness(
   const clock = new ManualClock(new Date("2026-10-28T10:00:00.000Z"));
   const scheduler = new SharedManualScheduler(clock);
   const fair = new LocalFairRoll();
-  const wallet = new TestWallet(STARTER_CHIPS);
+  const wallet = new TestWallet(OPENING_BALANCE);
   const raw = new Redis(valkey.url);
   const instances: NestExpressApplication[] = [];
 

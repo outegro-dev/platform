@@ -1,11 +1,11 @@
 import { Controller, Get, Inject } from "@nestjs/common";
-import { chipUnit, type RouletteMe } from "@outegro/contracts/roulette";
+import { type RouletteMe, rouletteUnit } from "@outegro/contracts/roulette";
 import { type AuthenticatedUser, CurrentUser } from "@outegro/nest-common";
 import { WALLET } from "../common/tokens.js";
 import type { WalletPort } from "../wallet/wallet.port.js";
 import { PlayersService } from "./players.service.js";
 
-/** The signed-in player: roulette nickname and chips; ownership comes from the token. */
+/** The signed-in player: roulette nickname and grumbles; ownership comes from the token. */
 @Controller("me")
 export class MeController {
   constructor(
@@ -20,7 +20,7 @@ export class MeController {
       userId: player.userId,
       nickname: player.nickname,
       balance: await this.wallet.balance(user.userId),
-      unit: chipUnit,
+      unit: rouletteUnit,
     };
   }
 }

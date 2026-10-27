@@ -11,6 +11,7 @@ import { winRef } from "../domain/ids.js";
 import {
   CREDIT_BATCH_LIMIT,
   type CreditItem,
+  roundObject,
   type WalletPort,
 } from "../wallet/wallet.port.js";
 import { RoundRepository, type RoundRow } from "./round.repository.js";
@@ -45,7 +46,8 @@ export class SettlementService {
         userId: bet.userId,
         amount: bet.amount * multipliers[color],
         ref: winRef(bet.id),
-        meta: { game: "roulette", round: round.id, color },
+        objectRef: roundObject(round.id),
+        meta: { round: round.id, color },
       }));
     for (let i = 0; i < winners.length; i += CREDIT_BATCH_LIMIT)
       await this.wallet.creditBatch(winners.slice(i, i + CREDIT_BATCH_LIMIT));

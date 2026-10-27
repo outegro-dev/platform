@@ -8,7 +8,7 @@ import { SettlementService } from "./rounds/settlement.service.js";
 import {
   type Harness,
   type Instance,
-  STARTER_CHIPS,
+  OPENING_BALANCE,
   startHarness,
 } from "./test/harness.js";
 
@@ -75,9 +75,9 @@ describe("settlement", () => {
     const loser = rows[2400];
     if (!winner || !loser) return;
     expect(await h.wallet.balance(winner.userId)).toBe(
-      STARTER_CHIPS + winner.amount * multipliers[winning],
+      OPENING_BALANCE + winner.amount * multipliers[winning],
     );
-    expect(await h.wallet.balance(loser.userId)).toBe(STARTER_CHIPS);
+    expect(await h.wallet.balance(loser.userId)).toBe(OPENING_BALANCE);
 
     // A second run (a new leader after a crash mid-settlement) changes nothing.
     const row = await a.app.get(RoundRepository).find(round.round);
@@ -86,7 +86,7 @@ describe("settlement", () => {
       await a.app.get(SettlementService).settle({ ...row, status: "rolling" }),
     ).toBe(false);
     expect(await h.wallet.balance(winner.userId)).toBe(
-      STARTER_CHIPS + winner.amount * multipliers[winning],
+      OPENING_BALANCE + winner.amount * multipliers[winning],
     );
   });
 });
