@@ -25,6 +25,7 @@ describe("navigation by permission", () => {
       "payments",
       "battleship",
       "education",
+      "roulette",
       "audit",
       "monitoring",
     ]);
@@ -37,7 +38,32 @@ describe("navigation by permission", () => {
       "notifications",
       "battleship",
       "education",
+      "roulette",
     ]);
+  });
+
+  it("opens the roulette with roulette.read; commands need their own permission", () => {
+    expect(itemsOf(["roulette.read"])).toEqual(["dashboard", "roulette"]);
+    expect(
+      tabsFor(["roulette.read"], sectionTabs.roulette).map((tab) => tab.key),
+    ).toEqual([
+      "live",
+      "rounds",
+      "players",
+      "table",
+      "daily",
+      "services",
+      "audit",
+    ]);
+    // Support looks; only an owner changes the table or voids a round.
+    const support = permissionsOf(["support"]);
+    expect(can(support, "roulette.read")).toBe(true);
+    expect(can(support, "roulette.manage")).toBe(false);
+    expect(can(support, "roulette.void")).toBe(false);
+    const owner = permissionsOf(["owner"]);
+    expect(can(owner, "roulette.manage")).toBe(true);
+    expect(can(owner, "roulette.void")).toBe(true);
+    expect(itemsOf(["roulette.manage"])).not.toContain("roulette");
   });
 
   it("gives an education editor the textbooks and nothing else", () => {
@@ -117,6 +143,7 @@ describe("navigation by permission", () => {
     expect(activeNav("/users/5b449591")).toBe("users");
     expect(activeNav("/payments/orders/1")).toBe("payments");
     expect(activeNav("/education/books/sql-internals")).toBe("education");
+    expect(activeNav("/roulette/rounds/184")).toBe("roulette");
     expect(activeNav("/unknown")).toBe("dashboard");
     // Grafana is another app: the console never marks it as current.
     expect(activeNav("/grafana/d/abc")).toBe("dashboard");

@@ -72,6 +72,21 @@ const table: Record<string, Record<string, Tone>> = {
   assist: { on: "ok", paused: "warn", off: "neutral" },
   attempt: { requesting: "info", ready: "ok", failed: "bad", unknown: "warn" },
   health: { up: "ok", degraded: "warn", down: "bad", unconfigured: "neutral" },
+  // Roulette: a round is live until it is paid out; a voided one went back.
+  roulettePhase: {
+    betting: "live",
+    locked: "live",
+    rolling: "live",
+    settled: "neutral",
+    voided: "bad",
+  },
+  rouletteBet: {
+    accepted: "info",
+    won: "ok",
+    lost: "neutral",
+    refunded: "warn",
+  },
+  serviceStatus: { up: "ok", down: "bad", unknown: "warn" },
 };
 
 export function toneOf(kind: keyof typeof table | string, state: string): Tone {

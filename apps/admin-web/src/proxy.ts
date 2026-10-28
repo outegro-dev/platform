@@ -7,7 +7,7 @@ import {
 } from "@outegro/bff/session";
 import { endSession } from "@outegro/bff/sso";
 import { type NextRequest, NextResponse } from "next/server";
-import { PATH_HEADER } from "@/lib/constants";
+import { BACKGROUND_HEADER, PATH_HEADER } from "@/lib/constants";
 import { env } from "@/lib/env";
 import { isIdle, nowSeconds, SEEN_COOKIE, seenCookieOptions } from "@/lib/idle";
 import { GRAFANA_AUTH_PATH } from "@/lib/monitoring";
@@ -87,7 +87,9 @@ export async function proxy(request: NextRequest) {
   headers.set(PATH_HEADER, `${pathname}${search}`);
   const response = NextResponse.next({ request: { headers } });
   response.headers.set("Content-Security-Policy", csp);
-  if (!open && signedIn) {
+  // A read the page makes on its own is not the operator being here.
+  const background = api && request.headers.get(BACKGROUND_HEADER) === "1";
+  if (!open && signedIn && !background) {
     response.cookies.set(SEEN_COOKIE, nowSeconds(), seenCookieOptions(secure));
   }
   return session.apply(response);

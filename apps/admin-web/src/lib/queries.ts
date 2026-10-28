@@ -181,6 +181,29 @@ export function auditFetchers(
       };
     };
   }
+  // Roulette's feed knows rounds and its settings only: a filter by another
+  // target (a user, a book) never matches it.
+  const rouletteTarget =
+    !filter.targetId ||
+    /^\d+$/.test(filter.targetId) ||
+    filter.targetId === "table" ||
+    filter.targetId === "daily";
+  if (
+    granted.has("roulette.read") &&
+    svc.roulette.configured &&
+    rouletteTarget
+  ) {
+    sources.roulette = async (cursor, limit) => {
+      const page = await svc.roulette.audit({
+        cursor: cursor ?? undefined,
+        limit,
+      });
+      return {
+        items: page.items.map(tag("roulette")),
+        nextCursor: page.nextCursor,
+      };
+    };
+  }
   if (
     granted.has("audit.read") &&
     granted.has("billing.read") &&

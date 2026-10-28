@@ -3,7 +3,7 @@ import type { Page } from "./result";
 
 /**
  * One timeline from several audit feeds (Identity, Notifications, Battleship,
- * Payments, Education). Each feed pages with its own opaque cursor, newest first; the
+ * Payments, Education, Roulette). Each feed pages with its own opaque cursor, newest first; the
  * merged cursor keeps, per feed, the last cursor and how many items of that
  * page were already shown. Items are only emitted while every feed with
  * more data has been read at least that far back, so the order is exact.
@@ -15,6 +15,7 @@ export const auditSources = [
   "battleship",
   "payments",
   "education",
+  "roulette",
 ] as const;
 export type AuditSource = (typeof auditSources)[number];
 
@@ -55,6 +56,8 @@ export const auditActions = {
     "refund.matched",
   ],
   education: eduAuditActionSchema.options,
+  // roulette-backend's `admin_audit` (the contract's `adminAuditEntrySchema`).
+  roulette: ["table.update", "round.void"],
 } as const satisfies Record<AuditSource, readonly string[]>;
 
 /**

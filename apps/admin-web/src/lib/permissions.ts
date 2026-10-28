@@ -66,6 +66,7 @@ export const navigation: readonly NavSection[] = [
       item("payments", ["billing.read"]),
       item("battleship", ["battleship.read"]),
       item("education", ["edu.read"]),
+      item("roulette", ["roulette.read"]),
     ],
   },
   { key: "governance", items: [item("audit", ["audit.read"])] },
@@ -143,6 +144,19 @@ export const sectionTabs = {
     { key: "books", href: "/education/books", permission: "edu.read" },
     { key: "readers", href: "/education/readers", permission: "edu.read" },
     { key: "audit", href: "/education/audit", permission: "edu.read" },
+  ],
+  roulette: [
+    { key: "live", href: "/roulette", permission: "roulette.read" },
+    { key: "rounds", href: "/roulette/rounds", permission: "roulette.read" },
+    { key: "players", href: "/roulette/players", permission: "roulette.read" },
+    { key: "table", href: "/roulette/table", permission: "roulette.read" },
+    { key: "daily", href: "/roulette/daily", permission: "roulette.read" },
+    {
+      key: "services",
+      href: "/roulette/services",
+      permission: "roulette.read",
+    },
+    { key: "audit", href: "/roulette/audit", permission: "roulette.read" },
   ],
 } as const satisfies Record<string, readonly SubNavItem[]>;
 

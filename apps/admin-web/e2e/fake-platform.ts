@@ -9,6 +9,8 @@
  *   /battleship/...       battleship-backend admin API (shape assumed by the adapter)
  *   /payments/...         payments-backend admin API and public catalog
  *   /edu/...              edu-backend admin API (@outegro/contracts/edu)
+ *   /roulette/...         roulette-backend admin API (@outegro/contracts/roulette)
+ *   /daily/...            daily-bonus-backend admin API (@outegro/contracts/daily-bonus)
  *
  * Tokens are unsigned JWT-shaped strings carrying the persona; every admin
  * endpoint checks the persona's permissions like the real services do.
@@ -19,8 +21,10 @@
  * connection. "fake-assist=off" answers Education's overview with the AI
  * assistant switched off, "fake-assist=paused" with its spending cap for the
  * day reached; "fake-audit=future" adds an Education audit action newer than
- * the contract. "fake-trace=<tag>" keeps every request made with it for
- * GET /__trace/<tag>.
+ * the contract. "fake-stale=roulette" refuses roulette and bonus commands
+ * made with a token issued before the first one (a role changed meanwhile),
+ * "fake-wallet=memory" reports the roulette's wallet running in memory.
+ * "fake-trace=<tag>" keeps every request made with it for GET /__trace/<tag>.
  */
 import { createHash, randomBytes } from "node:crypto";
 import {
@@ -504,7 +508,9 @@ const b64 = (value: unknown) =>
   Buffer.from(JSON.stringify(value)).toString("base64url");
 function tokensFor(session: Session) {
   const exp = Math.floor(Date.now() / 1000) + 300;
-  const accessToken = `${b64({ alg: "none", typ: "JWT" })}.${b64({ sub: personaIds[session.persona], sid: session.id, persona: session.persona, exp })}.fake`;
+  // issuedAtMs: when the token was issued, for services that refuse tokens
+  // older than the actor's last role change (see "fake-stale=roulette").
+  const accessToken = `${b64({ alg: "none", typ: "JWT" })}.${b64({ sub: personaIds[session.persona], sid: session.id, persona: session.persona, exp, issuedAtMs: Date.now() })}.fake`;
   return {
     sessionId: session.id,
     accessToken,
@@ -4514,6 +4520,587 @@ route("POST", "/payments/v1/admin/refunds/:id/match", (req, _res, [id]) => {
     createdAt: iso(Date.now()),
   });
   return { refund: refundView(refund), outcome: null };
+});
+
+// ── Roulette ────────────────────────────────────────────────────────────
+// roulette-backend's admin API (@outegro/contracts/roulette) and
+// daily-bonus-backend's (@outegro/contracts/daily-bonus), as the contract
+// describes them; seeded from a generator of their own, so they move no
+// other record. The current round always takes bets: voiding it opens the
+// next one with the same story (a green close to its payout limit).
+// "fake-stale=roulette" plays an operator whose role changed a moment ago:
+// the first command refuses every token issued before it (401), as the
+// services do; "fake-wallet=memory" reports a wallet running in memory.
+
+type RouletteColor = "red" | "black" | "green";
+type RoulettePhase = "betting" | "locked" | "rolling" | "settled" | "voided";
+type RouletteBet = {
+  betId: string;
+  round: number;
+  userId: string;
+  nickname: string;
+  color: RouletteColor;
+  amount: number;
+  status: "accepted" | "won" | "lost" | "refunded";
+  payout: number | null;
+  createdAt: string;
+};
+type RouletteRound = {
+  round: number;
+  phase: RoulettePhase;
+  number: number | null;
+  color: RouletteColor | null;
+  openedAt: number;
+  seed: string;
+  bets: RouletteBet[];
+};
+type RouletteAudit = {
+  id: string;
+  actorId: string;
+  action: string;
+  reason: string;
+  subject: string;
+  createdAt: string;
+};
+
+const rouletteRandom = prngFor("roulette");
+const rouletteUuid = () => uuidFrom(rouletteRandom);
+const rouletteBetween = (min: number, max: number) =>
+  min + Math.floor(rouletteRandom() * (max - min + 1));
+const sha256 = (value: string) =>
+  createHash("sha256").update(value).digest("hex");
+const colorOf = (number: number): RouletteColor =>
+  number === 0 ? "green" : number <= 7 ? "red" : "black";
+const multiplier: Record<RouletteColor, number> = {
+  red: 2,
+  black: 2,
+  green: 14,
+};
+
+const rouletteNicknames = [
+  "LuckyRed",
+  "GreenHunter",
+  "NightOwl",
+  "Kraken",
+  "AceOfInk",
+  "PaperTiger",
+  "Mira_L",
+  "Volk",
+  "Zero14",
+  "Halftone",
+  "Typewriter",
+  "BlackJackie",
+];
+const roulettePlayers = users
+  .filter(
+    (user) =>
+      user.status === "active" && !Object.values(personaIds).includes(user.id),
+  )
+  .slice(0, rouletteNicknames.length)
+  .map((user, index) => ({
+    userId: user.id,
+    nickname: rouletteNicknames[index] as string,
+    status: user.status,
+  }));
+
+// The seed chain: SHA-256 of a round's seed is the previous round's seed,
+// down to the commit published before the first round.
+const CHAIN = 400;
+const FIRST_ROUND = 125;
+const chain: string[] = [sha256("outegro-roulette-e2e")];
+for (let index = 1; index < CHAIN; index++)
+  chain.push(sha256(chain[index - 1] as string));
+chain.reverse();
+const seedOf = (round: number) => chain[round] as string;
+const rouletteCommit = sha256(seedOf(0));
+const publicSeed = "btc-block-912345";
+
+const rouletteTable = {
+  minBet: 10,
+  maxBet: 50_000,
+  betsPerRound: 5,
+  payoutLimitPerColor: 1_000_000,
+  paused: false,
+  maintenance: false,
+  version: 4,
+  updatedAt: iso(NOW - 3 * DAY),
+};
+
+const rounds = new Map<number, RouletteRound>();
+for (let round = FIRST_ROUND; round <= 184; round++) {
+  const number = rouletteBetween(0, 14);
+  const color = colorOf(number);
+  const openedAt = NOW - (185 - round) * 30 * MINUTE;
+  const bets: RouletteBet[] = [];
+  const count = rouletteBetween(0, 7);
+  for (let index = 0; index < count; index++) {
+    const player = roulettePlayers[
+      rouletteBetween(0, roulettePlayers.length - 1)
+    ] as (typeof roulettePlayers)[number];
+    const bet = (["red", "red", "black", "black", "green"] as const)[
+      rouletteBetween(0, 4)
+    ];
+    const amount = rouletteBetween(1, 40) * 50;
+    const won = bet === color;
+    bets.push({
+      betId: rouletteUuid(),
+      round,
+      userId: player.userId,
+      nickname: player.nickname,
+      color: bet,
+      amount,
+      status: won ? "won" : "lost",
+      payout: won ? amount * multiplier[bet] : 0,
+      createdAt: iso(openedAt + 5_000 + index * 900),
+    });
+  }
+  rounds.set(round, {
+    round,
+    phase: "settled",
+    number,
+    color,
+    openedAt,
+    seed: seedOf(round),
+    bets,
+  });
+}
+// An owner voided one round last week: its bets went back.
+const voidedRound = rounds.get(150) as RouletteRound;
+voidedRound.phase = "voided";
+for (const bet of voidedRound.bets) {
+  bet.status = "refunded";
+  bet.payout = null;
+}
+
+/** The current round: a few bets, and green close to its payout limit. */
+function openRound(round: number) {
+  const pattern: [number, RouletteColor, number][] = [
+    [0, "red", 50_000],
+    [1, "red", 50_000],
+    [2, "black", 40_000],
+    [3, "green", 30_000],
+    [4, "green", 30_000],
+    [5, "red", 20_000],
+    [6, "black", 25_000],
+  ];
+  rounds.set(round, {
+    round,
+    phase: "betting",
+    number: null,
+    color: null,
+    openedAt: Date.now() - 8_000,
+    seed: seedOf(round),
+    bets: pattern.map(([player, color, amount], index) => {
+      const who = roulettePlayers[player] as (typeof roulettePlayers)[number];
+      return {
+        betId: uuidFrom(prngFor(`roulette-${round}-${index}`)),
+        round,
+        userId: who.userId,
+        nickname: who.nickname,
+        color,
+        amount,
+        status: "accepted" as const,
+        payout: null,
+        createdAt: iso(Date.now() - 6_000 + index * 500),
+      };
+    }),
+  });
+  currentRound = round;
+}
+let currentRound = 185;
+openRound(185);
+
+const rouletteAudit: RouletteAudit[] = [
+  {
+    id: rouletteUuid(),
+    actorId: personaIds.owner,
+    action: "round.void",
+    reason: "The wheel froze mid-spin after a deploy",
+    subject: "round:150",
+    createdAt: iso(voidedRound.openedAt + 40_000),
+  },
+  {
+    id: rouletteUuid(),
+    actorId: personaIds.owner,
+    action: "table.update",
+    reason: "Lower the maximum bet for the launch week",
+    subject: "table",
+    createdAt: rouletteTable.updatedAt,
+  },
+].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
+const settledOf = (round: RouletteRound) => round.phase === "settled";
+const stakedOf = (round: RouletteRound) =>
+  round.bets.reduce((sum, bet) => sum + bet.amount, 0);
+const paidOf = (round: RouletteRound) =>
+  round.phase === "voided"
+    ? stakedOf(round)
+    : round.bets.reduce((sum, bet) => sum + (bet.payout ?? 0), 0);
+const roundView = (round: RouletteRound) => {
+  const staked = stakedOf(round);
+  const paidOut = paidOf(round);
+  return {
+    round: round.round,
+    phase: round.phase,
+    number: round.number,
+    color: round.color,
+    openedAt: iso(round.openedAt),
+    bets: round.bets.length,
+    staked,
+    paidOut,
+    result:
+      round.phase === "voided" ? 0 : settledOf(round) ? staked - paidOut : 0,
+  };
+};
+const houseOf = (list: RouletteRound[]) => {
+  const settled = list.filter(settledOf);
+  const staked = settled.reduce((sum, round) => sum + stakedOf(round), 0);
+  const paidOut = settled.reduce((sum, round) => sum + paidOf(round), 0);
+  return {
+    rounds: settled.length,
+    bets: settled.reduce((sum, round) => sum + round.bets.length, 0),
+    staked,
+    paidOut,
+    result: staked - paidOut,
+  };
+};
+const betLine = (bet: RouletteBet) => ({
+  betId: bet.betId,
+  nickname: bet.nickname,
+  amount: bet.amount,
+});
+
+/** Tokens issued before the operator's role "changed" (fake-stale=roulette). */
+const roleChangedAt = new Map<string, number>();
+function needFresh(req: Req, permission: string): Persona {
+  const persona = need(req, permission);
+  if (!String(req.headers["user-agent"] ?? "").includes("fake-stale=roulette"))
+    return persona;
+  const payload = JSON.parse(
+    Buffer.from(
+      (req.headers.authorization ?? "").slice(7).split(".")[1] ?? "",
+      "base64url",
+    ).toString("utf8"),
+  ) as { sid: string; issuedAtMs?: number };
+  if (!roleChangedAt.has(payload.sid))
+    roleChangedAt.set(payload.sid, Date.now());
+  if ((payload.issuedAtMs ?? 0) <= (roleChangedAt.get(payload.sid) ?? 0))
+    fail(401, "UNAUTHENTICATED");
+  return persona;
+}
+
+const rouletteReason = (body: Record<string, unknown> | undefined) => {
+  const reason = typeof body?.reason === "string" ? body.reason.trim() : "";
+  if (reason.length < 3 || reason.length > 500)
+    fail(400, "VALIDATION_FAILED", { reason: ["3..500 characters"] });
+  return reason;
+};
+
+route("GET", "/roulette/v1/admin/live", (req) => {
+  need(req, "roulette.read");
+  const round = rounds.get(currentRound) as RouletteRound;
+  const now = Date.now();
+  const totals = Object.fromEntries(
+    (["red", "black", "green"] as const).map((color) => {
+      const bets = round.bets
+        .filter((bet) => bet.color === color && bet.status === "accepted")
+        .sort((a, b) => b.amount - a.amount);
+      return [
+        color,
+        {
+          count: bets.length,
+          sum: bets.reduce((sum, bet) => sum + bet.amount, 0),
+          top: bets.slice(0, 7).map(betLine),
+        },
+      ];
+    }),
+  ) as unknown as Record<RouletteColor, { count: number; sum: number }>;
+  const all = [...rounds.values()];
+  return {
+    round: {
+      round: round.round,
+      phase: round.phase,
+      // The round keeps taking bets: twelve seconds left, every time.
+      bettingEndsAt: iso(now + 12_000),
+      rollingAt: iso(now + 14_000),
+      settleAt: iso(now + 20_000),
+      nextRoundAt: iso(now + 23_000),
+      result: null,
+      totals,
+      table: {
+        paused: rouletteTable.paused,
+        maintenance: rouletteTable.maintenance,
+      },
+    },
+    online: 37,
+    table: rouletteTable,
+    exposure: {
+      red: totals.red.sum * multiplier.red,
+      black: totals.black.sum * multiplier.black,
+      green: totals.green.sum * multiplier.green,
+    },
+    house: {
+      day: houseOf(all.filter((item) => item.openedAt > now - DAY)),
+      total: houseOf(all),
+    },
+  };
+});
+route("GET", "/roulette/v1/admin/rounds", (req) => {
+  need(req, "roulette.read");
+  const list = [...rounds.values()].sort((a, b) => b.round - a.round);
+  const page = paginate(list, req.query);
+  return { items: page.items.map(roundView), nextCursor: page.nextCursor };
+});
+route("GET", "/roulette/v1/admin/rounds/:round", (req, _res, [raw]) => {
+  need(req, "roulette.read");
+  const round = (rounds.get(Number(raw)) ??
+    fail(404, "NOT_FOUND")) as RouletteRound;
+  const revealed = round.phase === "settled" || round.number !== null;
+  const previous = round.round > 1 ? seedOf(round.round - 1) : null;
+  return {
+    ...roundView(round),
+    seed: revealed ? round.seed : null,
+    previousSeed: previous,
+    commit: rouletteCommit,
+    publicSeed,
+    linkVerified: revealed ? sha256(round.seed) === previous : null,
+    topBets: [...round.bets].sort((a, b) => b.amount - a.amount).slice(0, 10),
+  };
+});
+route("POST", "/roulette/v1/admin/rounds/:round/void", (req, _res, [raw]) => {
+  const persona = needFresh(req, "roulette.void");
+  const reason = rouletteReason(req.body);
+  const round = (rounds.get(Number(raw)) ??
+    fail(404, "NOT_FOUND")) as RouletteRound;
+  if (round.phase === "settled" || round.phase === "voided")
+    fail(422, "UNPROCESSABLE", {
+      round: [`cannot void a ${round.phase} round`],
+    });
+  const open = round.bets.filter((bet) => bet.status === "accepted");
+  const refunded = open.reduce((sum, bet) => sum + bet.amount, 0);
+  if (req.body?.preview === true)
+    return { preview: true, round: round.round, bets: open.length, refunded };
+  round.phase = "voided";
+  for (const bet of open) bet.status = "refunded";
+  rouletteAudit.unshift({
+    id: uuid(),
+    actorId: actorOf(persona),
+    action: "round.void",
+    reason,
+    subject: `round:${round.round}`,
+    createdAt: iso(Date.now()),
+  });
+  if (round.round === currentRound) openRound(currentRound + 1);
+  return { preview: false, round: round.round, bets: open.length, refunded };
+});
+const playerView = (player: (typeof roulettePlayers)[number]) => {
+  const bets = [...rounds.values()]
+    .flatMap((round) => round.bets)
+    .filter((bet) => bet.userId === player.userId);
+  const staked = bets.reduce((sum, bet) => sum + bet.amount, 0);
+  const paidOut = bets.reduce(
+    (sum, bet) =>
+      sum + (bet.status === "refunded" ? bet.amount : (bet.payout ?? 0)),
+    0,
+  );
+  const last =
+    bets
+      .map((bet) => bet.createdAt)
+      .sort()
+      .at(-1) ?? null;
+  return {
+    view: {
+      ...player,
+      bets: bets.length,
+      staked,
+      paidOut,
+      result: paidOut - staked,
+      lastBetAt: last,
+    },
+    bets,
+  };
+};
+route("GET", "/roulette/v1/admin/players", (req) => {
+  need(req, "roulette.read");
+  const q = (req.query.get("q") ?? "").trim().toLowerCase();
+  const list = roulettePlayers
+    .filter((player) => !q || player.nickname.toLowerCase().includes(q))
+    .map((player) => playerView(player).view)
+    .filter((player) => player.bets > 0)
+    .sort((a, b) => b.staked - a.staked);
+  return paginate(list, req.query);
+});
+route("GET", "/roulette/v1/admin/players/:userId", (req, _res, [userId]) => {
+  need(req, "roulette.read");
+  const player = (roulettePlayers.find((item) => item.userId === userId) ??
+    fail(404, "NOT_FOUND")) as (typeof roulettePlayers)[number];
+  const { view, bets } = playerView(player);
+  return {
+    ...view,
+    lastBets: [...bets]
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, 20),
+  };
+});
+route("GET", "/roulette/v1/admin/table", (req) => {
+  need(req, "roulette.read");
+  return rouletteTable;
+});
+route("POST", "/roulette/v1/admin/table", (req) => {
+  const persona = needFresh(req, "roulette.manage");
+  const reason = rouletteReason(req.body);
+  const body = req.body ?? {};
+  const whole = (key: string, max = Number.MAX_SAFE_INTEGER) => {
+    const value = body[key];
+    if (
+      !Number.isInteger(value) ||
+      (value as number) < 1 ||
+      (value as number) > max
+    )
+      fail(400, "VALIDATION_FAILED", { [key]: ["invalid"] });
+    return value as number;
+  };
+  const flag = (key: string) => {
+    if (typeof body[key] !== "boolean")
+      fail(400, "VALIDATION_FAILED", { [key]: ["invalid"] });
+    return body[key] as boolean;
+  };
+  const after = {
+    minBet: whole("minBet"),
+    maxBet: whole("maxBet"),
+    betsPerRound: whole("betsPerRound", 20),
+    payoutLimitPerColor: whole("payoutLimitPerColor"),
+    paused: flag("paused"),
+    maintenance: flag("maintenance"),
+  };
+  if (after.minBet > after.maxBet)
+    fail(400, "VALIDATION_FAILED", { minBet: ["min_above_max"] });
+  if (body.expectedVersion !== rouletteTable.version)
+    fail(409, "VERSION_CONFLICT");
+  const before = { ...rouletteTable };
+  const next = {
+    ...after,
+    version: rouletteTable.version + 1,
+    updatedAt: iso(Date.now()),
+  };
+  if (body.preview === true) return { preview: true, before, after: next };
+  Object.assign(rouletteTable, next);
+  rouletteAudit.unshift({
+    id: uuid(),
+    actorId: actorOf(persona),
+    action: "table.update",
+    reason,
+    subject: "table",
+    createdAt: next.updatedAt,
+  });
+  return { preview: false, before, after: { ...rouletteTable } };
+});
+route("GET", "/roulette/v1/admin/services", (req) => {
+  need(req, "roulette.read");
+  const memory = String(req.headers["user-agent"] ?? "").includes(
+    "fake-wallet=memory",
+  );
+  return {
+    services: [
+      { name: "roulette-backend", status: "up", latencyMs: 2 },
+      { name: "fair-roll", status: "up", latencyMs: 4 },
+      { name: "daily-bonus", status: "up", latencyMs: 6 },
+      memory
+        ? { name: "wallet", status: "unknown", latencyMs: null }
+        : { name: "wallet", status: "up", latencyMs: 9 },
+    ],
+    leader: { instance: "roulette-backend-6f9c7d-2x4kq", leaseMs: 7_400 },
+    tickAgeMs: 180,
+    wallet: memory ? "memory" : "http",
+  };
+});
+route("GET", "/roulette/v1/admin/audit", (req) => {
+  need(req, "roulette.read");
+  return paginate(rouletteAudit, req.query);
+});
+
+// The bonus of the day.
+const dailySettings = {
+  enabled: true,
+  streaksEnabled: true,
+  prizes: [
+    { amount: 10, chance: 0.6 },
+    { amount: 25, chance: 0.3 },
+    { amount: 100, chance: 0.09 },
+    { amount: 1000, chance: 0.01 },
+  ],
+  version: 6,
+  updatedAt: iso(NOW - 2 * DAY),
+};
+const averagePrize = (prizes: { amount: number; chance: number }[]) =>
+  prizes.reduce((sum, prize) => sum + prize.amount * prize.chance, 0);
+const dailySuspicions = [
+  {
+    kind: "shared_device" as const,
+    key: sha256("device-e2e").slice(0, 32),
+    users: roulettePlayers.slice(6, 9).map((player) => player.userId),
+    claims: 9,
+    lastAt: iso(NOW - 2 * HOUR),
+  },
+  {
+    kind: "shared_ip" as const,
+    key: sha256("ip-e2e").slice(0, 32),
+    users: roulettePlayers.slice(1, 3).map((player) => player.userId),
+    claims: 4,
+    lastAt: iso(NOW - 7 * HOUR),
+  },
+];
+
+route("GET", "/daily/v1/admin/daily", (req) => {
+  need(req, "roulette.read");
+  return {
+    settings: dailySettings,
+    expectedPrize: averagePrize(dailySettings.prizes),
+    last24h: { claims: 214, granted: 5_890 },
+    suspicions: dailySuspicions,
+  };
+});
+route("POST", "/daily/v1/admin/daily/settings", (req) => {
+  needFresh(req, "roulette.manage");
+  rouletteReason(req.body);
+  const body = req.body ?? {};
+  const prizes = body.prizes as { amount: number; chance: number }[];
+  if (
+    typeof body.enabled !== "boolean" ||
+    typeof body.streaksEnabled !== "boolean" ||
+    !Array.isArray(prizes) ||
+    prizes.length < 1 ||
+    prizes.length > 20 ||
+    prizes.some(
+      (prize) =>
+        !Number.isInteger(prize?.amount) ||
+        prize.amount < 1 ||
+        typeof prize.chance !== "number" ||
+        prize.chance <= 0 ||
+        prize.chance > 1,
+    ) ||
+    Math.abs(prizes.reduce((sum, prize) => sum + prize.chance, 0) - 1) >= 1e-9
+  )
+    fail(400, "VALIDATION_FAILED", { prizes: ["chances_must_sum_to_one"] });
+  if (body.expectedVersion !== dailySettings.version)
+    fail(409, "VERSION_CONFLICT");
+  const before = { ...dailySettings, prizes: [...dailySettings.prizes] };
+  const after = {
+    enabled: body.enabled as boolean,
+    streaksEnabled: body.streaksEnabled as boolean,
+    prizes: prizes.map(({ amount, chance }) => ({ amount, chance })),
+    version: dailySettings.version + 1,
+    updatedAt: iso(Date.now()),
+  };
+  const result = {
+    before,
+    after,
+    expectedPrizeBefore: averagePrize(before.prizes),
+    expectedPrizeAfter: averagePrize(after.prizes),
+  };
+  if (body.preview === true) return { preview: true, ...result };
+  Object.assign(dailySettings, after);
+  return { preview: false, ...result };
 });
 
 // ── Server ──────────────────────────────────────────────────────────────

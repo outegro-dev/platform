@@ -6,6 +6,7 @@ import {
   BoatIcon,
   BookOpenTextIcon,
   ChartLineIcon,
+  CoinsIcon,
   CreditCardIcon,
   type Icon,
   ScrollIcon,
@@ -24,6 +25,7 @@ const icons: Record<NavKey, Icon> = {
   payments: CreditCardIcon,
   battleship: BoatIcon,
   education: BookOpenTextIcon,
+  roulette: CoinsIcon,
   audit: ScrollIcon,
   monitoring: ChartLineIcon,
 };

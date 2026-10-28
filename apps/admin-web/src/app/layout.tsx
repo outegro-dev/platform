@@ -6,6 +6,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import "@outegro/ui/styles.css";
 import "@outegro/ui/zine.css";
 import "./globals.css";
+import { CLIENT_NAMESPACES } from "@/lib/constants";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("meta");
@@ -27,9 +28,6 @@ export const viewport: Viewport = {
   themeColor: "#efe4c6",
   colorScheme: "light",
 };
-
-/** Namespaces client components read; the rest stays on the server. */
-const CLIENT_NAMESPACES = ["common", "actions", "idle", "shell", "replay"];
 
 export default async function RootLayout({
   children,

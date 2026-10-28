@@ -32,8 +32,10 @@ export const phone = {
  * the connection) and a few variants ("fake-assist=off": Education's AI
  * assistant is switched off; "fake-assist=paused": its spending cap for the
  * day is reached; "fake-audit=future": Education's audit has an action newer
- * than the contract; "fake-trace=<tag>": the requests are kept for
- * `tracedRequests`).
+ * than the contract; "fake-stale=roulette": roulette commands refuse tokens
+ * issued before the first one, as after a role change; "fake-wallet=memory":
+ * the roulette's wallet runs in memory; "fake-trace=<tag>": the requests are
+ * kept for `tracedRequests`).
  */
 export const withFailure = (switches: string) =>
   `${devices["Desktop Chrome"].userAgent} ${switches}`;
