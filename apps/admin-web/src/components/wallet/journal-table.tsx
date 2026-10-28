@@ -4,6 +4,7 @@ import { DataTable, Time } from "@/components/ui/data";
 import type { WalletTx } from "@/lib/adapters/wallet";
 import { getLabels } from "@/lib/labels";
 import { formatGrumbles, Grumbles } from "./grumbles";
+import { pairs } from "./pairs";
 
 /**
  * A wallet's journal, newest first: what happened, how it moved the
@@ -35,17 +36,25 @@ export async function JournalTable({ rows }: { rows: WalletTx[] }) {
               <Time iso={row.createdAt} />
             </td>
             <td data-label={t("colKind")}>
-              <span className="cell-main">{label("txKind", row.kind)}</span>
-              <span className="cell-sub">
-                {label("walletSource", row.source)}
-                {row.objectRef && (
-                  <>
-                    {" · "}
-                    <span className="mono break-all">{row.objectRef}</span>
-                  </>
-                )}
+              {/* One block: on a phone the cell is a label and a value, and
+                  the value's lines stay under each other. */}
+              <span>
+                <span className="cell-main">{label("txKind", row.kind)}</span>
+                <span className="cell-sub">
+                  {label("walletSource", row.source)}
+                  {row.objectRef && (
+                    <>
+                      {" · "}
+                      <span className="mono">{row.objectRef}</span>
+                    </>
+                  )}
+                </span>
+                {/* A long ref breaks anywhere only on a phone; a table
+                    column keeps it whole between its hyphens. */}
+                <span className="cell-sub mono max-[719px]:break-all">
+                  {row.ref}
+                </span>
               </span>
-              <span className="cell-sub mono break-all">{row.ref}</span>
             </td>
             <td data-label={t("colAmount")} className="num">
               <Grumbles amount={row.amount} signed />
@@ -55,19 +64,19 @@ export async function JournalTable({ rows }: { rows: WalletTx[] }) {
               {formatGrumbles(row.balanceAfter, locale)}
             </td>
             <td data-label={t("colWho")}>
-              <span className="cell-main">
-                {row.actorId ? (
-                  <Actor id={row.actorId} />
-                ) : (
-                  <span className="muted">{t("byService")}</span>
+              <span>
+                <span className="cell-main">
+                  {row.actorId ? (
+                    <Actor id={row.actorId} />
+                  ) : (
+                    <span className="muted">{t("byService")}</span>
+                  )}
+                </span>
+                {row.reason && <span className="cell-sub">{row.reason}</span>}
+                {row.meta && (
+                  <span className="cell-sub">{pairs(row.meta)}</span>
                 )}
               </span>
-              {row.reason && <span className="cell-sub">{row.reason}</span>}
-              {row.meta && (
-                <span className="cell-sub mono break-all">
-                  {JSON.stringify(row.meta)}
-                </span>
-              )}
             </td>
           </tr>
         ))}

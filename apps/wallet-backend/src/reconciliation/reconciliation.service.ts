@@ -19,6 +19,9 @@ type Found = {
   details: Record<string, unknown>;
 };
 
+/** Longer than any wallet transaction plus clock skew between pods. */
+const LATE_COMMIT_MARGIN_MS = 120_000;
+
 const walletSubject = (userId: string, unit: string) =>
   `wallet:${userId}:${unit}`;
 
@@ -48,39 +51,58 @@ export class ReconciliationService {
       .insert(reconciliationRuns)
       .values({ mode, startedAt })
       .returning({ id: reconciliationRuns.id });
-    const userIds =
-      mode === "full"
-        ? null
-        : await this.sample(options.since ?? null, options.sampleSize ?? 100);
-    const found: Found[] = [];
-    const checked = await this.checkWallets(userIds, found);
-    await this.checkSystemAccounts(found);
-    await this.checkZeroSum(found);
-    await this.record(found, mode, checked.subjects);
-    await db
-      .update(reconciliationRuns)
-      .set({
-        finishedAt: this.clock.now(),
-        checkedWallets: checked.count,
-        issuesFound: found.length,
-      })
-      .where(eq(reconciliationRuns.id, started?.id ?? ""));
-    return { checkedWallets: checked.count, issues: found };
+    const runId = started?.id ?? "";
+    try {
+      const userIds =
+        mode === "full"
+          ? null
+          : await this.sample(options.since ?? null, options.sampleSize ?? 100);
+      const found: Found[] = [];
+      const checked = await this.checkWallets(userIds, found);
+      await this.checkSystemAccounts(found);
+      await this.checkZeroSum(found);
+      await this.record(found, mode, checked.subjects);
+      await db
+        .update(reconciliationRuns)
+        .set({
+          finishedAt: this.clock.now(),
+          checkedWallets: checked.count,
+          issuesFound: found.length,
+        })
+        .where(eq(reconciliationRuns.id, runId));
+      return { checkedWallets: checked.count, issues: found };
+    } catch (error) {
+      // Recorded, so the console says "failed", not "running" for ever.
+      await db
+        .update(reconciliationRuns)
+        .set({ finishedAt: this.clock.now(), failed: true })
+        .where(eq(reconciliationRuns.id, runId));
+      throw error;
+    }
   }
 
   /** Wallets changed since the last pass, plus random ones. */
   private async sample(since: Date | null, size: number): Promise<string[]> {
     const db = this.database.db;
+    // updated_at is when the statement ran, not when it committed: the
+    // margin catches an operation that committed after the last pass began.
     const changed = since
       ? await db
           .selectDistinct({ userId: wallets.userId })
           .from(wallets)
-          .where(gte(wallets.updatedAt, since))
+          .where(
+            gte(
+              wallets.updatedAt,
+              new Date(since.getTime() - LATE_COMMIT_MARGIN_MS),
+            ),
+          )
       : [];
+    // Not DISTINCT: PostgreSQL refuses ORDER BY random() with it; the Set
+    // below drops a player's other units.
     const random =
       size > 0
         ? await db
-            .selectDistinct({ userId: wallets.userId })
+            .select({ userId: wallets.userId })
             .from(wallets)
             .orderBy(sql`random()`)
             .limit(size)

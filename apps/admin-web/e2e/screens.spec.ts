@@ -10,6 +10,7 @@ import {
   screenshot,
   settle,
   signIn,
+  tablet,
   test,
   useRussian,
   visit,
@@ -336,6 +337,21 @@ test.describe("phone, English", () => {
       path: `${__dirname}/screenshots/navigation-sheet-mobile-en.png`,
     });
   });
+});
+
+// The wallet's screens on a tablet too: wide tables, dialogs and the
+// filter rows sit between the phone's cards and the desktop's columns.
+test.describe("tablet, English", () => {
+  test.use(tablet);
+  for (const screen of screens.filter((item) => item.name.includes("wallet"))) {
+    test.describe(screen.name, () => {
+      if (screen.userAgent)
+        test.use({ userAgent: `${screen.userAgent} Mobile` });
+      test(`${screen.name}`, async ({ page }) => {
+        await capture(page, screen, "tablet-en");
+      });
+    });
+  }
 });
 
 test.describe("desktop, Russian", () => {

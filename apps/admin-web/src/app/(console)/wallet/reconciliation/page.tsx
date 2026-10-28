@@ -6,6 +6,7 @@ import { DataTable, Time } from "@/components/ui/data";
 import { Panel, Status } from "@/components/ui/layout";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { EmptyState, FailureState } from "@/components/ui/states";
+import { pairs } from "@/components/wallet/pairs";
 import { pageAccess } from "@/lib/access";
 import { shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
@@ -26,7 +27,7 @@ function Subject({ subject }: { subject: string }) {
         {shortId(id)}
       </Link>
     );
-  return <span className="mono break-all">{subject}</span>;
+  return <span className="mono max-[719px]:break-all">{subject}</span>;
 }
 
 async function Reconciliation() {
@@ -80,14 +81,18 @@ async function Reconciliation() {
                     </Status>
                   </td>
                   <td data-label={t("colSeen")}>
-                    <Time iso={issue.firstSeenAt} />
-                    <span className="cell-sub">
-                      <Time iso={issue.resolvedAt ?? issue.lastSeenAt} />
+                    {/* One block, so on a phone the two times stay under
+                        each other instead of side by side. */}
+                    <span>
+                      <Time iso={issue.firstSeenAt} />
+                      <span className="cell-sub">
+                        <Time iso={issue.resolvedAt ?? issue.lastSeenAt} />
+                      </span>
                     </span>
                   </td>
                   <td data-label={t("colDetails")}>
-                    <span className="mono small break-all">
-                      {JSON.stringify(issue.details)}
+                    <span className="small max-[719px]:break-all">
+                      {pairs(issue.details)}
                     </span>
                   </td>
                 </tr>
@@ -120,9 +125,15 @@ async function Reconciliation() {
                     <Time iso={run.startedAt} />
                   </td>
                   <td data-label={t("colMode")}>
-                    {run.finishedAt
-                      ? label("runMode", run.mode)
-                      : `${label("runMode", run.mode)} · ${t("running")}`}
+                    {label("runMode", run.mode)}
+                    {run.failed ? (
+                      <>
+                        {" "}
+                        <Status tone="bad">{t("failed")}</Status>
+                      </>
+                    ) : (
+                      !run.finishedAt && ` · ${t("running")}`
+                    )}
                   </td>
                   <td data-label={t("colChecked")} className="num">
                     {run.checkedWallets}

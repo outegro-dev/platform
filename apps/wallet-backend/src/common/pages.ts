@@ -12,7 +12,8 @@ export function decodeVersionCursor(cursor: string | undefined): number | null {
   if (cursor === undefined) return null;
   const text = Buffer.from(cursor, "base64url").toString();
   const version = /^v([1-9]\d{0,9})$/.exec(text)?.[1];
-  if (!version)
+  // wallet_version is an int4: a bigger cursor would fail in PostgreSQL.
+  if (!version || Number(version) > 2_147_483_647)
     throw new AppError("VALIDATION_FAILED", {
       fieldErrors: { cursor: ["invalid"] },
     });

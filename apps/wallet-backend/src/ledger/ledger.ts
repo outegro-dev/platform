@@ -62,10 +62,13 @@ const LEGS: Record<TxKind, { sign: 1n | -1n; counter: SystemAccountCode }> = {
   reversal: { sign: 1n, counter: "spent" },
 };
 
-/** Credits by source: a daily bonus is issued, a payout returns what was spent. */
+/**
+ * Credits by source: a daily bonus is issued, anything else (a payout, a
+ * return) gives back what was spent. Packs bought with money (phase 2)
+ * arrive through the inbox with their own leg, not through this API.
+ */
 const CREDIT_COUNTER: Partial<Record<WalletSource, SystemAccountCode>> = {
   "daily-bonus": "issued_bonus",
-  pay: "issued_purchase",
 };
 const counterOf = (kind: TxKind, posting: Posting): SystemAccountCode =>
   posting.counter ??
@@ -357,7 +360,7 @@ export class WalletLedger {
         const posting = { ...input, amount };
         let row: TxRow;
         if (diff > 0n) {
-          row = await this.give(tx, "grant", posting, claimed.txId);
+          row = await this.give(tx, "grant", posting, claimed.txId, "set");
           await this.moveSystem(
             tx,
             counterOf("grant", posting),
@@ -365,18 +368,29 @@ export class WalletLedger {
             -amount,
           );
         } else
-          row = await this.take(tx, "adjust", posting, claimed.txId, false);
+          row = await this.take(
+            tx,
+            "adjust",
+            posting,
+            claimed.txId,
+            false,
+            "set",
+          );
         await this.audit(tx, actor, "wallet.set", row);
         return toOperation(row, false);
       }),
     );
   }
 
-  /** Before → after of setting the balance; the same balance is 422. */
+  /**
+   * Before → after of setting the balance, refused as the command would be:
+   * the same balance is 422, a difference over the cap 400.
+   */
   async previewSet(
     userId: string,
     unit: WalletUnit,
     target: bigint,
+    maxAmount: bigint,
   ): Promise<CommandPreview> {
     const [wallet] = await this.database.db
       .select({ balance: wallets.balance })
@@ -386,6 +400,11 @@ export class WalletLedger {
     if (before === target)
       throw new AppError("UNPROCESSABLE", {
         fieldErrors: { balance: ["unchanged"] },
+      });
+    const diff = target > before ? target - before : before - target;
+    if (diff > maxAmount)
+      throw new AppError("VALIDATION_FAILED", {
+        fieldErrors: { amount: ["too_large"] },
       });
     return {
       preview: true,
@@ -453,6 +472,18 @@ export class WalletLedger {
       this.metrics.operation(operation, "conflict");
       throw conflict();
     }
+    // A late retry of a debit that was rolled back since: the stake or the
+    // purchase it paid for is gone, so it must not read as a success.
+    if (operation === "debit") {
+      const [reversed] = await tx
+        .select({ ref: walletRefs.ref })
+        .from(walletRefs)
+        .where(eq(walletRefs.ref, `rollback:${input.ref}`));
+      if (reversed) {
+        this.metrics.operation(operation, "conflict");
+        throw conflict("ref", "rolled_back");
+      }
+    }
     this.metrics.replay(operation);
     return { txId, replay: toOperation(await this.journalRow(tx, held), true) };
   }
@@ -468,6 +499,8 @@ export class WalletLedger {
     input: Posting,
     txId: string,
     activeOnly: boolean,
+    /** The metrics' kind: `set` when a balance is set. */
+    measured: TxKind | "set" = kind,
   ): Promise<TxRow> {
     const now = this.clock.now();
     const [moved] = await tx
@@ -490,10 +523,10 @@ export class WalletLedger {
       // Thrown inside the transaction: the ref claim goes too, so the same
       // ref may be tried again once the wallet allows it.
       if (activeOnly && (await this.restricted(tx, input))) {
-        this.metrics.operation(kind, "restricted");
+        this.metrics.operation(measured, "restricted");
         throw new AppError("WALLET_RESTRICTED");
       }
-      this.metrics.operation(kind, "insufficient_funds");
+      this.metrics.operation(measured, "insufficient_funds");
       throw new AppError("INSUFFICIENT_FUNDS");
     }
     const [row] = await tx
@@ -520,7 +553,7 @@ export class WalletLedger {
       .returning();
     if (!row) throw new Error("journal insert returned nothing");
     await this.moveSystem(tx, counterOf(kind, input), input.unit, input.amount);
-    this.metrics.operation(kind, "ok");
+    this.metrics.operation(measured, "ok");
     return row;
   }
 
@@ -530,6 +563,7 @@ export class WalletLedger {
     kind: "grant" | "credit" | "reversal",
     input: Posting,
     txId: string,
+    measured: TxKind | "set" = kind,
   ): Promise<TxRow> {
     const now = this.clock.now();
     const [moved] = await tx
@@ -567,7 +601,7 @@ export class WalletLedger {
       })
       .returning();
     if (!row) throw new Error("journal insert returned nothing");
-    this.metrics.operation(kind, "ok");
+    this.metrics.operation(measured, "ok");
     return row;
   }
 

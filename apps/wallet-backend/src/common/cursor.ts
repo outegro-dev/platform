@@ -12,7 +12,15 @@ export function decodeCursor(cursor: string): Cursor {
   const [at, id] = Buffer.from(cursor, "base64url").toString().split("|");
   const date = new Date(at ?? "");
   // The id goes into a uuid comparison; anything else would be a 500.
-  if (!id || !z.uuid().safeParse(id).success || Number.isNaN(date.getTime()))
+  // Dates PostgreSQL cannot hold (year 275760) are refused here, not by SQL.
+  const year = date.getUTCFullYear();
+  if (
+    !id ||
+    !z.uuid().safeParse(id).success ||
+    Number.isNaN(date.getTime()) ||
+    year < 2000 ||
+    year > 9999
+  )
     throw new AppError("VALIDATION_FAILED", {
       fieldErrors: { cursor: ["invalid"] },
     });

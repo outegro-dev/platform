@@ -1,4 +1,8 @@
 import { randomUUID } from "node:crypto";
+import {
+  adminWalletCardSchema,
+  rollbackResponseSchema,
+} from "@outegro/contracts/wallet";
 import { createDatabase } from "@outegro/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Harness, invariants, startHarness } from "./test/harness.js";
@@ -290,10 +294,9 @@ describe("operations and idempotency (W-02)", () => {
       replayed: true,
       reversal: { ...reversed.body.reversal, replayed: true },
     });
-    // The debit's ref stays its own: repeating it answers the old debit.
-    expect(
-      (await debit({ ref: paid, userId, amount: "4" }).expect(200)).body,
-    ).toMatchObject({ replayed: true, balanceAfter: "6" });
+    // A late retry of a reversed debit must not read as a success.
+    const retried = await debit({ ref: paid, userId, amount: "4" }).expect(409);
+    expect(retried.body.error.fieldErrors).toEqual({ ref: ["rolled_back"] });
     // Only debits roll back.
     const payout = ref("payout");
     await credit([{ ref: payout, userId, amount: "1" }]).expect(200);
@@ -545,6 +548,54 @@ describe("operations and idempotency (W-02)", () => {
       cursor = res.body.nextCursor;
     } while (cursor);
     expect(seen).toEqual([26, 27, 28, 29, 30]);
+  });
+});
+
+describe("review fixes", () => {
+  it("rolls back a debit whose ref is as long as allowed, inside the contract", async () => {
+    const userId = await funded(10);
+    const long = `order:${"x".repeat(194)}`;
+    expect(long).toHaveLength(200);
+    await debit({ ref: long, userId, amount: "3" }).expect(200);
+    const back = await rollback({ ref: long }).expect(200);
+    expect(back.body.reversal.ref).toHaveLength(209);
+    expect(rollbackResponseSchema.safeParse(back.body).success).toBe(true);
+    const card = await h
+      .http()
+      .get(`/v1/admin/wallets/${userId}`)
+      .set(await h.auth(randomUUID(), ["owner"]))
+      .expect(200);
+    expect(adminWalletCardSchema.safeParse(card.body).success).toBe(true);
+  });
+
+  it("gives back what was spent for a return from pay", async () => {
+    const userId = randomUUID();
+    await credit([{ ref: ref("return"), userId, amount: "15" }], {
+      source: "pay",
+    }).expect(200);
+    const { rows } = await h.root.query(
+      "select counter_account from wallet_tx where user_id = $1",
+      [userId],
+    );
+    expect(rows).toEqual([{ counter_account: "spent" }]);
+  });
+
+  it("refuses cursors PostgreSQL could not hold, with 400", async () => {
+    const userId = await funded(1);
+    const huge = Buffer.from("v9999999999").toString("base64url");
+    await h
+      .http()
+      .get(`/v1/me/wallet/history?cursor=${huge}`)
+      .set(await h.auth(userId))
+      .expect(400);
+    const far = Buffer.from(
+      `+275760-09-13T00:00:00.000Z|${randomUUID()}`,
+    ).toString("base64url");
+    await h
+      .http()
+      .get(`/v1/admin/wallets?cursor=${far}`)
+      .set(await h.auth(randomUUID(), ["owner"]))
+      .expect(400);
   });
 });
 

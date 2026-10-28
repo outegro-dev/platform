@@ -301,6 +301,26 @@ describe("set the balance (owner's additions of 28.10)", () => {
     expect(await invariants(h)).toMatchObject({ drift: 0, total: 0n });
   });
 
+  it("refuses a preview over the cap like the command, and counts as set", async () => {
+    const userId = randomUUID();
+    await setBalance(userId, {
+      balance: "2000000",
+      commandId: randomUUID(),
+      preview: true,
+    }).expect(400);
+    const before = await h.metric("wallet_operations_total", {
+      kind: "set",
+      result: "ok",
+    });
+    await setBalance(userId, {
+      balance: "10",
+      commandId: randomUUID(),
+    }).expect(200);
+    expect(
+      await h.metric("wallet_operations_total", { kind: "set", result: "ok" }),
+    ).toBe(before + 1);
+  });
+
   it("filters a journal by source and sums the day by source", async () => {
     const userId = randomUUID();
     await command("grant", userId, {
@@ -599,9 +619,26 @@ describe("reconciliation and metrics (TC-W-03-01)", () => {
        order by started_at`,
     );
     expect(rows.map((r) => r.mode)).toEqual(["sample", "full", "sample"]);
+    // Every pass finished, the samples included (they once failed in SQL).
+    const runs = await h.root.query(
+      `select mode, finished_at is not null as finished, failed, checked_wallets
+       from reconciliation_runs where started_at >= '2026-10-29'
+       order by started_at`,
+    );
+    for (const run of runs.rows) {
+      expect(run).toMatchObject({ finished: true, failed: false });
+      expect(run.checked_wallets).toBeGreaterThan(0);
+    }
     expect(
       await h.metric("wallet_reconciliation_last_success_timestamp_seconds"),
     ).toBe(Date.parse("2026-10-29T02:30:00.000Z") / 1000);
+    const view = await h
+      .http()
+      .get("/v1/admin/reconciliation")
+      .set(ownerHeaders)
+      .expect(200);
+    for (const run of view.body.runs)
+      expect(run).toMatchObject({ failed: false });
     h.clock.set(new Date("2026-10-28T10:00:00.000Z"));
   });
 

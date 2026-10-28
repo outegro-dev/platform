@@ -111,7 +111,6 @@ export async function WalletCard({
           action={filterAction}
           label={t("filters")}
           active={Boolean(source)}
-          inline
         >
           {Object.entries(params).map(([name, value]) => (
             <input key={name} type="hidden" name={name} value={value} />

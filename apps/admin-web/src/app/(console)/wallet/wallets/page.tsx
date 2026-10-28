@@ -39,7 +39,6 @@ export default async function WalletsPage({
           action="/wallet/wallets"
           label={t("filters")}
           active={Boolean(filter.state || filter.userId)}
-          inline
         >
           <TextField
             name="userId"
