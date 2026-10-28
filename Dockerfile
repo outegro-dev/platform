@@ -2,9 +2,11 @@
 # One build for every app; each target copies only what its runtime needs.
 #   docker build --target landing-web -t outegro/landing-web:<tag> .
 # Targets: landing-web, id-web, pay-web, admin-web, battleship-web, edu-web,
-#          atelier-web, auth-backend, notifications-backend, payments-backend,
-#          battleship-backend, edu-backend, wallet-backend, atelier-backend,
-#          llm-gateway, atelier-tex, atelier-browser.
+#          roulette-web, atelier-web, auth-backend, notifications-backend,
+#          payments-backend, battleship-backend, edu-backend,
+#          wallet-backend, roulette-backend, fair-roll-backend,
+#          daily-bonus-backend, atelier-backend, llm-gateway, atelier-tex,
+#          atelier-browser.
 
 FROM node:24-bookworm-slim AS base
 ENV CI=1 \
@@ -23,12 +25,13 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 # CI builds only the apps a change affects (docker-bake BUILD_APPS); a plain
 # build still builds all of them.
-ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web atelier-web auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend atelier-backend llm-gateway atelier-tex atelier-browser"
+ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web roulette-web atelier-web auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend roulette-backend fair-roll-backend daily-bonus-backend atelier-backend llm-gateway atelier-tex atelier-browser"
 RUN pnpm turbo run build $(for app in $BUILD_APPS; do printf -- '--filter=@outegro/%s ' "$app"; done)
 # Backends: production dependencies only, plus build output and migrations
 # (and content/, the books edu-backend imports with its migrations; config/,
 # templates/ and fonts/ of the Atelier services).
 RUN for app in auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend \
+      roulette-backend fair-roll-backend daily-bonus-backend \
       atelier-backend llm-gateway atelier-tex atelier-browser; do \
       case " $BUILD_APPS " in *" $app "*) ;; *) continue ;; esac; \
       pnpm --filter "@outegro/$app" deploy --prod "/out/$app" && \
@@ -90,6 +93,13 @@ ENV PORT=3006
 EXPOSE 3006
 CMD ["node", "apps/edu-web/server.js"]
 
+FROM web AS roulette-web
+COPY --from=build --chown=node:node /repo/apps/roulette-web/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/roulette-web/.next/static ./apps/roulette-web/.next/static
+ENV PORT=3007
+EXPOSE 3007
+CMD ["node", "apps/roulette-web/server.js"]
+
 FROM web AS atelier-web
 COPY --from=build --chown=node:node /repo/apps/atelier-web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/atelier-web/.next/static ./apps/atelier-web/.next/static
@@ -137,6 +147,24 @@ FROM service AS wallet-backend
 COPY --from=build --chown=node:node /out/wallet-backend ./
 ENV PORT=4007
 EXPOSE 4007
+CMD ["node", "dist/main.js"]
+
+FROM service AS roulette-backend
+COPY --from=build --chown=node:node /out/roulette-backend ./
+ENV PORT=4006
+EXPOSE 4006
+CMD ["node", "dist/main.js"]
+
+FROM service AS fair-roll-backend
+COPY --from=build --chown=node:node /out/fair-roll-backend ./
+ENV PORT=4100
+EXPOSE 4100
+CMD ["node", "dist/main.js"]
+
+FROM service AS daily-bonus-backend
+COPY --from=build --chown=node:node /out/daily-bonus-backend ./
+ENV PORT=4101
+EXPOSE 4101
 CMD ["node", "dist/main.js"]
 
 FROM service AS atelier-backend

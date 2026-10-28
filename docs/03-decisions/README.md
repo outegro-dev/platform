@@ -15,5 +15,7 @@
 | [009](adr/009-backend-stack.md) | Стек backend: TS 6, Nest 12, Zod, Drizzle, Valkey, pino | accepted: owner 28.09.2026 | BE-01…BE-07 |
 | [010](adr/010-education.md) | Обучение: учебники как типизированные документы, доступ по грантам | accepted: owner 03.10.2026; продажа — open input | [глава 17](../01-specification/chapters/17-education.md) |
 | [011](adr/011-wallet-grumbles.md) | Кошелёк: отдельный сервис, грамблсы (`GRM`) | accepted: owner 28.10.2026; этапы 2–3 ждут команды | [W-01…W-06](../04-delivery/90-optional-wallet/README.md), [контракт](../02-contracts/wallet.md) |
+| [012](adr/012-roulette.md) | Рулетка: ставки грамблсами, раунд с лидером, честность по цепочке сидов, бонус дня, админка, всё на NestJS | accepted: owner 28.10.2026 | [контракт рулетки](../02-contracts/roulette.md) |
+| [013](adr/013-atelier.md) | Atelier: поиск работы владельца — вакансии, CV на две страницы, тексты, отклики, доска; модели через llm-gateway | accepted: owner 28.10.2026 (D1–D15) | [порядок выкатки](../06-operations/atelier-rollout.md) |
 
 Новые решения именовать последовательно, использовать [шаблон ADR](../07-templates/adr.md). [Открытые inputs](open-inputs.md) — единственный список того, что понадобится от владельца/внешнего провайдера.

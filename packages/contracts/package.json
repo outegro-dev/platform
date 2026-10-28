@@ -20,6 +20,14 @@
       "types": "./dist/edu.d.ts",
       "default": "./dist/edu.js"
     },
+    "./roulette": {
+      "types": "./dist/roulette.d.ts",
+      "default": "./dist/roulette.js"
+    },
+    "./daily-bonus": {
+      "types": "./dist/daily-bonus.d.ts",
+      "default": "./dist/daily-bonus.js"
+    },
     "./wallet": {
       "types": "./dist/wallet.d.ts",
       "default": "./dist/wallet.js"

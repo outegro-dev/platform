@@ -16,6 +16,7 @@ test("an owner sees every section", async ({ page }) => {
     "Battleship",
     "Education",
     "Wallet",
+    "Roulette",
     "Audit",
     "Monitoring",
   ]);
@@ -32,6 +33,7 @@ test("support sees only what support may read, and the server agrees", async ({
     "Notifications",
     "Battleship",
     "Education",
+    "Roulette",
   ]);
   // Panels follow the same permissions.
   await expect(
@@ -87,6 +89,8 @@ test("every detail page leads back to its list the same way", async ({
     ["/battleship/matches?status=finished", "Matches"],
     ["/battleship/players", "Players"],
     ["/education/books", "Books"],
+    ["/roulette/rounds", "Rounds"],
+    ["/roulette/players", "Players"],
   ] as const) {
     await visit(page, list);
     await openFirstRow(page);

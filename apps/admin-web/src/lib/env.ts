@@ -22,6 +22,10 @@ export const env = z
     EDU_API_URL: optionalBaseUrl,
     /** wallet-backend (grumbles); unset until it is deployed. */
     WALLET_API_URL: optionalBaseUrl,
+    /** roulette-backend (roulette.outegro.dev); unset until it is deployed. */
+    ROULETTE_API_URL: optionalBaseUrl,
+    /** daily-bonus-backend (the roulette's bonus of the day); unset until deployed. */
+    DAILY_API_URL: optionalBaseUrl,
     /** Public origin of the identity frontend (sign-in). */
     ID_URL: baseUrl.default("http://localhost:3002"),
     /** Public origin of this console; the SSO callback lives under it. */

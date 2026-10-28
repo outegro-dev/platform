@@ -3,6 +3,7 @@ import {
   BellIcon,
   BoatIcon,
   BookOpenTextIcon,
+  CoinsIcon,
   CreditCardIcon,
   FingerprintIcon,
 } from "@phosphor-icons/react/dist/ssr";
@@ -28,6 +29,7 @@ const sourceIcons: Record<AuditSource, ReactNode> = {
   battleship: <BoatIcon aria-hidden="true" />,
   payments: <CreditCardIcon aria-hidden="true" />,
   education: <BookOpenTextIcon aria-hidden="true" />,
+  roulette: <CoinsIcon aria-hidden="true" />,
 };
 
 /** Where a target lives in the console, when it has a page. */
@@ -48,11 +50,16 @@ export function targetHref(
       return `/payments/orders/${id}`;
     case "book":
       return `/education/books/${id}`;
+    case "round":
+      return entry.source === "roulette" ? `/roulette/rounds/${id}` : null;
     case "settings":
-      // Only Notifications' settings have a page.
-      return entry.source === "notifications"
-        ? "/notifications/channels"
-        : null;
+      // Notifications' channel switches, the roulette's table and bonus.
+      if (entry.source === "notifications") return "/notifications/channels";
+      if (entry.source === "roulette")
+        return entry.targetId === "daily"
+          ? "/roulette/daily"
+          : "/roulette/table";
+      return null;
     default:
       return null;
   }

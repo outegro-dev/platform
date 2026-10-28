@@ -31,6 +31,12 @@ export const permissions = [
   "edu.read",
   /** Education: publish, archive and change who reads a book, with a reason. */
   "edu.manage",
+  /** Roulette: the live table, rounds, players and the daily bonus. */
+  "roulette.read",
+  /** Roulette: table limits, pausing bets, maintenance, the daily bonus table. */
+  "roulette.manage",
+  /** Roulette: cancel a round and return every bet (owner only). */
+  "roulette.void",
   /**
    * Grafana behind the console's sign-in (admin.outegro.dev/grafana/):
    * an owner opens it as Admin, anyone else with this permission as Viewer.
@@ -59,6 +65,7 @@ export const platformRoles = {
     "battleship.read",
     "battleship.moderate",
     "edu.read",
+    "roulette.read",
   ],
   billing_operator: ["billing.read", "subscriptions.cancel"],
   /** Runs the textbooks at edu.outegro.dev; reading access itself is a Payments grant. */
