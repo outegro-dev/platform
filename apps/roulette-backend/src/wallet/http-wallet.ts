@@ -23,6 +23,11 @@ const creditBatchSchema = z.object({ items: z.array(operationSchema) });
 const rollbackSchema = z.object({
   state: z.enum(["reversed", "tombstoned"]),
 });
+const balancesSchema = z.object({
+  items: z.array(z.object({ userId: z.string(), balance: amount })),
+});
+/** The most ids one balances call takes. */
+const BALANCES_LIMIT = 1000;
 
 /**
  * wallet-backend over its internal API (`/v1/internal/*`, ADR-011) and the
@@ -81,9 +86,19 @@ export class HttpWallet implements WalletPort {
     return { status: state };
   }
 
-  /** wallet-backend has no balance read for services yet (asked for one). */
-  async balance(): Promise<null> {
-    return null;
+  async balances(userIds: string[]): Promise<Map<string, number>> {
+    const result = new Map<string, number>();
+    const unique = [...new Set(userIds)];
+    for (let i = 0; i < unique.length; i += BALANCES_LIMIT) {
+      const { items } = balancesSchema.parse(
+        await this.call("/v1/internal/balances", {
+          unit: WALLET_UNIT,
+          userIds: unique.slice(i, i + BALANCES_LIMIT),
+        }),
+      );
+      for (const item of items) result.set(item.userId, item.balance);
+    }
+    return result;
   }
 
   private async call(path: string, body: unknown): Promise<unknown> {

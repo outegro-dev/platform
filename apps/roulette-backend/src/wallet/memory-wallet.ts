@@ -19,7 +19,7 @@ type Debit = { input: DebitInput; balance: number; reversed: boolean };
  */
 export class InMemoryWallet implements WalletPort {
   private readonly logger = new Logger("InMemoryWallet");
-  private readonly balances = new Map<string, number>();
+  private readonly accounts = new Map<string, number>();
   private readonly debits = new Map<string, Debit>();
   private readonly credits = new Map<
     string,
@@ -45,7 +45,7 @@ export class InMemoryWallet implements WalletPort {
     // The real wallet rolls the whole transaction back: the ref stays free.
     if (current < input.amount) throw new WalletError("insufficient_funds");
     const balance = current - input.amount;
-    this.balances.set(input.userId, balance);
+    this.accounts.set(input.userId, balance);
     this.debits.set(input.ref, { input, balance, reversed: false });
     return { balance };
   }
@@ -62,7 +62,7 @@ export class InMemoryWallet implements WalletPort {
       if (previous)
         return { ref: item.ref, balance: previous.balance, replayed: true };
       const balance = this.read(item.userId) + item.amount;
-      this.balances.set(item.userId, balance);
+      this.accounts.set(item.userId, balance);
       this.credits.set(item.ref, { item, balance });
       return { ref: item.ref, balance, replayed: false };
     });
@@ -76,12 +76,16 @@ export class InMemoryWallet implements WalletPort {
     }
     if (!debit.reversed) {
       debit.reversed = true;
-      this.balances.set(
+      this.accounts.set(
         debit.input.userId,
         this.read(debit.input.userId) + debit.input.amount,
       );
     }
     return { status: "reversed" };
+  }
+
+  async balances(userIds: string[]): Promise<Map<string, number>> {
+    return new Map(userIds.map((userId) => [userId, this.read(userId)]));
   }
 
   async balance(userId: string): Promise<number> {
@@ -90,9 +94,9 @@ export class InMemoryWallet implements WalletPort {
 
   /** The balance, opening the account on first touch. */
   private read(userId: string): number {
-    const balance = this.balances.get(userId);
+    const balance = this.accounts.get(userId);
     if (balance !== undefined) return balance;
-    this.balances.set(userId, this.openingBalance);
+    this.accounts.set(userId, this.openingBalance);
     return this.openingBalance;
   }
 }

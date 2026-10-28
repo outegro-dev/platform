@@ -16,8 +16,8 @@ export interface WalletPort {
    * a debit arriving later with that ref gets a conflict (409).
    */
   rollback(ref: string): Promise<{ status: "reversed" | "tombstoned" }>;
-  /** The player's balance; null when the wallet offers no read to services yet. */
-  balance(userId: string): Promise<number | null>;
+  /** Balances of many players in one go; a player without a wallet has 0. */
+  balances(userIds: string[]): Promise<Map<string, number>>;
 }
 
 /** Kept with the operation so reconciliation can rebuild a lost bet. */
@@ -46,6 +46,21 @@ export const WALLET_UNIT = "GRM";
 export const WALLET_SOURCE = "roulette";
 
 export const roundObject = (round: number) => `round:${round}`;
+
+/**
+ * One player's balance for a screen, or null when the wallet does not
+ * answer: a missing figure must not keep anyone out of the game.
+ */
+export async function balanceOrNull(
+  wallet: WalletPort,
+  userId: string,
+): Promise<number | null> {
+  try {
+    return (await wallet.balances([userId])).get(userId) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export type WalletErrorCode =
   /** 402 INSUFFICIENT_FUNDS */

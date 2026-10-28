@@ -28,7 +28,7 @@
 
 | Маршрут | Доступ | Ответ |
 |---|---|---|
-| `GET /v1/me` | вход | `{ userId, nickname, balance, unit: "GRM" }`; `balance` — `null`, если кошелёк его не сообщил |
+| `GET /v1/me` | вход | `{ userId, nickname, balance, unit: "GRM" }`; `balance` — `null`, если кошелёк не ответил |
 | `POST /v1/ws-tickets` | вход | `{ ticket, expiresAt }`: одноразовый тикет сокета на 30 с |
 | `GET /v1/rounds?cursor&limit` | публично | `{ items: [{ round, number, color }], nextCursor }`, новые сначала, только `settled` |
 | `GET /v1/rounds/{round}` | публично | `FairRound`: фаза, `commit`, `publicSeed`, `seed`, `number`, `color`, `previousSeed`, число ставок, сумма ставок и выплат |
@@ -56,7 +56,7 @@
 | `session.ready` | первым сообщением | игрок (ник, баланс или `null`), стол (лимиты, множители, длительности), текущий раунд, свои ставки в нём, последние 20 результатов, `serverTime` |
 | `round.state` | всем, 4 раза в секунду и на каждой смене фазы | полный снимок `RoundView` |
 | `bet.accepted` | игроку, с `ref`; без `ref` — его другим вкладкам | ставка и баланс после списания |
-| `balance` | игроку, который ставил в раунде | `{ balance, round, payout }` после выплат; `balance` — `null`, если кошелёк его не сообщил |
+| `balance` | игроку, который ставил в раунде | `{ balance, round, payout }` после выплат; `balance` — `null`, если кошелёк не ответил |
 | `error` | игроку | `{ code, ref }` |
 | `pong` | игроку | `{ t, serverTime }` |
 
@@ -157,7 +157,9 @@
 | 409 `IDEMPOTENCY_CONFLICT` (`conflict` или `rolled_back`) | `round_closed`: ставка опоздала или повтор не совпал |
 | остальное, таймаут 3 с | `wallet_unavailable`, списание откатывается по `ref` |
 
-`rollback` без списания ставит «надгробие», опоздавший `debit` получает 409. Внутреннего чтения баланса у кошелька пока нет (запрошено): до него баланс в `session.ready`, `/v1/me` и `balance` для проигравших — `null`.
+`rollback` без списания ставит «надгробие», опоздавший `debit` получает 409. Таймаут списания — не отказ: рулетка откатывает этот `ref`, и двойного списания не будет.
+
+Баланс — `POST /v1/internal/balances { unit: "GRM", userIds }` (до 1 000 id, балансы строками): для `session.ready`, `/v1/me` и одной пачкой для уведомлений о выплате всем ставившим на реплике. Если кошелёк не ответил, баланс — `null`, и клиент оставляет свою цифру.
 
 ## Valkey рулетки
 

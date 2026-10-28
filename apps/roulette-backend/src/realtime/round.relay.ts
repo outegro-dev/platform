@@ -41,12 +41,21 @@ export class RoundRelay implements OnApplicationBootstrap {
   private async payouts(view: RoundView) {
     const number = view.result?.number;
     if (number === undefined) return;
-    for (const [userId, bets] of this.registry.takeBetsOf(view.round)) {
+    const bettors = this.registry.takeBetsOf(view.round);
+    if (bettors.size === 0) return;
+    // One read for every bettor on this replica; without it the client keeps its figure.
+    const balances = await this.wallet
+      .balances([...bettors.keys()])
+      .catch(() => new Map<string, number>());
+    for (const [userId, bets] of bettors) {
       const payout = bets.reduce((sum, bet) => sum + payoutOf(bet, number), 0);
-      const balance = await this.wallet.balance(userId);
       this.registry.send(userId, {
         type: "balance",
-        payload: { balance, round: view.round, payout },
+        payload: {
+          balance: balances.get(userId) ?? null,
+          round: view.round,
+          payout,
+        },
       });
     }
   }

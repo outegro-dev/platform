@@ -128,7 +128,36 @@ describe("HttpWallet", () => {
     expect(await codeFor(200, 1000)).toBe("unavailable");
   });
 
-  it("has no balance read for services yet", async () => {
-    expect(await wallet.balance()).toBeNull();
+  it("reads balances in one call, as numbers", async () => {
+    reply = {
+      status: 200,
+      body: {
+        items: [
+          {
+            userId: "a",
+            unit: "GRM",
+            balance: "1250",
+            state: "active",
+            exists: true,
+          },
+          {
+            userId: "b",
+            unit: "GRM",
+            balance: "0",
+            state: "active",
+            exists: false,
+          },
+        ],
+      },
+    };
+    const balances = await wallet.balances(["a", "b", "a"]);
+    expect([...balances]).toEqual([
+      ["a", 1250],
+      ["b", 0],
+    ]);
+    expect(seen.at(-1)).toMatchObject({
+      path: "/v1/internal/balances",
+      body: { unit: "GRM", userIds: ["a", "b"] },
+    });
   });
 });

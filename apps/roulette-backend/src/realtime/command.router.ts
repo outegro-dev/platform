@@ -13,7 +13,7 @@ import { ROUND_TIMINGS, WALLET } from "../common/tokens.js";
 import { RoundFeed } from "../rounds/round.feed.js";
 import { RoundRepository } from "../rounds/round.repository.js";
 import { TableSettingsService } from "../table/table.settings.js";
-import type { WalletPort } from "../wallet/wallet.port.js";
+import { balanceOrNull, type WalletPort } from "../wallet/wallet.port.js";
 import type { Connection } from "./connection.js";
 import { ConnectionRegistry } from "./connection.registry.js";
 
@@ -79,7 +79,7 @@ export class CommandRouter {
   async welcome(connection: Connection): Promise<OwnBet[]> {
     const { userId } = connection;
     const [balance, round, history, table] = await Promise.all([
-      this.wallet.balance(userId),
+      balanceOrNull(this.wallet, userId),
       this.feed.current(),
       this.repo.history(HISTORY_ON_WELCOME),
       this.table(),

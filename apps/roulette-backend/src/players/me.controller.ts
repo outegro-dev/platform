@@ -2,7 +2,7 @@ import { Controller, Get, Inject } from "@nestjs/common";
 import { type RouletteMe, rouletteUnit } from "@outegro/contracts/roulette";
 import { type AuthenticatedUser, CurrentUser } from "@outegro/nest-common";
 import { WALLET } from "../common/tokens.js";
-import type { WalletPort } from "../wallet/wallet.port.js";
+import { balanceOrNull, type WalletPort } from "../wallet/wallet.port.js";
 import { PlayersService } from "./players.service.js";
 
 /** The signed-in player: roulette nickname and grumbles; ownership comes from the token. */
@@ -19,7 +19,7 @@ export class MeController {
     return {
       userId: player.userId,
       nickname: player.nickname,
-      balance: await this.wallet.balance(user.userId),
+      balance: await balanceOrNull(this.wallet, user.userId),
       unit: rouletteUnit,
     };
   }
