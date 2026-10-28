@@ -12,8 +12,10 @@ import {
 import {
   type AdminCommand,
   adminCommandSchema,
+  adminJournalQuerySchema,
   adminWalletsQuerySchema,
-  historyQuerySchema,
+  type SetBalanceCommand,
+  setBalanceCommandSchema,
   unitQuerySchema,
 } from "@outegro/contracts/wallet";
 import {
@@ -68,8 +70,8 @@ export class AdminController {
   @RequirePermissions("wallet.read")
   wallet(
     @Param("userId", userIdPipe) userId: string,
-    @Query({ schema: historyQuerySchema }) query: z.infer<
-      typeof historyQuerySchema
+    @Query({ schema: adminJournalQuerySchema }) query: z.infer<
+      typeof adminJournalQuerySchema
     >,
   ) {
     return this.admin.wallet(userId, query);
@@ -105,6 +107,23 @@ export class AdminController {
   ) {
     return this.admin.command(
       "adjust",
+      { userId: actor.userId, requestId },
+      userId,
+      body,
+    );
+  }
+
+  @Post("wallets/:userId/set-balance")
+  @HttpCode(200)
+  @RequirePermissions("wallet.adjust")
+  @UseGuards(CurrentAccessGuard)
+  setBalance(
+    @CurrentUser() actor: AuthenticatedUser,
+    @RequestId() requestId: string | null,
+    @Param("userId", userIdPipe) userId: string,
+    @Body({ schema: setBalanceCommandSchema }) body: SetBalanceCommand,
+  ) {
+    return this.admin.setBalance(
       { userId: actor.userId, requestId },
       userId,
       body,

@@ -7,9 +7,9 @@ import { formatGrumbles, Grumbles } from "./grumbles";
 
 /**
  * A wallet's journal, newest first: what happened, how it moved the
- * balance (before → after), and who did it and why. Operations from the
- * internal API (purchases, stakes, payouts) have no operator: their ref
- * and the caller's context say where they came from.
+ * balance (before → after), and who did it and why. Each says its source
+ * (roulette, daily bonus, the shop, pay, the console) and the object it is
+ * about; operations from the internal API have no operator.
  */
 export async function JournalTable({ rows }: { rows: WalletTx[] }) {
   const t = await getTranslations("wallet.card");
@@ -36,6 +36,15 @@ export async function JournalTable({ rows }: { rows: WalletTx[] }) {
             </td>
             <td data-label={t("colKind")}>
               <span className="cell-main">{label("txKind", row.kind)}</span>
+              <span className="cell-sub">
+                {label("walletSource", row.source)}
+                {row.objectRef && (
+                  <>
+                    {" · "}
+                    <span className="mono break-all">{row.objectRef}</span>
+                  </>
+                )}
+              </span>
               <span className="cell-sub mono break-all">{row.ref}</span>
             </td>
             <td data-label={t("colAmount")} className="num">

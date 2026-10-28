@@ -23,6 +23,7 @@ import {
 } from "@/components/users/service-tabs";
 import { UserActions } from "@/components/users/user-actions";
 import { pageAccess } from "@/lib/access";
+import { walletSources } from "@/lib/adapters/wallet";
 import { maskEmail, shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
 import { one, oneOf, type Params, type SearchParams } from "@/lib/params";
@@ -163,6 +164,7 @@ export default async function UserPage({
             userId={user.id}
             granted={granted}
             cursor={one(query, "cursor")}
+            source={oneOf(query, "source", walletSources)}
           />
         )}
         {tab === "activity" && <ActivityTab userId={user.id} />}

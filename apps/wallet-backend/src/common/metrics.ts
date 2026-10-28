@@ -17,6 +17,9 @@ import { count, eq, sum } from "drizzle-orm";
 import { reconciliationIssues, wallets } from "../db/schema.js";
 import type { WalletDatabase } from "./database.js";
 
+/** What a metric is about: the kind of an operation, or setting a balance. */
+type Measured = TxKind | "set";
+
 /** How an operation ended; replays are counted apart as well. */
 export type OperationResult =
   | "ok"
@@ -45,7 +48,7 @@ export class WalletMetrics {
   ) {
     this.operations = metrics.counter({
       name: "wallet_operations_total",
-      help: "Wallet operations by kind (grant, adjust, debit, credit, reversal) and result: ok, replay, tombstoned, insufficient_funds, restricted, conflict, error.",
+      help: "Wallet operations by kind (grant, adjust, set, debit, credit, reversal) and result: ok, replay, tombstoned, insufficient_funds, restricted, conflict, error.",
       labelNames: ["kind", "result"],
     });
     this.duration = metrics.histogram({
@@ -68,7 +71,7 @@ export class WalletMetrics {
   }
 
   /** Runs one transaction and records its time; an unexpected failure counts as error. */
-  async time<T>(kind: TxKind, run: () => Promise<T>): Promise<T> {
+  async time<T>(kind: Measured, run: () => Promise<T>): Promise<T> {
     const started = performance.now();
     try {
       return await run();
@@ -83,11 +86,11 @@ export class WalletMetrics {
     }
   }
 
-  operation(kind: TxKind, result: OperationResult) {
+  operation(kind: Measured, result: OperationResult) {
     this.operations.inc({ kind, result });
   }
 
-  replay(kind: TxKind) {
+  replay(kind: Measured) {
     this.replays.inc({ kind });
     this.operations.inc({ kind, result: "replay" });
   }

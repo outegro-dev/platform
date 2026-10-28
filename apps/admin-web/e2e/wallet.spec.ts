@@ -112,6 +112,57 @@ test.describe("the wallet section", () => {
     expect(await balanceOf(page)).toBe(before);
   });
 
+  test("an owner sets the balance and the wallet works out the difference", async ({
+    page,
+  }) => {
+    await openMiraWallet(page);
+    const before = await balanceOf(page);
+    await page
+      .getByRole("button", { name: "Set balance", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog", { name: "Set the balance" });
+    await dialog.getByLabel("New balance").fill(String(before));
+    await expect(dialog.locator("output")).toContainText(
+      "The same balance: nothing would change",
+    );
+    await dialog.getByLabel("New balance").fill("100");
+    await expect(dialog.locator("output")).toContainText(
+      `${before.toLocaleString("en-US")} → 100`,
+    );
+    await dialog.getByLabel("Reason").fill("Season reset");
+    await dialog
+      .getByRole("button", { name: "Set balance", exact: true })
+      .click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole("status").getByText("Balance set to 100 grumbles"),
+    ).toBeVisible();
+    await expect.poll(() => balanceOf(page)).toBe(100);
+    const first = page.locator("#journal tbody tr").first();
+    await expect(first).toContainText("Taken by operator");
+    await expect(first).toContainText("Console");
+    await expect(first).toContainText("Season reset");
+  });
+
+  test("the journal says where each operation came from and filters by it", async ({
+    page,
+  }) => {
+    await openMiraWallet(page);
+    const journal = page.locator("#journal");
+    await expect(journal).toContainText("Roulette");
+    await expect(journal).toContainText("round:r-");
+    await journal.getByLabel("Source").selectOption("daily-bonus");
+    await journal.getByRole("button", { name: "Apply" }).click();
+    await expect(page).toHaveURL(/tab=wallet.*source=daily-bonus/);
+    const rows = journal.locator("tbody tr");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("Daily bonus");
+    await visit(page, "/wallet");
+    const turnover = page.locator("#turnover");
+    await expect(turnover).toContainText("Daily bonus");
+    await expect(turnover).toContainText("Roulette");
+  });
+
   test("is the owner's alone: other roles neither see nor open it", async ({
     page,
   }) => {

@@ -7,6 +7,7 @@ import type {
   RollbackResponse,
   SystemAccountCode,
   TxKind,
+  WalletSource,
   WalletUnit,
 } from "@outegro/contracts/wallet";
 import { AppError, CLOCK, type Clock, DATABASE } from "@outegro/nest-common";
@@ -42,6 +43,10 @@ type Posting = {
   unit: WalletUnit;
   /** The magnitude; the kind gives the sign. */
   amount: bigint;
+  source: WalletSource;
+  objectRef?: string | null;
+  /** The other leg, when it is not the kind's own (a reversal: its debit's). */
+  counter?: SystemAccountCode;
   reason?: string | null;
   actorId?: string | null;
   meta?: Record<string, unknown> | null;
@@ -56,6 +61,17 @@ const LEGS: Record<TxKind, { sign: 1n | -1n; counter: SystemAccountCode }> = {
   credit: { sign: 1n, counter: "spent" },
   reversal: { sign: 1n, counter: "spent" },
 };
+
+/** Credits by source: a daily bonus is issued, a payout returns what was spent. */
+const CREDIT_COUNTER: Partial<Record<WalletSource, SystemAccountCode>> = {
+  "daily-bonus": "issued_bonus",
+  pay: "issued_purchase",
+};
+const counterOf = (kind: TxKind, posting: Posting): SystemAccountCode =>
+  posting.counter ??
+  (kind === "credit"
+    ? (CREDIT_COUNTER[posting.source] ?? "spent")
+    : LEGS[kind].counter);
 
 /** Reasons a wallet is restricted while its account is not active. */
 const ACCOUNT_REASON = {
@@ -78,6 +94,8 @@ export function toOperation(row: TxRow, replayed: boolean): Operation {
     userId: row.userId,
     unit: row.unit,
     kind: row.kind,
+    source: row.source,
+    objectRef: row.objectRef,
     amount: row.amount.toString(),
     balanceBefore: row.balanceBefore.toString(),
     balanceAfter: row.balanceAfter.toString(),
@@ -117,14 +135,16 @@ export class WalletLedger {
   /** Internal API: payouts and returns, all items or none. */
   creditBatch(
     unit: WalletUnit,
+    source: WalletSource,
     items: CreditItem[],
     correlationId: string | null,
   ): Promise<Operation[]> {
     return this.metrics.time("credit", () =>
       this.database.db.transaction(async (tx) => {
-        const postings = items.map((item) => ({
+        const postings: Posting[] = items.map((item) => ({
           ...item,
           unit,
+          source,
           amount: BigInt(item.amount),
           correlationId,
         }));
@@ -160,7 +180,9 @@ export class WalletLedger {
           total += row.amount;
           results.push(toOperation(row, false));
         }
-        await this.moveSystem(tx, "spent", unit, -total);
+        const [first] = postings;
+        if (first)
+          await this.moveSystem(tx, counterOf("credit", first), unit, -total);
         return results;
       }),
     );
@@ -242,13 +264,21 @@ export class WalletLedger {
             userId: debit.userId,
             unit: debit.unit,
             amount: -debit.amount,
+            source: debit.source,
+            objectRef: debit.objectRef,
+            counter: debit.counterAccount,
             reason: input.reason ?? null,
             meta: { reverses: debit.id },
             correlationId: input.correlationId ?? null,
           },
           txId,
         );
-        await this.moveSystem(tx, "spent", debit.unit, -row.amount);
+        await this.moveSystem(
+          tx,
+          debit.counterAccount,
+          debit.unit,
+          -row.amount,
+        );
         return {
           ref: input.ref,
           state: "reversed",
@@ -267,7 +297,12 @@ export class WalletLedger {
         if (claimed.replay) return claimed.replay;
         await this.lockWallets(tx, [input]);
         const row = await this.give(tx, "grant", input, claimed.txId);
-        await this.moveSystem(tx, "issued_bonus", input.unit, -row.amount);
+        await this.moveSystem(
+          tx,
+          counterOf("grant", input),
+          input.unit,
+          -row.amount,
+        );
         await this.audit(tx, actor, "wallet.grant", row);
         return toOperation(row, false);
       }),
@@ -285,6 +320,78 @@ export class WalletLedger {
         return toOperation(row, false);
       }),
     );
+  }
+
+  /**
+   * Admin command: set the balance. Under the wallet's lock the difference
+   * is worked out and granted or taken as one operation (ref
+   * `set:{commandId}`, `amount` is the target); the same balance is 422,
+   * a difference over the cap 400.
+   */
+  setBalance(
+    actor: Actor,
+    input: Posting,
+    maxAmount: bigint,
+  ): Promise<Operation> {
+    return this.metrics.time("set", () =>
+      this.database.db.transaction(async (tx) => {
+        const claimed = await this.claim(tx, "set", input);
+        if (claimed.replay) return claimed.replay;
+        await this.lockWallets(tx, [input]);
+        const [wallet] = await tx
+          .select({ balance: wallets.balance })
+          .from(wallets)
+          .where(
+            and(eq(wallets.userId, input.userId), eq(wallets.unit, input.unit)),
+          );
+        const diff = input.amount - (wallet?.balance ?? 0n);
+        if (diff === 0n)
+          throw new AppError("UNPROCESSABLE", {
+            fieldErrors: { balance: ["unchanged"] },
+          });
+        const amount = diff > 0n ? diff : -diff;
+        if (amount > maxAmount)
+          throw new AppError("VALIDATION_FAILED", {
+            fieldErrors: { amount: ["too_large"] },
+          });
+        const posting = { ...input, amount };
+        let row: TxRow;
+        if (diff > 0n) {
+          row = await this.give(tx, "grant", posting, claimed.txId);
+          await this.moveSystem(
+            tx,
+            counterOf("grant", posting),
+            input.unit,
+            -amount,
+          );
+        } else
+          row = await this.take(tx, "adjust", posting, claimed.txId, false);
+        await this.audit(tx, actor, "wallet.set", row);
+        return toOperation(row, false);
+      }),
+    );
+  }
+
+  /** Before → after of setting the balance; the same balance is 422. */
+  async previewSet(
+    userId: string,
+    unit: WalletUnit,
+    target: bigint,
+  ): Promise<CommandPreview> {
+    const [wallet] = await this.database.db
+      .select({ balance: wallets.balance })
+      .from(wallets)
+      .where(and(eq(wallets.userId, userId), eq(wallets.unit, unit)));
+    const before = wallet?.balance ?? 0n;
+    if (before === target)
+      throw new AppError("UNPROCESSABLE", {
+        fieldErrors: { balance: ["unchanged"] },
+      });
+    return {
+      preview: true,
+      balanceBefore: before.toString(),
+      balanceAfter: target.toString(),
+    };
   }
 
   /** Before → after of an admin command, without writing anything. */
@@ -315,7 +422,7 @@ export class WalletLedger {
    */
   private async claim(
     tx: WalletTx,
-    operation: "grant" | "adjust" | "debit" | "credit",
+    operation: "grant" | "adjust" | "set" | "debit" | "credit",
     input: Posting,
   ): Promise<Claim> {
     const txId = randomUUID();
@@ -323,6 +430,7 @@ export class WalletLedger {
       input.userId,
       input.unit,
       input.amount,
+      input.source,
     ]);
     const claimed = await tx
       .insert(walletRefs)
@@ -395,12 +503,14 @@ export class WalletLedger {
         userId: input.userId,
         unit: input.unit,
         kind,
+        source: input.source,
+        objectRef: input.objectRef ?? null,
         ref: input.ref,
         amount: -input.amount,
         balanceBefore: moved.balance + input.amount,
         balanceAfter: moved.balance,
         walletVersion: moved.version,
-        counterAccount: LEGS[kind].counter,
+        counterAccount: counterOf(kind, input),
         reason: input.reason ?? null,
         actorId: input.actorId ?? null,
         meta: input.meta ?? null,
@@ -409,7 +519,7 @@ export class WalletLedger {
       })
       .returning();
     if (!row) throw new Error("journal insert returned nothing");
-    await this.moveSystem(tx, LEGS[kind].counter, input.unit, input.amount);
+    await this.moveSystem(tx, counterOf(kind, input), input.unit, input.amount);
     this.metrics.operation(kind, "ok");
     return row;
   }
@@ -441,12 +551,14 @@ export class WalletLedger {
         userId: input.userId,
         unit: input.unit,
         kind,
+        source: input.source,
+        objectRef: input.objectRef ?? null,
         ref: input.ref,
         amount: input.amount,
         balanceBefore: moved.balance - input.amount,
         balanceAfter: moved.balance,
         walletVersion: moved.version,
-        counterAccount: LEGS[kind].counter,
+        counterAccount: counterOf(kind, input),
         reason: input.reason ?? null,
         actorId: input.actorId ?? null,
         meta: input.meta ?? null,
@@ -555,7 +667,7 @@ export class WalletLedger {
   private async audit(
     tx: WalletTx,
     actor: Actor,
-    action: "wallet.grant" | "wallet.adjust",
+    action: "wallet.grant" | "wallet.adjust" | "wallet.set",
     row: TxRow,
   ) {
     await tx.insert(auditLog).values({

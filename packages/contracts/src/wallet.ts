@@ -29,7 +29,12 @@ export const signedAmountSchema = z.string().regex(/^-?\d+$/);
 /** An idempotency key: one operation per ref, ever. */
 export const walletRefSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,200}$/);
 /** Refs the wallet builds itself; the internal API refuses them. */
-export const reservedRefPrefixes = ["grant:", "adjust:", "rollback:"] as const;
+export const reservedRefPrefixes = [
+  "grant:",
+  "adjust:",
+  "set:",
+  "rollback:",
+] as const;
 const callerRefSchema = walletRefSchema.refine(
   (ref) => !reservedRefPrefixes.some((prefix) => ref.startsWith(prefix)),
   { message: "reserved prefix" },
@@ -57,6 +62,31 @@ export const systemAccountCodes = [
 ] as const;
 export type SystemAccountCode = (typeof systemAccountCodes)[number];
 
+/**
+ * Which service an operation came from and why: every journal row has one.
+ * `admin` is the console's commands; the rest call the internal API.
+ */
+export const walletSources = [
+  "roulette",
+  "daily-bonus",
+  "battleship-shop",
+  "pay",
+  "admin",
+] as const;
+export type WalletSource = (typeof walletSources)[number];
+/** Sources of the internal API (the console's commands are `admin`). */
+export const callerSources = [
+  "roulette",
+  "daily-bonus",
+  "battleship-shop",
+  "pay",
+] as const;
+export type CallerSource = (typeof callerSources)[number];
+const callerSourceSchema = z.enum(callerSources);
+
+/** The object an operation is about: `round:1207`, `order:<uuid>`. */
+export const objectRefSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,200}$/);
+
 /** The caller's own context (an order, a roulette round), kept in the journal. */
 export const walletMetaSchema = z
   .record(z.string(), z.unknown())
@@ -73,6 +103,8 @@ export const debitRequestSchema = z.object({
   userId: z.uuid(),
   unit: walletUnitSchema,
   amount: amountSchema,
+  source: callerSourceSchema,
+  objectRef: objectRefSchema.optional(),
   reason: reasonSchema.optional(),
   meta: walletMetaSchema.optional(),
   correlationId: correlationIdSchema.optional(),
@@ -83,6 +115,7 @@ export const creditItemSchema = z.object({
   ref: callerRefSchema,
   userId: z.uuid(),
   amount: amountSchema,
+  objectRef: objectRefSchema.optional(),
   reason: reasonSchema.optional(),
   meta: walletMetaSchema.optional(),
 });
@@ -91,6 +124,8 @@ export type CreditItem = z.infer<typeof creditItemSchema>;
 export const creditBatchRequestSchema = z
   .object({
     unit: walletUnitSchema,
+    /** One batch, one source: payouts of a round, a daily bonus. */
+    source: callerSourceSchema,
     items: z.array(creditItemSchema).min(1).max(1000),
     correlationId: correlationIdSchema.optional(),
   })
@@ -122,6 +157,8 @@ export const operationSchema = z.object({
   userId: z.uuid(),
   unit: walletUnitSchema,
   kind: z.enum(txKinds),
+  source: z.enum(walletSources),
+  objectRef: z.string().nullable(),
   amount: signedAmountSchema,
   balanceBefore: signedAmountSchema,
   balanceAfter: signedAmountSchema,
@@ -142,6 +179,28 @@ export const rollbackResponseSchema = z.object({
   replayed: z.boolean(),
 });
 export type RollbackResponse = z.infer<typeof rollbackResponseSchema>;
+
+/** Balances of many players at once (roulette: a socket has no user token). */
+export const balancesRequestSchema = z.object({
+  unit: walletUnitSchema,
+  userIds: z.array(z.uuid()).min(1).max(1000),
+});
+export type BalancesRequest = z.infer<typeof balancesRequestSchema>;
+
+export const balanceItemSchema = z.object({
+  userId: z.uuid(),
+  unit: walletUnitSchema,
+  balance: signedAmountSchema,
+  state: z.enum(walletStates),
+  /** False for a player without operations yet: the balance is zero. */
+  exists: z.boolean(),
+});
+export type BalanceItem = z.infer<typeof balanceItemSchema>;
+
+/** One item per requested id, in the request's order. */
+export const balancesResponseSchema = z.object({
+  items: z.array(balanceItemSchema),
+});
 
 /* ---------- Player ---------- */
 
@@ -167,6 +226,7 @@ export const historyQuerySchema = pageQuerySchema.extend({
 export const historyItemSchema = z.object({
   id: z.uuid(),
   kind: z.enum(txKinds),
+  source: z.enum(walletSources),
   amount: signedAmountSchema,
   balanceBefore: signedAmountSchema,
   balanceAfter: signedAmountSchema,
@@ -200,6 +260,7 @@ export const adminWalletsPageSchema = pageSchema(adminWalletSchema);
 
 export const adminTxSchema = historyItemSchema.extend({
   ref: walletRefSchema,
+  objectRef: z.string().nullable(),
   walletVersion: z.number().int().positive(),
   counterAccount: z.enum(systemAccountCodes),
   reason: z.string().nullable(),
@@ -214,6 +275,11 @@ export const adminWalletCardSchema = z.object({
   history: pageSchema(adminTxSchema),
 });
 export type AdminWalletCard = z.infer<typeof adminWalletCardSchema>;
+
+/** A wallet's journal in the console, optionally of one source. */
+export const adminJournalQuerySchema = historyQuerySchema.extend({
+  source: z.enum(walletSources).optional(),
+});
 
 /** Grant or take grumbles; `preview` shows before → after and writes nothing. */
 export const adminCommandSchema = z.object({
@@ -232,6 +298,20 @@ export const commandPreviewSchema = z.object({
   balanceAfter: signedAmountSchema,
 });
 export type CommandPreview = z.infer<typeof commandPreviewSchema>;
+
+/**
+ * Set the balance: the wallet works out the difference and grants or
+ * takes it (one operation, ref `set:{commandId}`); the same balance is
+ * 422 with nothing to do. `preview` shows before → after.
+ */
+export const setBalanceCommandSchema = z.object({
+  unit: walletUnitSchema,
+  balance: z.string().regex(/^(0|[1-9]\d{0,14})$/),
+  reason: adminReasonSchema,
+  commandId: z.uuid(),
+  preview: z.boolean().default(false),
+});
+export type SetBalanceCommand = z.infer<typeof setBalanceCommandSchema>;
 
 export const reconciliationIssueKinds = [
   "balance_drift",
@@ -287,12 +367,25 @@ export const adminOverviewSchema = z.object({
       balance: signedAmountSchema,
     }),
   ),
+  /** The day's turnover by source: grumbles in and out of players' wallets. */
+  turnover24h: z.array(
+    z.object({
+      source: z.enum(walletSources),
+      operations: z.number().int().nonnegative(),
+      credited: signedAmountSchema,
+      debited: signedAmountSchema,
+    }),
+  ),
   openIssues: z.number().int().nonnegative(),
   lastReconciliation: reconciliationRunSchema.nullable(),
 });
 export type AdminOverview = z.infer<typeof adminOverviewSchema>;
 
-export const adminAuditActions = ["wallet.grant", "wallet.adjust"] as const;
+export const adminAuditActions = [
+  "wallet.grant",
+  "wallet.adjust",
+  "wallet.set",
+] as const;
 
 export const adminAuditEntrySchema = z.object({
   id: z.uuid(),

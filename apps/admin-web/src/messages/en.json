@@ -58,7 +58,8 @@
       "free-chapters": "The book has fewer chapters than that: lower the number of free chapters.",
       "rule-refused": "Education did not accept this access rule; nothing changed.",
       "insufficient-funds": "The wallet holds less than that. Nothing was taken.",
-      "amount-too-large": "That is more than one command may move. Nothing was changed."
+      "amount-too-large": "That is more than one command may move. Nothing was changed.",
+      "same-balance": "The wallet already holds that much. Nothing was changed."
     },
     "done": {
       "suspended": "Account suspended. All sessions were ended.",
@@ -86,14 +87,19 @@
       "bookArchived": "Book archived.",
       "bookAccessChanged": "Access rule changed.",
       "grumblesGranted": "{count, plural, one {# grumble granted} other {# grumbles granted}}",
-      "grumblesTaken": "{count, plural, one {# grumble taken} other {# grumbles taken}}"
+      "grumblesTaken": "{count, plural, one {# grumble taken} other {# grumbles taken}}",
+      "balanceSet": "{count, plural, one {Balance set to # grumble} other {Balance set to # grumbles}}"
     },
     "grumbles": {
       "amount": "Amount",
       "amountHint": "Whole grumbles, from 1 to {max} at a time.",
       "now": "The wallet holds {balance} now.",
       "preview": "Balance after: {after}",
-      "previewShort": "Below zero: nothing would be taken"
+      "previewShort": "Below zero: nothing would be taken",
+      "target": "New balance",
+      "targetHint": "Whole grumbles, 0 or more. The wallet grants or takes the difference.",
+      "previewSet": "{before} → {after}",
+      "unchanged": "The same balance: nothing would change"
     }
   },
   "idle": {
@@ -513,6 +519,13 @@
     "runMode": {
       "sample": "Sample",
       "full": "Full"
+    },
+    "walletSource": {
+      "roulette": "Roulette",
+      "daily-bonus": "Daily bonus",
+      "battleship-shop": "Battleship shop",
+      "pay": "Pay",
+      "admin": "Console"
     }
   },
   "dashboard": {
@@ -1974,7 +1987,14 @@
       "allWallets": "All wallets",
       "connection": "Connection",
       "what": "the wallet",
-      "service": "Wallet"
+      "service": "Wallet",
+      "turnover": "The day by source",
+      "turnoverNote": "Grumbles in and out of players' wallets in 24 hours, by the service that moved them.",
+      "noTurnover": "No operations in 24 hours.",
+      "colSource": "Source",
+      "colOperations": "Operations",
+      "colCredited": "In",
+      "colDebited": "Out"
     },
     "wallets": {
       "title": "Wallets",
@@ -2012,7 +2032,10 @@
       "colWho": "Who and why",
       "byService": "A service",
       "empty": "No operations yet",
-      "what": "the wallet"
+      "what": "the wallet",
+      "filters": "Journal filters",
+      "source": "Source",
+      "anySource": "Any source"
     },
     "command": {
       "grant": "Grant",
@@ -2027,7 +2050,12 @@
       "adjustEffect": "The balance shrinks by the amount; if the wallet holds less, nothing is taken.",
       "restricted": "The account is restricted: purchases and stakes stay blocked.",
       "once": "Sending this form twice applies it once.",
-      "audited": "Goes to the journal and the audit with your name and reason."
+      "audited": "Goes to the journal and the audit with your name and reason.",
+      "set": "Set balance",
+      "setTitle": "Set the balance",
+      "setDescription": "Brings the wallet to the balance you enter: the difference is granted or taken as one operation.",
+      "setConfirm": "Set balance",
+      "setEffect": "If a stake or a payout lands meanwhile, the wallet still ends at this balance."
     },
     "reconciliation": {
       "issues": "Issues",

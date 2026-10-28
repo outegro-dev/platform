@@ -131,13 +131,25 @@ describe("admin commands (TC-W-03-02)", () => {
       .get("/v1/admin/audit")
       .set(await asOwner())
       .expect(200);
+    // Both at the test clock's one instant: compared without their order.
     const mine = audit.body.items.filter(
       (entry: { userId: string }) => entry.userId === userId,
     );
-    expect(mine).toMatchObject([
-      { action: "wallet.adjust", amount: "-120", actorId: owner },
-      { action: "wallet.grant", amount: "500", actorId: owner },
-    ]);
+    expect(mine).toHaveLength(2);
+    expect(mine).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "wallet.adjust",
+          amount: "-120",
+          actorId: owner,
+        }),
+        expect.objectContaining({
+          action: "wallet.grant",
+          amount: "500",
+          actorId: owner,
+        }),
+      ]),
+    );
     expect(await invariants(h)).toMatchObject({ drift: 0, total: 0n });
   });
 
@@ -174,6 +186,174 @@ describe("admin commands (TC-W-03-02)", () => {
         reason: "test",
       })
       .expect(400);
+  });
+});
+
+describe("set the balance (owner's additions of 28.10)", () => {
+  const setBalance = (
+    userId: string,
+    body: Record<string, unknown>,
+    headers: Record<string, string> = ownerHeaders,
+  ) =>
+    h
+      .http()
+      .post(`/v1/admin/wallets/${userId}/set-balance`)
+      .set(headers)
+      .send({ unit: "GRM", reason: "season reset", ...body });
+
+  it("grants or takes the difference, once per form, and audits it", async () => {
+    const userId = randomUUID();
+    const up = randomUUID();
+    const preview = await setBalance(userId, {
+      balance: "750",
+      commandId: up,
+      preview: true,
+    }).expect(200);
+    expect(preview.body).toEqual({
+      preview: true,
+      balanceBefore: "0",
+      balanceAfter: "750",
+    });
+    const raised = await setBalance(userId, {
+      balance: "750",
+      commandId: up,
+    }).expect(200);
+    expect(raised.body).toMatchObject({
+      ref: `set:${up}`,
+      kind: "grant",
+      source: "admin",
+      amount: "750",
+      balanceAfter: "750",
+    });
+    // The same form again: the same answer, nothing new.
+    const again = await setBalance(userId, {
+      balance: "750",
+      commandId: up,
+    }).expect(200);
+    expect(again.body).toEqual({ ...raised.body, replayed: true });
+
+    const lowered = await setBalance(userId, {
+      balance: "200",
+      commandId: randomUUID(),
+      reason: "a bonus too many",
+    }).expect(200);
+    expect(lowered.body).toMatchObject({
+      kind: "adjust",
+      amount: "-550",
+      balanceBefore: "750",
+      balanceAfter: "200",
+    });
+    const same = await setBalance(userId, {
+      balance: "200",
+      commandId: randomUUID(),
+    }).expect(422);
+    expect(same.body.error.fieldErrors).toEqual({ balance: ["unchanged"] });
+    await setBalance(userId, {
+      balance: "200",
+      commandId: randomUUID(),
+      preview: true,
+    }).expect(422);
+    const capped = await setBalance(userId, {
+      balance: "2000000",
+      commandId: randomUUID(),
+    }).expect(400);
+    expect(capped.body.error.fieldErrors).toEqual({ amount: ["too_large"] });
+    await setBalance(userId, { balance: "-5", commandId: randomUUID() }).expect(
+      400,
+    );
+    await setBalance(
+      userId,
+      { balance: "1", commandId: randomUUID() },
+      await h.auth(randomUUID(), ["billing_operator"]),
+    ).expect(403);
+
+    const audit = await h
+      .http()
+      .get("/v1/admin/audit")
+      .set(ownerHeaders)
+      .expect(200);
+    const sets = audit.body.items.filter(
+      (e: { userId: string }) => e.userId === userId,
+    );
+    expect(sets).toHaveLength(2);
+    expect(sets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "wallet.set",
+          amount: "-550",
+          reason: "a bonus too many",
+        }),
+        expect.objectContaining({
+          action: "wallet.set",
+          amount: "750",
+          reason: "season reset",
+        }),
+      ]),
+    );
+    const { rows } = await h.root.query(
+      "select counter_account from wallet_tx where user_id = $1 order by wallet_version",
+      [userId],
+    );
+    expect(rows.map((r) => r.counter_account)).toEqual([
+      "issued_bonus",
+      "adjust",
+    ]);
+    expect(await invariants(h)).toMatchObject({ drift: 0, total: 0n });
+  });
+
+  it("filters a journal by source and sums the day by source", async () => {
+    const userId = randomUUID();
+    await command("grant", userId, {
+      amount: "100",
+      commandId: randomUUID(),
+    }).expect(200);
+    for (const [source, amount] of [
+      ["roulette", "30"],
+      ["battleship-shop", "20"],
+    ] as const)
+      await h
+        .http()
+        .post("/v1/internal/debit")
+        .set(h.service)
+        .send({
+          ref: `order:${randomUUID()}`,
+          userId,
+          unit: "GRM",
+          amount,
+          source,
+        })
+        .expect(200);
+    const roulette = await h
+      .http()
+      .get(`/v1/admin/wallets/${userId}?source=roulette`)
+      .set(ownerHeaders)
+      .expect(200);
+    expect(
+      roulette.body.history.items.map((i: { source: string }) => i.source),
+    ).toEqual(["roulette"]);
+    await h
+      .http()
+      .get(`/v1/admin/wallets/${userId}?source=casino`)
+      .set(ownerHeaders)
+      .expect(400);
+    const overview = await h
+      .http()
+      .get("/v1/admin/overview")
+      .set(ownerHeaders)
+      .expect(200);
+    const bySource = Object.fromEntries(
+      overview.body.turnover24h.map(
+        (t: { source: string; debited: string; credited: string }) => [
+          t.source,
+          t,
+        ],
+      ),
+    );
+    expect(Number(bySource.roulette.debited)).toBeGreaterThanOrEqual(30);
+    expect(Number(bySource["battleship-shop"].debited)).toBeGreaterThanOrEqual(
+      20,
+    );
+    expect(Number(bySource.admin.credited)).toBeGreaterThanOrEqual(100);
   });
 });
 
@@ -449,6 +629,7 @@ describe("reconciliation and metrics (TC-W-03-01)", () => {
       userId,
       unit: "GRM",
       amount: "2",
+      source: "battleship-shop",
     };
     for (let i = 0; i < 2; i++)
       await h

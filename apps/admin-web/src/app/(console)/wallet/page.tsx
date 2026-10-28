@@ -92,40 +92,81 @@ async function Overview() {
             }))}
           />
         </Panel>
-        <Panel flush id="system" title={t("system")} note={t("systemNote")}>
-          <DataTable label={t("system")} stack={false} compact>
-            <thead>
-              <tr>
-                <th scope="col">{t("colAccount")}</th>
-                <th scope="col" className="num">
-                  {t("colBalance")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.systemAccounts.map((account) => (
-                <tr key={account.code}>
-                  <td>
-                    <span className="cell-main">
-                      {label("systemAccount", account.code)}
-                    </span>
-                    <span className="cell-sub mono">{account.code}</span>
-                  </td>
-                  <td className="num">
-                    <Grumbles amount={account.balance} signed />
-                  </td>
+        <Panel
+          flush
+          id="turnover"
+          title={t("turnover")}
+          note={t("turnoverNote")}
+        >
+          {data.turnover24h.length === 0 ? (
+            <p className="muted small">{t("noTurnover")}</p>
+          ) : (
+            <DataTable label={t("turnover")} stack={false} compact>
+              <thead>
+                <tr>
+                  <th scope="col">{t("colSource")}</th>
+                  <th scope="col" className="num">
+                    {t("colOperations")}
+                  </th>
+                  <th scope="col" className="num">
+                    {t("colCredited")}
+                  </th>
+                  <th scope="col" className="num">
+                    {t("colDebited")}
+                  </th>
                 </tr>
-              ))}
-              <tr>
-                <th scope="row">{t("total")}</th>
-                <td className="num">
-                  <Grumbles amount={total.toString()} signed />
-                </td>
-              </tr>
-            </tbody>
-          </DataTable>
+              </thead>
+              <tbody>
+                {data.turnover24h.map((row) => (
+                  <tr key={row.source}>
+                    <td>{label("walletSource", row.source)}</td>
+                    <td className="num">{row.operations}</td>
+                    <td className="num">
+                      <Grumbles amount={row.credited} />
+                    </td>
+                    <td className="num">
+                      <Grumbles amount={row.debited} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </DataTable>
+          )}
         </Panel>
       </div>
+      <Panel flush id="system" title={t("system")} note={t("systemNote")}>
+        <DataTable label={t("system")} stack={false} compact>
+          <thead>
+            <tr>
+              <th scope="col">{t("colAccount")}</th>
+              <th scope="col" className="num">
+                {t("colBalance")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.systemAccounts.map((account) => (
+              <tr key={account.code}>
+                <td>
+                  <span className="cell-main">
+                    {label("systemAccount", account.code)}
+                  </span>
+                  <span className="cell-sub mono">{account.code}</span>
+                </td>
+                <td className="num">
+                  <Grumbles amount={account.balance} signed />
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <th scope="row">{t("total")}</th>
+              <td className="num">
+                <Grumbles amount={total.toString()} signed />
+              </td>
+            </tr>
+          </tbody>
+        </DataTable>
+      </Panel>
     </>
   );
 }

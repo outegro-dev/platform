@@ -68,6 +68,8 @@ CREATE TABLE "wallet_tx" (
 	"user_id" uuid NOT NULL,
 	"unit" text NOT NULL,
 	"kind" text NOT NULL,
+	"source" text NOT NULL,
+	"object_ref" text,
 	"ref" text NOT NULL,
 	"amount" bigint NOT NULL,
 	"balance_before" bigint NOT NULL,
@@ -106,4 +108,5 @@ CREATE INDEX "reconciliation_runs_started_idx" ON "reconciliation_runs" USING bt
 CREATE UNIQUE INDEX "wallet_tx_version_uq" ON "wallet_tx" USING btree ("user_id","unit","wallet_version");--> statement-breakpoint
 CREATE INDEX "wallet_tx_history_idx" ON "wallet_tx" USING btree ("user_id","unit","created_at","id");--> statement-breakpoint
 CREATE INDEX "wallet_tx_created_idx" ON "wallet_tx" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "wallet_tx_source_idx" ON "wallet_tx" USING btree ("source","created_at");--> statement-breakpoint
 CREATE INDEX "wallets_updated_idx" ON "wallets" USING btree ("unit","updated_at","user_id");

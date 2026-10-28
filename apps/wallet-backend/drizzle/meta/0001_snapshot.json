@@ -1,6 +1,6 @@
 {
-  "id": "e2ef5ce3-096c-4a7e-b3b2-d5d6815352af",
-  "prevId": "fd640bf7-ab33-4cbb-909a-de7b816da9cc",
+  "id": "f644242f-9139-4e67-99ab-eca5361e1b99",
+  "prevId": "60e5b3cb-abdb-4181-94ac-edebc1b3dc17",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -472,6 +472,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_ref": {
+          "name": "object_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "ref": {
           "name": "ref",
           "type": "text",
@@ -603,6 +615,27 @@
         "wallet_tx_created_idx": {
           "name": "wallet_tx_created_idx",
           "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "wallet_tx_source_idx": {
+          "name": "wallet_tx_source_idx",
+          "columns": [
+            {
+              "expression": "source",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "created_at",
               "isExpression": false,

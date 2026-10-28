@@ -14,7 +14,7 @@
 | Таблица | Что хранит | Гарантии |
 |---|---|---|
 | `wallets` | user_id + unit (PK), balance, state (`active` / `restricted`), restricted_reason, version, created_at, updated_at | `balance >= 0`; кэш журнала, меняется только операцией в той же транзакции |
-| `wallet_tx` | id, user_id, unit, kind, ref, amount со знаком, balance_before, balance_after, wallet_version, counter_account, reason, actor_id, meta, correlation_id, created_at | только INSERT: у роли приложения нет UPDATE, DELETE и TRUNCATE, триггер отклоняет их у любой роли; `balance_after = balance_before + amount`, `balance_after >= 0`, unique (user_id, unit, wallet_version) |
+| `wallet_tx` | id, user_id, unit, kind, source, object_ref, ref, amount со знаком, balance_before, balance_after, wallet_version, counter_account, reason, actor_id, meta, correlation_id, created_at | только INSERT: у роли приложения нет UPDATE, DELETE и TRUNCATE, триггер отклоняет их у любой роли; `balance_after = balance_before + amount`, `balance_after >= 0`, unique (user_id, unit, wallet_version) |
 | `wallet_refs` | ref (PK), operation, tx_id, request_fingerprint, created_at | идемпотентность и надгробия; только INSERT; отдельно от журнала, чтобы журнал можно было резать на партиции |
 | `system_accounts` | code + unit (PK), balance | вторая нога каждой операции |
 | `users` | user_id, status, status_version, access_version | проекция Identity для блокировки и команд админки |
@@ -22,22 +22,26 @@
 
 Строка `wallet_tx` — нога игрока; вторая нога — системный счёт `counter_account` с суммой `−amount`, его баланс меняется в той же транзакции. Поэтому для каждой единицы сумма балансов всех кошельков и всех системных счетов равна нулю.
 
+У каждой операции есть источник `source` — какой сервис и зачем: `roulette`, `daily-bonus`, `battleship-shop`, `pay` (внутренний API) или `admin` (команды админки) — и необязательная ссылка на объект `object_ref`: `round:1207`, `order:<uuid>` (до 200 символов `[A-Za-z0-9._:-]`). Откат наследует источник и объект своего списания.
+
 | Операция | kind | ref | Игрок | Второй счёт |
 |---|---|---|---|---|
 | Начисление оператором (оператор, промо, компенсация) | `grant` | `grant:{commandId}` | +N | `issued_bonus` −N |
 | Списание оператором | `adjust` | `adjust:{commandId}` | −N | `adjust` +N |
+| Установка баланса оператором | `grant` или `adjust` на разницу | `set:{commandId}` | ±разница | как у `grant` / `adjust` |
 | Списание по внутреннему API (покупка, ставка) | `debit` | задаёт вызывающий, например `order:{orderId}` | −N | `spent` +N |
-| Зачисление пачкой по внутреннему API (выплаты) | `credit` | задаёт вызывающий | +N | `spent` −N |
-| Откат списания | `reversal` | `rollback:{ref}` | +N | `spent` −N |
+| Зачисление по внутреннему API: выплаты рулетки, возвраты | `credit` | задаёт вызывающий | +N | `spent` −N |
+| Зачисление ежедневного бонуса (`source: daily-bonus`) | `credit` | `daily:{userId}:{claimNo}` | +N | `issued_bonus` −N |
+| Откат списания | `reversal` | `rollback:{ref}` | +N | счёт списания (`spent`) −N |
 
-`issued_purchase` (этап 2, пакеты) и `expired` (сгорание бонусов, если владелец его введёт) заведены сразу и пока не двигаются. Списание по API не проходит, если кошелёк `restricted`; начисление, зачисление, откат и списание оператором проходят в любом состоянии.
+`issued_purchase` (этап 2, пакеты: зачисление с `source: pay`) и `expired` (сгорание бонусов, если владелец его введёт) заведены сразу и пока не двигаются. Списание по API не проходит, если кошелёк `restricted`; начисление, зачисление, откат и списание оператором проходят в любом состоянии.
 
 Порядок блокировок: строки кошельков в порядке (user_id, unit), затем строки системных счетов в порядке code. Операция — одна транзакция PostgreSQL READ COMMITTED.
 
 ## Идемпотентность по ref
 
-- `ref`: 1–200 символов `[A-Za-z0-9._:-]`. Префиксы `grant:`, `adjust:` и `rollback:` ставит сам сервис; во внутреннем API они дают 400.
-- Отпечаток запроса — sha256 от операции, игрока, единицы и суммы. Причина, `meta` и `correlationId` в него не входят: повтор с другим текстом причины — тот же запрос.
+- `ref`: 1–200 символов `[A-Za-z0-9._:-]`. Префиксы `grant:`, `adjust:`, `set:` и `rollback:` ставит сам сервис; во внутреннем API они дают 400.
+- Отпечаток запроса — sha256 от операции, игрока, единицы, суммы (у установки — целевого баланса) и источника. Причина, `objectRef`, `meta` и `correlationId` в него не входят: повтор с другим текстом причины — тот же запрос.
 - Операция сначала занимает ref в `wallet_refs` (отпечаток и id будущей строки журнала), потом проводит, всё в одной транзакции. Сохранённый ответ — строка журнала, на которую указывает ref: она не меняется. Повтор с тем же отпечатком возвращает её с `replayed: true` и ничего не пишет; одновременный повтор ждёт коммита первого. Тот же ref с другим отпечатком или другой операцией — 409 `IDEMPOTENCY_CONFLICT`, `fieldErrors.ref: ["conflict"]`.
 - Отказ (402, 423, 400) не сохраняется: после пополнения тот же ref можно повторить.
 - Откат списания с ref X: если списание X есть — обратная проводка `reversal` с ref `rollback:X`. Если списания нет — надгробие: строка X с операцией `tombstone`; опоздавшее списание с этим ref получает 409 `IDEMPOTENCY_CONFLICT`, `fieldErrors.ref: ["rolled_back"]`. Повтор отката возвращает прежний ответ. Откат ref начисления или зачисления — 422 `UNPROCESSABLE`, `fieldErrors.ref: ["not_debit"]`.
@@ -49,9 +53,12 @@
 
 | Route | Вход | Ответ 200 |
 |---|---|---|
-| `POST /v1/internal/debit` | `ref`, `userId`, `unit`, `amount`, `reason?` (до 500), `meta?` (объект до 2 КБ), `correlationId?` | операция: `txId`, `ref`, `userId`, `unit`, `kind`, `amount` (со знаком), `balanceBefore`, `balanceAfter`, `createdAt`, `replayed` |
-| `POST /v1/internal/credit-batch` | `unit`, `items` (1–1 000: `ref`, `userId`, `amount`, `reason?`, `meta?`), `correlationId?` | `{ items: [операция] }` в порядке запроса |
+| `POST /v1/internal/debit` | `ref`, `userId`, `unit`, `amount`, `source`, `objectRef?`, `reason?` (до 500), `meta?` (объект до 2 КБ), `correlationId?` | операция: `txId`, `ref`, `userId`, `unit`, `kind`, `source`, `objectRef`, `amount` (со знаком), `balanceBefore`, `balanceAfter`, `createdAt`, `replayed` |
+| `POST /v1/internal/credit-batch` | `unit`, `source` (одна пачка — один источник), `items` (1–1 000: `ref`, `userId`, `amount`, `objectRef?`, `reason?`, `meta?`), `correlationId?` | `{ items: [операция] }` в порядке запроса |
 | `POST /v1/internal/rollback` | `ref` списания, `reason?`, `correlationId?` | `{ ref, state: "reversed" \| "tombstoned", reversal: операция \| null, replayed }` |
+| `POST /v1/internal/balances` | `unit`, `userIds` (1–1 000) | `{ items: [{ userId, unit, balance, state, exists }] }` по одному на id в порядке запроса; игрок без кошелька — `"0"`, `exists: false`, `restricted`, если аккаунт заблокирован. Только чтение, для сокета рулетки без пользовательского токена |
+
+`source` во внутреннем API — `roulette`, `daily-bonus`, `battleship-shop` или `pay`; без него или с `admin` — 400. Ежедневный бонус — пачка из одной строки с `source: daily-bonus`.
 
 Пачка — всё или ничего: конфликт любой строки даёт 409 с `fieldErrors["items.<i>.ref"]`, и ни одна строка не записана; повтор пачки целиком возвращает прежние операции. Одинаковые ref внутри пачки — 400. Строки одного игрока применяются по порядку.
 
@@ -70,9 +77,9 @@
 | Route | Вход | Ответ |
 |---|---|---|
 | `GET /v1/me/wallet` | `unit?` (по умолчанию `GRM`) | `unit`, `balance`, `state`, `exists`, `updatedAt` |
-| `GET /v1/me/wallet/history` | `unit?`, `cursor?`, `limit?` (25, до 100) | `items`: `id`, `kind`, `amount`, `balanceBefore`, `balanceAfter`, `createdAt`; `nextCursor` |
+| `GET /v1/me/wallet/history` | `unit?`, `cursor?`, `limit?` (25, до 100) | `items`: `id`, `kind`, `source`, `amount`, `balanceBefore`, `balanceAfter`, `createdAt`; `nextCursor` |
 
-Причину операции, `ref`, `meta` и автора игрок не видит: это внутренние данные оператора и сервисов.
+Игрок видит источник (рулетка, бонус, магазин), но не причину, `ref`, объект, `meta` и автора: это внутренние данные оператора и сервисов.
 
 ## API админки
 
@@ -80,15 +87,16 @@
 
 | Route | Право | Вход | Ответ |
 |---|---|---|---|
-| `GET /v1/admin/overview` | `wallet.read` | `unit?` | на руках у игроков, число кошельков и `restricted`, операции за 24 часа по видам, системные счета, открытые расхождения, последний проход сверки |
+| `GET /v1/admin/overview` | `wallet.read` | `unit?` | на руках у игроков, число кошельков и `restricted`, операции за 24 часа по видам, обороты за 24 часа по источникам (операций, пришло, ушло), системные счета, открытые расхождения, последний проход сверки |
 | `GET /v1/admin/wallets` | `wallet.read` | `unit?`, `state?`, `userId?`, `cursor?`, `limit?` | кошельки по `updated_at` убыв., `nextCursor` |
-| `GET /v1/admin/wallets/{userId}` | `wallet.read` | `unit?`, `cursor?`, `limit?` | кошелёк (или `exists: false` и ноль) и журнал: вид, ref, сумма, было → стало, второй счёт, причина, автор, meta, correlationId, время |
+| `GET /v1/admin/wallets/{userId}` | `wallet.read` | `unit?`, `source?`, `cursor?`, `limit?` | кошелёк (или `exists: false` и ноль) и журнал, при `source` — только этого источника: вид, источник, объект, ref, сумма, было → стало, второй счёт, причина, автор, meta, correlationId, время |
 | `POST /v1/admin/wallets/{userId}/grant` | `wallet.adjust` | `unit`, `amount`, `reason`, `commandId` (UUID), `preview?` | `preview: true` — `{ preview, balanceBefore, balanceAfter }` без записи; иначе операция |
 | `POST /v1/admin/wallets/{userId}/adjust` | `wallet.adjust` | то же | то же; нехватка — 402 и в предпросмотре |
+| `POST /v1/admin/wallets/{userId}/set-balance` | `wallet.adjust` | `unit`, `balance` (целевой, от 0), `reason`, `commandId`, `preview?` | под блокировкой кошелька разница начисляется (`grant`) или списывается (`adjust`) одной операцией; тот же баланс — 422 `balance: unchanged`, разница больше лимита — 400 `amount: too_large`; предпросмотр — «было → станет» |
 | `GET /v1/admin/reconciliation` | `wallet.read` | — | открытые и недавно закрытые расхождения, последние проходы |
 | `GET /v1/admin/audit` | `wallet.read` | `cursor?` | команды операторов: кто, что, кому, сумма, причина, requestId |
 
-Команды: причина обязательна (`adminReasonSchema`), сумма не больше `WALLET_ADMIN_MAX_AMOUNT` (инженерный default 1 000 000), токен не старше последнего accessVersion из событий Identity (иначе 401 и refresh), автор не заблокирован (иначе 403). ref команды — `grant:{commandId}` / `adjust:{commandId}`: повторная отправка той же формы не начисляет дважды. Аудит пишется в транзакции операции.
+Команды: причина обязательна (`adminReasonSchema`), сумма не больше `WALLET_ADMIN_MAX_AMOUNT` (инженерный default 1 000 000), токен не старше последнего accessVersion из событий Identity (иначе 401 и refresh), автор не заблокирован (иначе 403). ref команды — `grant:{commandId}`, `adjust:{commandId}` или `set:{commandId}`: повторная отправка той же формы не начисляет дважды. Источник команд — `admin`. Аудит (`wallet.grant`, `wallet.adjust`, `wallet.set`) пишется в транзакции операции.
 
 ## События
 
@@ -100,4 +108,4 @@
 
 - Проход каждые 5 минут (`RECONCILE_INTERVAL_MS`): кошельки, изменённые после прошлого прохода, плюс 100 случайных; все системные счета; нулевая сумма по единице. Раз в сутки после `RECONCILE_FULL_HOUR_UTC` (default 2) — все кошельки.
 - Виды расхождений: `balance_drift` — кэш кошелька не равен сумме журнала; `chain_break` — `balance_before` не равен `balance_after` предыдущей операции или версии идут с пропуском; `system_drift` — баланс системного счёта не равен минус сумме его ног; `zero_sum` — сумма всех счетов единицы не ноль. Одна открытая строка на (вид, subject); проход, нашедший subject чистым, закрывает её. Сверка ничего не чинит.
-- Метрики (порт 9467): `wallet_operations_total{kind,result}`, `wallet_operation_duration_seconds{kind}`, `wallet_idempotent_replays_total{kind}`, `wallet_balance_total{unit}`, `wallet_reconciliation_issues{type}`, `wallet_reconciliation_last_success_timestamp_seconds`. Алерт — открытые расхождения больше нуля или сверка молчит дольше 30 минут.
+- Метрики (порт 9467): `wallet_operations_total{kind,result}` (`kind` — вид операции или `set`), `wallet_operation_duration_seconds{kind}`, `wallet_idempotent_replays_total{kind}`, `wallet_balance_total{unit}`, `wallet_reconciliation_issues{type}`, `wallet_reconciliation_last_success_timestamp_seconds`. Алерт — открытые расхождения больше нуля или сверка молчит дольше 30 минут.

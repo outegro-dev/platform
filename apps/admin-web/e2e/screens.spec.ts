@@ -224,6 +224,22 @@ const screens: Screen[] = [
       await dialog.getByLabel("Reason").fill("Compensation for the outage");
     },
   },
+  {
+    name: "wallet-set-dialog",
+    englishOnly: true,
+    path: "/wallet/wallets?state=active",
+    skipStability: true,
+    steps: async (page) => {
+      await page.locator("table a.link").first().click();
+      await settle(page);
+      await page
+        .getByRole("button", { name: "Set balance", exact: true })
+        .click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("New balance").fill("500");
+      await dialog.getByLabel("Reason").fill("Season reset");
+    },
+  },
   { name: "wallet-reconciliation", path: "/wallet/reconciliation" },
   {
     name: "user-wallet",

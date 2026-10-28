@@ -120,6 +120,8 @@ async function step(): Promise<string> {
       userId,
       unit: "GRM",
       amount: amount.toString(),
+      source: pick(["roulette", "battleship-shop"] as const),
+      objectRef: `round:${refNo}`,
       meta: { step: refNo },
     };
     const res = await send("/v1/internal/debit", body);
@@ -155,7 +157,11 @@ async function step(): Promise<string> {
       userId: pick(players),
       amount: String(int(1, 80)),
     }));
-    const body = { unit: "GRM", items };
+    const body = {
+      unit: "GRM",
+      source: pick(["roulette", "daily-bonus"] as const),
+      items,
+    };
     const res = await send("/v1/internal/credit-batch", body);
     expect(res.status).toBe(200);
     for (const [i, item] of items.entries()) {
@@ -170,6 +176,33 @@ async function step(): Promise<string> {
     }
     remember("/v1/internal/credit-batch", body, res.body);
     return "credit:ok";
+  }
+
+  if (roll < 0.55 && random() < 0.25) {
+    // An operator sets the balance: the wallet grants or takes the difference.
+    const target = BigInt(int(0, 400));
+    const body = {
+      unit: "GRM",
+      balance: target.toString(),
+      reason: `acceptance step ${refNo}`,
+      commandId: uuid(),
+    };
+    const path = `/v1/admin/wallets/${userId}/set-balance`;
+    const res = await send(path, body, true);
+    if (target === balanceOf(userId)) {
+      expect(res.status).toBe(422);
+      return "set:unchanged";
+    }
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      kind: target > balanceOf(userId) ? "grant" : "adjust",
+      balanceBefore: balanceOf(userId).toString(),
+      balanceAfter: target.toString(),
+    });
+    model.balance.set(userId, target);
+    remember(path, body, res.body, true);
+    ++refNo;
+    return "set:ok";
   }
 
   if (roll < 0.55) {
@@ -271,7 +304,9 @@ async function step(): Promise<string> {
           i === 0 ? { ...item, amount: String(Number(item.amount) + 1) } : item,
         ),
       }
-    : { ...past.body, amount: String(Number(past.body.amount) + 1) };
+    : "balance" in past.body
+      ? { ...past.body, balance: String(Number(past.body.balance) + 1) }
+      : { ...past.body, amount: String(Number(past.body.amount) + 1) };
   const res = await send(past.path, changed, past.admin);
   expect(res.status).toBe(409);
   expect(res.body.error.code).toBe("IDEMPOTENCY_CONFLICT");
@@ -309,6 +344,7 @@ describe("phase 1 acceptance (W-06)", () => {
       "credit:ok",
       "grant:ok",
       "adjust:ok",
+      "set:ok",
       "rollback:reversed",
       "rollback:replayed",
       "rollback:tombstone",

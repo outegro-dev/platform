@@ -6,7 +6,8 @@ import { PanelSkeleton } from "@/components/ui/skeleton";
 import { FailureState } from "@/components/ui/states";
 import { WalletCard } from "@/components/wallet/wallet-card";
 import { pageAccess } from "@/lib/access";
-import { one, type Params, type SearchParams } from "@/lib/params";
+import { walletSources } from "@/lib/adapters/wallet";
+import { one, oneOf, type Params, type SearchParams } from "@/lib/params";
 import { can } from "@/lib/permissions";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,7 +28,9 @@ export default async function WalletPage({
   if (!access.ok) return access.element;
   const t = await getTranslations("wallet.card");
   const { userId } = await params;
-  const cursor = one(await searchParams, "cursor");
+  const query = await searchParams;
+  const cursor = one(query, "cursor");
+  const source = oneOf(query, "source", walletSources);
   if (!UUID.test(userId))
     return (
       <Panel title={t("title")}>
@@ -44,12 +47,13 @@ export default async function WalletPage({
   );
   return (
     <Suspense
-      key={cursor ?? ""}
+      key={`${source ?? ""}|${cursor ?? ""}`}
       fallback={<PanelSkeleton label={t("title")} stats={4} rows={6} />}
     >
       <WalletCard
         userId={userId}
         cursor={cursor}
+        source={source}
         canAdjust={can(access.granted, "wallet.adjust")}
         path={`/wallet/wallets/${userId}`}
         title={userId}

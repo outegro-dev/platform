@@ -4532,9 +4532,17 @@ type FakeWallet = {
   createdAt: string;
   updatedAt: string;
 };
+type WalletSourceKey =
+  | "roulette"
+  | "daily-bonus"
+  | "battleship-shop"
+  | "pay"
+  | "admin";
 type FakeWalletTx = {
   id: string;
   kind: WalletTxKind;
+  source: WalletSourceKey;
+  objectRef: string | null;
   ref: string;
   amount: bigint;
   balanceBefore: bigint;
@@ -4573,6 +4581,8 @@ function walletPost(
   at: number,
   extra: {
     ref?: string;
+    source?: WalletSourceKey;
+    objectRef?: string | null;
     reason?: string | null;
     actorId?: string | null;
     meta?: Record<string, unknown> | null;
@@ -4588,12 +4598,18 @@ function walletPost(
     createdAt: iso(at),
     updatedAt: iso(at),
   };
-  const leg = walletLegs[kind];
+  const source = extra.source ?? "admin";
+  const leg =
+    kind === "credit" && source === "daily-bonus"
+      ? { sign: 1n as const, counter: "issued_bonus" }
+      : walletLegs[kind];
   const after = wallet.balance + leg.sign * amount;
   if (after < 0n) fail(402, "INSUFFICIENT_FUNDS");
   const tx: FakeWalletTx = {
     id: uuidFrom(walletRandom),
     kind,
+    source,
+    objectRef: extra.objectRef ?? null,
     ref: extra.ref ?? `${kind}:${uuidFrom(walletRandom)}`,
     amount: leg.sign * amount,
     balanceBefore: wallet.balance,
@@ -4637,22 +4653,42 @@ const walletRandom = prngFor("wallet");
     for (let round = 0; round < rounds; round++) {
       at += Math.floor(walletRandom() * 30 * HOUR);
       const stake = BigInt(10 + Math.floor(walletRandom() * 9) * 10);
+      const roundId = `r-${1200 + index * 10 + round}`;
       const debit = walletPost(user.id, "debit", stake, at, {
         ref: `stake:${uuidFrom(walletRandom)}`,
-        meta: { roundId: `r-${1200 + index * 10 + round}`, color: "red" },
+        source: "roulette",
+        objectRef: `round:${roundId}`,
+        meta: { roundId, color: "red" },
       });
       if (walletRandom() < 0.4)
         walletPost(user.id, "credit", stake * 2n, at + MINUTE, {
           ref: `payout:${debit.ref.slice(6)}`,
-          meta: { roundId: debit.meta?.roundId },
+          source: "roulette",
+          objectRef: debit.objectRef,
+          meta: { roundId },
         });
       else if (walletRandom() < 0.15)
         walletPost(user.id, "reversal", stake, at + MINUTE, {
           ref: `rollback:${debit.ref}`,
+          source: "roulette",
+          objectRef: debit.objectRef,
           reason: "round cancelled",
           meta: { reverses: debit.id },
         });
     }
+  });
+  // Today's daily bonuses and stakes: the overview's day by source.
+  holders.slice(0, 4).forEach((user, index) => {
+    walletPost(user.id, "credit", 50n, NOW - (5 + index) * HOUR, {
+      ref: `daily:${user.id}:${index + 1}`,
+      source: "daily-bonus",
+    });
+    walletPost(user.id, "debit", 20n, NOW - (4 + index) * HOUR, {
+      ref: `stake:${uuidFrom(walletRandom)}`,
+      source: "roulette",
+      objectRef: `round:r-${1900 + index}`,
+      meta: { roundId: `r-${1900 + index}`, color: "black" },
+    });
   });
   // A grant by mistake, taken back by the operator.
   walletPost(mira.id, "grant", 500n, NOW - 3 * DAY, {
@@ -4724,9 +4760,24 @@ route("GET", "/wallet/v1/admin/overview", (req) => {
   const all = [...wallets.values()];
   const since = Date.now() - DAY;
   const day = { grant: 0, adjust: 0, debit: 0, credit: 0, reversal: 0 };
+  const turnover = new Map<
+    WalletSourceKey,
+    { operations: number; credited: bigint; debited: bigint }
+  >();
   for (const list of walletJournal.values())
-    for (const tx of list)
-      if (Date.parse(tx.createdAt) >= since) day[tx.kind]++;
+    for (const tx of list) {
+      if (Date.parse(tx.createdAt) < since) continue;
+      day[tx.kind]++;
+      const row = turnover.get(tx.source) ?? {
+        operations: 0,
+        credited: 0n,
+        debited: 0n,
+      };
+      row.operations++;
+      if (tx.amount > 0n) row.credited += tx.amount;
+      else row.debited -= tx.amount;
+      turnover.set(tx.source, row);
+    }
   return {
     unit: "GRM",
     onHand: all.reduce((sum, w) => sum + w.balance, 0n).toString(),
@@ -4737,6 +4788,14 @@ route("GET", "/wallet/v1/admin/overview", (req) => {
       code,
       balance: balance.toString(),
     })),
+    turnover24h: [...turnover]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([source, row]) => ({
+        source,
+        operations: row.operations,
+        credited: row.credited.toString(),
+        debited: row.debited.toString(),
+      })),
     openIssues: walletIssues.filter((i) => i.state === "open").length,
     lastReconciliation: walletRuns[0],
   };
@@ -4757,7 +4816,10 @@ route("GET", "/wallet/v1/admin/wallets/:userId", (req, _res, [userId]) => {
   need(req, "wallet.read");
   const id = userId as string;
   const wallet = wallets.get(id);
-  const journal = [...(walletJournal.get(id) ?? [])].reverse();
+  const source = req.query.get("source");
+  const journal = [...(walletJournal.get(id) ?? [])]
+    .filter((tx) => !source || tx.source === source)
+    .reverse();
   const page = paginate(journal, req.query);
   return {
     wallet: wallet
@@ -4806,6 +4868,8 @@ for (const kind of ["grant", "adjust"] as const)
         userId,
         unit: "GRM",
         kind: tx.kind,
+        source: tx.source,
+        objectRef: tx.objectRef,
         amount: tx.amount.toString(),
         balanceBefore: tx.balanceBefore.toString(),
         balanceAfter: tx.balanceAfter.toString(),
@@ -4814,6 +4878,53 @@ for (const kind of ["grant", "adjust"] as const)
       };
     },
   );
+route(
+  "POST",
+  "/wallet/v1/admin/wallets/:userId/set-balance",
+  (req, _res, [userId]) => {
+    const persona = need(req, "wallet.adjust");
+    const reason = reasonOf(req.body);
+    const body = req.body as { balance?: unknown; commandId?: unknown };
+    const target =
+      typeof body?.balance === "string" &&
+      /^(0|[1-9]\d{0,14})$/.test(body.balance)
+        ? BigInt(body.balance)
+        : fail(400, "VALIDATION_FAILED", { balance: ["invalid"] });
+    const ref = `set:${String(body?.commandId)}`;
+    let tx = walletCommands.get(ref);
+    const replayed = Boolean(tx);
+    if (!tx) {
+      const current = wallets.get(userId as string)?.balance ?? 0n;
+      const diff = target - current;
+      if (diff === 0n) fail(422, "UNPROCESSABLE", { balance: ["unchanged"] });
+      const amount = diff > 0n ? diff : -diff;
+      if (amount > 1_000_000n)
+        fail(400, "VALIDATION_FAILED", { amount: ["too_large"] });
+      tx = walletPost(
+        userId as string,
+        diff > 0n ? "grant" : "adjust",
+        amount,
+        Date.now(),
+        { ref, reason, actorId: actorOf(persona) },
+      );
+      walletCommands.set(ref, tx);
+    }
+    return {
+      txId: tx.id,
+      ref: tx.ref,
+      userId,
+      unit: "GRM",
+      kind: tx.kind,
+      source: tx.source,
+      objectRef: tx.objectRef,
+      amount: tx.amount.toString(),
+      balanceBefore: tx.balanceBefore.toString(),
+      balanceAfter: tx.balanceAfter.toString(),
+      createdAt: tx.createdAt,
+      replayed,
+    };
+  },
+);
 route("GET", "/wallet/v1/admin/reconciliation", (req) => {
   need(req, "wallet.read");
   return { issues: walletIssues, runs: walletRuns };

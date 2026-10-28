@@ -54,7 +54,8 @@ export type ActionCode =
   | "free-chapters"
   | "rule-refused"
   | "insufficient-funds"
-  | "amount-too-large";
+  | "amount-too-large"
+  | "same-balance";
 
 export type ActionResult =
   | { status: "idle" }

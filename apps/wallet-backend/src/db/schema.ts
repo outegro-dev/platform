@@ -3,6 +3,7 @@ import {
   reconciliationIssueKinds,
   systemAccountCodes,
   txKinds,
+  walletSources,
   walletStates,
   walletUnits,
 } from "@outegro/contracts/wallet";
@@ -35,6 +36,7 @@ export const userStatuses = ["active", "suspended", "deleted"] as const;
 export const refOperations = [
   "grant",
   "adjust",
+  "set",
   "debit",
   "credit",
   "rollback",
@@ -84,6 +86,10 @@ export const walletTx = pgTable(
     userId: uuid("user_id").notNull(),
     unit: text("unit", { enum: walletUnits }).notNull(),
     kind: text("kind", { enum: txKinds }).notNull(),
+    /** Which service and why: roulette, daily-bonus, battleship-shop, pay, admin. */
+    source: text("source", { enum: walletSources }).notNull(),
+    /** The object the operation is about: `round:1207`, `order:<uuid>`. */
+    objectRef: text("object_ref"),
     ref: text("ref").notNull(),
     amount: grumbles("amount").notNull(),
     balanceBefore: grumbles("balance_before").notNull(),
@@ -102,6 +108,7 @@ export const walletTx = pgTable(
     uniqueIndex("wallet_tx_version_uq").on(t.userId, t.unit, t.walletVersion),
     index("wallet_tx_history_idx").on(t.userId, t.unit, t.createdAt, t.id),
     index("wallet_tx_created_idx").on(t.createdAt),
+    index("wallet_tx_source_idx").on(t.source, t.createdAt),
     check("wallet_tx_amount_nonzero", sql`${t.amount} <> 0`),
     check(
       "wallet_tx_balance_formula",

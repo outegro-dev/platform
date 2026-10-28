@@ -12,8 +12,11 @@ import {
   type ReconciliationRun,
   reconciliationIssueKinds,
   reconciliationViewSchema,
+  setBalanceCommandSchema,
   systemAccountCodes,
   txKinds,
+  type WalletSource,
+  walletSources,
   walletStates,
 } from "@outegro/contracts/wallet";
 import type { Page } from "../result";
@@ -26,17 +29,26 @@ import { OptionalServiceAdapter, parse } from "./base";
  *
  *   GET  /v1/admin/overview                         wallet.read
  *   GET  /v1/admin/wallets?state&userId&cursor      wallet.read, newest change first
- *   GET  /v1/admin/wallets/:userId?cursor           wallet and its journal; no wallet: zero
+ *   GET  /v1/admin/wallets/:userId?source&cursor    wallet and its journal; no wallet: zero
  *   POST /v1/admin/wallets/:userId/grant  {unit, amount, reason, commandId}   wallet.adjust
  *   POST /v1/admin/wallets/:userId/adjust {unit, amount, reason, commandId}   wallet.adjust
+ *   POST /v1/admin/wallets/:userId/set-balance {unit, balance, reason, commandId}   wallet.adjust
  *   GET  /v1/admin/reconciliation                   open and recent issues, last passes
  *
  * Refusals: 402 INSUFFICIENT_FUNDS (taking more than the balance), 400 with
  * `amount: too_large` (over the per-command cap), 409 IDEMPOTENCY_CONFLICT
- * (the form's commandId was used with other data), 403, 401 (stale token).
+ * (the form's commandId was used with other data), 422 `balance: unchanged`
+ * (setting the balance it already has), 403, 401 (stale token).
  */
 
-export { reconciliationIssueKinds, systemAccountCodes, txKinds, walletStates };
+export type { WalletSource };
+export {
+  reconciliationIssueKinds,
+  systemAccountCodes,
+  txKinds,
+  walletSources,
+  walletStates,
+};
 export type WalletOverview = AdminOverview;
 export type WalletView = AdminWallet;
 export type WalletTx = AdminTx;
@@ -88,7 +100,7 @@ export class WalletAdmin extends OptionalServiceAdapter {
   /** A wallet and a page of its journal; a user without one gets zero. */
   async wallet(
     userId: string,
-    page: { cursor?: string; limit?: number } = {},
+    page: { cursor?: string; source?: WalletSource; limit?: number } = {},
   ): Promise<WalletCard> {
     return parse(
       adminWalletCardSchema,
@@ -108,6 +120,19 @@ export class WalletAdmin extends OptionalServiceAdapter {
       operationSchema,
       await this.send("POST", `${userPath(userId)}/${kind}`, body),
       "wallet command",
+    );
+  }
+
+  /** Set the balance: the wallet grants or takes the difference. */
+  async setBalance(
+    userId: string,
+    input: { balance: string; reason: string; commandId: string },
+  ): Promise<Operation> {
+    const body = setBalanceCommandSchema.parse({ unit: UNIT, ...input });
+    return parse(
+      operationSchema,
+      await this.send("POST", `${userPath(userId)}/set-balance`, body),
+      "wallet set balance",
     );
   }
 

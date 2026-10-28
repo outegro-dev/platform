@@ -12,6 +12,7 @@ import { Facts, Panel, PanelLink, Stat, Status } from "@/components/ui/layout";
 import { EmptyState, FailureState } from "@/components/ui/states";
 import { WalletCard } from "@/components/wallet/wallet-card";
 import type { UserDetail } from "@/lib/adapters/identity";
+import type { WalletSource } from "@/lib/adapters/wallet";
 import { bookOfFeature, grantTargetOf, libraryFeature } from "@/lib/education";
 import { grantTargets } from "@/lib/grant-targets";
 import { grantStatus, revocable } from "@/lib/grants";
@@ -574,18 +575,22 @@ export async function WalletTab({
   userId,
   granted,
   cursor,
+  source,
 }: {
   userId: string;
   granted: ReadonlySet<string>;
   cursor?: string;
+  source?: WalletSource;
 }) {
   const t = await getTranslations("users.wallet");
   return (
     <WalletCard
       userId={userId}
       cursor={cursor}
+      source={source}
       canAdjust={can(granted, "wallet.adjust")}
-      path={`/users/${userId}?tab=wallet`}
+      path={`/users/${userId}`}
+      params={{ tab: "wallet" }}
       title={t("title")}
       action={
         <PanelLink href={`/wallet/wallets/${userId}`}>{t("open")}</PanelLink>

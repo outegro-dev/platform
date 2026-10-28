@@ -47,6 +47,39 @@ export async function grantGrumbles(
   return walletCommand("grant")(form);
 }
 
+/** Sets the balance: the wallet grants or takes the difference. */
+export async function setGrumbles(
+  _: ActionResult,
+  form: FormData,
+): Promise<ActionResult> {
+  return runAction({
+    permission: "wallet.adjust",
+    form,
+    schema: z.object({
+      userId: z.uuid(),
+      commandId: z.uuid(),
+      balance: z.string().regex(/^(0|[1-9]\d{0,14})$/),
+      reason: adminReasonSchema,
+    }),
+    run: async (services, input) => {
+      await services.wallet.setBalance(input.userId, {
+        balance: input.balance,
+        reason: input.reason,
+        commandId: input.commandId,
+      });
+    },
+    success: (t, input) =>
+      t("done.balanceSet", { count: Number(input.balance) }),
+    explain: (error) => {
+      if (error.error.fieldErrors.balance?.includes("unchanged"))
+        return "same-balance";
+      if (error.error.fieldErrors.amount?.includes("too_large"))
+        return "amount-too-large";
+      return null;
+    },
+  });
+}
+
 /** Takes grumbles from a wallet; never below zero. */
 export async function takeGrumbles(
   _: ActionResult,

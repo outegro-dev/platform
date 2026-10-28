@@ -1,14 +1,24 @@
 import { randomUUID } from "node:crypto";
-import { HandCoinsIcon, MinusCircleIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  HandCoinsIcon,
+  MinusCircleIcon,
+  PencilSimpleIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import { getLocale, getTranslations } from "next-intl/server";
-import { grantGrumbles, takeGrumbles } from "@/app/(console)/wallet/actions";
+import {
+  grantGrumbles,
+  setGrumbles,
+  takeGrumbles,
+} from "@/app/(console)/wallet/actions";
 import { ActionDialog } from "@/components/ui/action-dialog";
 import { ADMIN_MAX_AMOUNT, type WalletView } from "@/lib/adapters/wallet";
 import { AmountField } from "./amount-field";
+import { BalanceField } from "./balance-field";
 import { formatGrumbles } from "./grumbles";
 
 /**
- * Grant and take, each a preview → confirm dialog with a reason. The
+ * Grant, take and set the balance, each a preview → confirm dialog with a
+ * reason. The
  * commandId is new on every render, so a form sent twice (a lost answer,
  * a double click) applies once, and the next command after the page
  * refreshes is a new one.
@@ -67,6 +77,24 @@ export async function WalletCommands({ wallet }: { wallet: WalletView }) {
           direction={-1}
           max={ADMIN_MAX_AMOUNT}
         />
+      </ActionDialog>
+      <ActionDialog
+        action={setGrumbles}
+        triggerLabel={t("set")}
+        triggerIcon={<PencilSimpleIcon aria-hidden="true" />}
+        title={t("setTitle")}
+        description={t("setDescription")}
+        consequences={[
+          amount("now", { balance }),
+          t("setEffect"),
+          ...restricted,
+          t("once"),
+          t("audited"),
+        ]}
+        confirmLabel={t("setConfirm")}
+        hidden={{ ...hidden, commandId: randomUUID() }}
+      >
+        <BalanceField balance={wallet.balance} />
       </ActionDialog>
     </div>
   );

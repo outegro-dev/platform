@@ -1,11 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type {
+  BalanceItem,
   HistoryItem,
+  WalletSource,
   WalletUnit,
   WalletView,
 } from "@outegro/contracts/wallet";
 import { DATABASE } from "@outegro/nest-common";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { TxRow, WalletDatabase } from "../common/database.js";
 import { decodeVersionCursor, encodeVersionCursor } from "../common/pages.js";
 import { users, wallets, walletTx } from "../db/schema.js";
@@ -13,6 +15,7 @@ import { users, wallets, walletTx } from "../db/schema.js";
 export const historyItem = (row: TxRow): HistoryItem => ({
   id: row.id,
   kind: row.kind,
+  source: row.source,
   amount: row.amount.toString(),
   balanceBefore: row.balanceBefore.toString(),
   balanceAfter: row.balanceAfter.toString(),
@@ -52,6 +55,47 @@ export class AccountService {
     };
   }
 
+  /**
+   * Many players' balances in one read (the internal API): a player
+   * without a wallet reads as zero, restricted already if the account is.
+   */
+  async balances(unit: WalletUnit, userIds: string[]): Promise<BalanceItem[]> {
+    const db = this.database.db;
+    const ids = [...new Set(userIds)];
+    const rows = await db
+      .select()
+      .from(wallets)
+      .where(and(eq(wallets.unit, unit), inArray(wallets.userId, ids)));
+    const found = new Map(rows.map((row) => [row.userId, row]));
+    const missing = ids.filter((id) => !found.has(id));
+    const accounts = missing.length
+      ? await db
+          .select({ userId: users.userId, status: users.status })
+          .from(users)
+          .where(inArray(users.userId, missing))
+      : [];
+    const status = new Map(accounts.map((a) => [a.userId, a.status]));
+    return userIds.map((userId) => {
+      const row = found.get(userId);
+      if (row)
+        return {
+          userId,
+          unit,
+          balance: row.balance.toString(),
+          state: row.state,
+          exists: true,
+        };
+      const account = status.get(userId);
+      return {
+        userId,
+        unit,
+        balance: "0",
+        state: account && account !== "active" ? "restricted" : "active",
+        exists: false,
+      };
+    });
+  }
+
   async history(
     userId: string,
     query: { unit: WalletUnit; cursor?: string; limit: number },
@@ -60,10 +104,15 @@ export class AccountService {
     return { ...rows, items: rows.items.map(historyItem) };
   }
 
-  /** One wallet's journal, newest first; shared with the admin card. */
+  /** One wallet's journal, newest first, optionally of one source; shared with the admin card. */
   async journal(
     userId: string,
-    query: { unit: WalletUnit; cursor?: string; limit: number },
+    query: {
+      unit: WalletUnit;
+      source?: WalletSource;
+      cursor?: string;
+      limit: number;
+    },
   ) {
     const before = decodeVersionCursor(query.cursor);
     const rows = await this.database.db
@@ -73,6 +122,7 @@ export class AccountService {
         and(
           eq(walletTx.userId, userId),
           eq(walletTx.unit, query.unit),
+          query.source ? eq(walletTx.source, query.source) : undefined,
           before === null ? undefined : lt(walletTx.walletVersion, before),
         ),
       )

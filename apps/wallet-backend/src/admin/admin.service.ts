@@ -6,8 +6,10 @@ import {
   type AdminTx,
   type AdminWallet,
   type ReconciliationRun,
+  type SetBalanceCommand,
   type TxKind,
   txKinds,
+  type WalletSource,
   type WalletState,
   type WalletUnit,
 } from "@outegro/contracts/wallet";
@@ -61,6 +63,8 @@ const adminTx = (row: TxRow): AdminTx => ({
   balanceBefore: row.balanceBefore.toString(),
   balanceAfter: row.balanceAfter.toString(),
   createdAt: row.createdAt.toISOString(),
+  source: row.source,
+  objectRef: row.objectRef,
   ref: row.ref,
   walletVersion: row.walletVersion,
   counterAccount: row.counterAccount,
@@ -112,6 +116,17 @@ export class AdminService {
       .from(walletTx)
       .where(and(eq(walletTx.unit, unit), gte(walletTx.createdAt, since)))
       .groupBy(walletTx.kind);
+    const turnover = await db
+      .select({
+        source: walletTx.source,
+        operations: count(),
+        credited: sql<string>`coalesce(sum(${walletTx.amount}) filter (where ${walletTx.amount} > 0), 0)::text`,
+        debited: sql<string>`coalesce(-sum(${walletTx.amount}) filter (where ${walletTx.amount} < 0), 0)::text`,
+      })
+      .from(walletTx)
+      .where(and(eq(walletTx.unit, unit), gte(walletTx.createdAt, since)))
+      .groupBy(walletTx.source)
+      .orderBy(walletTx.source);
     const accounts = await db
       .select({ code: systemAccounts.code, balance: systemAccounts.balance })
       .from(systemAccounts)
@@ -142,6 +157,7 @@ export class AdminService {
         code: a.code,
         balance: a.balance.toString(),
       })),
+      turnover24h: turnover,
       openIssues: issues?.open ?? 0,
       lastReconciliation: last ? run(last) : null,
     };
@@ -177,7 +193,12 @@ export class AdminService {
 
   async wallet(
     userId: string,
-    query: { unit: WalletUnit; cursor?: string; limit: number },
+    query: {
+      unit: WalletUnit;
+      source?: WalletSource;
+      cursor?: string;
+      limit: number;
+    },
   ) {
     const [row] = await this.database.db
       .select()
@@ -230,12 +251,32 @@ export class AdminService {
       userId,
       unit: body.unit,
       amount,
+      source: "admin" as const,
       reason: body.reason,
       actorId: actor.userId,
     };
     return kind === "grant"
       ? this.ledger.grant(actor, posting)
       : this.ledger.adjust(actor, posting);
+  }
+
+  /** Set the balance: the wallet grants or takes the difference. */
+  async setBalance(actor: Actor, userId: string, body: SetBalanceCommand) {
+    const target = BigInt(body.balance);
+    if (body.preview) return this.ledger.previewSet(userId, body.unit, target);
+    return this.ledger.setBalance(
+      actor,
+      {
+        ref: `set:${body.commandId}`,
+        userId,
+        unit: body.unit,
+        amount: target,
+        source: "admin",
+        reason: body.reason,
+        actorId: actor.userId,
+      },
+      this.config.adminMaxAmount,
+    );
   }
 
   async reconciliation() {

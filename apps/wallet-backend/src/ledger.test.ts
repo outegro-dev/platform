@@ -25,7 +25,7 @@ function debit(body: Record<string, unknown>) {
     .http()
     .post("/v1/internal/debit")
     .set(h.service)
-    .send({ unit: "GRM", ...body });
+    .send({ unit: "GRM", source: "roulette", ...body });
 }
 
 function credit(items: Record<string, unknown>[], extra = {}) {
@@ -33,7 +33,7 @@ function credit(items: Record<string, unknown>[], extra = {}) {
     .http()
     .post("/v1/internal/credit-batch")
     .set(h.service)
-    .send({ unit: "GRM", items, ...extra });
+    .send({ unit: "GRM", source: "roulette", items, ...extra });
 }
 
 function rollback(body: Record<string, unknown>) {
@@ -109,9 +109,9 @@ describe("journal and database guarantees (W-01)", () => {
     ).rejects.toMatchObject({ code: "23514" });
     await expect(
       h.root.query(
-        `insert into wallet_tx (id, user_id, unit, kind, ref, amount, balance_before,
+        `insert into wallet_tx (id, user_id, unit, kind, source, ref, amount, balance_before,
            balance_after, wallet_version, counter_account, created_at)
-         values ($1, $2, 'GRM', 'credit', $3, 5, 5, 11, 99, 'spent', now())`,
+         values ($1, $2, 'GRM', 'credit', 'roulette', $3, 5, 5, 11, 99, 'spent', now())`,
         [randomUUID(), userId, ref()],
       ),
     ).rejects.toMatchObject({ code: "23514" });
@@ -392,7 +392,13 @@ describe("operations and idempotency (W-02)", () => {
 
   it("keeps the internal API to services and a wallet to its owner (TC-W-02-05)", async () => {
     const userId = await funded(9);
-    const body = { ref: ref(), userId, unit: "GRM", amount: "1" };
+    const body = {
+      ref: ref(),
+      userId,
+      unit: "GRM",
+      amount: "1",
+      source: "battleship-shop",
+    };
     await h.http().post("/v1/internal/debit").send(body).expect(401);
     await h
       .http()
@@ -425,6 +431,7 @@ describe("operations and idempotency (W-02)", () => {
         "createdAt",
         "id",
         "kind",
+        "source",
       ]);
     const stranger = randomUUID();
     const theirs = await h
@@ -447,6 +454,79 @@ describe("operations and idempotency (W-02)", () => {
       .expect(400);
   });
 
+  it("reads many balances for a service, unknown and restricted players included", async () => {
+    const rich = await funded(70);
+    const restricted = await funded(5);
+    await h.identity().apply(h.statusEvent(restricted, "suspended", 1));
+    const newcomer = randomUUID();
+    const suspendedNewcomer = randomUUID();
+    await h.identity().apply(h.statusEvent(suspendedNewcomer, "suspended", 1));
+    const ids = [rich, newcomer, restricted, suspendedNewcomer, rich];
+    const res = await h
+      .http()
+      .post("/v1/internal/balances")
+      .set(h.service)
+      .send({ unit: "GRM", userIds: ids })
+      .expect(200);
+    expect(res.body.items).toEqual([
+      {
+        userId: rich,
+        unit: "GRM",
+        balance: "70",
+        state: "active",
+        exists: true,
+      },
+      {
+        userId: newcomer,
+        unit: "GRM",
+        balance: "0",
+        state: "active",
+        exists: false,
+      },
+      {
+        userId: restricted,
+        unit: "GRM",
+        balance: "5",
+        state: "restricted",
+        exists: true,
+      },
+      {
+        userId: suspendedNewcomer,
+        unit: "GRM",
+        balance: "0",
+        state: "restricted",
+        exists: false,
+      },
+      {
+        userId: rich,
+        unit: "GRM",
+        balance: "70",
+        state: "active",
+        exists: true,
+      },
+    ]);
+    await h
+      .http()
+      .post("/v1/internal/balances")
+      .send({ unit: "GRM", userIds: [rich] })
+      .expect(401);
+    await h
+      .http()
+      .post("/v1/internal/balances")
+      .set(h.service)
+      .send({ unit: "GRM", userIds: [] })
+      .expect(400);
+    await h
+      .http()
+      .post("/v1/internal/balances")
+      .set(h.service)
+      .send({
+        unit: "GRM",
+        userIds: Array.from({ length: 1001 }, () => randomUUID()),
+      })
+      .expect(400);
+  });
+
   it("pages a player's history by the wallet's own order", async () => {
     const userId = await funded(30);
     for (let i = 0; i < 4; i++)
@@ -465,6 +545,97 @@ describe("operations and idempotency (W-02)", () => {
       cursor = res.body.nextCursor;
     } while (cursor);
     expect(seen).toEqual([26, 27, 28, 29, 30]);
+  });
+});
+
+describe("sources (owner's additions of 28.10)", () => {
+  it("keeps the source and the object of every operation; a daily bonus is issued, payouts return what was spent", async () => {
+    const userId = randomUUID();
+    const daily = `daily:${userId}:1`;
+    const bonus = await credit([{ ref: daily, userId, amount: "100" }], {
+      source: "daily-bonus",
+    }).expect(200);
+    expect(bonus.body.items[0]).toMatchObject({
+      source: "daily-bonus",
+      objectRef: null,
+    });
+    const stake = ref("stake");
+    const debited = await debit({
+      ref: stake,
+      userId,
+      amount: "30",
+      objectRef: "round:1207",
+      meta: { roundId: "1207", color: "red" },
+    }).expect(200);
+    expect(debited.body).toMatchObject({
+      source: "roulette",
+      objectRef: "round:1207",
+    });
+    await credit([
+      { ref: ref("payout"), userId, amount: "60", objectRef: "round:1207" },
+    ]).expect(200);
+    const back = await rollback({ ref: stake }).expect(200);
+    expect(back.body.reversal).toMatchObject({
+      source: "roulette",
+      objectRef: "round:1207",
+    });
+    const { rows } = await h.root.query(
+      `select kind, source, object_ref, counter_account from wallet_tx
+       where user_id = $1 order by wallet_version`,
+      [userId],
+    );
+    expect(rows).toEqual([
+      {
+        kind: "credit",
+        source: "daily-bonus",
+        object_ref: null,
+        counter_account: "issued_bonus",
+      },
+      {
+        kind: "debit",
+        source: "roulette",
+        object_ref: "round:1207",
+        counter_account: "spent",
+      },
+      {
+        kind: "credit",
+        source: "roulette",
+        object_ref: "round:1207",
+        counter_account: "spent",
+      },
+      {
+        kind: "reversal",
+        source: "roulette",
+        object_ref: "round:1207",
+        counter_account: "spent",
+      },
+    ]);
+    // The source is part of the request: the same ref from another one is not.
+    await credit([{ ref: daily, userId, amount: "100" }], {
+      source: "roulette",
+    }).expect(409);
+    // Every call names its source; the console's own is not for callers.
+    await h
+      .http()
+      .post("/v1/internal/debit")
+      .set(h.service)
+      .send({ ref: ref(), userId, unit: "GRM", amount: "1" })
+      .expect(400);
+    await debit({ ref: ref(), userId, amount: "1", source: "admin" }).expect(
+      400,
+    );
+    await debit({ ref: ref(), userId, amount: "1", objectRef: "a b" }).expect(
+      400,
+    );
+    const history = await h
+      .http()
+      .get("/v1/me/wallet/history")
+      .set(await h.auth(userId))
+      .expect(200);
+    expect(history.body.items.map((i: { source: string }) => i.source)).toEqual(
+      ["roulette", "roulette", "roulette", "daily-bonus"],
+    );
+    await expectInvariants();
   });
 });
 
