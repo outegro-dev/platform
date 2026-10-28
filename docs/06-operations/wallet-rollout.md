@@ -99,3 +99,13 @@ wallet-backend 50m / 128Mi (лимит 256Mi): без сокетов и тяжё
 3. Проверка: пакеты в `GET /v1/catalog` и в pay-web группой «Кошелёк»; самый маленький пакет своей картой → в журнале кошелька `purchase` с ref `pack:payment:…`, в «Сверке» чисто; возврат части из кабинета Lava (запрос возврата в админке payments, затем вебхук) → `clawback`.
 
 Выключить: `GRUMBLE_PACKS_ENABLED=false` убирает пакеты из каталога; купленное, лоты и журнал остаются.
+
+## Этап 3: включить покупки за грамблсы
+
+Выключено флагом payments `GRUMBLE_PRICES_ENABLED` ([billing](../02-contracts/billing.md), [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md)). Включает владелец, когда есть цены (GRUMBLE-PRICES) и решение по Premium:
+
+1. Выкатить payments с миграцией 0004 (`wallet_orders`, только добавляет) при выключенном флаге.
+2. В `apps/production/payments.yaml` gitops: `WALLET_API_URL=http://wallet-backend:4007`, `INTERNAL_API_TOKEN` из `platform-internal` (если ещё не задан), `GRUMBLE_PRICES` — JSON `{"battleship-silver-fleet": <цена>}` (только разовые продукты), затем `GRUMBLE_PRICES_ENABLED=true`. Пакеты (этап 2) лучше включить раньше: без них при нехватке игроку нечем пополнить.
+3. Проверка: в pay-web у товара кнопка «Купить за N грамблсов»; покупка со своего кошелька → в журнале кошелька `debit` с ref `order:…` и источником `battleship-shop`, в Battleship скин открыт; при нехватке — сумма недостачи и ссылка на пакет.
+
+Выключить: `GRUMBLE_PRICES_ENABLED=false` убирает кнопку и цену; купленное остаётся (grant `purchase`).
