@@ -4,6 +4,7 @@
 
 - [Production: сервер, выпуск, секреты](production.md)
 - [Обучение: первая выкатка edu.outegro.dev](edu-rollout.md)
+- [Рулетка: первая выкатка roulette.outegro.dev](roulette-rollout.md) и [журнал сезонов](roulette-seasons.md)
 - [Ротация ключа подписи access-токенов](signing-keys.md)
 - [Passkeys: RP, выкатка, потеря устройства](passkeys.md)
 - [Метрики, логи и correlation сервисов](observability.md)
