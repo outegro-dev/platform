@@ -1,0 +1,5 @@
+name                                 type              encoding         emb sub uni object ID
+------------------------------------ ----------------- ---------------- --- --- --- ---------
+AZHATM+IBMPlexSans-Bold              CID TrueType      Identity-H       yes yes yes      4  0
+KTGWII+IBMPlexSans-SmBld             CID TrueType      Identity-H       yes yes yes      6  0
+WXOJCW+IBMPlexSans                   CID TrueType      Identity-H       yes yes yes      8  0
