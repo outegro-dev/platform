@@ -2,7 +2,7 @@
 
 92 отдельные карточки: **85 для базового выпуска**, **1 для будущего ТЗ игры**, **6 условных wallet-задач**. По сравнению с 82 исходными пунктами добавлены 4 задачи подготовки, а ранее перечисленный одной строкой wallet вынесен в 6 карточек. Число карточек не означает завершённый код.
 
-Ещё 48 карточек есть только на [доске](https://github.com/orgs/outegro-dev/projects/1): BS-01…04 (Морской бой), этап 11-zine (ZN-01…20, EDU-B1, MNT-01…11) и этап 12-roulette (RL-01…12). В task-index.json у них URL issue вместо пути к карточке. Состояние на 28.10.2026 (сверено с доской): из 140 задач 111 done, 14 in_progress, 13 planned, 2 deferred (W-04, W-05 — этапы 2 и 3 кошелька).
+Ещё 52 карточки есть только на [доске](https://github.com/orgs/outegro-dev/projects/1): BS-01…04 (Морской бой), этап 11-zine (ZN-01…20, EDU-B1, MNT-01…11) и этап 12-roulette (RL-01…16, план и статус — [#180](https://github.com/outegro-dev/platform/issues/180)). В task-index.json у них URL issue вместо пути к карточке. Состояние на 28.10.2026 (сверено с доской): из 144 задач 111 done, 14 in_progress, 17 planned, 2 deferred (W-04, W-05 — этапы 2 и 3 кошелька).
 
 У каждой карточки context, dependency links, required docs, область файлов, четыре предметных шага, checkpoints, конкретные test cases, DoD и rollback. [Machine index](task-index.json) содержит граф и статусы. [Каталог тестов](../05-quality/test-catalog.md) связывает все TC с задачами.
 

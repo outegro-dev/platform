@@ -3683,6 +3683,82 @@
       ],
       "chapter_refs": [],
       "test_case_ids": []
+    },
+    {
+      "id": "RL-13",
+      "title": "Мониторинг рулетки: алерты и дашборд Grafana",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/176",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-14",
+      "title": "Ответственная игра: 18+, лимиты, самоисключение",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/177",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-15",
+      "title": "Приёмка владельцем под своим входом",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/178",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-16",
+      "title": "Ещё игры на кошельке и fair-roll: crash, coinflip, кейсы",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/179",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
     }
   ]
 }
