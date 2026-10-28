@@ -94,6 +94,8 @@ html[data-theme="zine-calm"] {
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
+    /* Room under the footer for the fixed bonus button (48 px + 16 px offset). */
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
   .app-main {
     flex: 1;

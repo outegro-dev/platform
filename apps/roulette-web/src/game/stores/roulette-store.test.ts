@@ -92,6 +92,35 @@ describe("RouletteStore", () => {
     expect(socket.sent).toHaveLength(0);
   });
 
+  it("drops a timing refusal when the next round opens, keeps one about money", () => {
+    const { socket, store } = readyStore();
+    socket.deliver({
+      type: "round.state",
+      payload: { round: roundView({ phase: "locked" }) },
+    });
+    store.placeBet("black");
+    expect(store.notice).toEqual({ kind: "refused", code: "round_closed" });
+    const current = store.round?.round ?? 7;
+    socket.deliver({
+      type: "round.state",
+      payload: { round: roundView({ round: current + 1, phase: "betting" }) },
+    });
+    expect(store.notice).toEqual({ kind: "hint" });
+
+    socket.deliver({
+      type: "error",
+      payload: { code: "insufficient_funds", ref: null },
+    });
+    socket.deliver({
+      type: "round.state",
+      payload: { round: roundView({ round: current + 2, phase: "betting" }) },
+    });
+    expect(store.notice).toEqual({
+      kind: "refused",
+      code: "insufficient_funds",
+    });
+  });
+
   it("stops at three bets a round, counting bets still in flight", () => {
     const { socket, store } = readyStore();
     store.placeBet("red");

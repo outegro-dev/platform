@@ -70,8 +70,9 @@ export const DailyCorner = observer(function DailyCorner() {
       </DialogTrigger>
       <DialogContent
         className="daily-dialog"
+        // A calm dialog is a paper page in the kit (zine.css), whatever the
+        // page's tone: the light palette keeps its ink text readable on it.
         data-theme="zine-calm"
-        data-tone="dark"
         closeLabel={t("close")}
       >
         <DialogTitle className="daily-title">{t("title")}</DialogTitle>

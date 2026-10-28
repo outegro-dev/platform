@@ -630,11 +630,8 @@
     border-color: var(--ink);
     animation: daily-alive 1.6s ease-in-out infinite;
   }
+  /* The page itself (paper, border, shadow) comes from the kit's calm dialog. */
   .daily-dialog {
-    background: var(--background);
-    border: 2px solid var(--foreground);
-    border-radius: var(--radius-sm);
-    box-shadow: 6px 6px 0 var(--spot-red);
     padding: 24px 20px 20px;
     width: min(640px, calc(100vw - 32px));
     max-width: min(640px, calc(100vw - 32px));
@@ -652,10 +649,15 @@
     gap: 14px;
     min-width: 0;
   }
+  /* Ink on a yellow label: readable on the paper page of the dialog. */
   .daily-streak {
+    justify-self: start;
+    padding: 3px 8px;
+    background: var(--spot-yellow);
+    color: var(--ink);
+    border-radius: var(--radius-sm);
     font-family: var(--font-type);
     font-size: 12.5px;
-    color: var(--rl-y, var(--spot-yellow));
   }
   .daily-view {
     position: relative;
@@ -758,6 +760,38 @@
     }
     .rl-speed {
       inset-inline: 8px;
+    }
+  }
+
+  /* Phones: the amount with the sound switch beside it, quick buttons in an even 4 × 2 grid. */
+  @media (max-width: 559px) {
+    .rl-betbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .rl-amount {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .rl-sound {
+      grid-column: 2;
+      grid-row: 1;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .rl-quick {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .rl-quick .rl-q {
+      min-width: 0;
+      padding-inline: 4px;
+    }
+    .rl-msg {
+      grid-column: 1 / -1;
+      grid-row: 3;
     }
   }
 }

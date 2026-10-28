@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import type { DailyPrize } from "@outegro/contracts/daily-bonus";
 
 /** The next bonus opens 24 hours after the last one was taken. */
@@ -25,7 +25,8 @@ export const defaultPrizes: DailyPrize[] = [
   { amount: 5000, chance: 0.005 },
 ];
 
-export const cryptoRandom = () => randomInt(0, 2 ** 48) / 2 ** 48;
+/** A uniform float in [0, 1) from 48 random bits of the OS generator. */
+export const cryptoRandom = () => randomBytes(6).readUIntBE(0, 6) / 2 ** 48;
 
 /** The average prize of a table, before streak bonuses. */
 export function expectedPrize(prizes: readonly DailyPrize[]): number {

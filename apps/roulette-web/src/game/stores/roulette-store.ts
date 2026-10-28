@@ -24,6 +24,17 @@ export const HISTORY_LIMIT = 100;
 export const DEFAULT_AMOUNT = 100;
 
 /** What the line under the amount says. */
+/** Refusals that still hold in the next round: money and account, not timing. */
+const LASTING_REFUSALS = new Set<string>([
+  "insufficient_funds",
+  "wallet_restricted",
+  "account_blocked",
+]);
+
+function lastingRefusal(notice: Notice): boolean {
+  return notice.kind === "refused" && LASTING_REFUSALS.has(notice.code);
+}
+
 export type Notice =
   | { kind: "hint" }
   | { kind: "accepted"; color: Color; amount: number }
@@ -218,7 +229,8 @@ export class RouletteStore {
     if (previous && view.round < previous.round) return;
     if (!previous || view.round !== previous.round) {
       this.myBets = this.myBets.filter((bet) => bet.round >= view.round);
-      if (view.phase === "betting" && this.notice.kind !== "refused")
+      // A new round starts clean; only refusals about the player outlast it.
+      if (view.phase === "betting" && !lastingRefusal(this.notice))
         this.notice = { kind: "hint" };
     }
     if (view.result && !this.seeds.has(view.round)) {
