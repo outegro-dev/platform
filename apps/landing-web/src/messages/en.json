@@ -20,113 +20,147 @@
     "talk": "Let’s talk"
   },
   "projects": {
-    "label": "Projects",
+    "index": "02",
+    "label": "Reports",
     "title": "Built, shipped",
     "titleAccent": "and live.",
-    "name": "Battleship",
-    "summary": "Classic Battleship, online — the first product on my platform. Designed, built and run end to end: interface, game server, payments and infrastructure.",
-    "play": "Play",
-    "rulesTitle": "How it works",
-    "rules": [
-      {
-        "cell": "A1",
-        "term": "Live 1-on-1",
-        "text": "Matches run in real time and survive a dropped connection."
-      },
-      {
-        "cell": "B2",
-        "term": "4 bots",
-        "text": "From random shots to a probability map."
-      },
-      {
-        "cell": "C3",
-        "term": "Elo rating",
-        "text": "A quick match with an equal opponent, or a room by link."
-      },
-      {
-        "cell": "D4",
-        "term": "Stats",
-        "text": "Leaderboard, shot heatmap, match replays."
-      },
-      {
-        "cell": "E5",
-        "term": "Premium",
-        "text": "Subscription and purchases via Lava."
-      },
-      {
-        "cell": "F6",
-        "term": "Multilingual",
-        "text": "On desktop and on a phone."
-      }
-    ],
+    "intro": "The platform’s two main services: an educational roulette and a job-search pipeline. I designed, built and run both myself, from the interface down to the cluster.",
     "stackTitle": "Runs on",
-    "stack": ["Next.js", "NestJS", "WebSocket", "PostgreSQL", "Kubernetes"],
-    "note": "Screens from a local build with test data.",
-    "shots": {
-      "battle": {
-        "caption": "Against the Expert bot",
-        "alt": "Battleship in a desktop browser: a match against the Expert bot. Your fleet on the left has taken two hits; in enemy waters on the right two ships are sunk and a third is hit."
-      },
-      "placement": {
-        "caption": "Fleet placement",
-        "alt": "Fleet placement: four ships on the board, the next one shown in green where it will land, and the rest of the fleet in the tray."
-      },
-      "leaderboard": {
-        "caption": "Elo leaderboard",
-        "alt": "The leaderboard: rank, rating, wins, matches and win rate of the top players, with your own place next to the table."
-      },
-      "profile": {
-        "caption": "Profile and stats",
-        "alt": "A player profile: matches, wins, win rate, accuracy, best streak and moves to win, a shot heatmap and wins against each bot level."
+    "highlightsTitle": "What’s inside",
+    "roulette": {
+      "kicker": "Report from the table",
+      "name": "Roulette",
+      "what": "An educational roulette on grumbles, the platform’s own currency. One round every 30 seconds, live for everyone, and every result checks out in your browser.",
+      "open": "Open the roulette",
+      "note": "The screens show a build with made-up players and a made-up balance.",
+      "highlights": [
+        {
+          "mark": "0",
+          "term": "Fair by a chain of seeds",
+          "text": "A chain of a million SHA-256 seeds is built backwards, and its commit is published before the season. The public seed comes from a drand beacon round that has not happened yet, so nobody can pick a convenient chain, me included."
+        },
+        {
+          "mark": "1",
+          "term": "Checked in your browser",
+          "text": "The fairness page runs the same engine code as the server: the hash of the revealed seed and the round’s number are recomputed right on your machine."
+        },
+        {
+          "mark": "8",
+          "term": "The engine doesn’t pick the number",
+          "text": "A separate fair-roll service, the only one holding the secret, works it out. The round engine neither picks the result nor knows it in advance."
+        },
+        {
+          "mark": "2",
+          "term": "A round leader",
+          "text": "One replica drives the rounds on a lease in Valkey. Every phase change is a conditional UPDATE keyed by the round number, so a former leader waking up after a pause cannot write over anything."
+        },
+        {
+          "mark": "9",
+          "term": "A bet is never taken twice",
+          "text": "A reserve in one Lua script in Valkey, a debit from the wallet by the bet’s key, a batched write to Postgres every 5 ms. The player hears back only after the commit."
+        },
+        {
+          "mark": "3",
+          "term": "A live table",
+          "text": "A WebSocket opened by a one-time ticket and a full round snapshot 4 times a second: a lost tick breaks nothing, and the strip stops for everyone at once."
+        }
+      ],
+      "stack": [
+        "NestJS",
+        "Next.js",
+        "MobX",
+        "WebSocket",
+        "PostgreSQL",
+        "Valkey"
+      ],
+      "shots": {
+        "table": {
+          "caption": "A round taking bets",
+          "alt": "The roulette on a computer: a round taking bets, the strip resting on the last result, the latest results by it, and below three columns of bets by colour: red ×2, green ×14 and black ×2."
+        },
+        "phone": {
+          "caption": "The same round on a phone",
+          "alt": "The same roulette round on a phone screen: the strip and the latest results."
+        }
       }
+    },
+    "atelier": {
+      "kicker": "Report from the atelier",
+      "name": "Atelier",
+      "what": "A job-search pipeline: it finds vacancies, scores the fit, builds a tailored LaTeX CV for each one and keeps every application on a board.",
+      "private": "Private for now: sign-in is by invitation only.",
+      "open": "Invitation only",
+      "note": "The screens show the demo mode: a made-up candidate and made-up companies.",
+      "highlights": [
+        {
+          "mark": "01",
+          "term": "A queue for every step",
+          "text": "Search, reading the vacancy, matching, building the CV, the ATS check, sending: each step is its own task type with its own RabbitMQ queue. Retries after 15 seconds, a minute and five minutes, then a dead-letter queue, so a job never hangs."
+        },
+        {
+          "mark": "02",
+          "term": "A model only where code can’t cope",
+          "text": "A model reads the vacancy once, writes the texts and checks them. Picking the cases and skills and fitting the CV to its length is plain code."
+        },
+        {
+          "mark": "03",
+          "term": "One gateway for the models",
+          "text": "llm-gateway puts Codex CLI, Claude CLI and MiniMax behind one API, and Codex runs in a sandbox of its own."
+        },
+        {
+          "mark": "04",
+          "term": "A CV in LaTeX",
+          "text": "XeLaTeX builds the CV from a template. The board shows the ATS keyword coverage and what changed against the master CV, and the facts come only from a bank of cases."
+        },
+        {
+          "mark": "05",
+          "term": "A real browser for the forms",
+          "text": "Chromium driven by Playwright fills in the ATS forms. It never gets round a captcha or a login: such an application is flagged as needing a human."
+        }
+      ],
+      "stack": [
+        "NestJS",
+        "Next.js",
+        "RabbitMQ",
+        "PostgreSQL",
+        "XeLaTeX",
+        "Playwright"
+      ],
+      "shots": {
+        "board": {
+          "caption": "The applications board",
+          "alt": "The atelier’s board: columns for each stage, from vacancies found to applications sent, with the fit score and the vacancy’s source on every card."
+        },
+        "cv": {
+          "caption": "A CV tailored to the vacancy",
+          "alt": "An application opened over the board: the PDF CV built for the vacancy, its ATS keyword coverage and the list of changes against the master CV."
+        }
+      }
+    },
+    "more": {
+      "title": "Also on the platform",
+      "items": [
+        {
+          "key": "battleship",
+          "name": "Battleship",
+          "text": "Classic battleship online: real-time one-on-one matches, four bots and an Elo rating.",
+          "action": "Play"
+        },
+        {
+          "key": "edu",
+          "name": "Education",
+          "text": "Interactive textbooks for interview preparation: diagrams, runnable code, exercises and flash cards in every chapter.",
+          "action": "Read"
+        }
+      ]
     }
   },
   "bonk": {
-    "loading": [
-      "Loading the block…",
-      "Waiting for the server…",
-      "Almost there…"
-    ],
-    "request": "GET /blocks/desktop",
-    "pending": "pending",
-    "ok": "200 OK · 3 ms",
-    "progressLabel": "Loading the block",
-    "errorTitle": "This block failed to load",
-    "errorBody": "504 Gateway Timeout — the server dozed off.",
-    "retry": "Try again",
-    "knock": "TUNG!",
-    "shout": "SAHUR!",
-    "hit": "BONK!",
-    "reloading": "Reloading at bonk speed"
-  },
-  "services": {
-    "title": "What I can build",
-    "titleAccent": "for you.",
-    "intro": "6+ years in the JavaScript ecosystem. You bring an idea or an existing product; I take it through design, code, payments and infrastructure to launch, and stay for support. One engineer for the whole chain: no handoffs, one person answerable for the result.",
-    "desktop": {
-      "start": "start",
-      "icons": {
-        "battleship": "Battleship",
-        "account": "Account",
-        "stack": "Stack",
-        "bin": "Recycle Bin"
-      },
-      "notepad": {
-        "file": "What I can build.txt",
-        "app": "Notepad",
-        "menu": ["File", "Edit", "Format", "View", "Help"]
-      },
-      "stack": {
-        "app": "Explorer",
-        "title": "Stack",
-        "address": "Address",
-        "path": "C:\\outegro\\stack",
-        "menu": ["File", "Edit", "View", "Favorites", "Tools", "Help"],
-        "more": "Each one in detail on the stack menu"
-      }
-    }
+    "shout": "TUNG-TUNG!",
+    "hit": "BONK!"
   },
   "process": {
+    "index": "07",
     "label": "Process",
     "title": "Clear steps,",
     "titleAccent": "visible progress.",
@@ -160,13 +194,104 @@
       }
     ],
     "ai": "AI coding agents take the routine; contracts, tests and my review decide what ships.",
-    "window": "Process",
-    "loading": "Starting: Process",
-    "levels": "Loading levels",
-    "start": "Scroll to start the game",
-    "startStatic": "All levels unlocked",
     "scene": "A paper pop-up diorama: as you scroll, a bicycle rides past a workshop with a treasure map, an easel, a ship in its scaffolding, a lighthouse and a rocket to Pier No. 1, where the ship moors.",
     "sign": ["PIER", "No. 1"]
+  },
+  "platform": {
+    "index": "06",
+    "label": "Blueprint",
+    "title": "One platform",
+    "titleAccent": "under every app.",
+    "intro": "The roulette, the atelier, Battleship and the textbooks run on a platform I built and operate. The account, the wallet, notifications, payments and the operator console are shared by every outegro.dev app, all on a single K3s node behind Cloudflare.",
+    "live": "Running in production",
+    "layers": [
+      {
+        "name": "For users",
+        "items": [
+          {
+            "name": "Sign-in",
+            "result": "One account for every app: an email code or Google, active sessions, a security page and Telegram linking."
+          },
+          {
+            "name": "Wallet",
+            "result": "Grumbles, the platform’s own currency. Roulette bets and wins and the daily bonus go through it by an operation key, so a retry never counts twice."
+          },
+          {
+            "name": "Notifications",
+            "result": "Email and Telegram messages in the user’s language, with billing and security templates."
+          }
+        ]
+      },
+      {
+        "name": "For operators",
+        "items": [
+          {
+            "name": "Operator console",
+            "result": "Users, roles, payments, notifications, a roulette section and an audit log of operator actions."
+          },
+          {
+            "name": "Monitoring",
+            "result": "Metrics and logs from every service, with Telegram alerts for failing pods, expiring certificates, stale backups and stuck queues."
+          },
+          {
+            "name": "Delivery",
+            "result": "Every change is linted, type-checked, tested and built. Argo CD rolls it out from Git, and a rollback is a plain revert."
+          }
+        ]
+      },
+      {
+        "name": "Underneath",
+        "items": [
+          {
+            "name": "Data",
+            "result": "PostgreSQL with a database per service, continuous WAL archiving and daily backups to Cloudflare R2. Restoring from backup has been tested for real."
+          },
+          {
+            "name": "Messaging",
+            "result": "Events between services go through an outbox and an inbox: none are lost, none are applied twice."
+          },
+          {
+            "name": "Cluster",
+            "result": "One K3s node behind Cloudflare. TLS certificates renew on their own, and secrets are sealed in Git."
+          }
+        ]
+      }
+    ]
+  },
+  "faq": {
+    "index": "14",
+    "label": "Letters to the editor",
+    "title": "Your questions,",
+    "titleAccent": "straight answers.",
+    "intro": "What people usually ask before we start.",
+    "answer": "The editor replies",
+    "items": [
+      {
+        "q": "Who owns the code and the accounts?",
+        "a": "You do, from day one. The repository, the domain, hosting, payment and email services are set up in your name or your company’s, and I work in them as an invited member. All the code and its full history stay in your repository."
+      },
+      {
+        "q": "What if the developer disappears?",
+        "a": "The project does not hang on one person. Documentation on the architecture, setup and operations, tests and automated builds are part of the work, not an extra. You hold every access from the start, so your team or another engineer can pick it up. And when we wrap up, I hand the project over and walk your team through it."
+      },
+      {
+        "q": "Will you sign an NDA?",
+        "a": "Yes. If the task cannot be described without a non-disclosure agreement, send me yours and we sign it before getting into the details."
+      },
+      {
+        "q": "How much does it cost, and can I pay in parts?",
+        "a": "It depends on the scope and the format: a project is priced by estimate, long-term work by the month, an audit at a fixed price. Bigger work is split into stages and paid stage by stage, and every stage ends with something you can open and check. We settle the exact amount and the payment schedule after a short call about the task."
+      },
+      {
+        "q": "Who makes changes and supports the product after launch?",
+        "a": "We can keep going as long-term work: fixes, improvements, new features and an eye on metrics and alerts. Or your own team takes over, and by then it has everything it needs: the code, documentation, tests and access."
+      },
+      {
+        "q": "How fast do you reply?",
+        "a": "Usually within a day. If you would rather talk, book a call: 30 minutes at a time that suits you."
+      }
+    ],
+    "more": "Didn’t find your question? Ask it on a call."
   },
   "contact": {
     "index": "16",
@@ -194,6 +319,7 @@
     "platform": "Platform",
     "site": "This site",
     "links": {
+      "roulette": "Roulette",
       "battleship": "Battleship",
       "account": "Account",
       "purchases": "Purchases & subscriptions"
@@ -686,214 +812,6 @@
       }
     ]
   },
-  "record": {
-    "index": "14",
-    "label": "Employment record book",
-    "title": "Where I’ve worked",
-    "titleAccent": "and what I got done.",
-    "intro": "Building to order since 2016, on staff for over 6 years, since January 2020. Every entry comes from my résumé.",
-    "book": "Employment record book",
-    "fields": [
-      {
-        "label": "Surname",
-        "value": "Lukashik"
-      },
-      {
-        "label": "Name",
-        "value": "Nick"
-      },
-      {
-        "label": "Education",
-        "value": "higher: MIREA, Bachelor’s in Computer Science, 2020–2024"
-      },
-      {
-        "label": "Occupation",
-        "value": "software engineer"
-      }
-    ],
-    "signature": "Holder’s signature",
-    "seal": "Outegro magazine · Issue No. 1 · Editorial office ·",
-    "jobsTitle": "Employment record",
-    "columns": {
-      "number": "Entry",
-      "date": "Dates",
-      "record": "Record of employment",
-      "basis": "Source"
-    },
-    "basis": "résumé",
-    "thanks": "Commended for:",
-    "stamp": "Since 2016",
-    "cvLink": "The full version: a one-page résumé to print",
-    "jobs": [
-      {
-        "period": "2016 – 2020",
-        "hired": "Worked as an independent developer",
-        "product": "Counter-Strike roulette and jackpot sites set up to order, Steam trade bots and skin-trading tools.",
-        "done": [
-          "Steam trade bots with automated trade-offer confirmation and the then-new Steam Guard mobile confirmations.",
-          "Custom visualisations for trading on csgolounge.com, so listings and trade offers were easier to read and compare."
-        ]
-      },
-      {
-        "period": "01.2020 – 01.2021",
-        "hired": "Joined AdviceSolution as a Software Engineer",
-        "product": "Customer-facing service pages, technical knowledge tools and business integrations.",
-        "done": []
-      },
-      {
-        "period": "01.2021 – 02.2022",
-        "hired": "Joined FridayTech as a Full-Stack Engineer",
-        "product": "E-commerce logistics and fulfillment platform for Latin America.",
-        "done": [
-          "A Node.js BFF for checkout: roughly seven backend dependencies moved server-side, about two browser requests left.",
-          "A React component library adopted by three teams."
-        ]
-      },
-      {
-        "period": "02.2022 – 02.2023",
-        "hired": "Joined Kommo as a Software Engineer",
-        "product": "Global CRM platform for small and midsize businesses.",
-        "done": [
-          "A lead-notification wizard: typical setup down from more than 30 minutes to under 5.",
-          "Telegram and WhatsApp provider modules unified behind one shared contract."
-        ]
-      },
-      {
-        "period": "03.2023 – present",
-        "hired": "Joined Printify as a Full-Stack Engineer",
-        "product": "Print-on-demand e-commerce platform, 1M+ monthly users platform-wide.",
-        "done": [
-          "A new B2B ordering platform from requirements to production; the new revenue stream reached profitability in roughly 3 months.",
-          "Three back-office workflows consolidated into one operations platform; employee onboarding down from around 3 weeks to 1 week."
-        ]
-      },
-      {
-        "period": "04.2025 – present",
-        "hired": "Joined Toggle as an AI Full-Stack Engineer, alongside Printify",
-        "product": "Applied LLM products, agentic workflows and GPU inference.",
-        "done": [
-          "A conversational AI SaaS on a self-hosted open-source LLM, since commercial APIs could not meet its content requirements: GPU inference and a Node.js API with retries and graceful degradation.",
-          "An MCP support agent with scoped, read-only tools that files structured Jira reports."
-        ]
-      }
-    ]
-  },
-  "cv": {
-    "meta": {
-      "title": "Résumé · Nick Lukashik",
-      "description": "Nick Lukashik’s one-page résumé: senior full-stack engineer, experience, skills and education. An offprint ready to print."
-    },
-    "kicker": "Offprint",
-    "from": "from Outegro magazine · Issue No. 1 · October 2026",
-    "back": "Back to the issue",
-    "print": "Print or save as PDF",
-    "name": "Nick Lukashik",
-    "role": "Senior Full-Stack Engineer · AI",
-    "links": "Links",
-    "sections": {
-      "about": "About",
-      "experience": "Experience",
-      "skills": "Skills",
-      "education": "Education & Languages"
-    },
-    "about": [
-      "<b>Senior Full-Stack Engineer with 6+ years of commercial experience</b> building SaaS, CRM and e-commerce products with React, Next.js, Node.js and NestJS. I turn ambiguous requirements into shipped systems, owning delivery from product discovery and architecture through implementation and production support. I am particularly effective where complex state, inconsistent providers, retries, cache invalidation and system boundaries meet.",
-      "My work combines <b>product ownership and systems reliability</b>: launching a profitable B2B revenue stream, simplifying operational workflows and designing dependable APIs. Today I also build <b>LLM products and agents in production</b>: self-hosted GPU inference, RAG and MCP agents with human-in-the-loop workflows. I work agent-first with Claude Code and Codex, owning architecture, review and outcomes."
-    ],
-    "jobs": [
-      {
-        "company": "Toggle",
-        "role": "AI Full-Stack Engineer",
-        "period": "Apr 2025 – Present",
-        "product": "Applied LLM products, agentic workflows and GPU inference",
-        "items": [
-          "Built a <b>conversational AI SaaS on a self-hosted open-source LLM</b>, since commercial APIs could not meet its content requirements: GPU inference on Vast.ai, Dockerized model serving and a Node.js API with retries and graceful degradation.",
-          "Engineered an <b>MCP-powered AI support agent</b> that retrieves account and product context through scoped, read-only tools, classifies incidents and files structured Jira reports with reproduction steps and evidence."
-        ]
-      },
-      {
-        "company": "Printify",
-        "role": "Full-Stack Engineer",
-        "period": "Mar 2023 – Present",
-        "product": "Print-on-demand e-commerce platform; 1M+ monthly users (platform-wide)",
-        "items": [
-          "<b>Led end-to-end technical delivery of a new B2B ordering platform</b> using Next.js, NestJS and PostgreSQL, from requirements and API boundaries to release and production support; the new revenue stream <b>reached profitability in roughly 3 months</b>.",
-          "Consolidated <b>three independent back-office workflows into one operations platform</b>, centralizing validation and business rules and reducing employee onboarding from <b>around 3 weeks to 1 week</b>.",
-          "Built an <b>SEO content management service for 10,000+ product pages</b>, enabling marketing to maintain catalog metadata and content without engineering support."
-        ]
-      },
-      {
-        "company": "Kommo",
-        "role": "Software Engineer",
-        "period": "Feb 2022 – Feb 2023",
-        "product": "Global CRM platform for small and midsize businesses",
-        "items": [
-          "Reworked a complex multi-step lead-notification wizard: simplified transitions, validation and feedback, bringing typical setup time from <b>more than 30 minutes to under 5 minutes</b>."
-        ]
-      },
-      {
-        "company": "FridayTech",
-        "role": "Full-Stack Engineer",
-        "period": "Jan 2021 – Feb 2022",
-        "product": "E-commerce logistics and fulfillment platform for Latin America",
-        "items": [
-          "Designed a <b>Node.js BFF for checkout</b>, moving orchestration of roughly seven backend dependencies server-side and reducing browser requests to <b>about two</b> behind a stable API contract.",
-          "Developed a <b>reusable React component library adopted by three teams</b>, standardizing shared interface patterns across customer and back-office products."
-        ]
-      },
-      {
-        "company": "AdviceSolution",
-        "role": "Software Engineer",
-        "period": "Jan 2020 – Jan 2021",
-        "product": "Customer-facing service pages, technical knowledge tools and business integrations",
-        "items": []
-      },
-      {
-        "company": "Independent Developer",
-        "role": "Counter-Strike & Steam Projects",
-        "period": "2016 – 2020",
-        "product": "Roulette and jackpot sites set up to order, Steam trade bots and skin-trading tools",
-        "items": [
-          "Built <b>Steam trade bots</b>: automated trade-offer confirmation and integration of the then-new Steam Guard mobile confirmations, so bots could verify and accept trades without manual steps.",
-          "Developed a <b>browser extension</b> that merged item prices from csgolounge.com and market.csgo.com and showed them directly on trading pages."
-        ]
-      }
-    ],
-    "skills": [
-      {
-        "label": "Frontend",
-        "items": "JavaScript, TypeScript, React, Next.js, Angular, Vue, HTML5/CSS3, Tailwind CSS, Redux Toolkit, TanStack Query, Apollo Client"
-      },
-      {
-        "label": "Backend",
-        "items": "TypeScript, Node.js, NestJS, Express, Python, PHP, REST, GraphQL, tRPC, Microservices, BFF, JWT, OAuth"
-      },
-      {
-        "label": "Data & Messaging",
-        "items": "PostgreSQL, MySQL, MongoDB, Redis, RabbitMQ, Kafka, Vector Databases"
-      },
-      {
-        "label": "AI & Developer Tools",
-        "items": "Self-hosted LLMs, MCP, RAG, GPU Inference, Agent Workflows, Prompt Design, Claude Code, Codex, Cursor, Kimi"
-      },
-      {
-        "label": "Engineering Quality",
-        "items": "Jest, Vitest, Playwright, Unit / Integration / E2E Testing, Code Review"
-      },
-      {
-        "label": "Cloud & Observability",
-        "items": "Docker Compose, Kubernetes, Helm, AWS, GCP, GitHub Actions, GitLab CI/CD, Sentry, Prometheus, Grafana, Linux"
-      }
-    ],
-    "education": {
-      "school": "MIREA - Technological University",
-      "degree": "Bachelor’s Degree, Computer Science",
-      "period": "Sep 2020 – May 2024"
-    },
-    "imprint": "Printed from outegro.dev. Print run: 1 copy.",
-    "contactLink": "One-page résumé: an offprint ready to print",
-    "languages": "English: C1, full professional proficiency · Russian: native"
-  },
   "zine": {
     "poster": {
       "mast": "Outegro",
@@ -940,30 +858,31 @@
     },
     "coverAlt": "A cover in the style of an old popular-science magazine: an engineer’s desk at night, a brass lamp, a monitor with a Battleship game, a wooden toy ship, a notebook with a ticked list, posters of the Moon and a space shuttle, and a glass of tea in a holder.",
     "tocTitle": "In this issue",
-    "turn": {
-      "cue": "Scroll to turn",
-      "spread": "Spread {n} of {total}"
-    },
     "toc": [
       {
-        "title": "About me: a page for friends",
+        "title": "About me: a page for friends",
         "href": "#about",
         "page": "cover"
       },
       {
-        "title": "Report from the shipyard: Battleship",
-        "href": "#projects",
+        "title": "Report: an educational roulette",
+        "href": "#roulette",
         "page": "02"
       },
       {
-        "title": "Computer club: what I build, with what",
-        "href": "#services",
+        "title": "Report: an atelier for job hunting",
+        "href": "#atelier",
         "page": "04"
       },
       {
-        "title": "Bike ride: from the idea to Pier No. 1",
-        "href": "#process",
+        "title": "Blueprint: how the platform works",
+        "href": "#platform",
         "page": "06"
+      },
+      {
+        "title": "Cartoon in the margins: from the idea to Pier No. 1",
+        "href": "#process",
+        "page": "07"
       },
       {
         "title": "Editor’s column: how I became a programmer",
@@ -981,8 +900,8 @@
         "page": "12"
       },
       {
-        "title": "Employment record book: on the job since 2016",
-        "href": "#record",
+        "title": "Letters to the editor: questions and answers",
+        "href": "#faq",
         "page": "14"
       },
       {

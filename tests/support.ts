@@ -223,13 +223,10 @@ export async function contrastOnPaper(page: Page) {
   await still(page);
   await page.addStyleTag({
     content:
-      "*, ::before, ::after { --grain: none !important; --dots: none !important; --vintage-grain: none !important; }",
+      "*, ::before, ::after { --grain: none !important; --dots: none !important; --vintage-grain: none !important; --blueprint: none !important; }",
   });
   const scan = await new AxeBuilder({ page })
     .withRules(["color-contrast"])
-    // the desktop's shortcuts are named in white on its wallpaper photo,
-    // shadowed as on XP; axe misses the photo and measures the paper
-    .exclude(".desktop-icons")
     .analyze();
   const nodes = (results: typeof scan.violations) =>
     results.flatMap((result) => result.nodes);

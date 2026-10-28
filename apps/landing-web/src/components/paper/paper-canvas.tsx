@@ -139,6 +139,10 @@ export default function PaperCanvas({
       flat
       shadows="percentage"
       frameloop="demand"
+      // measured by its layout box, not its painted one: a transform on the
+      // way in (a reveal, a scale) never leaves the scene drawn at a corner
+      // of its stage until the next resize
+      resize={{ offsetSize: true }}
       camera={{ fov: 32, near: 0.5, far: 120, position: [0, 4.9, 14] }}
       gl={{
         antialias: true,

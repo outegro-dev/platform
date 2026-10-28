@@ -10,17 +10,17 @@ import stickSprite from "@/assets/sahur/stick.webp";
 import { frameAt, type Stage } from "@/components/bonk/choreography";
 import { ART_H, ART_W, drawSahur, loadSprites } from "@/components/bonk/sahur";
 
-// A stage where he comes out of a door to the right and walks left to swing.
+// A stage where he walks in from the right edge and swings to the left.
 const stage: Stage = {
   scale: 1,
-  doorScale: 0.3,
-  from: { x: 600, y: 300 },
-  stand: { x: 200, y: 400 },
-  hit: { x: 400, y: 300 },
+  facing: -1,
+  from: { x: 900, y: 400 },
+  stand: { x: 600, y: 400 },
+  hit: { x: 380, y: 240 },
 };
-const times = Array.from({ length: 36 }, (_, i) => 900 + i * 100);
+const times = Array.from({ length: 31 }, (_, i) => i * 100);
 
-/** Every 100 ms of the bonk choreography, frozen side by side. */
+/** Every 100 ms of the cameo, frozen side by side. */
 export function Storyboard() {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -36,7 +36,7 @@ export function Storyboard() {
       canvases.forEach((canvas, i) => {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
-        const frame = frameAt(times[i], stage, 0.2);
+        const frame = frameAt(times[i], stage);
         drawSahur(ctx, sprites, frame.pose);
         canvas.style.transform = `scaleX(${frame.facing})`;
       });
