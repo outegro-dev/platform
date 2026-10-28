@@ -202,11 +202,14 @@ describe("bets", () => {
 
     // The wallet answers at last: the tombstone turns the late debit away.
     // On a loaded runner the close can outlast the debit timeout; then the
-    // timeout refuses the bet first and rolls it back the same way.
+    // timeout refuses the bet first and rolls it back the same way. The
+    // debit's timer started before `started`, and a stalled event loop can
+    // fire it between release and the answer, so the strict check needs a
+    // wide margin (28.10 CI: a 200 ms margin was not enough).
     const heldMs = performance.now() - started;
     gate.release();
     const answer = await player.answer(ref);
-    if (heldMs < DEBIT_TIMEOUT_MS - 200)
+    if (heldMs < DEBIT_TIMEOUT_MS / 2)
       expect(answer).toEqual({ ok: false, code: "round_closed" });
     else
       expect(answer).toEqual({
