@@ -4,7 +4,7 @@ import { z } from "zod";
 export const env = z
   .object({
     /** Public address of this app, for the SSO callback and links back here. */
-    APP_URL: z.url().default("http://localhost:3007"),
+    APP_URL: z.url().default("http://localhost:3008"),
     /**
      * atelier-backend: the board, applications, inbox, pipeline, profile.
      * `mock` serves made-up data from src/lib/mock.ts and skips sign-in.

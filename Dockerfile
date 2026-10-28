@@ -104,8 +104,8 @@ FROM web AS atelier-web
 COPY --from=build --chown=node:node /repo/apps/atelier-web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/atelier-web/.next/static ./apps/atelier-web/.next/static
 COPY --from=build --chown=node:node /repo/apps/atelier-web/public ./apps/atelier-web/public
-ENV PORT=3007
-EXPOSE 3007
+ENV PORT=3008
+EXPOSE 3008
 CMD ["node", "apps/atelier-web/server.js"]
 
 FROM node:24-bookworm-slim AS service
