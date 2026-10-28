@@ -90,6 +90,10 @@ export async function startHarness() {
     METRICS_PORT: "0",
     LOG_LEVEL: "error",
     DATABASE_URL: appUrl.toString(),
+    // TC-W-02-01 sends 100 debits of one user at once: they queue on the
+    // wallet row, and with the default 10 connections the last ones waited
+    // past the 5 s connect timeout on a slow CI runner (MNT-11).
+    DATABASE_POOL_MAX: "40",
     VALKEY_URL: valkey.url,
     RABBITMQ_URL: rabbit.url,
     // Unused: tokens are verified with the local key above.

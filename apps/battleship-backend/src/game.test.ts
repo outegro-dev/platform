@@ -754,9 +754,24 @@ describe("quick matches (TC-BS-07)", () => {
       Array.from({ length: 6 }, () => h.connect()),
     );
     for (const socket of sockets) socket.send("queue.join", { mode: "quick" });
-    const matched = await Promise.all(
-      sockets.map((s) => s.next("queue.matched")),
+    const matching = Promise.all(sockets.map((s) => s.next("queue.matched")));
+    // Racing join passes can leave a pair to the pass that runs every second
+    // while anyone waits; the manual scheduler runs it only when advanced
+    // (MNT-08: on a slow runner the test waited for a pass that never came).
+    let settled = false;
+    matching.then(
+      () => {
+        settled = true;
+      },
+      () => {
+        settled = true;
+      },
     );
+    for (let i = 0; i < 10 && !settled; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      if (!settled) await h.advance(1_000);
+    }
+    const matched = await matching;
     const byMatch = new Map<string, number>();
     for (const m of matched)
       byMatch.set(m.payload.matchId, (byMatch.get(m.payload.matchId) ?? 0) + 1);
@@ -769,6 +784,8 @@ describe("quick matches (TC-BS-07)", () => {
 
   it("claims a pair at most once when passes race", async () => {
     const queue = h.get(QueueStore);
+    // The queue is shared by the suite: compare with what was there before.
+    const before = await queue.size();
     const entries = Array.from({ length: 12 }, (_, i) => ({
       userId: randomUUID(),
       rating: 1000 + i,
@@ -787,7 +804,7 @@ describe("quick matches (TC-BS-07)", () => {
     const claimed = results.flat(2).map((e) => e.userId);
     expect(new Set(claimed).size).toBe(claimed.length);
     expect(claimed.length).toBe(12);
-    expect(await queue.size()).toBe(0);
+    expect(await queue.size()).toBe(before);
   });
 
   /**
