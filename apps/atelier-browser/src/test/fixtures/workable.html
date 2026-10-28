@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Backend Engineer - Acme (Workable fixture)</title>
+<style>
+  body { font-family: sans-serif; max-width: 760px; margin: 24px auto; }
+  .field { margin: 14px 0; }
+  input[type=text], input[type=email], input[type=tel], textarea, [role=combobox] { width: 100%; padding: 6px; }
+  [role=radio] { display: inline-block; border: 1px solid #999; padding: 4px 10px; cursor: pointer; }
+  [role=radio][aria-checked=true] { background: #222; color: #fff; }
+  [role=radio] input, [role=checkbox] input { position: absolute; opacity: 0; width: 0; height: 0; }
+  [role=checkbox] { display: inline-block; width: 16px; height: 16px; border: 1px solid #333; vertical-align: middle; }
+  [role=checkbox][aria-checked=true] { background: #2a2; }
+  [role=listbox] { border: 1px solid #999; }
+  [role=option] { padding: 4px; cursor: pointer; }
+  #cookie-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 10; }
+  #cookie-banner { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; padding: 20px; z-index: 11; }
+  .error { color: #c00; }
+</style>
+</head>
+<body>
+<h1>Backend Engineer</h1>
+<main id="app"></main>
+<div id="cookie-backdrop"></div>
+<div id="cookie-banner" data-ui="cookie-consent">
+  This website uses cookies to improve user's experience. You can accept all cookies, decline all optional cookies, or manage your cookie settings.
+  <button type="button" data-ui="cookie-consent-settings">Cookies settings</button>
+  <button type="button" data-ui="cookie-consent-accept" data-choice="accepted">Accept all</button>
+  <button type="button" data-ui="cookie-consent-decline" data-choice="declined">Decline all</button>
+</div>
+<template id="form-template">
+  <form data-ui="application-form" novalidate>
+    <p>* Required fields</p>
+    <h3>Personal information</h3>
+    <div class="field"><span><strong>*</strong><span id="firstname_label">First name</span></span>
+      <input id="firstname" name="firstname" data-ui="firstname" aria-labelledby="firstname_label" aria-required="true" required type="text"></div>
+    <div class="field"><span><strong>*</strong><span id="lastname_label">Last name</span></span>
+      <input id="lastname" name="lastname" data-ui="lastname" aria-labelledby="lastname_label" aria-required="true" required type="text"></div>
+    <div class="field"><span><strong>*</strong><span id="email_label">Email</span></span>
+      <input id="email" name="email" data-ui="email" aria-labelledby="email_label" aria-required="true" required type="email"></div>
+    <div class="field"><span><span id="phone_label">Phone</span><span> (Optional)</span></span>
+      <input id="input_phone" name="phone" aria-labelledby="phone_label" aria-required="false" type="tel" autocomplete="tel"></div>
+    <h3>Profile</h3>
+    <div class="field"><span><strong>*</strong><span id="resume_label"><strong>Resume</strong></span></span>
+      <div data-role="dropzone">
+        <label role="button" for="input_files_resume" id="description_resume" tabindex="0">Choose file</label> <span>or drag and drop here</span>
+        <input data-ui="resume" tabindex="-1" id="input_files_resume" type="file" aria-labelledby="resume_label description_resume" accept=".pdf,.doc,.docx" required style="display:none">
+        <div id="resume-preview"></div>
+      </div></div>
+    <h3>Details</h3>
+    <div class="field"><span><span id="cover_letter_label">Cover letter</span><span> (Optional)</span></span>
+      <textarea id="cover_letter" name="cover_letter" data-ui="cover_letter" aria-labelledby="cover_letter_label" aria-required="false" rows="5"></textarea></div>
+    <div class="field"><span><span id="CA_1_label">Expected salary</span><span> (Optional)</span></span>
+      <input id="CA_1" name="CA_1" data-ui="CA_1" aria-labelledby="CA_1_label" aria-required="false" type="text"></div>
+    <div class="field"><span><span id="CA_2_label"><strong>Notice period / availability</strong></span><span> (Optional)</span></span>
+      <div data-ui="CA_2" data-input-type="select">
+        <input id="input_CA_2_input" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="input_CA_2_listbox" aria-autocomplete="list" aria-labelledby="CA_2_label" placeholder="Select an option…" type="text" readonly>
+        <input name="CA_2" tabindex="-1" aria-hidden="true" value="">
+      </div></div>
+    <div class="field"><span><strong>*</strong><span id="QA_1_label"><strong>Can you confirm that everything in this application is true and your own?</strong></span></span>
+      <fieldset role="radiogroup" data-ui="QA_1" aria-labelledby="QA_1_label">
+        <div data-ui="option" role="radio" aria-checked="false" aria-required="true" aria-labelledby="QA_1_label radio_label_y1"><label><input aria-required="true" required id="y1" tabindex="-1" aria-hidden="true" type="radio" name="QA_1" value="true"><span id="radio_label_y1">YES</span></label></div>
+        <div data-ui="option" role="radio" aria-checked="false" aria-required="true" aria-labelledby="QA_1_label radio_label_n1"><label><input aria-required="true" required id="n1" tabindex="-1" aria-hidden="true" type="radio" name="QA_1" value="false"><span id="radio_label_n1">NO</span></label></div>
+      </fieldset></div>
+    <div class="field"><span><span id="QA_2_label"><strong>Are you eligible to work in the country you are applying?</strong></span><span> (Optional)</span></span>
+      <fieldset role="radiogroup" data-ui="QA_2" aria-labelledby="QA_2_label">
+        <div data-ui="option" role="radio" aria-checked="false" aria-labelledby="QA_2_label radio_label_y2"><label><input id="y2" tabindex="-1" aria-hidden="true" type="radio" name="QA_2" value="true"><span id="radio_label_y2">YES</span></label></div>
+        <div data-ui="option" role="radio" aria-checked="false" aria-labelledby="QA_2_label radio_label_n2"><label><input id="n2" tabindex="-1" aria-hidden="true" type="radio" name="QA_2" value="false"><span id="radio_label_n2">NO</span></label></div>
+      </fieldset></div>
+    <div class="field"><span><strong>*</strong><span id="QA_3_label"><strong>Why Acme, and where would you make the biggest difference in this role?</strong></span></span>
+      <textarea id="QA_3" name="QA_3" data-ui="QA_3" aria-labelledby="QA_3_label" aria-required="true" required rows="5"></textarea></div>
+    <div class="field" data-ui="gdpr"><label data-ui="gdpr">
+      <div role="checkbox" aria-checked="false" aria-labelledby="checkbox_label_gdpr" tabindex="0"><input tabindex="-1" aria-hidden="true" type="checkbox" name="gdpr"></div>
+      <span id="checkbox_label_gdpr">I have read, understand and accept the content of the <a href="#privacy">Privacy Notice</a> and consent to the processing of my data as part of this application.</span>
+    </label></div>
+    <div data-ui="error" class="error" id="form-error"></div>
+    <button type="submit" data-ui="apply-button">Submit application</button>
+  </form>
+</template>
+<script>
+  window.cookieChoice = null;
+  for (const button of document.querySelectorAll("#cookie-banner [data-choice]")) {
+    button.addEventListener("click", () => {
+      window.cookieChoice = button.dataset.choice;
+      window.atelierFixtureReport?.("cookie", button.dataset.choice);
+      document.getElementById("cookie-banner").remove();
+      document.getElementById("cookie-backdrop").remove();
+    });
+  }
+  // The single-page app renders the form a moment after load.
+  setTimeout(() => {
+    const app = document.getElementById("app");
+    app.appendChild(document.getElementById("form-template").content.cloneNode(true));
+    const form = app.querySelector("form");
+    const resume = form.querySelector("#input_files_resume");
+    resume.addEventListener("change", () => {
+      form.querySelector("#resume-preview").textContent = resume.files[0]?.name ?? "";
+      form.querySelector("#description_resume").textContent = "Replace file";
+    });
+    for (const group of form.querySelectorAll("[role=radiogroup]")) {
+      for (const option of group.querySelectorAll("[role=radio]")) {
+        option.addEventListener("click", () => {
+          for (const other of group.querySelectorAll("[role=radio]")) {
+            other.setAttribute("aria-checked", "false");
+            other.querySelector("input").checked = false;
+          }
+          option.setAttribute("aria-checked", "true");
+          option.querySelector("input").checked = true;
+        });
+      }
+    }
+    const gdpr = form.querySelector("input[name=gdpr]");
+    gdpr.addEventListener("change", () =>
+      form.querySelector("[role=checkbox]").setAttribute("aria-checked", String(gdpr.checked)));
+    const combo = form.querySelector("#input_CA_2_input");
+    const hiddenValue = form.querySelector("input[name=CA_2]");
+    let list = null;
+    combo.addEventListener("click", () => {
+      if (list) return;
+      list = document.createElement("ul");
+      list.id = "input_CA_2_listbox";
+      list.setAttribute("role", "listbox");
+      for (const text of ["Available immediately", "2 weeks", "1 month", "2 months"]) {
+        const item = document.createElement("li");
+        item.setAttribute("role", "option");
+        item.textContent = text;
+        item.addEventListener("click", () => {
+          combo.value = text;
+          hiddenValue.value = text;
+          list.remove();
+          list = null;
+        });
+        list.appendChild(item);
+      }
+      combo.parentElement.appendChild(list);
+    });
+    combo.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && list) { list.remove(); list = null; }
+    });
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const missing = [];
+      for (const name of ["firstname", "lastname", "email"])
+        if (!form.querySelector(`[name=${name}]`).value.trim()) missing.push(name);
+      if (!resume.files.length) missing.push("resume");
+      if (!form.querySelector("input[name=QA_1]:checked")) missing.push("QA_1");
+      if (!form.querySelector("#QA_3").value.trim()) missing.push("QA_3");
+      if (!gdpr.checked) missing.push("gdpr");
+      if (missing.length) {
+        form.querySelector("#form-error").textContent = `Please fill in: ${missing.join(", ")}`;
+        return;
+      }
+      window.submitted = {
+        resume: resume.files[0].name,
+        cover: form.querySelector("#cover_letter").value,
+        notice: hiddenValue.value,
+        confirmed: form.querySelector("input[name=QA_1]:checked")?.value ?? null,
+        gdpr: gdpr.checked,
+      };
+      window.atelierFixtureReport?.("submitted", window.submitted);
+      app.innerHTML = '<div data-ui="successful-application"><h2>Thank you for applying!</h2><p>Your application has been submitted successfully.</p></div>';
+    });
+  }, 300);
+</script>
+</body>
+</html>

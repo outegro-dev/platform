@@ -1,0 +1,27 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "root": false,
+  "extends": "//",
+  "files": {
+    "includes": ["**", "!**/dist", "!**/node_modules"]
+  },
+  "overrides": [
+    {
+      "includes": ["src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "style": { "useImportType": "off" },
+          "complexity": { "noStaticOnlyClass": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["src/test/fixtures/**"],
+      "linter": {
+        "rules": {
+          "a11y": "off"
+        }
+      }
+    }
+  ]
+}
