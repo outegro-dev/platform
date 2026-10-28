@@ -95,8 +95,8 @@ export class WalletMetrics {
     this.operations.inc({ kind, result: "replay" });
   }
 
-  reconciliationFinished() {
-    this.reconciled.set(this.clock.now().getTime() / 1000);
+  reconciliationFinished(at: Date = this.clock.now()) {
+    this.reconciled.set(at.getTime() / 1000);
   }
 
   private readBalances(metrics: Metrics) {

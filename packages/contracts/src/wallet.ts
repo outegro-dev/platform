@@ -26,8 +26,13 @@ export const amountSchema = z.string().regex(/^[1-9]\d{0,14}$/);
 /** A balance or a signed journal amount, as a string. */
 export const signedAmountSchema = z.string().regex(/^-?\d+$/);
 
-/** An idempotency key: one operation per ref, ever. */
+/** An idempotency key from a caller: one operation per ref, ever. */
 export const walletRefSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,200}$/);
+/**
+ * A ref as the journal stores it: a caller's, or one the wallet built,
+ * such as `rollback:` + a caller's 200 characters.
+ */
+export const storedRefSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,209}$/);
 /** Refs the wallet builds itself; the internal API refuses them. */
 export const reservedRefPrefixes = [
   "grant:",
@@ -153,7 +158,7 @@ export type RollbackRequest = z.infer<typeof rollbackRequestSchema>;
 /** One applied operation; `replayed` says it was stored before this call. */
 export const operationSchema = z.object({
   txId: z.uuid(),
-  ref: walletRefSchema,
+  ref: storedRefSchema,
   userId: z.uuid(),
   unit: walletUnitSchema,
   kind: z.enum(txKinds),
@@ -259,7 +264,7 @@ export type AdminWallet = z.infer<typeof adminWalletSchema>;
 export const adminWalletsPageSchema = pageSchema(adminWalletSchema);
 
 export const adminTxSchema = historyItemSchema.extend({
-  ref: walletRefSchema,
+  ref: storedRefSchema,
   objectRef: z.string().nullable(),
   walletVersion: z.number().int().positive(),
   counterAccount: z.enum(systemAccountCodes),
@@ -341,6 +346,8 @@ export const reconciliationRunSchema = z.object({
   finishedAt: isoDateTime.nullable(),
   checkedWallets: z.number().int().nonnegative(),
   issuesFound: z.number().int().nonnegative(),
+  /** The pass threw before it finished its checks. */
+  failed: z.boolean(),
 });
 export type ReconciliationRun = z.infer<typeof reconciliationRunSchema>;
 
@@ -395,7 +402,7 @@ export const adminAuditEntrySchema = z.object({
   unit: walletUnitSchema,
   amount: signedAmountSchema,
   reason: z.string(),
-  ref: walletRefSchema,
+  ref: storedRefSchema,
   requestId: z.string().nullable(),
   createdAt: isoDateTime,
 });

@@ -36,7 +36,8 @@ CREATE TABLE "reconciliation_runs" (
 	"started_at" timestamp with time zone NOT NULL,
 	"finished_at" timestamp with time zone,
 	"checked_wallets" integer DEFAULT 0 NOT NULL,
-	"issues_found" integer DEFAULT 0 NOT NULL
+	"issues_found" integer DEFAULT 0 NOT NULL,
+	"failed" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "system_accounts" (

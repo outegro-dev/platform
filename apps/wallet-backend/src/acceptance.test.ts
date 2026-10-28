@@ -286,6 +286,15 @@ async function step(): Promise<string> {
   const past = pick(model.applied);
   if (random() < 0.6) {
     const res = await send(past.path, past.body, past.admin);
+    // A debit rolled back since is not a success to repeat.
+    if (
+      past.path.endsWith("/debit") &&
+      model.debits.get(String(past.body.ref))?.reversed
+    ) {
+      expect(res.status).toBe(409);
+      expect(res.body.error.fieldErrors).toEqual({ ref: ["rolled_back"] });
+      return "repeat:reversed";
+    }
     expect(res.status).toBe(200);
     if (past.path.endsWith("credit-batch"))
       expect(res.body.items).toEqual(
@@ -371,6 +380,13 @@ describe("phase 1 acceptance (W-06)", () => {
     );
     for (const past of model.applied) {
       const res = await send(past.path, past.body, past.admin);
+      if (
+        past.path.endsWith("/debit") &&
+        model.debits.get(String(past.body.ref))?.reversed
+      ) {
+        expect(res.status, past.path).toBe(409);
+        continue;
+      }
       expect(res.status, past.path).toBe(200);
       if (past.path.endsWith("credit-batch"))
         for (const item of res.body.items) expect(item.replayed).toBe(true);

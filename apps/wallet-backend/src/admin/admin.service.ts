@@ -83,6 +83,7 @@ const run = (
   finishedAt: row.finishedAt?.toISOString() ?? null,
   checkedWallets: row.checkedWallets,
   issuesFound: row.issuesFound,
+  failed: row.failed,
 });
 
 /** What the admin console reads and the two commands it may run. */
@@ -139,7 +140,12 @@ export class AdminService {
     const [last] = await db
       .select()
       .from(reconciliationRuns)
-      .where(isNotNull(reconciliationRuns.finishedAt))
+      .where(
+        and(
+          isNotNull(reconciliationRuns.finishedAt),
+          eq(reconciliationRuns.failed, false),
+        ),
+      )
       .orderBy(desc(reconciliationRuns.finishedAt))
       .limit(1);
     return {
@@ -263,7 +269,13 @@ export class AdminService {
   /** Set the balance: the wallet grants or takes the difference. */
   async setBalance(actor: Actor, userId: string, body: SetBalanceCommand) {
     const target = BigInt(body.balance);
-    if (body.preview) return this.ledger.previewSet(userId, body.unit, target);
+    if (body.preview)
+      return this.ledger.previewSet(
+        userId,
+        body.unit,
+        target,
+        this.config.adminMaxAmount,
+      );
     return this.ledger.setBalance(
       actor,
       {

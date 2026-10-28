@@ -11,6 +11,7 @@ import { platformTables } from "@outegro/db/schema";
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   check,
   index,
   integer,
@@ -190,6 +191,8 @@ export const reconciliationRuns = pgTable(
     finishedAt: at("finished_at"),
     checkedWallets: integer("checked_wallets").notNull().default(0),
     issuesFound: integer("issues_found").notNull().default(0),
+    /** The pass threw; its counts are not to be trusted. */
+    failed: boolean("failed").notNull().default(false),
   },
   (t) => [index("reconciliation_runs_started_idx").on(t.startedAt)],
 );
