@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import type { ConfigType } from "@nestjs/config";
 import {
   type OwnBet,
   type RouletteClientMessage,
@@ -11,9 +10,9 @@ import { multipliers, type RoundTimings } from "@outegro/roulette-engine";
 import type { RawData } from "ws";
 import { BetError, BetService } from "../bets/bet.service.js";
 import { ROUND_TIMINGS, WALLET } from "../common/tokens.js";
-import { tableConfig } from "../config/config.js";
 import { RoundFeed } from "../rounds/round.feed.js";
 import { RoundRepository } from "../rounds/round.repository.js";
+import { TableSettingsService } from "../table/table.settings.js";
 import type { WalletPort } from "../wallet/wallet.port.js";
 import type { Connection } from "./connection.js";
 import { ConnectionRegistry } from "./connection.registry.js";
@@ -51,7 +50,6 @@ export function seqOf(message: unknown): number | null {
 @Injectable()
 export class CommandRouter {
   private readonly logger = new Logger("CommandRouter");
-  private readonly table: TableView;
 
   constructor(
     private readonly bets: BetService,
@@ -60,19 +58,31 @@ export class CommandRouter {
     private readonly registry: ConnectionRegistry,
     @Inject(WALLET) private readonly wallet: WalletPort,
     @Inject(CLOCK) private readonly clock: Clock,
-    @Inject(tableConfig.KEY) limits: ConfigType<typeof tableConfig>,
-    @Inject(ROUND_TIMINGS) timings: RoundTimings,
-  ) {
-    this.table = { ...limits, multipliers: { ...multipliers }, timings };
+    @Inject(ROUND_TIMINGS) private readonly timings: RoundTimings,
+    private readonly settings: TableSettingsService,
+  ) {}
+
+  /** The table as players see it: limits, multipliers and phase lengths. */
+  private async table(): Promise<TableView> {
+    const settings = await this.settings.current();
+    return {
+      minBet: settings.minBet,
+      maxBet: settings.maxBet,
+      betsPerRound: settings.betsPerRound,
+      payoutLimitPerColor: settings.payoutLimitPerColor,
+      multipliers: { ...multipliers },
+      timings: this.timings,
+    };
   }
 
   /** `session.ready`, the first message of every connection; returns the bets it showed. */
   async welcome(connection: Connection): Promise<OwnBet[]> {
     const { userId } = connection;
-    const [balance, round, history] = await Promise.all([
+    const [balance, round, history, table] = await Promise.all([
       this.wallet.balance(userId),
       this.feed.current(),
       this.repo.history(HISTORY_ON_WELCOME),
+      this.table(),
     ]);
     const yourBets = round
       ? (await this.repo.betsOfUser(round.round, userId)).map((bet) => ({
@@ -87,7 +97,7 @@ export class CommandRouter {
       type: "session.ready",
       payload: {
         player: { nickname: connection.nickname, balance },
-        table: this.table,
+        table,
         round,
         yourBets,
         history: history.flatMap((item) =>

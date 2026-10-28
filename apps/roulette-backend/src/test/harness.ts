@@ -25,10 +25,10 @@ import {
 } from "jose";
 import request from "supertest";
 import type { RouletteDatabase } from "../common/database.js";
-import { FAIR_ROLL, SCHEDULER, WALLET } from "../common/tokens.js";
+import { FAIR_ROLL, IDENTITY, SCHEDULER, WALLET } from "../common/tokens.js";
 import { EngineDriver } from "../rounds/engine.driver.js";
 import { RoundFeed } from "../rounds/round.feed.js";
-import { LocalFairRoll, TestWallet } from "./fakes.js";
+import { LocalFairRoll, TestIdentity, TestWallet } from "./fakes.js";
 import { SharedManualScheduler } from "./manual-scheduler.js";
 import { TestSocket } from "./socket-client.js";
 
@@ -83,6 +83,7 @@ export async function startHarness(
     WS_ALLOWED_ORIGINS: ORIGIN,
     HTTP_RATE_LIMIT_PER_MINUTE: "100000",
     FAIR_ROLL_URL: "http://127.0.0.1:9",
+    AUTH_INTERNAL_URL: "http://127.0.0.1:9",
     INTERNAL_API_TOKEN: "t".repeat(40),
     WALLET_MEMORY_OPENING_BALANCE: String(OPENING_BALANCE),
     // Each test file runs in its own module graph, so env() is read afresh.
@@ -93,6 +94,7 @@ export async function startHarness(
   const scheduler = new SharedManualScheduler(clock);
   const fair = new LocalFairRoll();
   const wallet = new TestWallet(OPENING_BALANCE);
+  const identity = new TestIdentity();
   const raw = new Redis(valkey.url);
   const instances: NestExpressApplication[] = [];
 
@@ -107,6 +109,8 @@ export async function startHarness(
       .useValue(fair)
       .overrideProvider(WALLET)
       .useValue(wallet)
+      .overrideProvider(IDENTITY)
+      .useValue(identity)
       .overrideProvider(AccessTokenVerifier)
       .useValue(verifier)
       .compile();
@@ -167,8 +171,8 @@ export async function startHarness(
     };
   }
 
-  const tokenFor = (userId: string) =>
-    new SignJWT({ sid: randomUUID(), roles: [], av: 0 })
+  const tokenFor = (userId: string, roles: string[] = [], accessVersion = 0) =>
+    new SignJWT({ sid: randomUUID(), roles, av: accessVersion })
       .setProtectedHeader({ alg: "ES256", kid: "test", typ: "at+jwt" })
       .setSubject(userId)
       .setIssuer(ISSUER)
@@ -176,8 +180,12 @@ export async function startHarness(
       .setIssuedAt()
       .setExpirationTime("5m")
       .sign(privateKey);
-  const auth = async (userId: string) => ({
-    authorization: `Bearer ${await tokenFor(userId)}`,
+  const auth = async (
+    userId: string,
+    roles: string[] = [],
+    accessVersion = 0,
+  ) => ({
+    authorization: `Bearer ${await tokenFor(userId, roles, accessVersion)}`,
   });
 
   return {
@@ -185,6 +193,7 @@ export async function startHarness(
     scheduler,
     fair,
     wallet,
+    identity,
     /** Raw Valkey client without the service prefix, for inspection. */
     valkey: raw,
     boot,

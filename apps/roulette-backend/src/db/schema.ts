@@ -1,8 +1,10 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   smallint,
   text,
@@ -21,10 +23,13 @@ export const roundStatuses = [
   "betting",
   "locked",
   "rolling",
+  /** Winnings are on their way to the wallet; the round can no longer be voided. */
+  "paying",
   "settled",
+  "voided",
 ] as const;
 export const betColors = ["red", "black", "green"] as const;
-export const betStatuses = ["accepted", "won", "lost"] as const;
+export const betStatuses = ["accepted", "won", "lost", "refunded"] as const;
 
 /**
  * A roulette account, created on first access. The nickname is the game's
@@ -103,4 +108,41 @@ export const bets = pgTable(
     index("bets_round_idx").on(t.roundId),
     index("bets_user_idx").on(t.userId, t.createdAt),
   ],
+);
+
+/**
+ * The table's switches, one row: limits, paused bets, maintenance. The env
+ * values seed it once; afterwards the admin console changes it, with the
+ * version as the optimistic lock and every change in the audit.
+ */
+export const tableSettings = pgTable("table_settings", {
+  id: smallint("id").primaryKey().default(1),
+  minBet: grumbles("min_bet").notNull(),
+  maxBet: grumbles("max_bet").notNull(),
+  betsPerRound: integer("bets_per_round").notNull(),
+  payoutLimitPerColor: grumbles("payout_limit_per_color").notNull(),
+  paused: boolean("paused").notNull().default(false),
+  maintenance: boolean("maintenance").notNull().default(false),
+  version: integer("version").notNull().default(0),
+  updatedAt: at("updated_at").notNull(),
+  updatedBy: uuid("updated_by"),
+});
+
+export const auditActions = ["table.update", "round.void"] as const;
+
+/** Every admin command: who, why, and the state before and after. */
+export const adminAudit = pgTable(
+  "admin_audit",
+  {
+    id: uuid("id").primaryKey(),
+    actorId: uuid("actor_id").notNull(),
+    action: text("action", { enum: auditActions }).notNull(),
+    subject: text("subject").notNull(),
+    reason: text("reason").notNull(),
+    before: jsonb("before"),
+    after: jsonb("after"),
+    requestId: text("request_id"),
+    createdAt: at("created_at").notNull(),
+  },
+  (t) => [index("admin_audit_created_idx").on(t.createdAt)],
 );

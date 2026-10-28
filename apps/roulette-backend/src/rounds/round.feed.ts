@@ -13,6 +13,7 @@ import { VALKEY } from "@outegro/nest-common";
 import { colorOf } from "@outegro/roulette-engine";
 import type { Redis } from "ioredis";
 import { RouletteMetrics } from "../common/metrics.js";
+import { TableSettingsService } from "../table/table.settings.js";
 import { RoundRepository, type RoundRow } from "./round.repository.js";
 import { RoundStore } from "./round.store.js";
 
@@ -28,6 +29,7 @@ export class SnapshotService {
   constructor(
     private readonly repo: RoundRepository,
     private readonly store: RoundStore,
+    private readonly settings: TableSettingsService,
   ) {}
 
   async latest(): Promise<RoundView | null> {
@@ -36,10 +38,17 @@ export class SnapshotService {
   }
 
   async view(row: RoundRow): Promise<RoundView> {
-    let phase = row.status;
+    // Paying out is still the end of the spin for the players.
+    let phase = row.status === "paying" ? "rolling" : row.status;
     // Valkey stops the bets before the record does: show the close at once.
     if (phase === "betting" && (await this.store.phase(row.id)) === "locked")
       phase = "locked";
+    const table = await this.settings.current();
+    // A voided round shows no result: its bets went back.
+    const result =
+      phase !== "voided" && row.number !== null && row.seed !== null
+        ? { number: row.number, color: colorOf(row.number), seed: row.seed }
+        : null;
     return {
       round: row.id,
       phase,
@@ -47,11 +56,9 @@ export class SnapshotService {
       rollingAt: row.rollingAt?.toISOString() ?? null,
       settleAt: row.settleAt?.toISOString() ?? null,
       nextRoundAt: row.nextRoundAt?.toISOString() ?? null,
-      result:
-        row.number !== null && row.seed !== null
-          ? { number: row.number, color: colorOf(row.number), seed: row.seed }
-          : null,
+      result,
       totals: await this.store.totals(row.id),
+      table: { paused: table.paused, maintenance: table.maintenance },
     };
   }
 }
@@ -102,6 +109,11 @@ export class RoundFeed implements OnApplicationBootstrap, OnModuleDestroy {
     if (this.last && Date.now() - this.last.at < STALE_MS)
       return this.last.view;
     return this.snapshots.latest();
+  }
+
+  /** How long ago this replica received the last frame; null before the first. */
+  frameAgeMs(): number | null {
+    return this.last ? Date.now() - this.last.at : null;
   }
 
   /** The last frame's round without a round trip (the bet path). */

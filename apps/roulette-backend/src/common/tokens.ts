@@ -6,3 +6,5 @@ export const ROUND_TIMINGS = Symbol("ROUND_TIMINGS");
 export const WALLET = Symbol("WALLET");
 /** fair-roll (FairRollPort). */
 export const FAIR_ROLL = Symbol("FAIR_ROLL");
+/** Identity's internal lookup (IdentityPort). */
+export const IDENTITY = Symbol("IDENTITY");

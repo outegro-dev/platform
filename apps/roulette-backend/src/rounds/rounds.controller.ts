@@ -59,7 +59,7 @@ export class RoundsController {
     const revealed = round.seed !== null && round.number !== null;
     return {
       round: round.id,
-      phase: round.status,
+      phase: round.status === "paying" ? "rolling" : round.status,
       commit: chain.commit,
       publicSeed: chain.publicSeed,
       seed: revealed ? round.seed : null,

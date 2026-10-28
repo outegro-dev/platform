@@ -38,6 +38,19 @@ export const fairRollConfig = registerAs("fairRoll", () => ({
   token: env().INTERNAL_API_TOKEN,
 }));
 
+export const identityConfig = registerAs("identity", () => ({
+  url: env().AUTH_INTERNAL_URL,
+  token: env().INTERNAL_API_TOKEN,
+}));
+
+/** Other services the admin console shows the health of. */
+export const servicesConfig = registerAs("services", () => ({
+  fairRoll: env().FAIR_ROLL_URL,
+  dailyBonus: env().DAILY_BONUS_URL,
+  wallet: env().WALLET_MODE === "http" ? env().WALLET_URL : undefined,
+  walletMode: env().WALLET_MODE,
+}));
+
 export const walletConfig = registerAs("wallet", () => ({
   mode: env().WALLET_MODE,
   url: env().WALLET_URL,

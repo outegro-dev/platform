@@ -6,6 +6,8 @@ import type { Redis } from "ioredis";
 /** Round keys outlive the round by an hour: late confirms and the last snapshot. */
 const ROUND_TTL_SECONDS = 3600;
 const TOP = 7;
+/** A replica's socket count is trusted this long after it reported it. */
+const ONLINE_FRESH_MS = 5000;
 
 /**
  * KEYS: round hash, pending set.
@@ -277,6 +279,47 @@ export class RoundStore {
       };
     });
     return totals;
+  }
+
+  /** What each colour of a round would pay if it won now. */
+  async exposure(round: number): Promise<Record<Color, number>> {
+    const values = await this.valkey.hmget(
+      roundKey(round),
+      ...colors.map((color) => `x:${color}`),
+    );
+    return Object.fromEntries(
+      colors.map((color, i) => [color, Math.max(0, Number(values[i] ?? 0))]),
+    ) as Record<Color, number>;
+  }
+
+  /** Every replica reports its open sockets each second. */
+  async reportOnline(instanceId: string, sockets: number): Promise<void> {
+    await this.valkey
+      .multi()
+      .hset("online", instanceId, `${sockets}:${Date.now()}`)
+      .expire("online", 60)
+      .exec();
+  }
+
+  /** Open sockets over the replicas that reported in the last few seconds. */
+  async online(): Promise<number> {
+    const reports = await this.valkey.hgetall("online");
+    const fresh = Date.now() - ONLINE_FRESH_MS;
+    let total = 0;
+    for (const report of Object.values(reports)) {
+      const [sockets, at] = report.split(":").map(Number);
+      if ((at ?? 0) >= fresh) total += sockets ?? 0;
+    }
+    return total;
+  }
+
+  /** Who holds the engine lease and for how much longer. */
+  async leader(): Promise<{ instance: string; leaseMs: number } | null> {
+    const [instance, leaseMs] = await Promise.all([
+      this.valkey.get("leader"),
+      this.valkey.pttl("leader"),
+    ]);
+    return instance ? { instance, leaseMs: Math.max(0, leaseMs) } : null;
   }
 
   /** Takes or extends the engine lease; false when another instance holds it. */

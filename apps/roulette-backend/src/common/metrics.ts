@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
+import { roulettePhaseSchema } from "@outegro/contracts/roulette";
 import {
   type Counter,
   type Gauge,
   type Histogram,
   Metrics,
 } from "@outegro/nest-common";
-import { type Phase, phases } from "@outegro/roulette-engine";
 
 /** Roulette metrics: bets by outcome, the bet path latency, rounds and sockets. */
 @Injectable()
@@ -82,8 +82,8 @@ export class RouletteMetrics {
     if (count > 0) this.rolledBack.inc(count);
   }
 
-  phaseIs(current: Phase) {
-    for (const phase of phases)
+  phaseIs(current: string) {
+    for (const phase of roulettePhaseSchema.options)
       this.phase.set({ phase }, phase === current ? 1 : 0);
   }
 

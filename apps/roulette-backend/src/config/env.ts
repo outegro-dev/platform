@@ -56,6 +56,10 @@ export const env = defineEnv(
       HTTP_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(240),
       /** fair-roll-backend inside the cluster. */
       FAIR_ROLL_URL: z.url(),
+      /** Identity's internal API: who an admin is right now. */
+      AUTH_INTERNAL_URL: z.url(),
+      /** daily-bonus-backend, for the admin console's service health. */
+      DAILY_BONUS_URL: z.url().optional(),
       INTERNAL_API_TOKEN: z.string().min(32),
       /**
        * The grumbles wallet: wallet-backend's internal API (`http`), or the

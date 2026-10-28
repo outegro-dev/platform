@@ -198,7 +198,8 @@ describe("rounds", () => {
     } as Parameters<SettlementService["settle"]>[0];
     const creditsBefore = h.wallet.creditCalls.length;
     expect(await a.app.get(SettlementService).settle(stale)).toBe(false);
-    expect(h.wallet.creditCalls.length).toBeGreaterThan(creditsBefore);
+    // The round is no longer rolling: nothing goes to the wallet again.
+    expect(h.wallet.creditCalls.length).toBe(creditsBefore);
     expect(await h.wallet.balance(player.userId)).toBe(before - 200 + payout);
     const [row] = await h
       .db(b)

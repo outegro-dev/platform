@@ -39,6 +39,9 @@ export class SettlementService {
     if (round.number === null)
       throw new Error(`round ${round.id} has no number to settle`);
     const started = performance.now();
+    // Claim the round first: a void cannot start once winnings go out, and
+    // a round voided first pays nothing.
+    if ((await this.repo.startPaying(round.id)) !== "paying") return false;
     const color = colorOf(round.number);
     const winners: CreditItem[] = (await this.repo.betsOf(round.id))
       .filter((bet) => bet.color === color)

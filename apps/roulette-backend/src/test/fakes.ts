@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { FairInfo, FairReveal } from "@outegro/contracts/roulette";
 import { colorOf, roll } from "@outegro/roulette-engine";
 import { FairRollError, type FairRollPort } from "../fair/fair-roll.port.js";
+import type { IdentityPort, IdentityUser } from "../identity/identity.js";
 import { InMemoryWallet } from "../wallet/memory-wallet.js";
 import type {
   CreditItem,
@@ -105,5 +106,18 @@ export class TestWallet extends InMemoryWallet {
   override async rollback(ref: string) {
     this.rollbacks.push(ref);
     return super.rollback(ref);
+  }
+}
+
+/** Identity's lookup in the test process: everyone active at version 0 unless set. */
+export class TestIdentity implements IdentityPort {
+  private readonly users = new Map<string, IdentityUser>();
+
+  set(userId: string, user: IdentityUser) {
+    this.users.set(userId, user);
+  }
+
+  async lookup(userId: string): Promise<IdentityUser> {
+    return this.users.get(userId) ?? { status: "active", accessVersion: 0 };
   }
 }

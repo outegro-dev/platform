@@ -6,6 +6,7 @@ import { RouletteMetrics } from "../common/metrics.js";
 import { FAIR_ROLL, ROUND_TIMINGS, WALLET } from "../common/tokens.js";
 import { betRef } from "../domain/ids.js";
 import type { FairRollPort } from "../fair/fair-roll.port.js";
+import { TableSettingsService } from "../table/table.settings.js";
 import type { WalletPort } from "../wallet/wallet.port.js";
 import { RoundFeed, SnapshotService } from "./round.feed.js";
 import { RoundRepository, type RoundRow } from "./round.repository.js";
@@ -14,6 +15,8 @@ import { SettlementService } from "./settlement.service.js";
 
 /** How long the close waits for bets whose debit is still in flight. */
 export const CLOSE_GRACE_MS = 800;
+/** How often a table in maintenance looks whether it may open again. */
+const MAINTENANCE_RECHECK_MS = 1000;
 const GRACE_POLL_MS = 10;
 
 /**
@@ -37,6 +40,7 @@ export class RoundEngine {
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(ROUND_TIMINGS) private readonly timings: RoundTimings,
     private readonly metrics: RouletteMetrics,
+    private readonly settings: TableSettingsService,
   ) {}
 
   /** One move; returns when the next one falls due (now: at once). */
@@ -61,13 +65,20 @@ export class RoundEngine {
         await this.roll(round);
         return this.clock.now();
       case "rolling":
+      case "paying":
         if (round.settleAt && now < round.settleAt) return round.settleAt;
         await this.settlement.settle(round);
         await this.publish();
         return this.clock.now();
       case "settled":
+      case "voided":
         if (round.nextRoundAt && now < round.nextRoundAt)
           return round.nextRoundAt;
+        // Maintenance: the round in play finishes, no new one opens.
+        if ((await this.settings.current()).maintenance) {
+          await this.publish();
+          return new Date(now.getTime() + MAINTENANCE_RECHECK_MS);
+        }
         await this.open(round.id + 1, now);
         return this.clock.now();
     }

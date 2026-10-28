@@ -31,6 +31,8 @@ export class InternalUsersController {
       locale: user.locale,
       status: user.status,
       accessVersion: user.accessVersion,
+      /** When the account was created: the daily bonus waits 24 hours for new ones. */
+      createdAt: user.createdAt.toISOString(),
       /**
        * The aggregateVersion user events carry: a projection stores it with
        * this data, so an older event arriving later changes nothing.

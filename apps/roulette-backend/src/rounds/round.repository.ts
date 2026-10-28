@@ -110,6 +110,18 @@ export class RoundRepository {
   }
 
   /**
+   * Claims the round for payouts (rolling → paying), so it can no longer be
+   * voided while winnings go out. The status after the attempt.
+   */
+  async startPaying(id: number): Promise<RoundRow["status"] | null> {
+    await this.db
+      .update(rounds)
+      .set({ status: "paying" })
+      .where(and(eq(rounds.id, id), eq(rounds.status, "rolling")));
+    return (await this.find(id))?.status ?? null;
+  }
+
+  /**
    * Marks winners and losers and closes the round in one transaction,
    * after the winnings are in the wallet. False when another engine did it.
    */
@@ -128,7 +140,7 @@ export class RoundRepository {
           settledAt: now,
           nextRoundAt: new Date(now.getTime() + timings.settledMs),
         })
-        .where(and(eq(rounds.id, id), eq(rounds.status, "rolling")))
+        .where(and(eq(rounds.id, id), eq(rounds.status, "paying")))
         .returning({ id: rounds.id });
       if (!closed) return false;
       await tx

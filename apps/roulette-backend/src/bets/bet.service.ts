@@ -1,15 +1,14 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import type { ConfigType } from "@nestjs/config";
 import type { OwnBet, RouletteErrorCode } from "@outegro/contracts/roulette";
 import { type Color, checkStake, exposureOf } from "@outegro/roulette-engine";
 import { RouletteMetrics } from "../common/metrics.js";
 import { WALLET } from "../common/tokens.js";
-import { tableConfig } from "../config/config.js";
 import { betIdOf, betRef } from "../domain/ids.js";
 import { RoundFeed } from "../rounds/round.feed.js";
 import { RoundRepository } from "../rounds/round.repository.js";
 import { RoundStore } from "../rounds/round.store.js";
+import { TableSettingsService } from "../table/table.settings.js";
 import {
   roundObject,
   WalletError,
@@ -61,8 +60,7 @@ export class BetService {
     private readonly repo: RoundRepository,
     private readonly writer: BetWriter,
     @Inject(WALLET) private readonly wallet: WalletPort,
-    @Inject(tableConfig.KEY)
-    private readonly table: ConfigType<typeof tableConfig>,
+    private readonly settings: TableSettingsService,
     private readonly metrics: RouletteMetrics,
   ) {}
 
@@ -80,7 +78,9 @@ export class BetService {
   }
 
   private async attempt(input: PlaceBet) {
-    const stake = checkStake(input.amount, this.table);
+    const table = await this.settings.current();
+    if (table.paused || table.maintenance) throw new BetError("bets_paused");
+    const stake = checkStake(input.amount, table);
     if (stake) throw new BetError(stake);
     const view = await this.feed.current();
     if (view?.phase !== "betting") throw new BetError("round_closed");
@@ -105,8 +105,8 @@ export class BetService {
     for (;;) {
       const reserved = await this.store.reserve({
         ...place,
-        maxBets: this.table.betsPerRound,
-        payoutLimit: this.table.payoutLimitPerColor,
+        maxBets: table.betsPerRound,
+        payoutLimit: table.payoutLimitPerColor,
       });
       if (reserved.status === "ok") break;
       if (reserved.status !== "duplicate") throw new BetError(reserved.status);
