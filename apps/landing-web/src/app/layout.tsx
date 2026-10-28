@@ -63,8 +63,8 @@ async function analytics() {
 
 /**
  * What client components translate on their own: the header and the
- * language switch, the consent note and settings, the contact dialog, the
- * 504 card. The rest is translated on the server, so the page's payload
+ * language switch, the consent note and settings, the contact dialog,
+ * Sahur's lettering. The rest is translated on the server, so the page's payload
  * carries only these, not every message of every page.
  */
 const CLIENT_MESSAGES = ["nav", "consent", "contact", "bonk"];

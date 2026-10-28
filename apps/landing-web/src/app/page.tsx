@@ -1,8 +1,5 @@
 import { Button } from "@outegro/ui/button";
-import {
-  ArrowRightIcon,
-  ArrowUpRightIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Viewport } from "next";
 import Image, { getImageProps } from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -13,21 +10,21 @@ import magazine from "@/assets/cover/magazine.webp";
 import scrap from "@/assets/cover/scrap.webp";
 import strip from "@/assets/cover/strip.webp";
 import { ContactLinks } from "@/components/contact-links";
-import { Os } from "@/components/desktop/os";
 import { Header } from "@/components/header";
+import { PaperJourney } from "@/components/paper/paper-journey";
 import { EditorColumn } from "@/components/personality/editor-column";
 import { HobbyClub } from "@/components/personality/hobby-club";
 import { IncidentReport } from "@/components/personality/incident-report";
-import { LabourBook } from "@/components/personality/labour-book";
+import { Reports } from "@/components/reports";
 import { RevealObserver } from "@/components/reveal-observer";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
 import { CatPaw } from "@/components/zine/cat-paw";
 import { Coupon } from "@/components/zine/coupon";
 import { Fly } from "@/components/zine/fly";
-import { Issue } from "@/components/zine/issue";
 import { LateFaces } from "@/components/zine/late-faces";
 import { Mischief } from "@/components/zine/mischief";
+import { Opening } from "@/components/zine/opening";
 import { calendly, contacts } from "@/lib/contact";
 import { sso } from "@/lib/sso";
 
@@ -36,6 +33,21 @@ import { sso } from "@/lib/sso";
 export const viewport: Viewport = { themeColor: "#f6eede" };
 
 type TocItem = { title: string; href: string; page: string };
+type Step = { title: string; body: string; see: string };
+type Layer = { name: string; items: { name: string; result: string }[] };
+type Letter = { q: string; a: string };
+
+// the platform's sites, shown as proof in the platform section
+const hosts = [
+  "outegro.dev",
+  "id.outegro.dev",
+  "roulette.outegro.dev",
+  "atelier.outegro.dev",
+  "battleship.outegro.dev",
+  "edu.outegro.dev",
+  "pay.outegro.dev",
+  "admin.outegro.dev",
+];
 
 // a phone has the magazine a little wider than the screen (zine-page.css)
 const magazineSizes =
@@ -61,6 +73,9 @@ export default async function Home() {
   const toc = t.raw("zine.toc") as TocItem[];
   const steps = t.raw("zine.band.steps") as string[];
   const lede = t.raw("zine.lede") as string[];
+  const layers = t.raw("platform.layers") as Layer[];
+  const work = t.raw("process.steps") as Step[];
+  const letters = t.raw("faq.items") as Letter[];
   // "Discuss a project" opens a chat with the owner in Telegram
   const telegram = contacts.find((c) => c.key === "telegram")?.href;
   const locale = await getLocale();
@@ -143,8 +158,7 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* the magazine lying on the page, its cover marked for the book
-              that flies off it (IssueFlight) */}
+          {/* the magazine lying on the page */}
           <div className="cover-mag">
             <Image
               src={magazine}
@@ -152,7 +166,6 @@ export default async function Home() {
               sizes={magazineSizes}
               preload
             />
-            <span className="cover-art" aria-hidden="true" />
           </div>
 
           {/* the torn strip: the way of the work, and where it ends. A phone
@@ -176,17 +189,132 @@ export default async function Home() {
           </div>
         </section>
 
-        <Issue toc={toc} />
+        {/* the issue opened: the friends' questionnaire and the contents */}
+        <Opening toc={toc} />
 
-        <Os />
+        {/* the two main services, then the rest of the platform */}
+        <Reports />
+
+        <section
+          id="platform"
+          className="platform"
+          data-tone="dark"
+          aria-labelledby="platform-title"
+        >
+          <div className="og-container section-space">
+            <SectionHeading
+              id="platform-title"
+              index={t("platform.index")}
+              label={t("platform.label")}
+              title={t("platform.title")}
+              accent={t("platform.titleAccent")}
+            />
+            <div className="platform-intro" data-reveal>
+              <p>{t("platform.intro")}</p>
+              <div className="platform-live">
+                <p className="live-status">
+                  <span className="live-dot" aria-hidden="true" />
+                  {t("platform.live")}
+                </p>
+                <ul className="platform-hosts">
+                  {hosts.map((host) => (
+                    <li key={host}>{host}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="platform-grid">
+              {layers.map((layer, i) => (
+                <div key={layer.name} className="platform-layer">
+                  <h3 className="og-eyebrow">
+                    <span>0{i + 1}</span> {layer.name}
+                  </h3>
+                  <ul>
+                    {layer.items.map((item) => (
+                      <li key={item.name} className="platform-node">
+                        <h4>{item.name}</h4>
+                        <p>{item.result}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="process"
+          className="process section-space"
+          aria-labelledby="process-title"
+        >
+          <div className="og-container">
+            <SectionHeading
+              id="process-title"
+              index={t("process.index")}
+              label={t("process.label")}
+              title={t("process.title")}
+              accent={t("process.titleAccent")}
+            />
+            <p className="section-lead" data-reveal>
+              {t("process.intro")}
+            </p>
+          </div>
+          {/* the steps as a scroll-driven paper cartoon (React Three Fiber) */}
+          <PaperJourney
+            steps={work}
+            labels={{
+              youSee: t("process.youSee"),
+              scene: t("process.scene"),
+              sign: t.raw("process.sign") as string[],
+            }}
+          />
+          <p className="process-ai og-container" data-reveal>
+            {t("process.ai")}
+          </p>
+        </section>
 
         {/* the back pages, where the person is: the editor's column, the
-            hobby club, the police blotter of production and the
-            employment record book, which leads on to the résumé */}
+            hobby club and the police blotter of production */}
         <EditorColumn />
         <HobbyClub />
         <IncidentReport />
-        <LabourBook />
+
+        <section
+          id="faq"
+          className="faq og-container section-space"
+          aria-labelledby="faq-title"
+        >
+          <SectionHeading
+            id="faq-title"
+            index={t("faq.index")}
+            label={t("faq.label")}
+            title={t("faq.title")}
+            accent={t("faq.titleAccent")}
+          />
+          <p className="section-lead" data-reveal>
+            {t("faq.intro")}
+          </p>
+          {/* letters to the editor: every answer is in the markup, no toggles */}
+          <ol className="letters">
+            {letters.map((letter, i) => (
+              <li key={letter.q} className="letter">
+                <span className="letter-stamp" aria-hidden="true">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 className="letter-q">{letter.q}</h3>
+                <p className="letter-by" aria-hidden="true">
+                  {t("faq.answer")}
+                </p>
+                <p className="letter-a">{letter.a}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="faq-more">
+            <p>{t("faq.more")}</p>
+            {bookCall()}
+          </div>
+        </section>
 
         <section
           id="contact"
@@ -222,11 +350,6 @@ export default async function Home() {
             <div className="contact-side">
               <ContactLinks part="rest" />
               <p className="og-eyebrow contact-where">{t("contact.reply")}</p>
-              {/* the résumé on one page, to print or pass on */}
-              <a href="/cv" className="contact-cv">
-                {t("cv.contactLink")}
-                <ArrowRightIcon aria-hidden="true" />
-              </a>
             </div>
           </div>
         </section>

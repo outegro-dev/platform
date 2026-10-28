@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { menu, trumpDeck } from "../apps/landing-web/src/lib/stack";
 import {
   centre,
@@ -24,19 +24,18 @@ import {
 
 /*
  * The landing as an old popular-science magazine: the cover with its
- * headline and the torn strip of the work's steps, the issue (the
- * contents, the Battleship report, a friends' questionnaire inside the
- * cover), the old desktop with what I can build and the whole stack, the
- * process as a paper game, the coupon and the contacts; then /stack,
- * /privacy and what browsers and crawlers ask the server for.
+ * headline and the torn strip of the work's steps, the opening spread (a
+ * friends' questionnaire inside the cover, the contents), the reports on
+ * the roulette and the atelier with Tung Tung Tung Sahur's cameo, the rest
+ * of the platform, the platform's blueprint, the process as a paper
+ * cartoon, the back pages, the letters, the coupon and the contacts; then
+ * /stack, /privacy and what browsers and crawlers ask the server for.
  *
  * Copy comes from the site's own messages, so both languages are checked
  * against what the pages are meant to say. Elements are found by role, id
  * and href, never by the layout, and nothing counts on how long an
- * animation takes: on wide screens with motion the issue and the desktop
- * are scroll stages that move their anchors about, so checks that need the
- * page to sit still ask for reduced motion, where everything lies in its
- * place.
+ * animation takes: checks that need the page to sit still ask for reduced
+ * motion, where everything lies in its place.
  */
 
 const CALENDLY = "https://calendly.com/nick-lukashik/30min";
@@ -45,12 +44,29 @@ const EMAIL = "coping.barrel@gmail.com";
 const LINKEDIN = "https://www.linkedin.com/in/nick-lukashick/";
 const GITHUB = "https://github.com/coping-barrel";
 const GAME = "https://battleship.outegro.dev";
+const ROULETTE = "https://roulette.outegro.dev";
+const ATELIER = "https://atelier.outegro.dev";
+const EDU = "https://edu.outegro.dev";
 const ACCOUNT = "https://id.outegro.dev";
 /**
- * The page's anchors: the cover, the issue's top, the report, the desktop,
- * the process, the contacts.
+ * The page's anchors: the cover, the opening spread, the reports and each
+ * report, the blueprint, the cartoon, the back pages, the letters and the
+ * contacts.
  */
-const ANCHORS = ["top", "about", "projects", "services", "process", "contact"];
+const ANCHORS = [
+  "top",
+  "about",
+  "projects",
+  "roulette",
+  "atelier",
+  "platform",
+  "process",
+  "column",
+  "club",
+  "incidents",
+  "faq",
+  "contact",
+];
 const desktop = { width: 1440, height: 900 };
 const phone = { width: 375, height: 812 };
 
@@ -237,32 +253,64 @@ for (const lang of locales) {
       }
     });
 
-    test("the Battleship report: the story, the way in and the screens of this language", async ({
+    test("the reports: the roulette and the atelier, each with its screens in this language, what is inside and the way in", async ({
       page,
     }) => {
       // everything in its place: a screenshot comes in once it is near
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto("/");
       await hydrated(page);
-      const story = page.getByRole("region", {
-        name: twoPart(t.projects.title, t.projects.titleAccent),
+      const p = t.projects;
+      const reports = page.getByRole("region", {
+        name: twoPart(p.title, p.titleAccent),
       });
-      await expect(
-        story.getByRole("heading", { level: 3, name: t.projects.name }),
-      ).toBeAttached();
-      await expect(story).toContainText(t.projects.summary);
-      for (const rule of t.projects.rules)
-        await expect(story).toContainText(rule.text);
-      const play = page.getByRole("link", { name: t.projects.play });
-      expect(await play.count()).toBeGreaterThan(0);
-      for (const link of await play.all())
-        await expect(link).toHaveAttribute("href", GAME);
-      for (const shot of Object.values(t.projects.shots)) {
-        const image = page.getByRole("img", { name: shot.alt, exact: true });
-        await expect(image).toHaveCount(1);
-        await centre(image);
-        await expect(image).toHaveAttribute("src", new RegExp(`-${lang}\\.`));
+      await expect(reports).toHaveAttribute("id", "projects");
+      await expect(reports).toContainText(p.intro);
+      for (const product of ["roulette", "atelier"] as const) {
+        const r = p[product];
+        const report = reports.getByRole("article", {
+          name: r.name,
+          exact: true,
+        });
+        await expect(report).toHaveAttribute("id", product);
+        await expect(report.getByRole("heading", { level: 3 })).toHaveText(
+          r.name,
+        );
+        await expect(report).toContainText(r.kicker);
+        await expect(report).toContainText(r.what);
+        for (const point of r.highlights)
+          await expect(report).toContainText(`${point.term}. ${point.text}`);
+        for (const tech of r.stack) await expect(report).toContainText(tech);
+        await expect(report).toContainText(r.note);
+        for (const shot of Object.values(r.shots)) {
+          await expect(report).toContainText(shot.caption);
+          const image = report.getByRole("img", {
+            name: shot.alt,
+            exact: true,
+          });
+          await expect(image).toHaveCount(1);
+          await centre(image);
+          await expect(image).toHaveAttribute("src", new RegExp(`-${lang}\\.`));
+        }
       }
+      // the roulette opens to anyone; the atelier says it is by invitation
+      await expect(
+        page.locator("#roulette").getByRole("link", { name: p.roulette.open }),
+      ).toHaveAttribute("href", ROULETTE);
+      const atelier = page.locator("#atelier");
+      await expect(atelier).toContainText(p.atelier.private);
+      await expect(
+        atelier.getByRole("link", { name: literally(p.atelier.open) }),
+      ).toHaveAttribute("href", ATELIER);
+      expect(await hrefs(atelier.getByRole("link"))).toEqual([ATELIER]);
+      // the rest of the platform: a card each, each with its way in
+      const more = reports.getByRole("complementary", { name: p.more.title });
+      await expect(more.getByRole("heading", { level: 4 })).toHaveText(
+        p.more.items.map((item) => item.name),
+      );
+      for (const item of p.more.items)
+        await expect(more).toContainText(item.text);
+      expect(await hrefs(more.getByRole("link"))).toEqual([GAME, EDU]);
     });
 
     test("the questionnaire: the photo, the name, the job and the toys on the stack", async ({
@@ -292,71 +340,63 @@ for (const lang of locales) {
         await expect(toy).toHaveAttribute("href", /^\/stack(#[\w-]+)?$/);
     });
 
-    test("the old desktop: Notepad says what I can build, Explorer opens the whole stack", async ({
+    test("the blueprint: the platform under every app, its sites and its three layers", async ({
       page,
     }) => {
-      const s = t.services;
+      const b = t.platform;
       await page.goto("/");
-      const desktop = page.getByRole("region", {
-        name: twoPart(s.title, s.titleAccent),
+      const platform = page.getByRole("region", {
+        name: twoPart(b.title, b.titleAccent),
       });
-      const notepad = desktop
-        .getByRole("article")
-        .filter({ hasText: s.desktop.notepad.app });
-      await expect(notepad).toContainText(
-        `${s.desktop.notepad.file} — ${s.desktop.notepad.app}`,
+      await expect(platform).toHaveAttribute("id", "platform");
+      await expect(platform).toContainText(b.intro);
+      await expect(platform.getByRole("heading", { level: 3 })).toHaveText(
+        b.layers.map((layer, i) => `0${i + 1} ${layer.name}`),
       );
-      await expect(
-        notepad.getByRole("heading", { level: 2 }),
-      ).toHaveAccessibleName(twoPart(s.title, s.titleAccent));
-      await expect(notepad).toContainText(s.intro);
-
-      // Explorer: a folder for each part of the work, every dish in it
-      const explorer = desktop.getByRole("article").filter({
-        has: page.getByRole("heading", {
-          level: 3,
-          name: s.desktop.stack.title,
-          exact: true,
-        }),
-      });
-      const sections = t.stackPage.sections as Record<string, { kind: string }>;
-      const names = t.stackPage.names as Record<string, string>;
-      await expect(explorer.getByRole("heading", { level: 4 })).toHaveText(
-        menu.map((section) => sections[section.id]?.kind ?? ""),
-      );
-      await expect(explorer.getByRole("listitem")).toHaveText(
-        menu.flatMap((section) =>
-          section.dishes.map((dish) => dish.name ?? names[dish.id] ?? ""),
-        ),
-      );
-      await expect(
-        explorer.getByRole("link", { name: s.desktop.stack.more }),
-      ).toHaveAttribute("href", "/stack");
-
-      // the shortcuts down the left
-      for (const [label, href] of [
-        [s.desktop.icons.battleship, GAME],
-        [s.desktop.icons.account, ACCOUNT],
-        [s.desktop.icons.stack, "/stack"],
-      ] as const)
-        await expect(
-          desktop.getByRole("link", { name: label, exact: true }),
-        ).toHaveAttribute("href", href);
+      for (const layer of b.layers)
+        for (const item of layer.items) {
+          await expect(
+            platform.getByRole("heading", { level: 4, name: item.name }),
+          ).toHaveCount(1);
+          await expect(platform).toContainText(item.result);
+        }
+      for (const host of [ROULETTE, ATELIER, GAME, EDU])
+        await expect(platform).toContainText(new URL(host).host);
     });
 
-    test("the game window plays the process, every step in the markup", async ({
+    test("the paper ride has a section of its own: the process told step by step, every step in the markup", async ({
       page,
     }) => {
       const p = t.process;
       await page.goto("/");
-      const game = page.getByRole("region", {
+      const process = page.getByRole("region", {
         name: twoPart(p.title, p.titleAccent),
       });
-      await expect(game).toContainText(p.intro);
-      await expect(game.getByRole("heading", { level: 3 })).toHaveText(
+      await expect(process).toHaveAttribute("id", "process");
+      await expect(process).toContainText(p.intro);
+      await expect(process.getByRole("heading", { level: 3 })).toHaveText(
         p.steps.map((step) => step.title),
       );
-      await expect(game).toContainText(p.ai);
+      await expect(process).toContainText(p.ai);
+    });
+
+    test("the letters to the editor: every question answered in the markup, and the call to ask the rest", async ({
+      page,
+    }) => {
+      const f = t.faq;
+      await page.goto("/");
+      const faq = page.getByRole("region", {
+        name: twoPart(f.title, f.titleAccent),
+      });
+      await expect(faq).toHaveAttribute("id", "faq");
+      await expect(faq.getByRole("heading", { level: 3 })).toHaveText(
+        f.items.map((letter) => letter.q),
+      );
+      for (const letter of f.items) await expect(faq).toContainText(letter.a);
+      await expect(faq).toContainText(f.more);
+      const book = faq.getByRole("link", { name: t.nav.book, exact: true });
+      await expect(book).toHaveAttribute("href", CALENDLY);
+      await expectNewTab(book);
     });
 
     test("the contacts: the coupon books the call; e-mail, Telegram, LinkedIn and GitHub sit by it", async ({
@@ -680,10 +720,7 @@ for (const [device, viewport] of [
     await hydrated(page);
     for (const id of ANCHORS)
       await expect(page.locator(`#${id}`)).toHaveCount(1);
-    // wide, the issue takes off before the read: its stage plays too
-    if (device === "desktop")
-      await expect(page.locator("#about")).toHaveAttribute("data-flight", "");
-    // the scroll stages move ids about as they play: never off the page or
+    // nothing moves an id about as the page is read: never off the page or
     // onto a second element, anywhere down
     const misplaced = new Map<string, string>();
     await scrollThrough(page, async (y) => {
@@ -706,47 +743,6 @@ for (const [device, viewport] of [
       await expect(page.locator(href ?? ""), `${href}`).toHaveCount(1);
   });
 }
-
-test("desktop: the issue's book, flown and gone up off the screen, is only not painted: a screen reader finds its headings and links anywhere down", async ({
-  page,
-}) => {
-  // Wide, with motion, the book is fixed over the page and placed on every
-  // scroll frame. A reader of the desktop, the process or the contacts
-  // still finds the report and the contents in the lists of headings and
-  // links, and reads back up into them.
-  await page.setViewportSize(desktop);
-  await page.goto("/");
-  await hydrated(page);
-  const issue = page.locator("#about");
-  await expect(issue).toHaveAttribute("data-flight", "");
-  // what assistive tech has of the issue: each heading and link, by its tag
-  // and words
-  const read = async () =>
-    (
-      await Promise.all(
-        (["heading", "link"] as const).map((role) =>
-          issue
-            .getByRole(role)
-            .evaluateAll((els) =>
-              els.map((el) => `${el.localName} ${el.textContent?.trim()}`),
-            ),
-        ),
-      )
-    ).flat();
-  const all = await read();
-  for (const tag of [/^h\d /, /^a /])
-    expect(
-      all.some((name) => tag.test(name)),
-      `${tag}`,
-    ).toBe(true);
-  const missing = new Map<string, string>();
-  await scrollThrough(page, async (y) => {
-    const now = await read();
-    for (const name of all.filter((name) => !now.includes(name)))
-      if (!missing.has(name)) missing.set(name, `${name}: gone at ${y}px`);
-  });
-  expect([...missing.values()]).toEqual([]);
-});
 
 test("header: the name leads to the top, the masthead links land, the call is booked in Calendly", async ({
   page,
@@ -1009,7 +1005,7 @@ function wandersOff(page: Page, id: string, ms: number) {
 }
 
 for (const [way, from, href, links] of [
-  // scrolled to the issue, the book lies open on its contents
+  // scrolled to the opening spread, from its contents
   [
     "the contents",
     "#about",
@@ -1030,11 +1026,9 @@ for (const [way, from, href, links] of [
   test(`desktop: a jump from ${way} to ${href} past the stages lands there and stays`, async ({
     page,
   }) => {
-    // Motion on: the jump passes the issue's broken page and the desktop.
-    // It is taken as soon as the page is hydrated, so the issue may take
-    // off on the way, and nothing the stages play meanwhile (the 504 joke
-    // glides the page on to the desktop once it has played) may take the
-    // reader anywhere else.
+    // Motion on: the jump passes the reports, Sahur's cameo and the paper
+    // ride's pinned stage. It is taken as soon as the page is hydrated, and
+    // nothing that plays meanwhile may take the reader anywhere else.
     test.setTimeout(60_000);
     await page.setViewportSize(desktop);
     await page.goto("/");
@@ -1047,313 +1041,6 @@ for (const [way, from, href, links] of [
     await expect(page.locator(href), "where the jump lands").toBeInViewport();
     expect(await wandersOff(page, href.slice(1), 8_000)).toBeNull();
   });
-
-/**
- * Each time from here on the focus falls to the page itself, looked at
- * every frame and after each focus taken away with nowhere to go (so a
- * drop is seen even if put right before the next frame): where the page
- * stood and how far the 504 joke had played (again as the joke plays on
- * meanwhile); read back with the function returned.
- */
-async function focusDrops(page: Page) {
-  await page.evaluate(() => {
-    const drops: string[] = [];
-    Object.defineProperty(window, "focusDrops", { value: drops });
-    // the joke as it stood when last seen with the focus lost
-    let lost: string | null = null;
-    const look = () => {
-      const focus = document.activeElement;
-      const joke = document.querySelector("[data-phase]");
-      const phase = joke?.getAttribute("data-phase") ?? "";
-      if (focus && focus !== document.body) lost = null;
-      else if (lost !== phase) {
-        lost = phase;
-        drops.push(`at ${Math.round(scrollY)}px, the joke ${phase}`);
-      }
-    };
-    const everyFrame = () => {
-      look();
-      requestAnimationFrame(everyFrame);
-    };
-    requestAnimationFrame(everyFrame);
-    document.addEventListener("focusout", (event) => {
-      if (!event.relatedTarget) setTimeout(look);
-    });
-  });
-  return () =>
-    page.evaluate(
-      () => (window as unknown as { focusDrops: string[] }).focusDrops,
-    );
-}
-
-/**
- * Scrolls `step` px at a time, each step given two frames for the stages to
- * place themselves, until something matches `selector`; given an event's
- * name, until that event has reached what it matches.
- */
-function scrollTill(
-  page: Page,
-  step: number,
-  selector: string,
-  event?: string,
-) {
-  return page.evaluate(
-    ([step, selector, event]) =>
-      new Promise<void>((done, fail) => {
-        let heard = false;
-        if (event)
-          document.querySelector(selector)?.addEventListener(
-            event,
-            () => {
-              heard = true;
-            },
-            { once: true },
-          );
-        let left = 500;
-        const next = () => {
-          if (event ? heard : document.querySelector(selector)) done();
-          else if (!left--)
-            fail(
-              new Error(
-                `Scrolled on, never to ${event ? `${event} on ` : ""}${selector}`,
-              ),
-            );
-          else {
-            window.scrollBy({ top: step, behavior: "instant" });
-            requestAnimationFrame(() => requestAnimationFrame(next));
-          }
-        };
-        next();
-      }),
-    [step, selector, event] as const,
-  );
-}
-
-/**
- * What the 504 card went on to within `ms`, read every frame, if it left
- * its failed state; null while it still waits on its door.
- */
-function pressedWithin(page: Page, ms: number) {
-  return page.evaluate(
-    (ms) =>
-      new Promise<string | null>((done) => {
-        const start = performance.now();
-        const check = (now: number) => {
-          const phase = document
-            .querySelector("[data-phase]")
-            ?.getAttribute("data-phase");
-          if (phase !== "failed")
-            done(`${phase ?? "no card"} ${Math.round(now - start)} ms on`);
-          else if (now - start >= ms) done(null);
-          else requestAnimationFrame(check);
-        };
-        requestAnimationFrame(check);
-      }),
-    ms,
-  );
-}
-
-/** Whether the focus is on what `locator` finds or somewhere inside it. */
-function holdsFocus(locator: Locator) {
-  return locator.evaluate((el) => el.contains(document.activeElement));
-}
-
-/** Until the page sits still: a smooth scroll under way has come to rest. */
-async function scrolledStill(page: Page) {
-  let last = Number.NaN;
-  await expect
-    .poll(
-      async () => {
-        const y = await page.evaluate(() => scrollY);
-        const still = y === last;
-        last = y;
-        return still;
-      },
-      { intervals: [300] },
-    )
-    .toBe(true);
-}
-
-/** The old desktop, by its name: its stage moves #services onto a mark. */
-function theDesktop(page: Page) {
-  const t = messages.en.services;
-  return page.getByRole("region", { name: twoPart(t.title, t.titleAccent) });
-}
-
-/**
- * Wide, with motion, the issue in flight: the keyboard on the report's
- * last link, then scrolled on until the broken page is up over the issue.
- * Watches the focus from the report on.
- */
-async function toTheBrokenPage(page: Page) {
-  await page.setViewportSize(desktop);
-  await page.goto("/");
-  await hydrated(page);
-  const issue = page.locator("#about");
-  await expect(issue).toHaveAttribute("data-flight", "");
-  // a Tab first: the stage follows only the keyboard's focus to its spread
-  await page.keyboard.press("Tab");
-  await issue.locator(`a[href="${GAME}"]`).last().focus();
-  const drops = await focusDrops(page);
-  await scrollTill(page, 30, ".issue-error[data-shown]");
-  return drops;
-}
-
-/** Until the 504 card has failed and shows its door. */
-const doorUp = (page: Page) =>
-  expect(page.locator("[data-phase]")).toHaveAttribute("data-phase", "failed");
-
-/** Scrolls on until the stage asks the 504 card to press its door. */
-const scrollOnToThePress = (page: Page) =>
-  scrollTill(page, 30, ".bonk", "bonk-retry");
-
-// The 504 card plays over the issue's broken page: its door changes as the
-// joke plays, the card goes, the broken page goes inert as it is scrolled
-// off and the page glides on. The keyboard's place is kept all the while.
-// Scrolled on, the stage presses the door for the reader, but not with the
-// keyboard on it, nor once the keyboard comes to it: that reader presses it.
-for (const [way, toTheDoor] of [
-  [
-    "once the card has failed",
-    async (page: Page) => {
-      await doorUp(page);
-      await page.keyboard.press("Tab");
-    },
-  ],
-  [
-    "and scrolled on",
-    async (page: Page) => {
-      await doorUp(page);
-      await page.keyboard.press("Tab");
-      await scrollOnToThePress(page);
-    },
-  ],
-  [
-    "as it is about to be pressed for the reader scrolling on",
-    async (page: Page) => {
-      await scrollOnToThePress(page);
-      await page.waitForFunction(
-        () => document.querySelector("[data-phase] [data-pressed]"),
-        null,
-        { polling: "raf" },
-      );
-      await page.keyboard.press("Tab");
-    },
-  ],
-] as const)
-  test(`keyboard: the 504 card's door, tabbed to ${way}, waits for the reader's Enter, keeps the focus through the joke and hands it on to the desktop`, async ({
-    page,
-    browserName,
-  }) => {
-    test.skip(
-      browserName === "webkit",
-      "Safari only tabs to links with Option+Tab by default.",
-    );
-    test.setTimeout(60_000);
-    const drops = await toTheBrokenPage(page);
-    const joke = page.locator("[data-phase]");
-    const door = page.getByRole("button", { name: messages.en.bonk.retry });
-    await toTheDoor(page);
-    await expect(door).toBeFocused();
-    await expect(joke).toHaveAttribute("data-phase", "failed");
-    // the card waits 0.7 s before it presses the door for the reader
-    expect(await pressedWithin(page, 1_500)).toBeNull();
-    await expect(door).not.toHaveAttribute("data-pressed");
-    await page.keyboard.press("Enter");
-    await expect(joke).toHaveAttribute("data-phase", "loaded", {
-      timeout: 20_000,
-    });
-    await scrolledStill(page);
-    // the page has glided on to the desktop, and so has the keyboard
-    const desktopPart = theDesktop(page);
-    await expect(desktopPart).toBeInViewport();
-    await page.keyboard.press("Tab");
-    await expect.poll(() => holdsFocus(desktopPart)).toBe(true);
-    expect(await drops()).toEqual([]);
-  });
-
-for (const [when, phase] of [
-  ["while the card loads", "loading"],
-  ["once it has failed", "failed"],
-] as const)
-  test(`keyboard: Tab on past the 504 card ${when} and Shift+Tab back keep the focus in the issue`, async ({
-    page,
-    browserName,
-  }) => {
-    test.skip(
-      browserName === "webkit",
-      "Safari only tabs to links with Option+Tab by default.",
-    );
-    test.setTimeout(60_000);
-    const drops = await toTheBrokenPage(page);
-    const joke = page.locator("[data-phase]");
-    await expect(joke).toHaveAttribute("data-phase", phase);
-    // on to the desktop's first shortcut: past the door, if there is one yet
-    const desktopPart = theDesktop(page);
-    if (phase === "failed") await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    await expect.poll(() => holdsFocus(desktopPart)).toBe(true);
-    await expect(joke).not.toHaveAttribute("data-phase", /armed|loading/);
-    // back: onto the door, or the report if the page has gone up off it
-    for (let back = 0; back < 2; back++) {
-      await page.keyboard.press("Shift+Tab");
-      await scrolledStill(page);
-      await expect.poll(() => holdsFocus(page.locator("#about"))).toBe(true);
-    }
-    expect(await drops()).toEqual([]);
-  });
-
-test("keyboard: scrolled back up off the 504 card, the focus on its door goes on from the report", async ({
-  page,
-  browserName,
-}) => {
-  test.skip(
-    browserName === "webkit",
-    "Safari only tabs to links with Option+Tab by default.",
-  );
-  test.setTimeout(60_000);
-  const drops = await toTheBrokenPage(page);
-  const joke = page.locator("[data-phase]");
-  await expect(joke).toHaveAttribute("data-phase", "failed");
-  await page.keyboard.press("Tab");
-  await expect(
-    page.getByRole("button", { name: messages.en.bonk.retry }),
-  ).toBeFocused();
-  // the broken page goes inert as it fades, and the joke is set again a
-  // little further up, its door gone
-  await scrollTill(page, -30, ".issue-error:not([data-shown])");
-  await scrollTill(page, -30, '[data-phase="armed"]');
-  await settle(page);
-  expect(await holdsFocus(page.locator(".issue-error"))).toBe(false);
-  expect(await holdsFocus(page.locator("#about"))).toBe(true);
-  expect(await drops()).toEqual([]);
-});
-
-test("keyboard: the 504 joke played for a reader scrolling on from the report leaves the focus there, and the next Tab goes on to the desktop", async ({
-  page,
-  browserName,
-}) => {
-  test.skip(
-    browserName === "webkit",
-    "Safari only tabs to links with Option+Tab by default.",
-  );
-  test.setTimeout(60_000);
-  const drops = await toTheBrokenPage(page);
-  const joke = page.locator("[data-phase]");
-  await scrollOnToThePress(page);
-  await expect(joke).toHaveAttribute("data-phase", "loaded", {
-    timeout: 20_000,
-  });
-  await scrolledStill(page);
-  const desktopPart = theDesktop(page);
-  await expect(desktopPart).toBeInViewport();
-  expect(await holdsFocus(page.locator("#about"))).toBe(true);
-  // on from where the reader was, to where the page now stands
-  await page.keyboard.press("Tab");
-  await expect.poll(() => holdsFocus(desktopPart)).toBe(true);
-  await expect(desktopPart).toBeInViewport();
-  expect(await drops()).toEqual([]);
-});
 
 test("the masthead on /stack leads to the main page's sections, with scripts and without", async ({
   browser,
@@ -1426,7 +1113,12 @@ test("the footer links the platform's sites and this site's pages on every page"
           ),
         path,
       )
-      .toEqual([GAME, ACCOUNT, "https://pay.outegro.dev/subscriptions"]);
+      .toEqual([
+        ROULETTE,
+        GAME,
+        ACCOUNT,
+        "https://pay.outegro.dev/subscriptions",
+      ]);
     expect(
       await hrefs(
         footer.getByRole("navigation", { name: t.site }).getByRole("link"),
@@ -1438,10 +1130,9 @@ test("the footer links the platform's sites and this site's pages on every page"
 
 // ─── A clean read ────────────────────────────────────────────
 
-for (const [device, viewport, joke] of [
-  // a wide screen with motion breaks the issue and plays the 504 joke
-  ["desktop", desktop, true],
-  ["phone", phone, false],
+for (const [device, viewport] of [
+  ["desktop", desktop],
+  ["phone", phone],
 ] as const) {
   test(`${device}: reading the whole issue down raises no console error, no CSP violation, no failed request and shifts nothing`, async ({
     page,
@@ -1462,19 +1153,15 @@ for (const [device, viewport, joke] of [
     await hydrated(page);
     await scrollThrough(page);
     await expect(page.getByRole("contentinfo")).toBeInViewport();
-    // the joke plays out to the end: the block "reloads" and the page
-    // glides on to the desktop
-    if (joke)
-      await expect(page.locator("[data-phase]")).toHaveAttribute(
-        "data-phase",
-        "loaded",
-        { timeout: 20_000 },
-      );
+    // Sahur's cameo played on the way, and is gone
+    await expect(page.locator(".sahur-layer")).toHaveCount(0, {
+      timeout: 5_000,
+    });
     await page.waitForLoadState("networkidle");
     expect(seen.errors).toEqual([]);
     expect(await seen.csp()).toEqual([]);
     expect(failed).toEqual([]);
-    // the stages move the book and the windows, never the layout
+    // the cameo and the cartoon move over the page, never the layout
     expect(await shifted()).toBeLessThan(0.02);
     // the pictures the scripts add on the way have their text too
     await expect(page.locator("img:not([alt])")).toHaveCount(0);
@@ -1549,17 +1236,21 @@ for (const [device, viewport] of [
     await page.goto("/");
     await hydrated(page);
 
-    // nothing loops, nothing is drawn in WebGL, nothing waits for a scroll
+    // nothing loops, nothing is drawn in WebGL, nothing waits for a scroll;
+    // the one canvas is Sahur standing still by the roulette's screen
     expect(await looping(page)).toEqual([]);
-    await expect(page.locator("canvas")).toHaveCount(0);
+    await expect(page.locator("canvas:not(.sahur-still canvas)")).toHaveCount(
+      0,
+    );
     expect(await unseen(page)).toEqual([]);
 
     // no scroll stage: each anchor is its own section, with its heading
     const parts = [
       ["#top", t.zine.headlineLead],
       ["#projects", t.projects.title],
-      ["#services", t.services.title],
+      ["#platform", t.platform.title],
       ["#process", t.process.title],
+      ["#faq", t.faq.title],
       ["#contact", t.contact.title],
     ] as const;
     const tops: number[] = [];
@@ -1572,15 +1263,19 @@ for (const [device, viewport] of [
     }
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
 
-    // the spreads lie open: the contents, the questionnaire, the report
+    // the opening spread, the questionnaire and the reports' screens
     await expect(
       page.getByRole("navigation", { name: t.zine.tocTitle }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("img", { name: t.zine.form.photo }),
-    ).toBeVisible();
-    for (const shot of Object.values(t.projects.shots))
-      await expect(page.getByRole("img", { name: shot.alt })).toBeVisible();
+    for (const name of [
+      t.zine.form.photo,
+      ...Object.values(t.projects.roulette.shots).map((shot) => shot.alt),
+      ...Object.values(t.projects.atelier.shots).map((shot) => shot.alt),
+    ]) {
+      const picture = page.getByRole("img", { name, exact: true });
+      await centre(picture);
+      await expect(picture).toBeVisible();
+    }
     await expect(
       page
         .getByRole("region", {
@@ -1814,13 +1509,21 @@ for (const lang of locales)
       ).toHaveCount(t.zine.toc.length);
       for (const title of [
         twoPart(t.projects.title, t.projects.titleAccent),
-        twoPart(t.services.title, t.services.titleAccent),
+        twoPart(t.platform.title, t.platform.titleAccent),
         twoPart(t.process.title, t.process.titleAccent),
+        twoPart(t.faq.title, t.faq.titleAccent),
         twoPart(t.contact.title, t.contact.titleAccent),
       ])
         await expect(
           page.getByRole("heading", { level: 2, name: title }),
         ).toBeVisible();
+      // both reports, each read in full
+      for (const product of ["roulette", "atelier"] as const) {
+        const report = page.locator(`#${product}`);
+        await expect(report).toContainText(t.projects[product].what);
+        for (const point of t.projects[product].highlights)
+          await expect(report).toContainText(point.text);
+      }
       await expect(
         page
           .locator('dl[aria-labelledby="form-title"]')
@@ -1828,7 +1531,11 @@ for (const lang of locales)
       ).toContainText([t.zine.form.name.a, t.zine.form.job.a]);
       for (const step of t.process.steps)
         await expect(
-          page.getByRole("heading", { level: 3, name: step.title }),
+          page.getByRole("heading", {
+            level: 3,
+            name: step.title,
+            exact: true,
+          }),
         ).toBeAttached();
       const contact = page.locator("#contact");
       await expect(contact.locator(`a[href="${TELEGRAM}"]`)).toBeVisible();
@@ -2100,7 +1807,6 @@ test("every page announces the share card of its language: a 1200×630 PNG other
     ["/", "", (t: Messages) => t.meta.title],
     ["/stack", "/stack", (t: Messages) => t.stackPage.meta.title],
     ["/privacy", "/privacy", (t: Messages) => t.privacy.meta.title],
-    ["/cv", "/cv", (t: Messages) => t.cv.meta.title],
   ] as const;
   const cards = new Set<string>();
   for (const lang of locales) {
@@ -2224,7 +1930,10 @@ test("the cover and the screenshots come as WebP even to a browser that takes AV
   await hydrated(page);
   for (const image of [
     page.locator("#top").getByRole("img", { name: t.zine.coverAlt }),
-    page.getByRole("img", { name: t.projects.shots.battle.alt, exact: true }),
+    page.getByRole("img", {
+      name: t.projects.roulette.shots.table.alt,
+      exact: true,
+    }),
   ]) {
     await centre(image);
     await expect(image).toHaveAttribute("src", /^\/_next\/image\?/);
@@ -2261,7 +1970,6 @@ test("robots.txt and sitemap.xml: the four pages indexed, the people's routes le
   expect(urls).toEqual([
     "https://outegro.dev/",
     "https://outegro.dev/stack",
-    "https://outegro.dev/cv",
     "https://outegro.dev/privacy",
   ]);
   // each page listed is open to crawlers, answers, names itself canonical
@@ -2537,156 +2245,84 @@ test.describe("the gates", () => {
 
 // ─── The desktop's windows ───────────────────────────────────
 
-/** A box on screen as [left, top, width, height], to the pixel. */
-type Box = [number, number, number, number];
-
-/** How far apart two boxes are: their farthest side, in px. */
-const apart = (a: Box, b: Box) =>
-  Math.max(...a.map((value, i) => Math.abs(value - b[i])));
-
-test("desktop: the game's window opens at its size, its outline out of the taskbar button, the cartoon in it as large from the first frame", async ({
+test("desktop: the paper ride's scene is drawn at its stage's size from its first frame", async ({
   page,
 }) => {
-  // The game's window holds what measures itself: the cartoon's canvas
-  // takes its size from its box on screen. Scaled up as it opened, the
-  // window had the cartoon drawn in a small corner of it till the next
-  // scroll. Only its outline flies now, from the game's taskbar button;
-  // the window shows over it at its size.
+  // The cartoon's canvas measures its box by layout, not as painted: a
+  // scale on its way in had it drawn small in a corner till the next resize.
   test.setTimeout(60_000);
   await page.setViewportSize(desktop);
   await page.goto("/");
   await hydrated(page);
-  const os = page.locator(".os");
-  await expect(os).toHaveAttribute("data-stage", "");
-  // the desktop's first screen: its windows up, the game's closed
-  await os.evaluate((el) =>
-    window.scrollTo({
-      top: el.getBoundingClientRect().top + window.scrollY,
-      behavior: "instant",
-    }),
+  const pj = page.locator("#process .pj");
+  // a software rasteriser lays the steps out as paper notes: nothing to draw
+  await centre(page.locator("#process .section-lead"));
+  await expect(pj).toHaveAttribute("data-mode", /live|static/);
+  await expect
+    .poll(() =>
+      pj.evaluate((el) => el.matches("[data-ready], [data-mode='static']")),
+    )
+    .toBe(true);
+  test.skip(
+    (await pj.getAttribute("data-mode")) === "static",
+    "No hardware WebGL here: the paper notes stand in for the scene.",
   );
-  // a real GPU draws the cartoon behind the closed window, as it does for
-  // a reader of the desktop; a software one lays it out as paper notes
-  await expect(
-    page.locator(".os-game .pj:is([data-ready], [data-mode='static'])"),
-  ).toHaveCount(1);
-  const live = (await page.locator(".os-game .pj[data-ready]").count()) > 0;
-  // every frame from here on, and the outline's flight, stopped the moment
-  // it starts and looked at all along its way before it goes on
+  // every frame since the scene first drew, and on through the ride
   await page.evaluate(() => {
-    const os = document.querySelector<HTMLElement>(".os");
-    const game = document.querySelector<HTMLElement>(".os-game");
-    const zoom = document.querySelector<HTMLElement>(".os-zoom");
-    const button = document.querySelector<HTMLElement>(".xp-tasks > .is-game");
-    if (!os || !game || !zoom || !button) throw new Error("No game window");
-    const box = (el: Element) => {
-      const r = el.getBoundingClientRect();
-      return [r.left, r.top, r.width, r.height].map(Math.round);
-    };
-    const seen = {
-      frames: [] as {
-        shown: boolean;
-        window: number[];
-        canvas: number[] | null;
-        stage: number[] | null;
-      }[],
-      flight: null as null | {
-        button: number[];
-        window: number[];
-        path: number[][];
-      },
-    };
-    Object.defineProperty(window, "gameOpening", { value: seen });
+    const seen: string[] = [];
+    Object.defineProperty(window, "pjFrames", { value: seen });
     const look = () => {
-      const canvas = game.querySelector("canvas");
+      const canvas =
+        document.querySelector<HTMLCanvasElement>("#process canvas");
       const stage = canvas?.closest(".pj-stage");
-      seen.frames.push({
-        shown: Number(getComputedStyle(game).opacity) > 0,
-        window: box(game),
-        canvas: canvas ? box(canvas).slice(2) : null,
-        stage: stage ? box(stage).slice(2) : null,
-      });
+      if (canvas && stage) {
+        const box = stage.getBoundingClientRect();
+        const ratio = canvas.width / box.width;
+        const drawn = Math.round(canvas.width / ratio);
+        if (
+          Math.abs(canvas.height / ratio - box.height) > 2 ||
+          drawn !== Math.round(box.width)
+        )
+          seen.push(
+            `${canvas.width}×${canvas.height} in ${Math.round(box.width)}×${Math.round(box.height)}`,
+          );
+        const css = canvas.getBoundingClientRect();
+        if (
+          Math.abs(css.width - box.width) > 1 ||
+          Math.abs(css.height - box.height) > 1
+        )
+          seen.push(
+            `box ${Math.round(css.width)}×${Math.round(css.height)} in ${Math.round(box.width)}×${Math.round(box.height)}`,
+          );
+      }
       requestAnimationFrame(look);
     };
     requestAnimationFrame(look);
-    new MutationObserver((_, observer) => {
-      if (!os.hasAttribute("data-game")) return;
-      observer.disconnect();
-      const [flight] = zoom.getAnimations();
-      if (!flight) return;
-      flight.pause();
-      const end = Number(flight.effect?.getComputedTiming().endTime) - 1;
-      const path = Array.from({ length: 21 }, (_, i) => {
-        flight.currentTime = (end * i) / 20;
-        return box(zoom);
-      });
-      flight.currentTime = 0;
-      flight.play();
-      seen.flight = { button: box(button), window: box(game), path };
-    }).observe(os, { attributes: true, attributeFilter: ["data-game"] });
   });
-  // read on down: the windows go down into the taskbar, the game loads by
-  // itself and opens; then all its opening plays out
-  await scrollTill(page, 60, ".os[data-minimised]");
-  await expect(os).toHaveAttribute("data-game", "");
-  await expect(os).not.toHaveAttribute("data-loading", "");
-  await still(page);
-  await settle(page);
-
-  const { frames, flight } = await page.evaluate(
-    () =>
-      (
-        window as unknown as {
-          gameOpening: {
-            frames: {
-              shown: boolean;
-              window: Box;
-              canvas: number[] | null;
-              stage: number[] | null;
-            }[];
-            flight: { button: Box; window: Box; path: Box[] } | null;
-          };
-        }
-      ).gameOpening,
-  );
-  const shown = frames.filter((frame) => frame.shown);
-  expect(shown.length, "frames with the window showing").toBeGreaterThan(0);
-  // on the frames it shows, the window is the size it ends at
-  const size = (box: Box) => `${box[2]}×${box[3]}`;
-  const final = size(shown[shown.length - 1].window);
+  for (let i = 0; i < 6; i++) {
+    await page.evaluate(() =>
+      window.scrollBy({ top: innerHeight * 0.5, behavior: "instant" }),
+    );
+    await settle(page);
+  }
   expect(
-    [...new Set(shown.map((frame) => size(frame.window)))],
-    "the window's sizes as it shows",
-  ).toEqual([final]);
-  // and the cartoon in it fills its stage on each of them
-  if (live)
-    expect(
-      shown
-        .filter(
-          (frame) =>
-            !frame.canvas || frame.canvas.join() !== frame.stage?.join(),
-        )
-        .map(
-          (frame) => `${frame.canvas?.join("×")} in ${frame.stage?.join("×")}`,
-        ),
-      "the cartoon drawn smaller than its stage",
-    ).toEqual([]);
-  // the outline: from the button to the window's place, only ever growing
-  expect(flight, "the outline's flight").not.toBeNull();
-  if (!flight) return;
-  expect(apart(flight.path[0], flight.button)).toBeLessThanOrEqual(1);
-  expect(
-    apart(flight.path[flight.path.length - 1], flight.window),
-  ).toBeLessThanOrEqual(1);
-  const shrinks = flight.path.filter(
-    (box, i) =>
-      i > 0 &&
-      (box[2] < flight.path[i - 1][2] || box[3] < flight.path[i - 1][3]),
-  );
-  expect(shrinks, "the outline smaller than a moment before").toEqual([]);
+    await page.evaluate(
+      () => (window as unknown as { pjFrames: string[] }).pjFrames,
+    ),
+    "the scene drawn at another size than its stage",
+  ).toEqual([]);
 });
 
-// ─── The back pages and the résumé ───────────────────────────
+// ─── The back pages ──────────────────────────────────────────
+
+/** The employers of the résumé the landing no longer carries. */
+const EMPLOYERS = [
+  "Toggle",
+  "Printify",
+  "Kommo",
+  "FridayTech",
+  "AdviceSolution",
+];
 
 /**
  * What of a part of the page runs past the sides of the screen: every
@@ -2720,10 +2356,8 @@ for (const lang of locales)
   test.describe(lang, () => {
     test.use({ lang });
     const t = messages[lang];
-    /** A line of the résumé as it reads: its bold runs are only marked. */
-    const plain = (line: string) => line.replace(/<\/?b>/g, "");
 
-    test("the back pages: the editor's column signed by hand, the hobby club's sheets, the incident report and the record book", async ({
+    test("the back pages: the editor's column signed by hand, the hobby club's sheets and the incident report", async ({
       page,
     }) => {
       const seen = await watch(page);
@@ -2777,151 +2411,21 @@ for (const lang of locales)
       for (const note of t.incidents.notes)
         await expect(blotter).toContainText(note.measures);
       const told = (await blotter.textContent()) ?? "";
-      for (const job of t.cv.jobs)
-        expect(told, "an employer named in the blotter").not.toContain(
-          job.company,
-        );
+      for (const company of EMPLOYERS)
+        expect(told, "an employer named in the blotter").not.toContain(company);
 
-      // the record book: the title page filled in, an entry per job in
-      // order, each from the résumé, and the way to the whole of it
-      const record = page.getByRole("region", {
-        name: twoPart(t.record.title, t.record.titleAccent),
-      });
-      const fields = record.locator(".record-fields");
-      await expect(fields.getByRole("term")).toHaveText(
-        t.record.fields.map((field) => field.label),
-      );
-      await expect(fields.getByRole("definition")).toHaveText(
-        t.record.fields.map((field) => field.value),
-      );
-      await expect(record.getByRole("heading", { level: 4 })).toHaveText(
-        t.record.jobs.map((job) => job.hired),
-      );
-      for (const job of t.record.jobs) {
-        await expect(record).toContainText(job.period);
-        for (const line of job.done as string[])
-          await expect(record).toContainText(line);
-      }
-      await expect(
-        record.getByRole("link", { name: t.record.cvLink }),
-      ).toHaveAttribute("href", "/cv");
-      // and the contacts lead to the résumé too
-      await expect(
-        page.locator("#contact").getByRole("link", { name: t.cv.contactLink }),
-      ).toHaveAttribute("href", "/cv");
-      // the languages stay on /cv: the landing names none
-      await expect(page.locator("main")).not.toContainText(t.cv.languages);
-      await expect(page.locator("main")).not.toContainText("C1");
+      // no résumé on the landing: no record book, no way to /cv
+      await expect(page.locator("#record")).toHaveCount(0);
+      await expect(page.locator('a[href="/cv"]')).toHaveCount(0);
 
-      for (const part of ["#column", "#club", "#incidents", "#record"])
+      for (const part of ["#column", "#club", "#incidents"])
         expect(await seriousViolations(page, part), part).toEqual([]);
       expect(seen.errors).toEqual([]);
       expect(await seen.csp()).toEqual([]);
     });
 
-    test("/cv: the one-page résumé in this language, its links, open to search", async ({
-      page,
-    }) => {
-      const seen = await watch(page);
-      await page.goto("/cv");
-      await expect(page.locator("html")).toHaveAttribute("lang", lang);
-      await expect(page).toHaveTitle(t.cv.meta.title);
-      await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
-      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-        "href",
-        "https://outegro.dev/cv",
-      );
-
-      const sheet = page.getByRole("article", { name: t.cv.name });
-      await expect(sheet).toHaveAttribute("data-theme", "zine-calm");
-      await expect(
-        page.getByRole("heading", { level: 1, name: t.cv.name }),
-      ).toBeVisible();
-      await expect(sheet).toContainText(t.cv.kicker);
-      await expect(sheet).toContainText(t.cv.role);
-      await expect(sheet.getByRole("heading", { level: 2 })).toHaveText(
-        Object.values(t.cv.sections),
-      );
-      // each job in order, in the résumé's own words
-      await expect(sheet.getByRole("heading", { level: 3 })).toHaveText(
-        t.cv.jobs.map((job) => `${job.company} · ${job.role}`),
-      );
-      for (const job of t.cv.jobs)
-        for (const item of job.items as string[])
-          await expect(sheet).toContainText(plain(item));
-      for (const paragraph of t.cv.about)
-        await expect(sheet).toContainText(plain(paragraph));
-      for (const skill of t.cv.skills)
-        await expect(sheet).toContainText(skill.items);
-      await expect(sheet).toContainText(t.cv.education.school);
-      // the languages, which only this page names
-      await expect(sheet).toContainText(t.cv.languages);
-
-      // exactly the site and the ways to write of the main page, each off
-      // the site in a tab of its own; no phone
-      const links = sheet.getByRole("list", { name: t.cv.links });
-      await expect
-        .poll(() => hrefs(links.getByRole("link")))
-        .toEqual([
-          "https://outegro.dev",
-          `mailto:${EMAIL}`,
-          TELEGRAM,
-          LINKEDIN,
-          GITHUB,
-        ]);
-      for (const href of ["https://outegro.dev", TELEGRAM, LINKEDIN, GITHUB])
-        await expectNewTab(links.locator(`a[href="${href}"]`));
-      await expect(sheet.locator('a[href^="tel:"]')).toHaveCount(0);
-      await expect(page.getByRole("link", { name: t.cv.back })).toHaveAttribute(
-        "href",
-        "/",
-      );
-      await expect(
-        page.getByRole("button", { name: t.cv.print }),
-      ).toBeVisible();
-
-      expect(await seriousViolations(page)).toEqual([]);
-      expect(seen.errors).toEqual([]);
-      expect(await seen.csp()).toEqual([]);
-    });
-
-    test("/cv on paper: the sheet alone, on one A4 page", async ({
-      page,
-      browserName,
-    }) => {
-      await page.goto("/cv");
-      await page.evaluate(() => document.fonts.ready);
-      // the offprint's own page box, named so no other page prints on it
-      expect(
-        await page.evaluate(() =>
-          [...document.styleSheets].some((sheet) => {
-            try {
-              return [...sheet.cssRules].some(
-                (rule) =>
-                  rule instanceof CSSPageRule &&
-                  rule.selectorText === "cv" &&
-                  /^a4$/i.test(rule.style.getPropertyValue("size")),
-              );
-            } catch {
-              return false;
-            }
-          }),
-        ),
-      ).toBe(true);
-      await page.emulateMedia({ media: "print" });
-      await expect(page.locator(".cv-sheet")).toHaveCSS("page", "cv");
-      await expect(page.locator(".cv-sheet")).toBeVisible();
-      for (const chrome of [".site-header", ".site-footer", ".cv-tools"])
-        await expect(page.locator(chrome), chrome).toBeHidden();
-      test.skip(browserName !== "chromium", "page.pdf is Chromium's.");
-      const pdf = (await page.pdf({ preferCSSPageSize: true })).toString(
-        "latin1",
-      );
-      expect(pdf.match(/\/Type\s*\/Page[^s]/g) ?? []).toHaveLength(1);
-    });
-
     for (const width of [320, 390, 1440])
-      test(`${width}px: the back pages and /cv run off neither side`, async ({
+      test(`${width}px: the back pages run off neither side`, async ({
         page,
       }) => {
         await page.emulateMedia({ reducedMotion: "reduce" });
@@ -2929,321 +2433,186 @@ for (const lang of locales)
         await page.goto("/");
         await hydrated(page);
         await page.evaluate(() => document.fonts.ready);
-        for (const part of ["#column", "#club", "#incidents", "#record"]) {
+        for (const part of ["#column", "#club", "#incidents"]) {
           await centre(page.locator(part));
           await still(page);
           expect(await runsOff(page, part), part).toEqual([]);
         }
-        await page.goto("/cv");
-        await page.evaluate(() => document.fonts.ready);
-        expect(await runsOff(page, "#main"), "/cv").toEqual([]);
       });
   });
 
-// ─── The issue's pages, turned by the scroll ─────────────────
+// ─── Tung Tung Tung Sahur's cameo ───────────────────────────
 
-/** The issue now: where it starts on the page, its height, a screen's. */
-function issueStage(page: Page) {
-  return page.evaluate(() => {
-    const box = document.querySelector(".issue")?.getBoundingClientRect();
-    if (!box) throw new Error("No issue on the page");
-    return { top: box.top + scrollY, height: box.height, screen: innerHeight };
-  });
-}
+/** The roulette's large screen, the one hung crooked for Sahur. */
+const crookedFrame = (page: Page) =>
+  page.locator("#roulette .report-shot[data-crooked]");
 
 /**
- * How the issue's pages lie: the scroll, in screens past where the issue
- * is pinned; how far each leaf is over (0 flat on the right, 1 over on the
- * left); the corner against fully peeled back; and how full the cue's
- * rule is.
+ * From here on: each time Sahur comes on the page, and whether anything of
+ * his would catch the pointer or move the page's layout while he is there.
  */
-function pagesNow(page: Page) {
-  return page.evaluate(() => {
-    const matrix = (selector: string) => {
-      const el = document.querySelector(selector);
-      if (!el) throw new Error(`No ${selector} on the page`);
-      const transform = getComputedStyle(el).transform;
-      return new DOMMatrix(transform === "none" ? undefined : transform);
-    };
-    const over = (selector: string) =>
-      Math.acos(Math.max(-1, Math.min(1, matrix(selector).m11))) / Math.PI;
-    const top =
-      (document.querySelector(".issue")?.getBoundingClientRect().top ?? 0) +
-      scrollY;
-    return {
-      after: (scrollY - top) / innerHeight,
-      contents: over(".is-contents-leaf"),
-      report: over(".is-report-leaf"),
-      corner: matrix(".book-curl").m11,
-      filled: matrix(".issue-turn-bar").a,
-    };
-  });
-}
-
-/**
- * Until the issue's pages and the scroll lie still: the pages catch up with
- * the scroll over a few frames rather than at once.
- */
-function pagesStill(page: Page) {
-  return page.evaluate(
-    () =>
-      new Promise<void>((done) => {
-        const parts = [
-          ".is-contents-leaf",
-          ".is-report-leaf",
-          ".book-curl",
-          ".issue-turn-bar",
-        ].map((selector) => document.querySelector(selector));
-        let last = "";
-        let same = 0;
-        const look = () => {
-          const now = [
-            Math.round(scrollY),
-            ...parts.map((el) => (el ? getComputedStyle(el).transform : "")),
-          ].join();
-          same = now === last ? same + 1 : 0;
-          last = now;
-          if (same >= 12) done();
-          else requestAnimationFrame(look);
-        };
-        requestAnimationFrame(look);
-      }),
-  );
-}
-
-/** Instantly, as a script would: the stage's own easing still plays. */
-function scrollToY(page: Page, y: number) {
-  return page.evaluate(
-    (y) => window.scrollTo({ top: y, behavior: "instant" }),
-    y,
-  );
-}
-
-test("desktop: the scroll turns the issue's pages bit by bit, the corner first, and a cue under the spread says what the scroll does", async ({
-  page,
-}) => {
-  // Wide, with motion, the issue is a scroll stage: two turns, each the
-  // right page's corner peeling back and then its leaf going over, every
-  // bit of the scroll moving one or the other; then the broken page.
-  test.setTimeout(60_000);
-  const t = messages.en.zine.turn;
-  await page.setViewportSize(desktop);
-  await page.goto("/");
-  await hydrated(page);
-  const issue = page.locator("#about");
-  await expect(issue).toHaveAttribute("data-flight", "");
-  // short: under two screens of scrolling past the pinned spread
-  const { top, height, screen } = await issueStage(page);
-  expect((height - screen) / screen).toBeLessThan(2);
-
-  await scrollToY(page, top);
-  await pagesStill(page);
-  // for the eyes only (the pages themselves are read in order): what the
-  // scroll does, which spread lies open, the rule at its start
-  const cue = issue.locator(".issue-turn");
-  await expect(cue).toHaveAttribute("aria-hidden", "true");
-  await expect(cue).toHaveCSS("opacity", "1");
-  await expect(cue).toContainText(t.cue);
-  const spread = (n: number) =>
-    cue.getByText(t.spread.replace("{n}", `${n}`).replace("{total}", "2"));
-  await expect(spread(1)).toBeVisible();
-  await expect(spread(2)).toBeHidden();
-  let was = await pagesNow(page);
-  expect(was.contents).toBe(0);
-  expect(was.filled).toBeCloseTo(0, 2);
-  // the right page's corner dog-eared: it is a page to turn
-  expect(was.corner).toBeGreaterThan(0.2);
-
-  // down to the report 30px at a time: the corner peels back while the
-  // leaf lies flat, then the leaf goes over, never back, never in a leap
-  const peeled: number[] = [];
-  const leaps: string[] = [];
-  for (let y = top + 30; y < top + 0.7 * screen; y += 30) {
-    await scrollToY(page, y);
-    await pagesStill(page);
-    const now = await pagesNow(page);
-    const where = now.after.toFixed(2);
-    if (now.contents < was.contents - 1e-3 || now.filled < was.filled - 1e-3)
-      leaps.push(`back at ${where}`);
-    if (now.contents - was.contents > 0.15)
-      leaps.push(
-        `over by ${(now.contents - was.contents).toFixed(2)} at ${where}`,
-      );
-    if (now.contents === 0) peeled.push(now.corner);
-    was = now;
-  }
-  expect(leaps).toEqual([]);
-  expect(peeled.length).toBeGreaterThan(3);
-  expect(peeled[peeled.length - 1]).toBeGreaterThan(peeled[0] * 2);
-  // at the report: the contents leaf over, the count on, the rule half full
-  await scrollToY(page, top + 0.7 * screen);
-  await pagesStill(page);
-  was = await pagesNow(page);
-  expect(was.contents).toBeCloseTo(1, 2);
-  expect(was.report).toBe(0);
-  expect(was.filled).toBeCloseTo(0.5, 2);
-  await expect(spread(2)).toBeVisible();
-  await expect(spread(1)).toBeHidden();
-
-  // a notch of the wheel with no smooth scrolling (a jump of 90px) is
-  // glided over: frame by frame the leaf goes a part of the way further
-  await scrollToY(page, top + 0.95 * screen);
-  await pagesStill(page);
-  const start = (await pagesNow(page)).report;
-  const frames = await page.evaluate(
-    async (y) => {
-      const leaf = document.querySelector(".is-report-leaf");
-      if (!leaf) throw new Error("No report leaf");
-      const over = () => {
-        const transform = getComputedStyle(leaf).transform;
-        const m11 = new DOMMatrix(transform === "none" ? undefined : transform)
-          .m11;
-        return Math.acos(Math.max(-1, Math.min(1, m11))) / Math.PI;
-      };
-      window.scrollTo({ top: y, behavior: "instant" });
-      const seen: number[] = [];
-      for (let i = 0; i < 4; i++) {
-        await new Promise(requestAnimationFrame);
-        seen.push(over());
+async function watchCameo(page: Page) {
+  await page.evaluate(() => {
+    const seen = { entrances: 0, catching: 0, heights: [] as number[] };
+    Object.defineProperty(window, "cameo", { value: seen });
+    new MutationObserver((records) => {
+      for (const record of records)
+        for (const node of record.addedNodes)
+          if (node instanceof HTMLElement && node.matches(".sahur-layer"))
+            seen.entrances++;
+    }).observe(document.body, { childList: true });
+    const look = () => {
+      const layer = document.querySelector(".sahur-layer");
+      if (layer) {
+        seen.heights.push(document.documentElement.scrollHeight);
+        for (const el of [layer, ...layer.querySelectorAll("*")])
+          if (getComputedStyle(el).pointerEvents !== "none") seen.catching++;
       }
-      return seen;
-    },
-    top + 1.05 * screen,
-  );
-  await pagesStill(page);
-  const end = (await pagesNow(page)).report;
-  expect(end - start).toBeGreaterThan(0.2);
-  expect(frames[0] - start).toBeLessThan((end - start) * 0.6);
-  for (let i = 1; i < frames.length; i++)
-    expect(frames[i]).toBeGreaterThanOrEqual(frames[i - 1]);
-});
+      requestAnimationFrame(look);
+    };
+    requestAnimationFrame(look);
+  });
+  return () =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            cameo: { entrances: number; catching: number; heights: number[] };
+          }
+        ).cameo,
+    );
+}
 
-test("desktop: a leaf the wheel leaves partly over settles on a spread, a notch only lifts the corner, and a key turns a whole leaf", async ({
+for (const [device, viewport] of [
+  ["desktop", desktop],
+  ["phone", phone],
+] as const)
+  test(`${device}: Tung Tung Tung Sahur walks in by himself, bonks the roulette's crooked screen straight and walks off, once, the page readable and clickable all along`, async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const seen = await watch(page);
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await hydrated(page);
+    const frame = crookedFrame(page);
+    await expect(frame).toHaveAttribute("data-crooked", "");
+    expect(await frame.evaluate((el) => getComputedStyle(el).rotate)).not.toBe(
+      "none",
+    );
+    const cameo = await watchCameo(page);
+    // nothing to wait for: the screen well in view, he comes on his own
+    await centre(frame);
+    const layer = page.locator(".sahur-layer");
+    await expect(layer).toHaveCount(1, { timeout: 3_000 });
+    await expect(layer).toHaveAttribute("aria-hidden", "true");
+    // under him the page is the page's: a point anywhere over him finds
+    // what lies there, never his canvas
+    await expect(layer.locator("canvas")).toBeVisible();
+    const hits = await page.evaluate(() => {
+      const box = document
+        .querySelector(".sahur-layer canvas")
+        ?.getBoundingClientRect();
+      if (!box) return ["no canvas"];
+      const found: string[] = [];
+      for (const x of [0.25, 0.5, 0.75])
+        for (const y of [0.4, 0.7]) {
+          const px = Math.min(
+            Math.max(box.left + box.width * x, 1),
+            innerWidth - 1,
+          );
+          const py = Math.min(
+            Math.max(box.top + box.height * y, 1),
+            innerHeight - 1,
+          );
+          const hit = document.elementFromPoint(px, py);
+          if (hit?.closest(".sahur-layer")) found.push(`${x},${y}`);
+        }
+      return found;
+    });
+    expect(hits, "points where he catches the pointer").toEqual([]);
+    // the bonk sets the screen straight, and he goes, within three seconds
+    await expect(frame).toHaveAttribute("data-crooked", "straight", {
+      timeout: 3_000,
+    });
+    await expect(layer).toHaveCount(0, { timeout: 4_000 });
+    await expect
+      .poll(() => frame.evaluate((el) => getComputedStyle(el).rotate))
+      .toMatch(/^(none|0deg)$/);
+    // read away and back: he does not come again
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await settle(page);
+    await centre(frame);
+    await page.waitForTimeout(1_500);
+    await expect(layer).toHaveCount(0);
+    const { entrances, catching, heights } = await cameo();
+    expect(entrances, "times he came on").toBe(1);
+    expect(catching, "parts of him catching the pointer").toBe(0);
+    expect(new Set(heights).size, "the page's height while he played").toBe(1);
+    expect(seen.errors).toEqual([]);
+    expect(await seen.csp()).toEqual([]);
+  });
+
+test("Sahur keeps away from the screen until it is well in view: a reader racing past the report leaves him waiting, and the page never stops for him", async ({
   page,
 }) => {
-  test.setTimeout(60_000);
   await page.setViewportSize(desktop);
   await page.goto("/");
   await hydrated(page);
-  await expect(page.locator("#about")).toHaveAttribute("data-flight", "");
-  const { top } = await issueStage(page);
-  await scrollToY(page, top);
-  await pagesStill(page);
-  await page.mouse.move(desktop.width / 2, desktop.height / 2);
-  const after = async () => (await pagesNow(page)).after;
-
-  // a notch: the corner lifts and stays so, the spread still there to read
-  await page.mouse.wheel(0, 100);
-  await expect.poll(after).toBeGreaterThan(0.05);
-  await pagesStill(page);
-  let now = await pagesNow(page);
-  expect(now.contents).toBe(0);
-  expect(now.after).toBeLessThan(0.25);
-  // two more and the leaf is on its way: stopped there, it goes on over
-  // and the report lies open
-  await page.mouse.wheel(0, 100);
-  await page.mouse.wheel(0, 100);
-  await expect.poll(after, { timeout: 5_000 }).toBeCloseTo(0.7, 2);
-  await pagesStill(page);
-  now = await pagesNow(page);
-  expect(now.contents).toBeCloseTo(1, 2);
-  expect(now.report).toBe(0);
-  // a notch back up: the leaf goes back over onto the contents
-  await page.mouse.wheel(0, -100);
-  await expect.poll(after, { timeout: 5_000 }).toBeCloseTo(0, 2);
-  await pagesStill(page);
-  expect((await pagesNow(page)).contents).toBe(0);
-
-  // the keys: a whole leaf a press, to the broken page and back
-  for (const [key, to] of [
-    ["ArrowDown", 0.7],
-    ["PageDown", 1.3],
-    ["ArrowUp", 0.7],
-    ["PageUp", 0],
-  ] as const) {
-    await page.keyboard.press(key);
-    await expect
-      .poll(after, { timeout: 5_000, message: key })
-      .toBeCloseTo(to, 2);
-  }
-  await pagesStill(page);
-  now = await pagesNow(page);
-  expect([now.contents, now.report]).toEqual([0, 0]);
+  const cameo = await watchCameo(page);
+  // past the report in one go: the frame never sat three quarters in view
+  await page
+    .locator("#platform")
+    .evaluate((el) => el.scrollIntoView({ behavior: "instant" }));
+  await page.waitForTimeout(1_000);
+  expect((await cameo()).entrances).toBe(0);
+  await expect(page.locator("#platform")).toBeInViewport();
+  await expect(crookedFrame(page)).toHaveAttribute("data-crooked", "");
 });
 
-test("desktop, reduced motion: the issue lies open and still, its pages in reading order and every link on the keyboard's way", async ({
+test("reduced motion: Sahur only stands by the roulette's screen, which hangs straight; nothing moves", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize(desktop);
   await page.goto("/");
   await hydrated(page);
-  const issue = page.locator("#about");
-  // no stage: nothing pinned or turned, no corner, no cue
-  await expect(issue).not.toHaveAttribute("data-flight");
-  await expect(issue.locator(".issue-turn")).toBeHidden();
-  await expect(issue.locator(".book-curl")).toBeHidden();
-  expect(
-    await issue
-      .locator(".book-leaf")
-      .evaluateAll((els) => els.map((el) => getComputedStyle(el).transform)),
-  ).toEqual(["none", "none", "none"]);
-  // the spreads one under the other: the inside of the cover by the
-  // contents, then the report's two pages
-  const sheets = await issue
-    .locator(".is-inside, .is-contents, .is-story, .is-screens")
-    .evaluateAll((els) =>
-      els.map((el) => {
-        const box = el.getBoundingClientRect();
-        return { left: box.left, top: box.top + scrollY, width: box.width };
-      }),
-    );
-  expect(sheets).toHaveLength(4);
-  const [inside, contents, story, screens] = sheets;
-  for (const sheet of sheets) expect(sheet.width).toBeGreaterThan(300);
-  expect(Math.abs(inside.top - contents.top)).toBeLessThan(2);
-  expect(inside.left).toBeLessThan(contents.left);
-  expect(Math.abs(story.top - screens.top)).toBeLessThan(2);
-  expect(story.top).toBeGreaterThan(contents.top);
-  expect(story.left).toBeLessThan(screens.left);
-  await expect(issue.locator("#toc-title")).toBeVisible();
-  await expect(issue.locator("#projects-title")).toBeVisible();
-  // Tab goes from link to link in the order the pages are read, each shown
-  // where it lies
-  const stops = await issue.evaluate((root) =>
-    [
-      ...root.querySelectorAll<HTMLElement>(
-        "a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])",
-      ),
-    ]
-      .filter((el) => el.checkVisibility() && !el.closest("[inert]"))
-      .map((el, i) => {
-        el.dataset.stop = `${i}`;
-        return `${i}`;
-      }),
+  const frame = crookedFrame(page);
+  expect(await frame.evaluate((el) => getComputedStyle(el).rotate)).toBe(
+    "none",
   );
-  expect(stops.length).toBeGreaterThan(3);
-  await issue.locator('[data-stop="0"]').focus();
-  for (const stop of stops) {
-    if (stop !== "0") await page.keyboard.press("Tab");
-    const here = issue.locator(`[data-stop="${stop}"]`);
-    await expect(here).toBeFocused();
-    await expect(here).toBeInViewport();
-  }
-  // and nothing in it moves
-  await still(page);
-  expect(
-    await issue.evaluate((root) =>
-      document
-        .getAnimations()
-        .filter(
-          (a) =>
-            a.playState === "running" &&
-            a.effect instanceof KeyframeEffect &&
-            a.effect.target instanceof Element &&
-            root.contains(a.effect.target),
-        )
-        .map((a) => (a as CSSAnimation).animationName),
-    ),
-  ).toEqual([]);
+  await centre(frame);
+  const standing = frame.locator(".sahur-still");
+  await expect(standing).toHaveCount(1);
+  await expect(standing).toHaveAttribute("aria-hidden", "true");
+  await expect(standing).toHaveCSS("pointer-events", "none");
+  await expect(standing.locator("canvas")).toBeVisible();
+  await page.waitForTimeout(1_500);
+  await expect(page.locator(".sahur-layer")).toHaveCount(0);
+  expect(await looping(page)).toEqual([]);
+  expect(await frame.evaluate((el) => getComputedStyle(el).rotate)).toBe(
+    "none",
+  );
+});
+
+// ─── What is gone ────────────────────────────────────────────
+
+test("the résumé, the old desktop, the book and its 504 page are gone: /cv answers 404 and nothing leads there", async ({
+  page,
+  request,
+}) => {
+  expect((await request.get("/cv")).status()).toBe(404);
+  await page.goto("/");
+  await hydrated(page);
+  await expect(page.locator('a[href="/cv"]')).toHaveCount(0);
+  for (const gone of [
+    ".os",
+    ".xp-window",
+    ".issue",
+    ".book",
+    ".bonk",
+    "#services",
+    "#record",
+  ])
+    await expect(page.locator(gone), gone).toHaveCount(0);
 });

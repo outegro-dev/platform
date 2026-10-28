@@ -79,9 +79,9 @@
 [data-theme="zine"] .skip-link:not(:focus) {
   font-family: "og-body-fallback", "Times New Roman", serif;
 }
-/* the main page on the vintage cover's cream paper all the way down (the
-   old computer paints its own wallpaper over it), and so are /stack,
-   /privacy, the 404 and the sign-in error, each known by a class of its own */
+/* the main page on the vintage cover's cream paper all the way down, and so
+   are /stack, /privacy, the 404 and the sign-in error, each known by a class
+   of its own */
 html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error) {
   --background: var(--vintage-paper);
 }
@@ -723,8 +723,7 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   outline-offset: 3px;
 }
 
-/* the magazine lying on the page, as drawn, its shadow and all; .cover-art
-   marks its cover for the book that lifts off it */
+/* the magazine lying on the page, as drawn, its shadow and all */
 .cover-mag {
   position: absolute;
   z-index: 1;
@@ -757,18 +756,6 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   width: 100%;
   height: auto;
 }
-.cover-art {
-  position: absolute;
-  top: 47.7%;
-  left: 51.7%;
-  width: 86.8%;
-  height: 86.5%;
-  translate: -50% -50%;
-  rotate: 5deg;
-  visibility: hidden;
-  pointer-events: none;
-}
-
 /* the torn strip along the bottom: the way of the work on red paper, the
    promise on the page beside it, the blue scrap in the corner */
 .cover-band {
@@ -926,19 +913,6 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   }
 }
 
-/* the magazine's cover, flat: the front of the flying book */
-.poster {
-  position: relative;
-  background: #f3ecdc;
-  box-shadow: 10px 16px 30px rgb(27 25 21 / 0.28);
-}
-.poster > img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .burst {
   position: absolute;
   z-index: 3;
@@ -1010,8 +984,8 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   }
 }
 
-/* the first frame lays out the cover alone: what lies under it (the issue,
-   the old computer, the contact block, the footer) comes in once the first
+/* the first frame lays out the cover alone: what lies under it (the
+   opening spread, the reports, the contact block, the footer) comes in once the first
    contentful paint is out (RevealObserver), a second after that frame at
    most. So the first layout is the cover's, and the faces set only further
    down are fetched after it is painted, not ahead of it. The cover is a
@@ -1337,78 +1311,64 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   }
 }
 
-/* ─── The issue: the cover, the contents, the report ──────── */
-/* Two leaves over a last page (see Issue). By default (no script, reduced
-   motion, screens under 1024px) the two spreads lie one under the other.
-   In flight (IssueFlight) the book is fixed and placed by the script: the
-   cover flies here from the first screen and opens on the way, the spread
-   is pinned, the contents page lifts its corner and turns over, then the
-   report's, and the broken page holds before the stage lets go
-   (--issue-stage of scrolling: two turns of 0.7 and 0.6 screens, then
-   0.55 for the broken page; IssueFlight counts on it) */
-.issue {
-  --issue-stage: 185svh;
-  /* the blank pages and the broken page: the page's own paper */
-  --blank: var(--vintage-paper);
-  position: relative;
-  padding-block: 72px 32px;
+/* ─── The opening spread: the questionnaire and the contents ─ */
+/* The issue opened past its cover (see Opening): the inside of the cover
+   on the left, the contents on the right, two pages lying on the table.
+   A page is 2:3 and grows past it with its text; a phone has the pages one
+   under the other */
+.opening {
+  padding-block: 88px 24px;
 }
-.issue-pin {
+.spread {
   display: grid;
-  place-items: center;
-}
-/* a spread: two 2:3 pages, as tall as fits between header and bottom strip;
-   on a short screen it keeps a 540px page as long as it can and then only
-   clears the header (68px) above and below, as the text has its floor */
-.issue-slot {
-  position: relative;
-  width: min(
-    100%,
-    calc(min(clamp(100svh - 180px, 540px, 100svh - 136px), 900px) * 4 / 3)
-  );
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 1120px);
+  margin-inline: auto;
 }
 
 /* pages: paper, darker towards the spine */
-.book-sheet {
+.sheet {
   position: relative;
   container-type: inline-size;
   display: flex;
   flex-direction: column;
+  place-self: stretch;
+  aspect-ratio: 2 / 3;
   color: var(--ink);
   background-color: var(--paper-white);
 }
 /* the margins go on what is on the page: cqi there is of the page, while
    on the page itself it would be of the screen */
-.book-sheet > * {
+.sheet > * {
   margin-inline: 8cqi;
 }
-.book-sheet > :first-child {
+.sheet > :first-child {
   margin-top: 7cqi;
 }
-.book-sheet > :last-child {
+.sheet > :last-child {
   margin-bottom: 5cqi;
 }
-.book-sheet.is-recto {
+.sheet.is-recto {
   background-image: linear-gradient(
     to right,
     color-mix(in srgb, var(--ink) 14%, transparent),
     transparent 9%
   );
   box-shadow:
-    0 0 0 2px var(--page-ink, var(--ink)),
-    12px 14px 0 var(--page-ink, var(--ink));
+    0 0 0 2px var(--ink),
+    12px 14px 0 var(--ink);
 }
-.book-sheet.is-verso {
+.sheet.is-verso {
   background-image: linear-gradient(
     to left,
     color-mix(in srgb, var(--ink) 14%, transparent),
     transparent 9%
   );
   box-shadow:
-    0 0 0 2px var(--page-ink, var(--ink)),
-    0 14px 0 var(--page-ink, var(--ink));
+    0 0 0 2px var(--ink),
+    0 14px 0 var(--ink);
 }
-.book-running {
+.sheet-running {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1416,32 +1376,19 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   padding-bottom: 1.6cqi;
   border-bottom: 1px solid var(--ink);
   font-family: var(--font-plain);
-  font-size: clamp(9px, 2.1cqi, 12px);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-/* the section, on a plaque */
-.book-section {
-  padding: 0.5cqi 2cqi;
-  font-family: var(--font-loud);
-  font-size: clamp(9px, 2.3cqi, 13px);
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  color: var(--paper-white);
-  background: var(--ink);
-}
-.book-folio {
+.sheet-folio {
   margin-top: auto;
   padding-top: 2cqi;
   font-family: var(--font-plain);
   font-weight: 600;
-  font-size: clamp(10px, 2.4cqi, 13px);
+  font-size: 13px;
   text-align: right;
-}
-.book-sheet.is-verso .book-folio {
-  text-align: left;
 }
 
 /* the inside of the cover: a friends' form written on the page itself;
@@ -1580,13 +1527,13 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
 .form-rows > div {
   counter-increment: question;
   padding: 2.8cqi 0 2.4cqi;
-  font-size: clamp(13px, 4.9cqi, 27px);
+  font-size: clamp(18px, 5.4cqi, 27px);
   line-height: 1.3;
   border-bottom: 1px dashed color-mix(in srgb, var(--ink) 28%, transparent);
 }
 .form-rows dt {
   display: inline;
-  font-size: clamp(12px, 3.1cqi, 17px);
+  font-size: clamp(13px, 3.6cqi, 17px);
   font-weight: 600;
   color: var(--ink-soft);
 }
@@ -1660,8 +1607,8 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   display: flex;
   align-items: last baseline;
   gap: 10px;
-  padding: 1.7cqi 0;
-  font-size: clamp(14px, 3.7cqi, 19px);
+  padding: 1.5cqi 0;
+  font-size: clamp(14px, 3.5cqi, 19px);
 }
 .toc-name {
   flex: 1;
@@ -1684,7 +1631,7 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
 }
 .toc-page {
   font-family: var(--font-loud);
-  font-size: clamp(12px, 2.8cqi, 14px);
+  font-size: 12px;
 }
 /* the point sits mid-cell: drawn up to its letters and out to the
    column's edge, where the figures end */
@@ -1692,109 +1639,95 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   margin-inline: -0.25em -0.2em;
 }
 
-/* page 2: the report's story, in two faces only: the heavy sans for the
-   headings, the plain sans for the text */
-.story {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  margin-top: 6cqi;
+/* a phone: the pages one by one, at a phone's width */
+@media (max-width: 767px) {
+  .opening {
+    padding-top: 64px;
+  }
+  .spread {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+    width: min(100%, 440px);
+  }
+  .sheet {
+    aspect-ratio: auto;
+  }
 }
-.story-title {
+/* the narrowest phones: the running head keeps to one line of type, the
+   issue without the magazine's name */
+@media (max-width: 359px) {
+  .sheet-mast {
+    display: none;
+  }
+}
+
+/* ─── Reports: the roulette and the atelier ───────────────── */
+/* Each report a spread of its own (see Reports): the name and what it is,
+   the screens, what is inside as numbered points, the stack and the way
+   in. The roulette has its screens on the right, the atelier on the left */
+.reports-lead {
+  max-width: 62ch;
+  margin-top: 18px;
+}
+.report {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-areas:
+    "head media"
+    "body media";
+  grid-template-rows: auto 1fr;
+  gap: 8px clamp(32px, 5vw, 80px);
+  margin-top: 72px;
+  padding-top: 36px;
+  border-top: 3px solid var(--ink);
+  scroll-margin-top: 72px;
+}
+.report.is-atelier {
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-areas:
+    "media head"
+    "media body";
+}
+.report-head {
+  grid-area: head;
+}
+.report-media {
+  position: relative;
+  grid-area: media;
+  align-self: start;
+  margin-top: 18px;
+  padding-bottom: clamp(56px, 8vw, 120px);
+}
+.report-body {
+  grid-area: body;
+}
+.report-kicker {
+  width: fit-content;
+  padding: 3px 10px;
+  font-family: var(--font-loud);
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--paper-white);
+  background: var(--spot-red-deep);
+  rotate: -2deg;
+}
+.report-name {
+  margin-top: 14px;
   font-family: var(--font-sign);
-  font-size: clamp(18px, 6.2cqi, 38px);
+  font-size: clamp(48px, 6.4vw, 104px);
   font-weight: 900;
-  line-height: 1.02;
+  line-height: 0.95;
   letter-spacing: -0.03em;
 }
-.story-accent {
-  display: block;
-  color: var(--spot-red);
-}
-.story-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2cqi 3cqi;
-  margin-top: 4.4cqi;
-  padding-top: 2.6cqi;
-  border-top: 2px solid var(--ink);
-}
-.story-name {
-  font-family: var(--font-sign);
-  font-size: clamp(15px, 4.8cqi, 28px);
-  font-weight: 900;
-  line-height: 1.05;
-}
-.story-summary {
-  margin-top: 2.4cqi;
-  font-family: var(--font-plain);
-  font-size: clamp(12px, 2.9cqi, 15px);
-  font-weight: 500;
+.report-what {
+  max-width: 36ch;
+  margin-top: 18px;
+  font-size: 20px;
   line-height: 1.5;
+  letter-spacing: 0;
 }
-.issue .book :is(.story-play, .screens-play) {
-  align-self: flex-start;
-  height: auto;
-  min-height: 0;
-  padding: 1.4cqi 2.8cqi;
-  font-size: clamp(12px, 2.4cqi, 13px);
-}
-.issue .book .story-head .story-play {
-  align-self: center;
-}
-/* how it works: the rules of the game, each marked with a cell of the
-   board, a hit in its corner */
-.story-rules-title {
-  margin-top: 5cqi;
-  font-family: var(--font-sign);
-  font-size: clamp(12px, 3.6cqi, 20px);
-  font-weight: 900;
-  line-height: 1.1;
-}
-.story-rules {
-  display: grid;
-  gap: 2.2cqi;
-  margin-top: 2.6cqi;
-  font-family: var(--font-plain);
-}
-.story-rules li {
-  display: grid;
-  grid-template-columns: 7.4cqi minmax(0, 1fr);
-  gap: 2.6cqi;
-  align-items: center;
-}
-.story-cell {
-  position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
-  border: 1.5px solid var(--ink);
-  font-size: clamp(8px, 2.3cqi, 13px);
-  font-weight: 700;
-  background: var(--paper);
-}
-.story-cell::after {
-  content: "";
-  position: absolute;
-  top: 0.7cqi;
-  right: 0.7cqi;
-  width: 1.4cqi;
-  height: 1.4cqi;
-  border-radius: 50%;
-  background: var(--spot-red);
-}
-.story-rules p {
-  font-size: clamp(12px, 2.75cqi, 15px);
-  font-weight: 500;
-  line-height: 1.4;
-}
-.story-rules b {
-  font-weight: 800;
-}
-.story-label {
-  margin-top: 4cqi;
+.report-label {
+  margin-top: 30px;
   font-family: var(--font-plain);
   font-size: 12px;
   font-weight: 700;
@@ -1802,576 +1735,538 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-
-/* page 3: the report's screens, one large and three small, each with its
-   caption under it, in the game's own colours */
-.screens {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  margin-top: 5cqi;
+.report-points {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  font-family: var(--font-plain);
 }
-.screens-shot {
+.report-points li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.report-points p {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.report-points b {
+  font-weight: 800;
+}
+/* the roulette's points are sectors of its strip: 0 green, 1 to 7 red,
+   8 to 14 black */
+.report-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-family: var(--font-sign);
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--paper-white);
+  background: var(--ink);
+  border-radius: 50%;
+  box-shadow: 2px 3px 0 var(--halftone);
+}
+.report-mark[data-sector="green"] {
+  background: var(--ok);
+}
+.report-mark[data-sector="red"] {
+  background: var(--spot-red);
+}
+/* the atelier's are tailor's labels, stitched on */
+.is-atelier .report-mark {
+  height: 30px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--spot-yellow);
+  border-radius: 0;
+  outline: 1.5px dashed var(--ink);
+  outline-offset: -5px;
+  rotate: -3deg;
+}
+.report .badge-list {
+  margin-top: 12px;
+}
+.report-way {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-top: 30px;
+}
+.report-host {
+  font-family: var(--font-type);
+  font-size: 14px;
+  text-transform: none;
+  color: var(--ink-soft);
+}
+.report-private {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-plain);
+  font-size: 15px;
+  font-weight: 600;
+}
+/* the way in to a service that opens by invitation: a dashed ticket, not
+   the red call */
+.report-invite {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  min-height: 44px;
+  padding: 11px 16px 9px;
+  font-family: var(--font-loud);
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  border: 2px dashed var(--ink);
+}
+.report-invite:hover {
+  background: var(--spot-yellow);
+}
+.report-note {
+  margin-top: 18px;
+  font-family: var(--font-plain);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* the screens: a large print taped onto the page, a smaller one over its
+   lower corner. The pictures keep their frames' size while they wait to
+   come near (WhenNear) */
+.report-shot {
+  position: relative;
   margin: 0;
 }
-.screens-frame {
+.report-shot.is-wide {
+  padding: 10px 10px 0;
+  background: var(--paper-white);
+  border: 2px solid var(--ink);
+  box-shadow: 10px 12px 0 var(--ink);
+}
+.report-frame {
   display: block;
   overflow: hidden;
   aspect-ratio: 1440 / 900;
-  border: 1.5px solid var(--ink);
   background: var(--paper-deep);
+  border: 1.5px solid var(--ink);
 }
-.screens-frame img {
+.report-frame img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: top;
 }
-.screens-shot figcaption {
-  margin-top: 1.4cqi;
+.report-shot figcaption {
+  padding: 8px 2px 10px;
   font-family: var(--font-plain);
-  font-size: clamp(12px, 2.4cqi, 13px);
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.3;
 }
-.screens-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 3cqi;
-  margin-top: 3.2cqi;
+.report-shot .tape.is-top {
+  top: -18px;
+  left: 50%;
+  translate: -50% 0;
+  rotate: -3deg;
 }
-.screens-row figcaption {
-  font-size: 12px;
+.report-shot.is-small {
+  position: absolute;
+  z-index: 1;
+  bottom: 0;
 }
-/* the chips run as words do, so lines that wrap come out balanced (never
-   one chip alone under the rest); each keeps its gap after and below it,
-   which the list takes back at its end */
-.issue .screens .badge-list {
-  --chip-gap: 1.2cqi;
+/* the phone: a slim black handset over the print's corner */
+.report-shot.is-phone {
+  right: -10px;
+  width: clamp(104px, 21%, 180px);
+  rotate: 4deg;
+}
+.is-phone .report-frame {
+  aspect-ratio: 390 / 844;
+  border: 6px solid var(--ink);
+  border-radius: 20px;
+  background: var(--ink);
+}
+.is-phone figcaption {
+  font-family: var(--font-hand);
+  font-size: 20px;
+  font-weight: 400;
+  text-align: center;
+  color: var(--spot-blue);
+}
+/* the atelier's CV: a second print over the board's corner */
+.report-shot.is-cv {
+  right: -12px;
+  width: 46%;
+  padding: 8px 8px 0;
+  background: var(--paper-white);
+  border: 2px solid var(--ink);
+  box-shadow: 8px 10px 0 var(--ink);
+  rotate: 3deg;
+}
+/* the roulette's large print hangs crooked until Tung Tung Tung Sahur
+   bonks it straight (SahurCameo); with reduced motion, or no script to
+   bring him, it hangs straight from the start */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .report-shot[data-crooked] {
+    rotate: -3.5deg;
+    transform-origin: 60% 0;
+    transition: rotate 0.55s cubic-bezier(0.3, 1.9, 0.45, 1);
+  }
+  .report-shot[data-crooked="straight"] {
+    rotate: 0deg;
+  }
+}
+/* with reduced motion he only stands by the frame, the bat on his
+   shoulder: drawn over its lower corner, catching nothing */
+.sahur-still {
+  position: absolute;
+  z-index: 2;
+  bottom: -2px;
+  left: -16%;
+  width: 40%;
+  height: auto;
+  aspect-ratio: 540 / 392;
+  pointer-events: none;
+}
+.sahur-still canvas {
   display: block;
-  margin: 1.6cqi calc(-1 * var(--chip-gap)) calc(-1 * var(--chip-gap)) 0;
-  text-wrap: balance;
+  width: 100%;
+  height: 100%;
 }
-.issue .screens .badge-list li {
-  display: inline-block;
-  margin: 0 var(--chip-gap) var(--chip-gap) 0;
-  vertical-align: top;
-}
-.issue .screens .badge-list li > * {
-  padding: 0.4cqi 1.8cqi;
-  font-size: 12px;
-}
-.issue .book .screens-play {
-  margin-top: 3cqi;
-}
-.screens-note {
-  margin-top: auto;
-  padding-top: 2.4cqi;
-  font-family: var(--font-plain);
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-/* where the book can fly (lying open below that, the pages set their own
-   sizes) the report's print stays at a reader's 12px however small the
-   spread: on a page under 450px wide (a window under about 850px tall) the
-   report gives up a little of its air, under 400px (780px) its second way
-   into the game too; from 450px until the chips fit on one line as they
-   are, they keep to it a little slimmer */
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-  @container (width < 400px) {
-    .issue .book .screens-play {
-      display: none;
-    }
-  }
-  @container (width < 450px) {
-    .story {
-      margin-top: 4cqi;
-    }
-    .story-head {
-      margin-top: 3cqi;
-    }
-    .story-summary {
-      line-height: 1.4;
-    }
-    .story-rules-title {
-      margin-top: 3.6cqi;
-    }
-    .story-rules {
-      gap: 1.2cqi;
-    }
-    .story-rules p {
-      line-height: 1.3;
-    }
-    .screens {
-      margin-top: 3.6cqi;
-    }
-    .screens-row {
-      margin-top: 2.4cqi;
-    }
-    .story-label {
-      margin-top: 3cqi;
-    }
-    .screens-note {
-      padding-top: 1.6cqi;
-    }
-  }
-  @container (450px <= width < 545px) {
-    .issue .screens .badge-list {
-      --chip-gap: 1cqi;
-    }
-    .issue .screens .badge-list li > * {
-      padding-inline: 1cqi;
-    }
+@media (max-width: 767px) {
+  .sahur-still {
+    left: -6%;
   }
 }
 
-/* ── lying open: the two spreads one under the other ── */
-.issue:not([data-flight]) .book {
+/* the rest of the platform: two cards in a line */
+.more {
+  margin-top: 96px;
+  padding-top: 28px;
+  border-top: 3px double var(--ink);
+}
+.more-title {
+  width: fit-content;
+  font-family: var(--font-tabloid);
+  font-size: clamp(30px, 3.4vw, 46px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--spot-red-deep);
+  rotate: -2deg;
+}
+.more-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  row-gap: 56px;
+  gap: 24px 32px;
+  margin-top: 28px;
 }
-.issue:not([data-flight]) .book-leaf {
-  display: contents;
-}
-/* a page grows past 2:3 with its text; the two pages of a spread end level
-   all the same, each as wide as its column */
-.issue:not([data-flight]) .book-sheet {
-  place-self: stretch;
-  aspect-ratio: 2 / 3;
-}
-.issue:not([data-flight])
-  :is(.book-face.poster, .book-curl, .is-blank, .issue-error) {
-  display: none;
-}
-.issue:not([data-flight]) .is-inside {
-  grid-area: 1 / 1;
-}
-.issue:not([data-flight]) .is-contents {
-  grid-area: 1 / 2;
-}
-.issue:not([data-flight]) .is-story {
-  grid-area: 2 / 1;
-}
-.issue:not([data-flight]) .is-screens {
-  grid-area: 2 / 2;
-}
-/* lying open the pages are about a phone wide: they are set at a reader's
-   size, not scaled down with the spread, and grow to fit */
-@media (max-width: 1023px), (prefers-reduced-motion: reduce) {
-  .issue:not([data-flight]) .book-running {
-    font-size: 12px;
-    letter-spacing: 0.08em;
-  }
-  .issue:not([data-flight]) .book-section {
-    font-size: 12px;
-  }
-  .issue:not([data-flight]) .book-folio {
-    font-size: 13px;
-  }
-  .issue:not([data-flight]) .form-rows > div {
-    font-size: clamp(18px, 5.4cqi, 24px);
-  }
-  .issue:not([data-flight]) .form-rows dt {
-    font-size: clamp(13px, 3.6cqi, 16px);
-  }
-  .issue:not([data-flight]) .toc-page {
-    font-size: 12px;
-  }
-  .issue:not([data-flight]) .story-summary {
-    margin-top: 14px;
-    font-size: 15px;
-  }
-  .issue:not([data-flight]) .book :is(.story-play, .screens-play) {
-    padding: 10px 16px;
-    font-size: 12px;
-  }
-  .issue:not([data-flight]) .story-rules-title {
-    font-size: 17px;
-  }
-  .issue:not([data-flight]) .story-rules li {
-    grid-template-columns: 32px minmax(0, 1fr);
-  }
-  .issue:not([data-flight]) .story-cell {
-    font-size: 12px;
-  }
-  .issue:not([data-flight]) .story-rules p {
-    font-size: 14px;
-  }
-  .issue:not([data-flight]) .screens-shot figcaption {
-    font-size: 13px;
-  }
-  .issue:not([data-flight]) .story-label,
-  .issue:not([data-flight]) .screens-row figcaption,
-  .issue:not([data-flight]) .screens-note {
-    font-size: 12px;
-  }
-  .issue:not([data-flight]) .screens .badge-list li > * {
-    padding: 2px 8px;
-    font-size: 12px;
-  }
-}
-/* a phone: the pages one by one, in the order of the issue */
-@media (max-width: 767px) {
-  .issue:not([data-flight]) .issue-slot {
-    width: min(100%, 440px);
-  }
-  .issue:not([data-flight]) .book {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 32px;
-  }
-  .issue:not([data-flight])
-    :is(.is-inside, .is-contents, .is-story, .is-screens) {
-    aspect-ratio: auto;
-  }
-  .issue:not([data-flight]) .is-inside {
-    grid-area: 1 / 1;
-  }
-  .issue:not([data-flight]) .is-contents {
-    grid-area: 2 / 1;
-  }
-  .issue:not([data-flight]) .is-story {
-    grid-area: 3 / 1;
-  }
-  .issue:not([data-flight]) .is-screens {
-    grid-area: 4 / 1;
-  }
-}
-/* the narrowest phones: the running head keeps to one line of type, the
-   issue without the magazine's name */
-@media (max-width: 359px) {
-  .issue:not([data-flight]) .book-mast {
-    display: none;
-  }
-}
-
-/* ── in flight: a 3D book on a pinned stage ── */
-/* #projects while the issue is a stage: from where the report lies open
-   (top set by IssueFlight) to the end of the stage */
-.issue-anchor {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 1px;
-  pointer-events: none;
-}
-.issue:not([data-flight]) .issue-anchor {
-  display: none;
-}
-.issue[data-flight] {
-  height: calc(100svh + var(--issue-stage));
-  padding-block: 0;
-}
-.issue[data-flight] .issue-pin {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-}
-.issue[data-flight] .issue-slot {
-  aspect-ratio: 4 / 3;
-}
-.issue[data-flight] .book {
-  position: fixed;
-  z-index: 20;
-  top: 0;
-  left: 0;
-  transform-origin: 75% 50%;
-  perspective: 3400px;
-  will-change: transform;
-  /* it spans the spread all the way, its left half empty while it flies
-     over the first screen: only the paper takes the pointer */
-  pointer-events: none;
-}
-.issue[data-flight] :is(.book-page, .book-leaf) {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 50%;
-  height: 100%;
-}
-/* the last page lies under the leaves */
-.issue[data-flight] .book-page {
-  z-index: 0;
-  pointer-events: auto;
-}
-/* the leaves lie over the right page and turn over to the left on the
-   spine (IssueFlight sets each one's turn, a transform and nothing else, so
-   the pages on it are not styled again); the one turned last lies on top */
-.issue[data-flight] .book-leaf {
-  transform-origin: left center;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.is-cover-leaf {
-  z-index: 5;
-}
-.is-contents-leaf {
-  z-index: 3;
-}
-.is-report-leaf {
-  z-index: 2;
-}
-.book[data-opened] .is-cover-leaf {
-  z-index: 1;
-}
-.book[data-turned] .is-report-leaf {
-  z-index: 4;
-}
-/* past the report: blank pages, as plain as the broken page coming up */
-.is-blank {
-  background: var(--blank);
-}
-.book-page.is-blank {
-  box-shadow:
-    0 0 0 2px var(--page-ink, var(--ink)),
-    12px 14px 0 var(--page-ink, var(--ink));
-}
-.book-face.is-blank {
-  box-shadow:
-    0 0 0 2px var(--page-ink, var(--ink)),
-    0 14px 0 var(--page-ink, var(--ink));
-}
-/* while the book is shut its pages print no ink round the cover: the
-   outlines come in as it starts to open, and go again as the broken page
-   starts to come up over the blank pages (IssueFlight marks the book
-   inked): no spine shows through its card. The mark is switched, and the
-   pages fade their own outlines, so a frame of the flight never styles the
-   whole book again */
-.issue[data-flight] .book {
-  --page-ink: transparent;
-}
-.issue[data-flight] .book[data-inked] {
-  --page-ink: var(--ink);
-}
-.issue[data-flight] :is(.book-sheet, .is-blank) {
-  transition: box-shadow 0.3s ease;
-}
-/* and the report's page, the one the last leaf turns over, goes blank with
-   them: no strip of it is seen sliced by an edge no longer drawn, and a
-   focus ring on it comes back only with the ink, once the broken page has
-   nearly gone */
-.issue[data-flight] .is-story > * {
-  transition: opacity 0.3s ease;
-}
-.issue[data-flight] .book:not([data-inked]) .is-story > * {
-  opacity: 0;
-}
-.issue[data-flight] .book:not([data-inked]) .is-story:focus-visible {
-  outline-color: transparent;
-}
-.issue[data-flight] .book-face {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  backface-visibility: hidden;
-  pointer-events: auto;
-}
-.issue[data-flight] .book-face.is-back {
-  transform: rotateY(180deg);
-}
-/* gone with the broken page (IssueFlight fades it out), the book is out of
-   the pointer's way; its links still take the keyboard's focus */
-.issue[data-flight] .book[data-spent] :is(.book-page, .book-face) {
-  pointer-events: none;
-}
-/* the turning pages print no outline of their own: the last page's, under
-   them all, is the right page's edge, and a leaf goes over as bare paper */
-.issue[data-flight] :is(.is-contents, .is-screens) {
-  clip-path: inset(0);
-}
-/* the corner: the box is the right page's corner peeled right back (22% of
-   the page), scaled from the corner and carried over with its leaf by
-   IssueFlight, a transform alone. Under the fold, the page beneath (the
-   report's, or a blank one under the report's own corner) in the shade of
-   the flap; over it, the flap, the back of the paper */
-.book-curl {
-  --under: var(--paper-white);
-  position: absolute;
-  z-index: 6;
-  right: 0;
-  bottom: 0;
-  width: 11%;
-  aspect-ratio: 1;
-  transform-origin: 100% 100%;
-  transform: scale(0);
-  will-change: transform;
-  pointer-events: none;
-}
-.book-curl[data-under="blank"] {
-  --under: var(--blank);
-}
-.book-curl span {
-  position: absolute;
-  inset: 0;
-  transform-origin: 100% 100%;
-}
-.book-curl span::before,
-.book-curl span::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-.book-curl span::before {
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
-  background: linear-gradient(
-    to bottom right,
-    color-mix(in srgb, var(--ink) 24%, var(--under)) 50%,
-    var(--under) 66%
-  );
-}
-.book-curl span::after {
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  background: linear-gradient(
-    135deg,
-    var(--paper-white) 20%,
-    var(--paper-deep) 50%
-  );
-}
-/* a spread read a while (IssueFlight marks the issue resting once the
-   scroll has been still a moment): its corner lifts a little now and then,
-   the page asking to be turned */
-.issue[data-resting] .book-curl span {
-  animation: book-beckon 4.2s ease-in-out infinite;
-}
-@keyframes book-beckon {
-  0%,
-  36%,
-  100% {
-    scale: 1;
-  }
-  14% {
-    scale: 1.9;
-  }
-  24% {
-    scale: 1.55;
-  }
-}
-
-/* under the spread in flight: «scroll» with a nudging arrow, a rule that
-   fills as the issue is turned (a tick at each spread) and which spread
-   lies open; IssueFlight fades it in as the book lands and out as the
-   broken page comes up, and fills the rule, a transform alone */
-.issue-turn {
-  position: absolute;
-  top: calc(100% + 26px);
-  left: 50%;
+.more-card {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px 18px;
+  background: var(--paper-white);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-hard);
+}
+.more-name {
+  font-family: var(--font-sign);
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+.more-text {
+  font-size: 17px;
+  line-height: 1.55;
+}
+.more-link {
+  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  translate: -50% 0;
-  font-family: var(--font-plain);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.12em;
+  gap: 4px 10px;
+  width: fit-content;
+  min-height: 44px;
+  margin-top: auto;
+  font-family: var(--font-loud);
+  font-size: 13px;
   text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--ink-soft);
-  opacity: 0;
-  pointer-events: none;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 2px solid var(--ink);
 }
-.issue:not([data-flight]) .issue-turn {
-  display: none;
+.more-link:hover {
+  background: var(--spot-yellow);
 }
-.issue-turn-cue {
+
+@media (max-width: 1023px) {
+  .report,
+  .report.is-atelier {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "head"
+      "media"
+      "body";
+    grid-template-rows: none;
+  }
+  .report-media {
+    margin-top: 28px;
+  }
+}
+@media (max-width: 767px) {
+  .report {
+    margin-top: 56px;
+  }
+  .report-what {
+    font-size: 18px;
+  }
+  .report-shot.is-phone {
+    right: -4px;
+    width: 30%;
+  }
+  .report-shot.is-cv {
+    right: -4px;
+    width: 58%;
+  }
+  .more-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── Platform: a dark blueprint spread ───────────────────── */
+/* the grid as a texture of its own (--blueprint), as the paper's grain is:
+   lifted, the words lie on the plain dark paper under it */
+[data-theme="zine"] .platform {
+  --blueprint:
+    linear-gradient(
+      color-mix(in srgb, var(--paper) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--paper) 7%, transparent) 1px,
+      transparent 1px
+    );
+  color: var(--foreground);
+  background-color: var(--background);
+  background-image: var(--blueprint);
+  background-size: 28px 28px;
+}
+.platform-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 28px 80px;
+  align-items: start;
+  margin-top: 44px;
+}
+.platform-intro > p {
+  max-width: 640px;
+  font-size: 19px;
+  line-height: 1.65;
+  color: var(--muted-foreground);
+}
+.platform-live {
+  display: grid;
+  gap: 18px;
+  padding-top: 6px;
+}
+.live-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  font-family: var(--font-plain);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.issue-turn-cue svg {
-  width: 12px;
-  height: 12px;
-}
-.issue[data-resting] .issue-turn-cue svg {
-  animation: issue-turn-nudge 1.6s ease-in-out infinite;
-}
-@keyframes issue-turn-nudge {
-  0%,
-  50%,
-  100% {
-    translate: 0 0;
-  }
-  25% {
-    translate: 0 3px;
-  }
-}
-/* the rule: ticks at the ends and in the middle, the spreads' places */
-.issue-turn-track {
+.live-dot {
   position: relative;
-  width: 112px;
-  height: 9px;
-  border-inline: 2px solid var(--ink);
-  background:
-    linear-gradient(
-      color-mix(in srgb, var(--ink) 22%, transparent),
-      color-mix(in srgb, var(--ink) 22%, transparent)
-    )
-    center / 100% 2px no-repeat;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live);
 }
-.issue-turn-track::after {
+.live-dot::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 100%;
-  translate: -50% 0;
-  background: var(--ink);
+  inset: -4px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--live) 26%, transparent);
 }
-.issue-turn-bar {
-  position: absolute;
-  top: calc(50% - 1px);
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--ink);
-  transform-origin: left center;
-  transform: scaleX(0);
-  will-change: transform;
+.platform-hosts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-family: var(--font-type);
+  font-size: 14px;
+  color: var(--muted-foreground);
 }
-/* both counts in one place, the one that is not open hidden: the line keeps
-   its width as the count goes on */
-.issue-turn-count {
+.platform-grid {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 64px;
 }
-.issue-turn-count > span {
-  grid-area: 1 / 1;
+.platform-layer {
+  padding: 18px;
+  border: 2px dashed var(--border);
 }
-.issue-turn:not([data-at="2"]) [data-spread="2"],
-.issue-turn[data-at="2"] [data-spread="1"] {
-  visibility: hidden;
+.platform-layer h3 {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: var(--muted-foreground);
+}
+.platform-layer ul {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.platform-node {
+  display: grid;
+  gap: 10px;
+  padding: 20px 20px 18px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-hard);
+}
+.platform-node h4 {
+  font-family: var(--font-sign);
+  font-size: 19px;
+  font-weight: 900;
+}
+.platform-node p {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--muted-foreground);
+}
+@media (max-width: 1023px) {
+  .platform-intro,
+  .platform-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
-/* the broken page: white across the screen over the pinned issue, the
-   504 card in the middle (IssueFlight fades it in and out) */
-.issue-error {
+/* ─── Process: the paper cartoon in its own section ──────── */
+/* the steps are the paper ride (paper.css): a pinned stage the scroll
+   plays, or paper notes where it cannot */
+[data-theme="zine"] .process {
+  border-top: 3px double var(--ink);
+}
+.process .section-lead {
+  max-width: 62ch;
+  margin-top: 18px;
+}
+.process .pj {
+  margin-top: 40px;
+}
+[data-theme="zine"] .process-ai {
+  max-width: 640px;
+  margin-top: 36px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ─── Letters to the editor (FAQ) ─────────────────────────── */
+[data-theme="zine"] .faq {
+  border-top: 3px double var(--ink);
+}
+/* plain letters on clean paper, set straight: they are for reading */
+.letters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  align-items: start;
+  gap: 40px 34px;
+  margin-top: 48px;
+}
+.letter {
+  position: relative;
+  padding: 26px 28px 28px;
+  background: var(--paper-white);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-hard);
+}
+/* a postage stamp with the letter's number */
+.letter-stamp {
   position: absolute;
-  z-index: 30;
-  top: 0;
-  left: 50%;
+  top: -14px;
+  right: 18px;
   display: grid;
   place-items: center;
-  width: 100vw;
-  height: 100%;
-  translate: -50% 0;
-  background-color: var(--blank);
-  background-image: var(--vintage-grain);
-  opacity: 0;
-  pointer-events: none;
+  width: 52px;
+  height: 60px;
+  font-family: var(--font-mast);
+  font-size: 22px;
+  background: var(--spot-yellow);
+  outline: 2px dashed var(--ink);
+  outline-offset: -6px;
+  box-shadow: 2px 3px 0 var(--halftone);
+  rotate: 5deg;
 }
-.issue-error[data-shown] {
-  pointer-events: auto;
+.letter:nth-child(even) .letter-stamp {
+  background: var(--spot-pink);
+  rotate: -4deg;
 }
-.issue-error .bonk {
-  width: min(460px, 100% - 32px);
+.letter-q {
+  padding-right: 56px;
+  font-family: var(--font-type);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.45;
 }
-.issue-error .bonk-overlay {
-  position: static;
+.letter-by {
+  margin-top: 18px;
+  font-family: var(--font-loud);
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--spot-red-deep);
 }
-.issue-error .bonk-card {
-  position: static;
-  margin: 0;
+.letter-a {
+  max-width: 65ch;
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.faq-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 28px;
+  margin-top: 48px;
+}
+.faq-more p {
+  font-family: var(--font-hand);
+  font-size: 27px;
+  line-height: 1.2;
+  color: var(--spot-blue);
+}
+/* on a screen too narrow for its label the call wraps it, at its height */
+.faq-more > [data-slot="button"] {
+  flex-shrink: 1;
+  min-width: 0;
+  height: auto;
+  min-height: 52px;
+  white-space: normal;
+  text-align: center;
+}
+@media (max-width: 767px) {
+  .letter {
+    padding: 24px 20px;
+  }
+  .letter-q {
+    font-size: 17px;
+  }
 }
 
 /* ─── Section headings: magazine rubrics ──────────────────── */
@@ -2968,39 +2863,7 @@ html[data-theme="zine"]:has(.cover, .menu-page, .legal, .erratum, .auth-error)
   );
 }
 
-/* ─── The bonk card, zine edition ─────────────────────────── */
-[data-theme="zine"] .bonk-card {
-  border: 2px solid var(--border);
-  border-radius: 0;
-  box-shadow: var(--shadow-soft);
-  rotate: -1.2deg;
-}
-[data-theme="zine"] .bonk-title {
-  font-family: var(--font-stamp);
-  font-weight: 400;
-  font-size: 30px;
-  color: var(--spot-red);
-}
-/* the status line in the body face's regular: its bold is set nowhere else
-   on the page, and fetched for this line alone it lands while the book
-   takes off, shifting the flying pages */
-[data-theme="zine"] .bonk-status {
-  font-weight: 400;
-}
-[data-theme="zine"] .bonk-door,
-[data-theme="zine"] .bonk-door-leaf {
-  border-radius: 0;
-}
-[data-theme="zine"] .bonk-door-leaf {
-  font-family: var(--font-loud);
-  font-size: 13px;
-  text-transform: uppercase;
-  border: 2.5px solid var(--border);
-}
-[data-theme="zine"] .bonk-progress,
-[data-theme="zine"] .bonk-progress span {
-  border-radius: 0;
-}
+/* ─── Tung Tung Tung Sahur's speech bubble, zine edition ───── */
 [data-theme="zine"] .sahur-bubble > span {
   font-family: var(--font-tabloid);
   font-weight: 400;
@@ -3248,7 +3111,7 @@ html[data-waking] main {
 
 /* ─── Print ───────────────────────────────────────────────── */
 /* on paper nothing flies and no paw comes: the coupon lies in its place,
-   and a page of the issue is never cut between two sheets */
+   and a page of the opening spread is never cut between two sheets */
 @media print {
   .fly,
   .paw {
@@ -3258,18 +3121,20 @@ html[data-waking] main {
     translate: none;
     rotate: none;
   }
-  .book-sheet {
+  .sheet,
+  .report-shot,
+  .letter {
     break-inside: avoid;
   }
   /* the outline inside the page, not round it: a page carried over to the
      next sheet would leave its top line at the foot of the last one */
-  .book-sheet:is(.is-recto, .is-verso) {
+  .sheet:is(.is-recto, .is-verso) {
     border: 2px solid var(--ink);
   }
-  .book-sheet.is-recto {
+  .sheet.is-recto {
     box-shadow: 12px 14px 0 var(--ink);
   }
-  .book-sheet.is-verso {
+  .sheet.is-verso {
     box-shadow: 0 14px 0 var(--ink);
   }
   /* the photo as on screen, white border and corners: the corners are

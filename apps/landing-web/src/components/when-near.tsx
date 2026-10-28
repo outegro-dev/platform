@@ -6,9 +6,9 @@ import { flushSync } from "react-dom";
 /**
  * A picture that mounts only once its box comes near the screen, `ahead`
  * of it as an IntersectionObserver rootMargin. Native lazy loading reaches
- * a few screens down, and the first layout is short (the issue lies open
- * until its flight takes over), so pictures far down the page came with
- * the first screen. Meanwhile the box keeps the picture's size (its class
+ * a few screens down, and the first layout is short (the cover alone,
+ * zine-page.css), so pictures far down the page came with the first
+ * screen. Meanwhile the box keeps the picture's size (its class
  * sets it) and, given the picture's `label`, stands in for it as an image
  * of that name once hydrated; without scripting the picture in <noscript>
  * shows instead.

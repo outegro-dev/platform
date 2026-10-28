@@ -1,6 +1,11 @@
 // The platform's public sites, linked from the footer of every page.
 export const platformLinks = [
   {
+    key: "roulette",
+    host: "roulette.outegro.dev",
+    href: "https://roulette.outegro.dev",
+  },
+  {
     key: "battleship",
     host: "battleship.outegro.dev",
     href: "https://battleship.outegro.dev",

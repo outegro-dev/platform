@@ -15,7 +15,7 @@ import { LocaleSwitcher } from "./locale-switcher";
 import type { MobileMenu } from "./mobile-menu";
 
 /** Sections of the main page, in page order. */
-const sections = ["projects", "services", "process", "contact"] as const;
+const sections = ["projects", "platform", "process", "contact"] as const;
 
 /** The masthead's two links, as on the cover. */
 const masthead = ["projects", "process"] as const;
@@ -173,9 +173,7 @@ export function Header({
     };
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    // the section in view, by whatever holds its id at the time: the issue
-    // in flight and the staged desktop move #projects, #services and
-    // #process onto marks spanning their acts, and back when they land
+    // the section in view, by whatever holds its id at the time
     const holders = new Map<Element, string>();
     const observer = new IntersectionObserver(
       (entries) => {
