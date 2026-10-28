@@ -1,6 +1,6 @@
 {
   "version": "0.4",
-  "status_note": "Statuses synced with the GitHub board (outegro-dev project #1) on 2026-10-11. done: issue closed as completed or work merged to master; in_progress: open issue with work started; planned: not started; deferred: optional wallet. A card-file path means the v0.3 card; an issue URL path means the card lives only on the board. Per-task evidence exists only where docs/09-evidence/<ID>/ has a report.",
+  "status_note": "Statuses synced with the GitHub board (outegro-dev project #1) on 2026-10-28. done: issue closed as completed or work merged to master; in_progress: open issue with work started; planned: not started; deferred: optional wallet. A card-file path means the v0.3 card; an issue URL path means the card lives only on the board. Per-task evidence exists only where docs/09-evidence/<ID>/ has a report.",
   "tasks": [
     {
       "id": "BOOT-01",
@@ -2261,7 +2261,7 @@
       "id": "W-01",
       "title": "Сервис wallet-backend: схема, журнал и гарантии БД",
       "stage": "90-optional-wallet",
-      "status": "review",
+      "status": "done",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-01.md",
       "dependencies": [
@@ -2325,7 +2325,7 @@
       "id": "W-02",
       "title": "Операции, идемпотентность по ref и API",
       "stage": "90-optional-wallet",
-      "status": "review",
+      "status": "done",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-02.md",
       "dependencies": [
@@ -2389,7 +2389,7 @@
       "id": "W-03",
       "title": "Сверка, метрики и раздел «Кошелёк» в админке",
       "stage": "90-optional-wallet",
-      "status": "review",
+      "status": "done",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-03.md",
       "dependencies": [
@@ -2618,7 +2618,7 @@
       "id": "W-06",
       "title": "Приёмка этапа 1: инварианты на случайных командах",
       "stage": "90-optional-wallet",
-      "status": "review",
+      "status": "done",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-06.md",
       "dependencies": [
@@ -3352,6 +3352,319 @@
       "chapter_refs": [
         "docs/01-specification/chapters/10-k3s-infrastructure.md"
       ],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-01",
+      "title": "ADR-012 и контракт рулетки",
+      "stage": "12-roulette",
+      "status": "done",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/152",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-02",
+      "title": "Пакет roulette-engine: колесо, выплаты, номер раунда",
+      "stage": "12-roulette",
+      "status": "done",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/153",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-03",
+      "title": "fair-roll-backend: цепочка сидов и раскрытие по порядку",
+      "stage": "12-roulette",
+      "status": "done",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/154",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-04",
+      "title": "roulette-backend: движок раунда, ставки и расчёт",
+      "stage": "12-roulette",
+      "status": "done",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/155",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-05",
+      "title": "daily-bonus-backend: бонус дня",
+      "stage": "12-roulette",
+      "status": "done",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/156",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-06",
+      "title": "roulette-web: игра, анимации и окно бонуса",
+      "stage": "12-roulette",
+      "status": "done",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/157",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-07",
+      "title": "Раздел «Рулетка» в admin-web",
+      "stage": "12-roulette",
+      "status": "done",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/158",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-08",
+      "title": "Выкатка рулетки и сезон 1",
+      "stage": "12-roulette",
+      "status": "in_progress",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/159",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-09",
+      "title": "Нагрузка и отказы рулетки",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/160",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-10",
+      "title": "Рассылка отдельным fanout-сервисом и столы",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/161",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-11",
+      "title": "Чат, «дождь», топ недели и уровни",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/162",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "RL-12",
+      "title": "Telegram Mini App для рулетки",
+      "stage": "12-roulette",
+      "status": "planned",
+      "scope": "roulette",
+      "path": "https://github.com/outegro-dev/platform/issues/163",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/03-decisions/adr/012-roulette.md",
+        "docs/02-contracts/roulette.md",
+        "docs/06-operations/roulette-rollout.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-06",
+      "title": "Next.js 16.4.3: security advisories",
+      "stage": "11-zine",
+      "status": "in_progress",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/164",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/06-operations/production.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-07",
+      "title": "Остальные уязвимости из pnpm audit",
+      "stage": "11-zine",
+      "status": "planned",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/165",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/06-operations/production.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-08",
+      "title": "Нестабильный тест battleship-backend game.test.ts",
+      "stage": "11-zine",
+      "status": "planned",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/166",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/06-operations/production.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-09",
+      "title": "Ёмкость узла: NotReady и нехватка памяти при общем релизе",
+      "stage": "11-zine",
+      "status": "planned",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/167",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/06-operations/production.md"
+      ],
+      "chapter_refs": [],
+      "test_case_ids": []
+    },
+    {
+      "id": "MNT-10",
+      "title": "Playwright: Firefox и WebKit на машине разработки",
+      "stage": "11-zine",
+      "status": "planned",
+      "scope": "post-release",
+      "path": "https://github.com/outegro-dev/platform/issues/168",
+      "dependencies": [],
+      "external": [],
+      "required_docs": [
+        "docs/00-start-here/project-context.md",
+        "docs/00-start-here/execution-protocol.md",
+        "docs/06-operations/production.md"
+      ],
+      "chapter_refs": [],
       "test_case_ids": []
     }
   ]
