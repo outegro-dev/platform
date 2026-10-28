@@ -9,7 +9,11 @@ import { z } from "zod";
 import { accessToken, payments } from "@/lib/api";
 import { env } from "@/lib/env";
 import { idempotencyKeyPattern } from "@/lib/payments/client";
-import type { CancelOutcome, CheckoutOutcome } from "@/lib/payments/model";
+import type {
+  CancelOutcome,
+  CheckoutOutcome,
+  GrumbleOutcome,
+} from "@/lib/payments/model";
 
 /*
  * Server actions: same-origin only (Next.js checks Origin against Host),
@@ -91,4 +95,20 @@ export async function startCheckout(input: unknown): Promise<CheckoutOutcome> {
   const token = await accessToken();
   if (!token) return done({ kind: "unauthorized" });
   return done(await payments.checkout(token, parsed.data));
+}
+
+const grumbleSchema = z.object({
+  productKey: z.string().regex(/^[a-z0-9][a-z0-9-]{1,63}$/),
+  idempotencyKey: z.string().regex(idempotencyKeyPattern),
+});
+
+/** Buys with grumbles (wallet phase 3); the price is the server's. */
+export async function buyWithGrumbles(input: unknown): Promise<GrumbleOutcome> {
+  const done = (outcome: GrumbleOutcome) =>
+    logged("buyWithGrumbles", outcome, ["paid", "short", "owned"]);
+  const parsed = grumbleSchema.safeParse(input);
+  if (!parsed.success) return done({ kind: "gone" });
+  const token = await accessToken();
+  if (!token) return done({ kind: "unauthorized" });
+  return done(await payments.buyWithGrumbles(token, parsed.data));
 }

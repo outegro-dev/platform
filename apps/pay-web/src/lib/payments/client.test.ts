@@ -272,12 +272,37 @@ describe("reads", () => {
                 money: { minor: "52", currency: "EUR", scale: 2 },
               },
             ],
+            // Not sent by this payments build: not sold for grumbles.
+            priceGrumbles: null,
           },
         ],
       },
     });
     const headers = (calls()[0] as Call)[1].headers as Record<string, string>;
     expect(headers.authorization).toBeUndefined();
+  });
+
+  it("reads a price in grumbles and drops a malformed one", async () => {
+    const product = (priceGrumbles: unknown) => ({
+      key: "battleship-silver-fleet",
+      service: "battleship",
+      feature: "cosmetics.silver-fleet",
+      kind: "one_time",
+      periodicity: "ONE_TIME",
+      graceDays: 0,
+      title: { en: "Silver Fleet", ru: "Серебряный флот" },
+      description: { en: "Silver ships", ru: "Серебряные корабли" },
+      prices: [],
+      priceGrumbles,
+    });
+    respond(200, {
+      checkoutEnabled: true,
+      products: [product("500"), product("-1"), product(null)],
+    });
+    const result = await client().catalog();
+    expect(
+      result.ok ? result.data.products.map((p) => p.priceGrumbles) : null,
+    ).toEqual(["500", null, null]);
   });
 
   it("keeps every app's products, reading a period or kind it does not know as unknown", async () => {

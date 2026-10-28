@@ -11,6 +11,7 @@ import {
   type CheckoutOutcome,
   checkoutStates,
   type Failure,
+  type GrumbleOutcome,
   grantStates,
   isKnown,
   type Order,
@@ -128,9 +129,29 @@ const catalog = z.object({
       title: localized,
       description: localized,
       prices: z.array(z.object({ priceId: z.string(), money })),
+      // Older payments builds do not send it: not sold for grumbles.
+      priceGrumbles: z
+        .string()
+        .regex(/^[1-9]\d{0,14}$/)
+        .nullish()
+        .transform((value) => value ?? null)
+        .catch(null),
     }),
   ),
 }) satisfies z.ZodType<Catalog, unknown>;
+
+const grumbleCheckout = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("paid"),
+    balanceAfter: z.string().nullable(),
+  }),
+  z.object({
+    status: z.literal("short"),
+    shortfall: z.string(),
+    pack: z.object({ key: z.string(), grumbles: z.string() }).nullable(),
+  }),
+  z.object({ status: z.literal("failed"), failure: z.string() }),
+]);
 
 const checkout = z.object({
   orderId: z.string().min(1),
@@ -290,6 +311,48 @@ export class PaymentsClient {
       return { kind: "blocked", orderId };
     }
     return { kind: "redirect", orderId, url: paymentUrl };
+  }
+
+  /**
+   * Buys a one-time product with grumbles (wallet phase 3). The price is
+   * the server's; the same key returns the same order.
+   */
+  async buyWithGrumbles(
+    token: string,
+    input: { productKey: string; idempotencyKey: string },
+  ): Promise<GrumbleOutcome> {
+    if (!idempotencyKeyPattern.test(input.idempotencyKey))
+      return { kind: "gone" };
+    const path = "/v1/checkout/grumbles";
+    let raw: unknown;
+    try {
+      raw = await this.call<unknown>(path, {
+        method: "POST",
+        accessToken: token,
+        headers: { "idempotency-key": input.idempotencyKey },
+        body: { productKey: input.productKey },
+        timeoutMs: 20_000,
+      });
+    } catch (error) {
+      if (error instanceof BackendError) {
+        if (error.error.code === "ALREADY_OWNED") return { kind: "owned" };
+        if (error.error.code === "WALLET_RESTRICTED")
+          return { kind: "restricted" };
+        if (error.status === 401) return { kind: "unauthorized" };
+        if (error.status === 404 || error.status === 422)
+          return { kind: "gone" };
+      }
+      this.failure(path, error);
+      return { kind: "unavailable" };
+    }
+    const parsed = this.parse(path, grumbleCheckout, raw);
+    if (!parsed.ok) return { kind: "unavailable" };
+    const result = parsed.data;
+    if (result.status === "paid")
+      return { kind: "paid", balanceAfter: result.balanceAfter };
+    if (result.status === "short")
+      return { kind: "short", shortfall: result.shortfall, pack: result.pack };
+    return { kind: "failed" };
   }
 
   /** Only https pages on CHECKOUT_ORIGINS, without credentials in the URL. */

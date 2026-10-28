@@ -66,6 +66,25 @@ const packsJson = z
       ),
   );
 
+/** Prices in grumbles (GRUMBLE-PRICES): `{ "<productKey>": 500 }`. */
+const pricesJson = z
+  .string()
+  .default("{}")
+  .transform((text, ctx) => {
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      ctx.addIssue({ code: "custom", message: "not JSON" });
+      return z.NEVER;
+    }
+  })
+  .pipe(
+    z.record(
+      z.string().regex(/^[a-z0-9][a-z0-9-]{1,63}$/),
+      z.number().int().min(1).max(1_000_000_000),
+    ),
+  );
+
 /** Optional secret: an empty `KEY=` line in .env means "not configured". */
 const optionalSecret = z
   .string()
@@ -90,6 +109,19 @@ export const env = defineEnv(
        */
       GRUMBLE_PACKS_ENABLED: z.stringbool().default(false),
       GRUMBLE_PACKS: packsJson,
+      /**
+       * Purchases with grumbles (phase 3) stay off until the owner sets the
+       * prices; GRUMBLE_PRICES is JSON `{ "<productKey>": grumbles }` for
+       * one-time products. The wallet's internal API: WALLET_API_URL with
+       * INTERNAL_API_TOKEN.
+       */
+      GRUMBLE_PRICES_ENABLED: z.stringbool().default(false),
+      GRUMBLE_PRICES: pricesJson,
+      WALLET_API_URL: z
+        .string()
+        .optional()
+        .transform((value) => (value ? value : undefined))
+        .pipe(z.url().optional()),
       /**
        * auth-backend's internal API, for buyers whose Identity events predate
        * this service. Both unset: such buyers wait for events.

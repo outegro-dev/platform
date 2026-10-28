@@ -29,6 +29,13 @@
       "when": 1793153982780,
       "tag": "0003_grumble_packs",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793155213733,
+      "tag": "0004_wallet_orders",
+      "breakpoints": true
     }
   ]
 }

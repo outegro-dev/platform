@@ -46,6 +46,14 @@ export const grumblePacksConfig = registerAs("grumblePacks", () => ({
   packs: env().GRUMBLE_PACKS,
 }));
 
+/** Purchases with grumbles (phase 3): on only with prices and the wallet. */
+export const grumblePricesConfig = registerAs("grumblePrices", () => ({
+  enabled: env().GRUMBLE_PRICES_ENABLED,
+  prices: env().GRUMBLE_PRICES,
+  walletUrl: env().WALLET_API_URL,
+  token: env().INTERNAL_API_TOKEN,
+}));
+
 /** pay-web: the pages that messages to buyers link to. */
 export const payWebConfig = registerAs("payWeb", () => ({
   url: env().PAY_WEB_URL,

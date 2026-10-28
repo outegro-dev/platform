@@ -255,6 +255,21 @@ const screens: Screen[] = [
     },
   },
   {
+    // Buying with grumbles (phase 3) when the wallet is short.
+    name: "catalog-grumbles-short",
+    persona: { scenario: "empty", catalog: "packs" },
+    ru: true,
+    open: async (page) => {
+      await page.goto("/catalog");
+      await page.locator(".grumble-buy button").first().click();
+      await page.locator(".grumble-confirm button").first().click();
+      await expect(
+        page.locator(".grumble-buy a[href='#grumbles-1000']"),
+      ).toBeVisible();
+      await page.locator("#battleship-silver-fleet").scrollIntoViewIfNeeded();
+    },
+  },
+  {
     name: "catalog-owned",
     open: async (page) => {
       await page.goto("/catalog");

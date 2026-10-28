@@ -22,6 +22,7 @@ import { useFormat } from "@/lib/i18n-client";
 import type { Product } from "@/lib/payments/model";
 import { signInPath } from "@/lib/sso";
 import { CheckoutStore, sessionKeyVault } from "@/stores/checkout-store";
+import { GrumbleBuy } from "./grumble-buy";
 
 type Ownership = { kind: "owned" | "subscribed"; href: string } | null;
 
@@ -210,6 +211,9 @@ export const ProductCard = observer(function ProductCard({
           >
             {line}
           </FormMessage>
+        )}
+        {!ownership && product.priceGrumbles && (
+          <GrumbleBuy productKey={product.key} price={product.priceGrumbles} />
         )}
       </div>
     </article>

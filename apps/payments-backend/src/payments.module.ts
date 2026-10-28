@@ -16,6 +16,8 @@ import { CatalogController } from "./catalog/catalog.controller.js";
 import { CatalogService } from "./catalog/catalog.service.js";
 import { CheckoutController } from "./checkout/checkout.controller.js";
 import { CheckoutService } from "./checkout/checkout.service.js";
+import { GrumbleCheckoutService } from "./checkout/grumble-checkout.service.js";
+import { WalletClient } from "./checkout/wallet.client.js";
 import { PaymentsMetrics } from "./common/metrics.js";
 import { lavaConfig } from "./config/config.js";
 import { CustomersService } from "./customers/customers.service.js";
@@ -62,6 +64,8 @@ import { ReconciliationWorker } from "./workers/reconciliation.worker.js";
     RefundService,
     ProviderEvents,
     CheckoutService,
+    WalletClient,
+    GrumbleCheckoutService,
     AccountService,
     AdminService,
     CurrentAccessGuard,

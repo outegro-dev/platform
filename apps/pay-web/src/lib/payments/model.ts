@@ -109,6 +109,8 @@ export type Product = {
   title: Localized;
   description: Localized;
   prices: Price[];
+  /** Its price in grumbles (wallet phase 3); null when not sold for them. */
+  priceGrumbles: string | null;
 };
 
 export type Catalog = { checkoutEnabled: boolean; products: Product[] };
@@ -136,6 +138,25 @@ export type CheckoutInput = {
 };
 
 /** What starting (or repeating) a checkout led to. */
+/** A purchase with grumbles (wallet phase 3), as the buyer sees it. */
+export type GrumbleOutcome =
+  | { kind: "paid"; balanceAfter: string | null }
+  /** Not enough: how many are missing and a pack that covers them. */
+  | {
+      kind: "short";
+      shortfall: string;
+      pack: { key: string; grumbles: string } | null;
+    }
+  | { kind: "owned" }
+  /** The wallet is restricted (a blocked account or a debt). */
+  | { kind: "restricted" }
+  /** The wallet refused or failed: nothing was taken. */
+  | { kind: "failed" }
+  | { kind: "unauthorized" }
+  | { kind: "gone" }
+  /** Unknown result: repeat with the same key. */
+  | { kind: "unavailable" };
+
 export type CheckoutOutcome =
   /** An https payment page on an allowed origin. */
   | { kind: "redirect"; orderId: string; url: string }
