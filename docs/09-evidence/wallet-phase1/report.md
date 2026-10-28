@@ -60,7 +60,7 @@
 
 ## Ограничения и незавершённое
 
-- Выкатки нет: стадия Dockerfile, bake, `tools/ci/scope.mjs`, gitops (БД `wallet`, Sealed Secret с `INTERNAL_API_TOKEN`, NetworkPolicy, ServiceMonitor, правило алерта, дашборд Grafana, `WALLET_API_URL` у admin-web) — только с согласия владельца.
+- Выкатка подготовлена по поручению владельца отдельными PR (`feat/wallet-deploy` в platform и gitops), порядок — [runbook](../../06-operations/wallet-rollout.md); шаг 0 (секрет `pg-wallet` на сервере) делает владелец.
 - Аудит кошелька не входит в общую ленту `/audit` админки: команды видны в журнале кошелька (автор и причина) и в `GET /v1/admin/audit` сервиса.
 - Системный счёт — одна строка на код, поэтому операции платформы с одним счётом идут по очереди. Для этапа 1 этого хватает; при росте нагрузки — шардированные строки счёта.
 - Этапы 2 (W-04) и 3 (W-05) не начаты: ждут `GRUMBLE-PACKS` и `GRUMBLE-PRICES`.
