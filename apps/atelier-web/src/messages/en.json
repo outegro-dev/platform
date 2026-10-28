@@ -1,0 +1,543 @@
+{
+  "meta": {
+    "title": "Atelier · outegro",
+    "titleTemplate": "%s · Atelier",
+    "description": "Your job search on one board: vacancies, tailored CVs, messages and replies."
+  },
+  "brand": {
+    "product": "Atelier",
+    "home": "Atelier, the board"
+  },
+  "nav": {
+    "label": "Sections",
+    "inbox": "Inbox",
+    "board": "Board",
+    "pipeline": "Pipeline",
+    "profile": "Profile",
+    "add": "Add vacancy",
+    "addShort": "Add",
+    "skip": "Skip to content",
+    "menu": "Menu",
+    "openMenu": "Open the menu",
+    "closeMenu": "Close the menu",
+    "inboxCount": "{count, plural, one {# waiting} other {# waiting}}",
+    "language": "Language",
+    "languageFailed": "The language did not change. Try again.",
+    "theme": "Theme",
+    "themes": {
+      "system": "Auto",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "signOut": "Sign out",
+    "account": "Account",
+    "mock": "Mock data",
+    "mockHint": "Made-up applications, nothing is sent"
+  },
+  "status": {
+    "offline": "You're offline. Check the connection and try again.",
+    "dismiss": "Dismiss",
+    "failed": "That didn't go through. Try again.",
+    "signedOut": "Your session ended. Sign in again to continue.",
+    "forbidden": "Your account can't do that.",
+    "notFound": "That application is no longer there.",
+    "conflict": "The application changed in the meantime. The board is up to date now."
+  },
+  "footer": {
+    "site": "outegro.dev",
+    "privacy": "Privacy",
+    "account": "Account"
+  },
+  "auth": {
+    "errorTitle": "Sign-in didn't finish",
+    "reasons": {
+      "state_mismatch": "The sign-in link expired or was opened in another browser.",
+      "missing_code": "The sign-in page did not send a code back.",
+      "invalid_grant": "The sign-in could not be confirmed. It may have been used already.",
+      "unavailable": "The account service is temporarily unavailable.",
+      "unknown": "Something went wrong while signing in."
+    },
+    "retry": "Try again",
+    "home": "Back to the board",
+    "signedOutTitle": "You signed out of Atelier",
+    "signedOutBody": "Your board stays as it is. Sign in again when you want to come back.",
+    "signIn": "Sign in"
+  },
+  "noAccess": {
+    "title": "Atelier isn't open to this account",
+    "body": "You're signed in as {who}, and Atelier is a private workshop for now. If you think this account should have access, ask the owner of outegro.dev.",
+    "signOut": "Sign out",
+    "site": "Go to outegro.dev"
+  },
+  "identity": {
+    "title": "Your account didn't answer",
+    "body": "Atelier could not check who you are. Try again in a minute."
+  },
+  "errors": {
+    "title": "Something is temporarily unavailable",
+    "body": "Atelier did not answer in time. Nothing you did is lost.",
+    "offlineTitle": "You're offline",
+    "offlineBody": "The page needs a connection. It will load once you're back online.",
+    "retry": "Try again",
+    "retrying": "Trying again…"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The address may be mistyped, or the application was removed.",
+    "home": "Back to the board"
+  },
+  "unavailable": {
+    "title": "The workshop is closed for a minute",
+    "body": "atelier-backend did not answer. Your applications are safe; try again shortly.",
+    "retry": "Try again"
+  },
+  "stages": {
+    "found": "Found",
+    "fit": "Good fit",
+    "building": "Building",
+    "ready": "Ready",
+    "sent": "Sent",
+    "hr": "HR screen",
+    "task": "Take-home",
+    "tech": "Tech interview",
+    "final": "Final",
+    "offer": "Offer",
+    "archived": "Archive"
+  },
+  "stageHints": {
+    "found": "Below the threshold or not scored yet",
+    "fit": "Above the threshold, waiting in the Inbox",
+    "building": "CV, PDF and texts in progress",
+    "ready": "Waiting for Send",
+    "sent": "Applied, waiting for a reply",
+    "hr": "First call with a recruiter",
+    "task": "Home assignment with a deadline",
+    "tech": "Technical rounds",
+    "final": "Team, manager, culture",
+    "offer": "Terms and a deadline to answer",
+    "archived": "Out of the funnel"
+  },
+  "reasons": {
+    "hired": "Hired",
+    "rejected": "Rejected",
+    "ghosted": "No reply",
+    "withdrawn": "Withdrawn",
+    "closed": "Closed",
+    "skipped": "Skipped"
+  },
+  "flags": {
+    "needs_edit": "Needs edit",
+    "needs_human": "Needs you",
+    "follow_up": "Follow-up",
+    "meeting": "Meeting",
+    "cv_opened": "CV opened",
+    "dodep": "Extra touches"
+  },
+  "channels": {
+    "ats_form": "ATS form",
+    "email": "Email",
+    "telegram": "Telegram",
+    "linkedin": "LinkedIn",
+    "manual": "Manual"
+  },
+  "sources": {
+    "linkedin": "LinkedIn",
+    "lever": "Lever",
+    "greenhouse": "Greenhouse",
+    "ashby": "Ashby",
+    "workable": "Workable",
+    "telegram": "Telegram",
+    "headhunter_ge": "hh.ge",
+    "manual": "Added by hand"
+  },
+  "age": {
+    "now": "now",
+    "m": "{n}m",
+    "h": "{n}h",
+    "d": "{n}d",
+    "w": "{n}w",
+    "label": "Updated {when} ago",
+    "labelNow": "Updated just now"
+  },
+  "score": {
+    "label": "Fit {score} of 100",
+    "none": "Not scored"
+  },
+  "board": {
+    "title": "Board",
+    "lead": "Every application from the first find to the answer.",
+    "stats": {
+      "label": "Your numbers",
+      "total": "Applications",
+      "sent": "Sent",
+      "sentToday": "Sent today",
+      "replies": "Replies",
+      "replyRate": "{rate} of sent",
+      "interviews": "Interviewing",
+      "offers": "Offers"
+    },
+    "filters": {
+      "label": "Filters",
+      "search": "Search",
+      "searchPlaceholder": "Company or role",
+      "source": "Source",
+      "anySource": "All sources",
+      "flag": "Mark",
+      "anyFlag": "All marks",
+      "clear": "Clear filters",
+      "showing": "{shown} of {total} shown",
+      "nothing": "Nothing matches these filters.",
+      "nothingHint": "Try a shorter search or another source."
+    },
+    "columns": "Stages",
+    "cardCount": "{count, plural, one {# application} other {# applications}}",
+    "empty": "Empty for now",
+    "emptyFiltered": "No matches here",
+    "archiveShow": "Show the archive",
+    "archiveHide": "Hide the archive",
+    "archiveCount": "{count, plural, one {# card} other {# cards}}",
+    "switcher": "Go to a stage",
+    "dropHere": "Drop to move here",
+    "flags": "Marks",
+    "open": "Open {company}",
+    "moved": "{company} moved to {stage}.",
+    "archived": "{company} archived: {reason}.",
+    "moveFailed": "{company} stayed in {stage}. Try again.",
+    "dragHint": "Drag a card to another column, or use its Move menu."
+  },
+  "move": {
+    "button": "Move {company}",
+    "label": "Move to",
+    "current": "current",
+    "archive": "Archive as",
+    "reasonTitle": "Why is it archived?",
+    "reasonBody": "{company} goes to the archive. Pick what happened.",
+    "cancel": "Cancel"
+  },
+  "detail": {
+    "close": "Close",
+    "openPage": "Open as a page",
+    "back": "Board",
+    "loading": "Opening the application…",
+    "stage": "Stage",
+    "stageButton": "Stage: {stage}",
+    "archivedAs": "Archived: {reason}",
+    "source": "From {source}",
+    "via": "Apply by {channel}",
+    "noChannel": "No channel yet",
+    "updated": "Updated {when}",
+    "sentAt": "Sent {when}",
+    "salary": "{min} to {max} a {period}",
+    "periods": {
+      "year": "year",
+      "month": "month",
+      "hour": "hour"
+    },
+    "actions": "Actions",
+    "send": "Send",
+    "sending": "Sending…",
+    "sendHint": "Send becomes available once the application is ready.",
+    "sent": "Sent. The card moved to Sent.",
+    "retry": "Retry from step",
+    "retryShort": "Retry",
+    "retryFailed": "Retry from the failed step",
+    "retryFrom": "From {step}",
+    "retried": "The pipeline runs again from {step}.",
+    "openVacancy": "Open vacancy",
+    "opensInNewTab": "(opens in a new tab)",
+    "tabs": {
+      "label": "Application",
+      "resume": "Resume",
+      "fit": "Fit",
+      "texts": "Texts",
+      "contacts": "Contacts",
+      "history": "History",
+      "pipeline": "Pipeline"
+    }
+  },
+  "resume": {
+    "none": "No CV yet",
+    "noneBody": "The CV appears here once the pipeline has built it.",
+    "preview": "Preview of {file}",
+    "previewFallback": "This browser can't show the PDF inside the page.",
+    "openPdf": "Open the PDF",
+    "file": "File",
+    "share": "Share link",
+    "noShare": "The link appears once the application is sent.",
+    "copy": "Copy",
+    "copyLink": "Copy the link",
+    "copied": "Copied",
+    "copyFailed": "Couldn't copy",
+    "opens": "Opens",
+    "opensValue": "{count, plural, =0 {Not opened yet} one {Opened # time} other {Opened # times}}",
+    "pages": "Pages",
+    "pagesValue": "{count, plural, one {# page} other {# pages}}",
+    "ats": "ATS coverage",
+    "atsValue": "{value} of the vacancy's keywords",
+    "atsNone": "Not checked",
+    "changes": "What changed from the master CV",
+    "noChanges": "Nothing changed."
+  },
+  "fit": {
+    "none": "Not scored yet",
+    "noneBody": "The fit appears once the vacancy has been analysed.",
+    "score": "Fit",
+    "summary": "{direct} direct, {related} related, {weak} weak, {missing} missing",
+    "importance": {
+      "must": "Must have",
+      "responsibility": "Responsibilities",
+      "preferred": "Nice to have"
+    },
+    "labels": {
+      "direct": "Direct",
+      "related": "Related",
+      "weak": "Weak",
+      "missing": "Missing"
+    },
+    "cases": "Cases",
+    "noCase": "No case in the bank"
+  },
+  "texts": {
+    "materials": "Messages",
+    "answers": "Form answers",
+    "none": "No texts yet",
+    "noneBody": "Cover letter, messages and form answers are written after the CV.",
+    "kinds": {
+      "cover_letter": "Cover letter",
+      "telegram": "Telegram message",
+      "email": "Email",
+      "linkedin": "LinkedIn note",
+      "follow_up": "Follow-up"
+    },
+    "subject": "Subject",
+    "copy": "Copy",
+    "copyNamed": "Copy: {what}",
+    "copied": "Copied",
+    "copyFailed": "Couldn't copy",
+    "locales": {
+      "en": "EN",
+      "ru": "RU"
+    },
+    "localeNames": {
+      "en": "in English",
+      "ru": "in Russian"
+    }
+  },
+  "contacts": {
+    "none": "No contacts yet",
+    "noneBody": "Every touch (the application itself and the extra ones) is listed here.",
+    "statuses": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "replied": "Replied",
+      "failed": "Failed"
+    },
+    "notSent": "Not sent yet",
+    "count": "{count, plural, one {# touch} other {# touches}}"
+  },
+  "history": {
+    "none": "Nothing has happened yet.",
+    "sources": {
+      "system": "Atelier",
+      "mail": "Mail",
+      "manual": "You"
+    },
+    "actions": {
+      "found": "Found",
+      "scored": "Scored",
+      "taken": "Taken",
+      "built": "CV built",
+      "sent": "Sent",
+      "received": "Application received",
+      "cv_opened": "CV opened",
+      "invited": "Invitation",
+      "moved": "Moved",
+      "archived": "Archived",
+      "retried": "Retried",
+      "added": "Added by hand"
+    }
+  },
+  "pipelineTab": {
+    "none": "The pipeline hasn't started.",
+    "statuses": {
+      "waiting": "Waiting",
+      "running": "Running",
+      "ok": "Done",
+      "failed": "Failed",
+      "skipped": "Skipped",
+      "needs_human": "Needs you"
+    },
+    "calls": "{count, plural, =0 {No model calls} one {# model call} other {# model calls}}",
+    "total": "{steps} steps, {calls, plural, one {# model call} other {# model calls}}, {time}",
+    "retryHere": "Retry from {step}"
+  },
+  "steps": {
+    "discover": "Discover",
+    "fetch": "Fetch the page",
+    "extract": "Extract fields",
+    "dedupe": "Find duplicates",
+    "structure": "Structure",
+    "analyze": "Analyse the vacancy",
+    "match": "Match the bank",
+    "select": "Select cases",
+    "compose": "Compose the CV",
+    "adapt": "Adapt the wording",
+    "rules": "Check the rules",
+    "review": "Review the facts",
+    "repair": "Repair",
+    "fallback": "Fallback",
+    "fit": "Fit to the page",
+    "ats-check": "ATS check",
+    "store": "Store the PDF",
+    "texts": "Write the texts",
+    "channel": "Pick the channel",
+    "send": "Send",
+    "dodep": "Extra touches",
+    "mail": "Read the mail"
+  },
+  "inbox": {
+    "title": "Inbox",
+    "lead": "New matches to take or skip, and the things only you can do.",
+    "matches": "New matches",
+    "matchesCount": "{count, plural, one {# match} other {# matches}}",
+    "tasks": "Needs you",
+    "tasksCount": "{count, plural, one {# task} other {# tasks}}",
+    "keys": "Keyboard",
+    "keyMove": "move",
+    "keyTake": "take",
+    "keySkip": "skip",
+    "take": "Take",
+    "skip": "Skip",
+    "takeNamed": "Take {company}",
+    "skipNamed": "Skip {company}",
+    "taken": "{company} taken. Its CV is being built.",
+    "skipped": "{company} skipped.",
+    "failed": "{company} stayed in the Inbox. Try again.",
+    "empty": "All caught up",
+    "emptyBody": "New matches land here as soon as the pipeline scores them.",
+    "noTasks": "Nothing needs you right now.",
+    "kinds": {
+      "needs_human": "Needs you",
+      "needs_edit": "Needs edit",
+      "unsorted_mail": "Unsorted mail"
+    },
+    "openForm": "Open the form",
+    "openApplication": "Open the application",
+    "listLabel": "New matches, use J and K to move"
+  },
+  "add": {
+    "title": "Add a vacancy",
+    "lead": "Paste a link to the posting, or the whole text if there's no link. Atelier reads it, scores the fit and puts it on the board.",
+    "label": "Link or vacancy text",
+    "hint": "A link starts with https://. Pasted text needs at least 100 characters.",
+    "submit": "Add to the board",
+    "submitting": "Adding…",
+    "detectedUrl": "A link to {host}",
+    "detectedText": "Vacancy text, {count, plural, one {# character} other {# characters}}",
+    "errors": {
+      "empty": "Paste a link or the text of the vacancy.",
+      "url": "This link doesn't look complete. Check that it starts with https:// and has no spaces.",
+      "short": "That's {count, plural, one {# character} other {# characters}}. Paste the whole vacancy: at least 100.",
+      "long": "That's longer than 200,000 characters. Paste only the vacancy itself.",
+      "refused": "Atelier couldn't read this. Check the link, or paste the text instead.",
+      "failed": "The vacancy wasn't added. Try again in a minute."
+    },
+    "done": "On the board",
+    "doneBody": "It starts in Found. Atelier fetches the page, scores the fit and moves it on.",
+    "open": "Open the application",
+    "another": "Add another"
+  },
+  "pipeline": {
+    "title": "Pipeline",
+    "lead": "What runs now, what waits in the queues and which model accounts can take work.",
+    "providers": "Model providers",
+    "available": "Available",
+    "paused": "Paused",
+    "unavailable": "Unavailable",
+    "pausedUntil": "Until {time}",
+    "pausedFor": "Resumes {when}",
+    "load": "{inFlight} of {concurrency} slots busy",
+    "liftPause": "Lift pause",
+    "lifting": "Lifting…",
+    "lifted": "{provider} takes work again.",
+    "liftFailed": "The pause stayed. Try again.",
+    "queues": "Queues",
+    "queuesIdle": "{count, plural, one {# more queue is empty} other {# more queues are empty}}",
+    "waiting": "Waiting",
+    "running": "Running",
+    "jobs": "Jobs",
+    "noJobs": "No jobs right now.",
+    "columns": {
+      "job": "Job",
+      "step": "Step",
+      "status": "Status",
+      "started": "Started",
+      "updated": "Updated"
+    },
+    "jobStatuses": {
+      "queued": "Queued",
+      "running": "Running",
+      "waiting_human": "Waits for you",
+      "done": "Done",
+      "failed": "Failed"
+    },
+    "kinds": {
+      "application_build": "Build",
+      "application_send": "Send",
+      "application_dodep": "Extra touches",
+      "vacancy_add": "Add vacancy",
+      "discover": "Discover",
+      "mail": "Mail"
+    },
+    "noStep": "No step"
+  },
+  "profile": {
+    "title": "Profile",
+    "lead": "The measurements every CV is cut from. Editing comes later; for now this is what the pipeline reads.",
+    "preferences": "Preferences",
+    "factsMode": "Facts",
+    "factsModes": {
+      "free": "May add the vacancy's technologies within a company's domain",
+      "strict": "Only facts from the cases"
+    },
+    "factsModeNames": {
+      "free": "Free",
+      "strict": "Strict"
+    },
+    "maxPages": "CV length",
+    "maxPagesValue": "{count, plural, one {Up to # page} other {Up to # pages}}",
+    "form": "Form answers",
+    "location": "Location",
+    "timezone": "Time zone",
+    "workFormat": "Work format",
+    "contract": "Contract",
+    "relocation": "Relocation",
+    "sponsorship": "Visa sponsorship",
+    "salary": "Salary from",
+    "salaryValue": "{amount} a {period}",
+    "notice": "Notice period",
+    "noticeValue": "{count, plural, =0 {Can start now} one {# week} other {# weeks}}",
+    "eeo": "Diversity questions",
+    "eeoValue": "Prefer not to say",
+    "yes": "Yes",
+    "no": "No",
+    "needs": "Needed",
+    "notNeeded": "Not needed",
+    "periods": {
+      "year": "year",
+      "month": "month"
+    },
+    "cases": "Achievement cases",
+    "casesCount": "{active} active of {total}",
+    "columns": {
+      "id": "Case",
+      "company": "Company",
+      "title": "What was done",
+      "technologies": "Technologies",
+      "active": "In use"
+    },
+    "active": "Active",
+    "inactive": "Off",
+    "noTech": "None listed"
+  }
+}
