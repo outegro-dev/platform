@@ -196,12 +196,8 @@
           "name": "bets_round_id_rounds_id_fk",
           "tableFrom": "bets",
           "tableTo": "rounds",
-          "columnsFrom": [
-            "round_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["round_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
