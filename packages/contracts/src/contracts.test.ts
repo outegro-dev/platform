@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   anyEventSchema,
   billingGrantChanged,
+  billingGrumblesPurchased,
+  billingGrumblesReversed,
   deadLetterQueueName,
   defineEvent,
   defineQueue,
@@ -44,6 +46,46 @@ describe("event envelope", () => {
       },
     });
     expect(event.payload.state).toBe("active");
+  });
+
+  it("carries a pack's grumbles as a whole positive number (phase 2)", () => {
+    const purchased = {
+      ...envelope,
+      type: "billing.grumbles-purchased.v1",
+      payload: {
+        paymentId: "00000000-0000-4000-8000-000000000005",
+        orderId: "00000000-0000-4000-8000-000000000006",
+        userId: "00000000-0000-4000-8000-000000000003",
+        productKey: "grumbles-1000",
+        grumbles: "1000",
+        money: { minor: "9900", currency: "RUB", scale: 2 },
+        paidAt: "2026-09-27T12:00:00.000Z",
+      },
+    };
+    expect(
+      billingGrumblesPurchased.schema.parse(purchased).payload.grumbles,
+    ).toBe("1000");
+    for (const grumbles of ["0", "-5", "1.5", "01000", 1000])
+      expect(
+        billingGrumblesPurchased.schema.safeParse({
+          ...purchased,
+          payload: { ...purchased.payload, grumbles },
+        }).success,
+      ).toBe(false);
+    const reversed = billingGrumblesReversed.schema.safeParse({
+      ...envelope,
+      type: "billing.grumbles-reversed.v1",
+      payload: {
+        caseId: "00000000-0000-4000-8000-000000000007",
+        paymentId: "00000000-0000-4000-8000-000000000005",
+        userId: "00000000-0000-4000-8000-000000000003",
+        kind: "chargeback",
+        grumbles: "1000",
+        money: { minor: "9900", currency: "RUB", scale: 2 },
+        occurredAt: "2026-09-28T12:00:00.000Z",
+      },
+    });
+    expect(reversed.success).toBe(true);
   });
 
   it("rejects a payload of another event type", () => {

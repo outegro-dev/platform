@@ -290,6 +290,7 @@
   "kinds": {
     "subscription": "Подписка",
     "one_time": "Разовая покупка",
+    "grumble_pack": "Грамблсы",
     "unknown": "Покупка"
   },
   "periods": {
@@ -310,7 +311,8 @@
   },
   "services": {
     "battleship": "Морской бой",
-    "edu": "Обучение"
+    "edu": "Обучение",
+    "wallet": "Кошелёк"
   },
   "auth": {
     "errorMetaTitle": "Вход",

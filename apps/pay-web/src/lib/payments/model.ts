@@ -23,7 +23,12 @@ export const checkoutStates = [
 ] as const;
 export type CheckoutState = (typeof checkoutStates)[number];
 
-export const productKinds = ["subscription", "one_time"] as const;
+/** `grumble_pack`: grumbles for the wallet (phase 2), no access of its own. */
+export const productKinds = [
+  "subscription",
+  "one_time",
+  "grumble_pack",
+] as const;
 export type ProductKind = (typeof productKinds)[number] | "unknown";
 
 export const periodicities = [

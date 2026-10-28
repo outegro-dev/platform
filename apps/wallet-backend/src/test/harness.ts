@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 import {
+  billingGrumblesPurchased,
+  billingGrumblesReversed,
   createEvent,
   identityRoleBindingChanged,
   identityUserStatusChanged,
@@ -32,6 +34,7 @@ import {
 } from "jose";
 import request from "supertest";
 import type { WalletDatabase } from "../common/database.js";
+import { BillingConsumer } from "../events/billing.consumer.js";
 import { IdentityConsumer } from "../events/identity.consumer.js";
 import { JSON_LIMIT } from "../internal/internal.controller.js";
 import { ReconciliationService } from "../reconciliation/reconciliation.service.js";
@@ -149,6 +152,49 @@ export async function startHarness() {
       payload: { userId, status, accessVersion },
     });
 
+  /** A pack of `grumbles` paid for in Payments (phase 2). */
+  const packEvent = (
+    userId: string,
+    grumbles: number,
+    paymentId: string = randomUUID(),
+    minor = "9900",
+  ) =>
+    createEvent(billingGrumblesPurchased, {
+      aggregateId: paymentId,
+      aggregateVersion: 1,
+      payload: {
+        paymentId,
+        orderId: randomUUID(),
+        userId,
+        productKey: `grumbles-${grumbles}`,
+        grumbles: String(grumbles),
+        money: { minor, currency: "RUB", scale: 2 },
+        paidAt: clock.now().toISOString(),
+      },
+    });
+
+  /** A refund or a chargeback of that pack, asking `grumbles` back. */
+  const reversalEvent = (
+    userId: string,
+    paymentId: string,
+    grumbles: number,
+    kind: "refund" | "chargeback" = "refund",
+    caseId: string = randomUUID(),
+  ) =>
+    createEvent(billingGrumblesReversed, {
+      aggregateId: caseId,
+      aggregateVersion: 1,
+      payload: {
+        caseId,
+        paymentId,
+        userId,
+        kind,
+        grumbles: String(grumbles),
+        money: { minor: "100", currency: "RUB", scale: 2 },
+        occurredAt: clock.now().toISOString(),
+      },
+    });
+
   /** A role granted in Identity: it bumps accessVersion too, not the status. */
   const roleEvent = (userId: string, roleKey: string, accessVersion: number) =>
     createEvent(identityRoleBindingChanged, {
@@ -178,9 +224,12 @@ export async function startHarness() {
       return app.get<WalletDatabase>(DATABASE).db;
     },
     identity: () => app.get(IdentityConsumer),
+    billing: () => app.get(BillingConsumer),
     reconciliation: () => app.get(ReconciliationService),
     statusEvent,
     roleEvent,
+    packEvent,
+    reversalEvent,
     async metric(name: string, labels: Record<string, string> = {}) {
       return metricValue(await app.get(Metrics).scrape(), name, labels);
     },

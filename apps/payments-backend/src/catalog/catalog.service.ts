@@ -4,6 +4,7 @@ import {
   Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
+import type { ConfigType } from "@nestjs/config";
 import {
   AppError,
   CLOCK,
@@ -13,6 +14,7 @@ import {
 } from "@outegro/nest-common";
 import { and, asc, eq, isNull, max, notInArray, sql } from "drizzle-orm";
 import type { PaymentsDatabase } from "../common/database.js";
+import { grumblePacksConfig } from "../config/config.js";
 import { prices, products } from "../db/schema.js";
 import { type CatalogProduct, catalog } from "../domain/catalog.js";
 import {
@@ -21,6 +23,7 @@ import {
   moneyDto,
   toMinor,
 } from "../domain/money.js";
+import { packProducts } from "../domain/packs.js";
 
 export type Offer = {
   product: typeof products.$inferSelect;
@@ -39,12 +42,21 @@ export class CatalogService implements OnApplicationBootstrap {
   constructor(
     @Inject(DATABASE) private readonly database: PaymentsDatabase,
     @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(grumblePacksConfig.KEY)
+    private readonly packs: ConfigType<typeof grumblePacksConfig>,
   ) {}
 
   async onApplicationBootstrap() {
     // A restored catalog stays as it was until the operator is done.
     if (heldBySafeMode("catalog sync")) return;
-    await this.sync(catalog);
+    await this.sync(this.definition());
+  }
+
+  /** The code catalog, with the packs of grumbles while they are enabled. */
+  definition(): readonly CatalogProduct[] {
+    return this.packs.enabled
+      ? [...catalog, ...packProducts(this.packs.packs)]
+      : catalog;
   }
 
   async sync(definition: readonly CatalogProduct[]) {
@@ -66,6 +78,8 @@ export class CatalogService implements OnApplicationBootstrap {
           graceDays: product.graceDays,
           title: product.title,
           description: product.description,
+          grumbles:
+            product.grumbles === undefined ? null : BigInt(product.grumbles),
           active: true,
           updatedAt: now,
         };
@@ -157,6 +171,7 @@ export class CatalogService implements OnApplicationBootstrap {
       graceDays: product.graceDays,
       title: product.title,
       description: product.description,
+      grumbles: product.grumbles?.toString() ?? null,
       prices: list.map((price) => ({
         priceId: price.id,
         version: price.version,

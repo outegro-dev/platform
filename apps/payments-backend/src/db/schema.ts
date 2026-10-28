@@ -26,7 +26,11 @@ const minor = (name: string) => bigint(name, { mode: "bigint" });
 
 export const { outbox, inbox } = platformTables;
 
-export const productKinds = ["subscription", "one_time"] as const;
+export const productKinds = [
+  "subscription",
+  "one_time",
+  "grumble_pack",
+] as const;
 export const orderStatuses = ["pending", "paid", "failed", "refunded"] as const;
 export const attemptStates = [
   "requesting",
@@ -109,11 +113,19 @@ export const products = pgTable(
     graceDays: integer("grace_days").notNull().default(0),
     title: jsonb("title").$type<LocalizedText>().notNull(),
     description: jsonb("description").$type<LocalizedText>().notNull(),
+    /** A grumble pack's grumbles (phase 2); null for everything else. */
+    grumbles: bigint("grumbles", { mode: "bigint" }),
     active: boolean("active").notNull().default(true),
     createdAt: at("created_at").notNull(),
     updatedAt: at("updated_at").notNull(),
   },
-  (t) => [uniqueIndex("products_offer_uq").on(t.provider, t.providerOfferId)],
+  (t) => [
+    uniqueIndex("products_offer_uq").on(t.provider, t.providerOfferId),
+    check(
+      "products_pack_grumbles",
+      sql`(${t.kind} = 'grumble_pack') = (${t.grumbles} is not null and ${t.grumbles} > 0)`,
+    ),
+  ],
 );
 
 /**
@@ -162,6 +174,8 @@ export const orders = pgTable(
     graceDays: integer("grace_days").notNull(),
     providerOfferId: text("provider_offer_id").notNull(),
     title: jsonb("title").$type<LocalizedText>().notNull(),
+    /** The pack's grumbles when it was ordered (phase 2). */
+    grumbles: bigint("grumbles", { mode: "bigint" }),
     currency: text("currency", { enum: currencies }).notNull(),
     amountMinor: minor("amount_minor").notNull(),
     status: text("status", { enum: orderStatuses })
@@ -177,6 +191,10 @@ export const orders = pgTable(
     index("orders_user_idx").on(t.userId, t.createdAt),
     index("orders_status_idx").on(t.status, t.createdAt),
     check("orders_amount_positive", sql`${t.amountMinor} > 0`),
+    check(
+      "orders_pack_grumbles",
+      sql`(${t.kind} = 'grumble_pack') = (${t.grumbles} is not null and ${t.grumbles} > 0)`,
+    ),
   ],
 );
 

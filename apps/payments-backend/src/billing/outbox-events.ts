@@ -1,5 +1,7 @@
 import {
   billingGrantChanged,
+  billingGrumblesPurchased,
+  billingGrumblesReversed,
   billingPaymentConfirmed,
   billingSubscriptionChanged,
   createEvent,
@@ -8,10 +10,11 @@ import { enqueueEvent } from "@outegro/db";
 import type {
   Executor,
   GrantRow,
+  OrderRow,
   PaymentRow,
   SubscriptionRow,
 } from "../common/database.js";
-import { moneyDto } from "../domain/money.js";
+import { type Currency, moneyDto } from "../domain/money.js";
 
 /**
  * Domain events go to the outbox in the transaction of the change they
@@ -92,4 +95,66 @@ export async function paymentConfirmed(
   });
   await enqueueEvent(tx, event);
   return event.eventId;
+}
+
+/** A paid pack of grumbles (phase 2): the wallet credits it once. */
+export async function grumblesPurchased(
+  tx: Executor,
+  order: OrderRow,
+  payment: PaymentRow,
+  at: Date,
+) {
+  if (order.grumbles === null) throw new Error("pack order without grumbles");
+  await enqueueEvent(
+    tx,
+    createEvent(billingGrumblesPurchased, {
+      aggregateId: payment.id,
+      aggregateVersion: 1,
+      occurredAt: at,
+      correlationId: order.correlationId,
+      payload: {
+        paymentId: payment.id,
+        orderId: order.id,
+        userId: payment.userId,
+        productKey: order.productKey,
+        grumbles: order.grumbles.toString(),
+        money: moneyDto(payment.amountMinor, payment.currency),
+        paidAt: payment.confirmedAt.toISOString(),
+      },
+    }),
+  );
+}
+
+/** Money of a pack given back: the wallet takes `grumbles` back once per case. */
+export async function grumblesReversed(
+  tx: Executor,
+  input: {
+    caseId: string;
+    payment: PaymentRow;
+    kind: "refund" | "chargeback";
+    grumbles: bigint;
+    amountMinor: bigint;
+    currency: Currency;
+  },
+  at: Date,
+  correlationId?: string,
+) {
+  await enqueueEvent(
+    tx,
+    createEvent(billingGrumblesReversed, {
+      aggregateId: input.caseId,
+      aggregateVersion: 1,
+      occurredAt: at,
+      correlationId,
+      payload: {
+        caseId: input.caseId,
+        paymentId: input.payment.id,
+        userId: input.payment.userId,
+        kind: input.kind,
+        grumbles: input.grumbles.toString(),
+        money: moneyDto(input.amountMinor, input.currency),
+        occurredAt: at.toISOString(),
+      },
+    }),
+  );
 }

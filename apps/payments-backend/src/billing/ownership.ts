@@ -35,6 +35,8 @@ export async function alreadyHeld(
   product: { key: string; kind: ProductKind; service: string; feature: string },
   exceptOrderId?: string,
 ): Promise<Held | null> {
+  // Packs of grumbles are bought again and again.
+  if (product.kind === "grumble_pack") return null;
   if (product.kind === "one_time") {
     const [owned] = await tx
       .select({ orderId: grants.sourceId })

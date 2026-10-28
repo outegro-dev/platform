@@ -151,7 +151,15 @@ export const lavaPayloads = {
     };
   },
 
-  chargeback(input: Money & { tierId: string; email: string; at: Date }) {
+  chargeback(
+    input: Money & {
+      tierId: string;
+      email: string;
+      at: Date;
+      /** Not in Lava's documented example; matches exactly when present. */
+      contractId?: string;
+    },
+  ) {
     const id = randomUUID();
     return {
       event_id: id,
@@ -171,6 +179,7 @@ export const lavaPayloads = {
           tier_id: input.tierId,
         },
         customer_email: input.email,
+        ...(input.contractId ? { contract_id: input.contractId } : {}),
         balance_impact: {
           debited_amount: input.amount,
           provider_fee: 0.5,

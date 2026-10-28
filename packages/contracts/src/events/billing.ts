@@ -50,3 +50,46 @@ export const billingSubscriptionChanged = defineEvent(
     autoRenew: z.boolean(),
   }),
 );
+
+/** A pack's grumbles: a whole number from 1 to 10^15-1, as a string. */
+const grumblesSchema = z.string().regex(/^[1-9]\d{0,14}$/);
+
+/**
+ * A pack of grumbles paid for (phase 2, ADR-011). Settled instead of a
+ * grant; the wallet credits it exactly once, by `pack:payment:{paymentId}`.
+ */
+export const billingGrumblesPurchased = defineEvent(
+  "billing.grumbles-purchased.v1",
+  "payments",
+  z.object({
+    paymentId: z.uuid(),
+    orderId: z.uuid(),
+    userId: z.uuid(),
+    productKey: z.string().min(1),
+    grumbles: grumblesSchema,
+    /** What the buyer paid for the pack. */
+    money: moneySchema,
+    paidAt: isoDateTime,
+  }),
+);
+
+/**
+ * Money of a pack given back: a refund (all of it or a part) or a
+ * chargeback. The wallet takes back `grumbles` once per case
+ * (`pack:case:{caseId}`); what the wallet no longer holds becomes a debt
+ * and restricts it.
+ */
+export const billingGrumblesReversed = defineEvent(
+  "billing.grumbles-reversed.v1",
+  "payments",
+  z.object({
+    caseId: z.uuid(),
+    paymentId: z.uuid(),
+    userId: z.uuid(),
+    kind: z.enum(["refund", "chargeback"]),
+    grumbles: grumblesSchema,
+    /** The money this case gave back. */
+    money: moneySchema,
+    occurredAt: isoDateTime,
+  }),
+);
