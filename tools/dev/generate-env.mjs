@@ -23,6 +23,7 @@ const apps = [
   { dir: "apps/id-web", file: ".env.local" },
   { dir: "apps/battleship-web", file: ".env.local" },
   { dir: "apps/edu-web", file: ".env.local" },
+  { dir: "apps/roulette-web", file: ".env.local" },
   { dir: "apps/admin-web", file: ".env.local" },
   { dir: "apps/landing-web", file: ".env.local" },
 ];

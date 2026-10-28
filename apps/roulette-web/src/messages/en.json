@@ -1,0 +1,211 @@
+{
+  "meta": {
+    "title": "Roulette — outegro",
+    "titleTemplate": "%s · Roulette",
+    "description": "A round every 30 seconds, every outcome checkable on the fairness page."
+  },
+  "brand": {
+    "product": "roulette",
+    "home": "Roulette by outegro, home"
+  },
+  "nav": {
+    "sections": "Roulette sections",
+    "game": "Roulette",
+    "fair": "Fairness",
+    "language": "Language",
+    "skip": "Skip to content"
+  },
+  "account": {
+    "signIn": "Sign in",
+    "account": "Account",
+    "signOut": "Sign out",
+    "balance": "Your grumbles: {amount}",
+    "unknown": "Balance unknown"
+  },
+  "footer": {
+    "privacy": "Privacy",
+    "site": "outegro.dev",
+    "account": "Account"
+  },
+  "connection": {
+    "connecting": "Connecting to the game server…",
+    "reconnecting": "Connection lost. Reconnecting…",
+    "offline": "You are offline. We will reconnect when the network is back.",
+    "unauthorized": "Your session has ended. Sign in again to keep playing.",
+    "retry": "Retry now",
+    "signInAgain": "Sign in again"
+  },
+  "phase": {
+    "waiting": "Waiting for the round…",
+    "open": "Bets are open",
+    "betting": "Bets are open · {seconds} s",
+    "locked": "Bets are closed",
+    "rolling": "Spinning…",
+    "result": "{number} · {color}",
+    "next": "{number} · {color} · next round in {seconds} s",
+    "voided": "Round cancelled, bets returned",
+    "paused": "Bets are paused",
+    "maintenance": "Maintenance: no new round after this one"
+  },
+  "colors": {
+    "red": "Red",
+    "black": "Black",
+    "green": "Green"
+  },
+  "column": {
+    "bet": "Bet on {color}, pays ×{multiplier}",
+    "players": "{count, plural, one {# player} other {# players}}",
+    "more": "and {count} more",
+    "empty": "No bets yet",
+    "you": "your bet",
+    "won": "won"
+  },
+  "amount": {
+    "label": "Bet amount in grumbles",
+    "placeholder": "Bet amount…",
+    "quick": "Change the amount",
+    "clear": "Reset",
+    "add10": "+10",
+    "add100": "+100",
+    "add1000": "+1,000",
+    "half": "½",
+    "double": "×2",
+    "max": "Max",
+    "halfLabel": "Half",
+    "doubleLabel": "Double"
+  },
+  "notice": {
+    "hint": "Choose an amount and click a colour.",
+    "accepted": "Bet accepted: {amount, plural, one {# grumble} other {# grumbles}} on {color}.",
+    "won": "You won {payout, plural, one {# grumble} other {# grumbles}}.",
+    "lost": "No luck this round."
+  },
+  "refusal": {
+    "bad_message": "The game did not understand the bet. Reload the page.",
+    "round_closed": "Bets are closed. Wait for the next round.",
+    "bet_too_small": "The smallest bet is {min, plural, one {# grumble} other {# grumbles}}.",
+    "bet_too_large": "The largest bet is {max, plural, one {# grumble} other {# grumbles}}.",
+    "too_many_bets": "At most {count} bets a round.",
+    "table_limit": "The table limit on this colour is reached for this round.",
+    "insufficient_funds": "Not enough grumbles.",
+    "wallet_restricted": "Your wallet is restricted.",
+    "wallet_unavailable": "The wallet is not answering. The bet was cancelled; try again.",
+    "account_blocked": "This account cannot play.",
+    "rate_limited": "Too many clicks. Slow down a little.",
+    "internal": "Something went wrong. The bet was not placed.",
+    "not_connected": "Not connected to the game server yet.",
+    "bad_amount": "Enter a whole number of grumbles.",
+    "bets_paused": "Bets are paused by the operator; the rounds keep spinning."
+  },
+  "history": {
+    "label": "Last results",
+    "counts": "Last {count}:",
+    "red": "red {count}",
+    "green": "green {count}",
+    "black": "black {count}",
+    "empty": "No results yet"
+  },
+  "round": {
+    "number": "Round № {round}",
+    "check": "Check it on the fairness page"
+  },
+  "signedOut": {
+    "title": "Sign in to play",
+    "body": "Bets are made in grumbles from your outegro wallet, and winnings land there too.",
+    "signIn": "Sign in",
+    "history": "Recent results",
+    "unavailable": "The results are unavailable right now."
+  },
+  "fair": {
+    "title": "Fairness",
+    "lead": "Every outcome of the season is fixed in advance by a chain of seeds, and nobody, us included, can pick one. Any round can be checked right here, in your browser.",
+    "commit": "Commitment, seed₀",
+    "publicSeed": "Public seed",
+    "chainLength": "Rounds in the chain",
+    "lastRevealed": "Last revealed round",
+    "unavailable": "The published chain is unavailable right now.",
+    "howTitle": "How it works",
+    "how1": "Before the season fair-roll takes a secret root and builds a chain backwards: every link is the SHA-256 of the next one.",
+    "how2": "The first link, seed₀, is published together with the public seed: the value of a future round of the drand randomness beacon, which nobody knew then.",
+    "how3": "The number of round k is HMAC-SHA256 keyed with seedₖ over “public seed:k:attempt”; the first 4 bytes modulo 15, dropping the tail that 15 does not divide.",
+    "how4": "After the spin seedₖ is revealed. SHA-256(seedₖ) must equal seedₖ₋₁, and the number must come out the same.",
+    "checkTitle": "Check a round",
+    "round": "Round",
+    "check": "Check",
+    "checking": "Checking…",
+    "manualTitle": "Check by hand",
+    "manualLead": "Paste the values from anywhere: nothing is sent, the check runs in this page.",
+    "seed": "Revealed seed of the round",
+    "previousSeed": "Seed of the previous round (seed₀ for round 1)",
+    "manualPublicSeed": "Public seed",
+    "manualRound": "Round number",
+    "compute": "Compute",
+    "linkOk": "The seed is the next link of the chain: SHA-256(seed) is the previous seed.",
+    "linkBad": "The seed is NOT the next link: SHA-256(seed) differs from the previous seed.",
+    "number": "The number is {number}, {color}.",
+    "match": "It matches the result the round showed.",
+    "mismatch": "It does NOT match the published result, {number}.",
+    "notRevealed": "Round {round} is not revealed yet: wait until it spins.",
+    "notFound": "There is no round {round}.",
+    "failed": "The round could not be loaded. Try again.",
+    "invalid": "Seeds are 64 hexadecimal characters; the round is a whole number from 1."
+  },
+  "auth": {
+    "errorTitle": "Sign-in didn't finish",
+    "reasons": {
+      "state_mismatch": "The sign-in link expired or was opened in another browser.",
+      "missing_code": "The sign-in page did not send a code back.",
+      "invalid_grant": "The sign-in could not be confirmed. It may have been used already.",
+      "unavailable": "The account service is temporarily unavailable."
+    },
+    "retry": "Try again",
+    "home": "Back to the game"
+  },
+  "errors": {
+    "title": "Something is temporarily unavailable",
+    "body": "The game service did not answer in time. Your grumbles are safe.",
+    "retry": "Try again"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The address may be mistyped, or the page has moved.",
+    "home": "Back to the game"
+  },
+  "fx": {
+    "mega": "MEGA",
+    "green": "GREEN ×14",
+    "megaRound": "Mega round: a faster spin",
+    "greenWin": "Green came up: ×14"
+  },
+  "sound": {
+    "label": "Sound",
+    "on": "Sound on",
+    "off": "Sound off"
+  },
+  "daily": {
+    "button": "Daily bonus",
+    "buttonIn": "Bonus in {time}",
+    "title": "Daily bonus",
+    "lead": "Grumbles once every 24 hours, counted from the last time you took them.",
+    "streak": "Days in a row: {streak} · +{percent}% to the prize",
+    "odds": "Prizes and chances",
+    "chance": "{percent}%",
+    "take": "Take the bonus",
+    "spinning": "Spinning…",
+    "loading": "Loading…",
+    "won": "+{prize, plural, one {# grumble} other {# grumbles}} to your wallet.",
+    "base": "Prize {base} with the streak bonus.",
+    "nextIn": "The next bonus in {time}.",
+    "close": "Close",
+    "reasons": {
+      "not_yet": "Not yet: the next bonus in {time}.",
+      "email_unverified": "Confirm your email in the account to get the bonus.",
+      "account_too_new": "The bonus opens 24 hours after you sign up.",
+      "account_closed": "This account cannot take the bonus.",
+      "disabled": "The bonus of the day is switched off for now.",
+      "rate_limited": "Too many bonuses from this network or device today.",
+      "unavailable": "The bonus service is not answering. Try a little later.",
+      "signed_out": "Sign in to take the bonus."
+    }
+  }
+}

@@ -1,0 +1,363 @@
+/*
+ * Roulette app layout on the calm zine theme in its dark tone
+ * (data-theme="zine-calm" data-tone="dark" on <html>): ink paper, newsprint
+ * letters, hard red offset shadows, square corners. Colours, faces and
+ * component looks come from @outegro/ui and its zine.css; here only the
+ * shell, the header, the notices and /fair. The game itself is in
+ * roulette.css.
+ */
+
+:root {
+  --header-h: 72px;
+}
+@media (max-width: 767px) {
+  :root {
+    --header-h: auto;
+  }
+}
+/* A light rule between rows, in the ink of the tone it sits in. */
+html[data-theme="zine-calm"] {
+  --rule: color-mix(in srgb, var(--foreground) 22%, transparent);
+  /* The grumble's hard shadow is spot red in the dark tone (as zine.css on
+     feat/wallet sets it; harmless once it lands there). */
+  --coin-shadow: var(--spot-red);
+}
+
+@layer base {
+  html {
+    overflow-x: clip;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    touch-action: manipulation;
+  }
+  h1,
+  h2,
+  h3,
+  p,
+  dl,
+  dd,
+  ol,
+  ul {
+    margin: 0;
+  }
+  ol,
+  ul {
+    padding: 0;
+    list-style: none;
+  }
+}
+
+@layer components {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  .skip-link {
+    position: fixed;
+    z-index: 100;
+    top: 10px;
+    left: 10px;
+    transform: translateY(-160%);
+    border: 2px solid var(--foreground);
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    padding: 12px 20px;
+    box-shadow: var(--shadow-hard);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .skip-link:focus {
+    transform: none;
+  }
+
+  /* ─── Shell ───────────────────────────────────────────── */
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  .app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-block: 8px 96px;
+  }
+
+  /* ─── Header: the mock's top bar ──────────────────────── */
+  .app-header {
+    min-height: var(--header-h);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    padding-block: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-family: var(--font-sign);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    color: var(--foreground);
+  }
+  .brand-mark svg {
+    width: 26px;
+    height: 26px;
+  }
+  .brand-dot {
+    color: var(--spot-yellow);
+    font-size: 11px;
+  }
+  .main-nav {
+    display: flex;
+    gap: 16px;
+    font-size: 14px;
+  }
+  .main-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--muted-foreground);
+    font-weight: 600;
+  }
+  .main-nav a:hover {
+    color: var(--foreground);
+  }
+  .main-nav a[aria-current="page"] {
+    color: var(--foreground);
+    font-weight: 700;
+    box-shadow: inset 0 -2px 0 var(--spot-yellow);
+  }
+  .header-actions {
+    margin-inline-start: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+  }
+  .balance-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 6px 12px;
+    background: var(--muted);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  @media (max-width: 767px) {
+    .main-nav {
+      order: 3;
+      width: 100%;
+    }
+  }
+
+  /* ─── Footer ──────────────────────────────────────────── */
+  .app-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    padding-block: 22px 32px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+    color: var(--muted-foreground);
+  }
+  .app-footer a:hover {
+    color: var(--foreground);
+  }
+
+  /* ─── Notices (errors, 404, sign-in failures) ─────────── */
+  .notice {
+    display: grid;
+    gap: 14px;
+    max-width: 560px;
+    margin: 48px auto;
+    padding: 28px;
+    background: var(--surface);
+    border: 2px solid var(--foreground);
+    box-shadow: var(--shadow-soft);
+  }
+  .notice h1 {
+    font-family: var(--font-tabloid);
+    font-size: 30px;
+    line-height: 1.15;
+  }
+  .notice p {
+    color: var(--muted-foreground);
+  }
+  .notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .notice-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* ─── /fair ────────────────────────────────────────────── */
+  .fair-page {
+    max-width: 880px;
+    margin-inline: auto;
+  }
+  .fair-head {
+    display: grid;
+    gap: 10px;
+    padding-block: 18px 6px;
+  }
+  .fair-head h1 {
+    font-family: var(--font-tabloid);
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.1;
+  }
+  .fair-head p {
+    max-width: 66ch;
+    color: var(--muted-foreground);
+  }
+  .fair-card {
+    display: grid;
+    gap: 12px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 2px solid var(--foreground);
+    box-shadow: var(--shadow-hard);
+  }
+  .fair-card h2 {
+    font-family: var(--font-sign);
+    font-size: 15px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .fair-chain {
+    display: grid;
+    gap: 10px;
+  }
+  .fair-chain div {
+    display: grid;
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+    gap: 4px 14px;
+  }
+  .fair-chain dt {
+    font-family: var(--font-type);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
+  }
+  .fair-hash {
+    font-family: var(--font-type);
+    font-size: 13px;
+    word-break: break-all;
+  }
+  .fair-how {
+    display: grid;
+    gap: 8px;
+    padding-inline-start: 20px;
+    list-style: decimal;
+    max-width: 70ch;
+  }
+  .fair-muted {
+    color: var(--muted-foreground);
+    font-size: 14px;
+  }
+  .fair-tools {
+    display: grid;
+    gap: 16px;
+  }
+  .fair-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .fair-form {
+    display: grid;
+    gap: 6px;
+    max-width: 640px;
+  }
+  .fair-form label {
+    font-size: 13px;
+    color: var(--muted-foreground);
+    margin-top: 6px;
+  }
+  .fair-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-type);
+    font-size: 13px;
+  }
+  .fair-input:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+  .fair-input-short {
+    width: 10rem;
+  }
+  .fair-result,
+  .fair-result-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .fair-result-list {
+    display: grid;
+    gap: 8px;
+  }
+  .fair-result-list svg,
+  .fair-result svg {
+    width: 22px;
+    height: 22px;
+    flex: none;
+  }
+  .fair-result-list [data-ok="true"] svg {
+    color: var(--ok);
+  }
+  .fair-result-list [data-ok="false"] {
+    color: var(--danger);
+  }
+  @media (max-width: 640px) {
+    .fair-chain div {
+      grid-template-columns: 1fr;
+    }
+  }
+}
