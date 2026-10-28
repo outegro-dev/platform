@@ -18,7 +18,7 @@
     "@phosphor-icons/react": "2.1.10",
     "mobx": "7.0.6",
     "mobx-react-lite": "5.1.0",
-    "next": "16.4.0",
+    "next": "16.4.3",
     "next-intl": "4.14.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
