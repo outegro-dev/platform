@@ -1,0 +1,7 @@
+{
+  "https://boards-api.greenhouse.io/v1/boards/dwelly/jobs": {
+    "status": 200,
+    "url": "https://boards-api.greenhouse.io/v1/boards/dwelly/jobs",
+    "text": "{\"jobs\":[{\"absolute_url\":\"https://job-boards.eu.greenhouse.io/dwelly/jobs/5012083101\",\"internal_job_id\":4540086101,\"location\":{\"name\":\"London\"},\"id\":5012083101,\"updated_at\":\"2026-10-23T03:15:36-04:00\",\"requisition_id\":\"100\",\"title\":\"AI Engineering Team Lead\",\"company_name\":\"Dwelly\",\"first_published\":\"2026-10-22T14:54:21-04:00\",\"language\":\"en\",\"application_deadline\":null},{\"absolute_url\":\"https://job-boards.eu.greenhouse.io/dwelly/jobs/4954106101\",\"internal_job_id\":4512963101,\"location\":{\"name\":\"Remote\"},\"id\":4954106101,\"updated_at\":\"2026-10-19T05:21:28-04:00\",\"requisition_id\":\"69\",\"title\":\"Applied AI Engineer \",\"company_name\":\"Dwelly\",\"first_published\":\"2026-08-17T13:19:01-04:00\",\"language\":\"en\",\"application_deadline\":null},{\"absolute_url\":\"https://job-boards.eu.greenhouse.io/dwelly/jobs/4785962101\",\"internal_job_id\":4431668101,\"location\":{\"name\":\"London, UK \"},\"id\":4785962101,\"updated_at\":\"2026-10-21T04:33:33-04:00\",\"requisition_id\":\"16\",\"title\":\"Associate Launcher (Post-M&A)\",\"company_name\":\"Dwelly\",\"first_published\":\"2026-02-19T04:42:25-05:00\",\"language\":\"en\",\"application_deadline\":null}],\"meta\":{\"total\":29}}"
+  }
+}
