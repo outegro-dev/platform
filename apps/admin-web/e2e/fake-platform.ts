@@ -4724,6 +4724,7 @@ const walletRuns = Array.from({ length: 8 }, (_, i) => {
     finishedAt: iso(startedAt + 400),
     checkedWallets: i === 7 ? wallets.size : Math.min(wallets.size, 4),
     issuesFound: 0,
+    failed: false,
   };
 });
 const walletIssues = [

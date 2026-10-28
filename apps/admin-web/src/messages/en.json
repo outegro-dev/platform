@@ -2075,7 +2075,8 @@
       "running": "Running",
       "noRuns": "No passes yet",
       "what": "reconciliation",
-      "service": "Wallet"
+      "service": "Wallet",
+      "failed": "Failed"
     }
   }
 }
