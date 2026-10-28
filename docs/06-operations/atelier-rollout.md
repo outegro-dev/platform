@@ -2,7 +2,13 @@
 
 Как у Education ([edu-rollout.md](edu-rollout.md)): сначала база, секреты и вход, потом образы, потом приложение. Job миграций `atelier-migrate` — PreSync-хук общего приложения Argo `outegro`: если он упадёт (нет образа, секрета или базы), встанут выкатки всех сервисов, поэтому порядок шагов обязателен. Решение и состав — [ADR-012](../03-decisions/adr/012-atelier.md).
 
-Изменения gitops подготовлены в ветке `feat/atelier` репозитория gitops: `atelier.yaml` в `resources` закомментирован, поэтому ветку можно сливать после шага 1.
+Изменения gitops разложены на три ветки репозитория gitops, по одной на шаг:
+
+| Ветка | Что | Когда сливать |
+|---|---|---|
+| `feat/atelier-images` | записи `images` пяти образов (`pending`), OAuth-клиент `atelier-web`, патч приоритетов, `atelier.yaml` (выключен), строки `node/secrets.sh` | до платформы: CI пишет digest только в существующие записи. В отрисовке меняется одна строка — OAuth-клиент |
+| `feat/atelier-database` | роль и `Database atelier` (`postgres.yaml`) | вместе с запечатанными секретами шага 0 |
+| `feat/atelier-on` | `- atelier.yaml` в `resources` | после шагов 0–2, когда база создана |
 
 ## Шаг 0. Владелец, вне репозиториев
 
@@ -15,24 +21,27 @@
    for s in pg-atelier atelier-internal atelier-codex atelier-llm; do ssh outegro-prod "sudo bash -s -- outegro/$s" < node/seal.sh > "apps/production/secrets/$s.yaml"; done
    ```
 
-   Затем добавить четыре файла в `apps/production/secrets/kustomization.yaml`. `pg-atelier` и `atelier-internal` (сервисные токены между backend, llm-gateway, tex и browser) создаются один раз и больше не меняются; `atelier-codex` — только затравка: при первом старте init-контейнер копирует `auth.json` в том `llm-gateway-home`, дальше Codex обновляет вход там.
+   Затем добавить четыре файла в `apps/production/secrets/kustomization.yaml` и закоммитить их в ветку `feat/atelier-database`. `pg-atelier` и `atelier-internal` (сервисные токены между backend, llm-gateway, tex и browser) создаются один раз и больше не меняются; `atelier-codex` — только затравка: при первом старте init-контейнер копирует `auth.json` в том `llm-gateway-home`, дальше Codex обновляет вход там.
 
-## Шаг 1. gitops: база, роль, вход
+## Шаг 1a. gitops: записи образов и вход
 
-Слить `feat/atelier` gitops в `master` вместе с файлами секретов из шага 0. В ветке уже есть: роль `atelier` и `Database atelier` (`postgres.yaml`), OAuth-клиент `atelier-web` (`apps.yaml`), записи `images` пяти образов с тегом `pending`, патч приоритетов (`outegro.dev/priority=agents` → `outegro-agents`), `atelier.yaml` (выключен).
+Слить `feat/atelier-images` в `master` gitops. Ничего не запускается; OAuth-клиент `atelier-web` подхватит auth-backend при выкатке шага 2 (его образ пересобирается из-за контрактов).
+
+## Шаг 1b. gitops: база и секреты
+
+Слить `feat/atelier-database` вместе с файлами секретов из шага 0.
 
 ```text
 ssh outegro-prod 'sudo k3s kubectl -n outegro get database atelier'
-ssh outegro-prod 'sudo k3s kubectl -n outegro rollout restart deploy/auth-backend'
 ```
 
 ## Шаг 2. platform: образы
 
-Слить PR `feat/atelier` в `master` platform. Изменены Dockerfile, контракты (право `atelier.use`) и корневые файлы, поэтому CI проверит и соберёт все приложения, включая `atelier-backend`, `atelier-web`, `llm-gateway`, `atelier-tex`, `atelier-browser`, и запишет их digest в gitops. Пока не сделан шаг 3, smoke — `SMOKE_SKIP=atelier node tools/ops/smoke.mjs`.
+Слить PR `feat/atelier` в `master` platform (можно до шага 1b, но после 1a). Изменены Dockerfile, контракты (право `atelier.use`) и корневые файлы, поэтому CI проверит и соберёт все приложения, включая `atelier-backend`, `atelier-web`, `llm-gateway`, `atelier-tex`, `atelier-browser`, и запишет их digest в gitops. Пока не сделан шаг 3, smoke — `SMOKE_SKIP=atelier node tools/ops/smoke.mjs`.
 
 ## Шаг 3. gitops: приложение
 
-Раскомментировать `- atelier.yaml` в `apps/production/kustomization.yaml`, коммит в `master`. Argo выполнит `atelier-migrate`, поднимет пять деплойментов и Ingress `atelier` и `cv`.
+Слить `feat/atelier-on` (раскомментирует `- atelier.yaml`), когда шаг 1b применён и digest образов записаны. Argo выполнит `atelier-migrate`, поднимет пять деплойментов и Ingress `atelier` и `cv`.
 
 ## Шаг 4. Профиль владельца
 
