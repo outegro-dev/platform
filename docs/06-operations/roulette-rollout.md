@@ -11,7 +11,7 @@
 
 **Почему порядок важен.** Job миграций — PreSync-хук общего приложения Argo `outegro`. Если он упадёт (нет образа, секрета или базы), встанут выкатки всех сервисов ([production.md](production.md#выпуск)).
 
-**Кошелёк — раньше всех шагов.** Ставки идут настоящими грамблсами, поэтому wallet-backend (ADR-011, PR #143) должен быть смёржен и выкачен до шага 2. Без него в production roulette-backend и daily-bonus-backend не стартуют: конфиг требует `WALLET_MODE=http`.
+**Кошелёк — раньше всех шагов.** Ставки идут настоящими грамблсами. wallet-backend (ADR-011) выкачен 28.10.2026 ([его выкатка](wallet-rollout.md)). Без него в production roulette-backend и daily-bonus-backend не стартуют: конфиг требует `WALLET_MODE=http`.
 
 **Ветки:**
 - gitops — `feat/roulette-deploy`: приложения в ней закомментированы до шага 3;
