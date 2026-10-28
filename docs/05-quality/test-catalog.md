@@ -259,44 +259,51 @@
 | TC-PAY-12-01 | [PAY-12](../04-delivery/05-payments/tasks/PAY-12.md) | Provider contract |
 | TC-PAY-12-02 | [PAY-12](../04-delivery/05-payments/tasks/PAY-12.md) | Отличие |
 | TC-PAY-12-03 | [PAY-12](../04-delivery/05-payments/tasks/PAY-12.md) | Нет доступа |
-| TC-W-01-01 | [W-01](../04-delivery/90-optional-wallet/tasks/W-01.md) | Проводки |
-| TC-W-01-02 | [W-01](../04-delivery/90-optional-wallet/tasks/W-01.md) | Нарушение |
-| TC-W-01-03 | [W-01](../04-delivery/90-optional-wallet/tasks/W-01.md) | История |
+| TC-W-01-01 | [W-01](../04-delivery/90-optional-wallet/tasks/W-01.md) | Журнал только дописывается |
+| TC-W-01-02 | [W-01](../04-delivery/90-optional-wallet/tasks/W-01.md) | Кэш и нулевая сумма |
+| TC-W-01-03 | [W-01](../04-delivery/90-optional-wallet/tasks/W-01.md) | Ограничения схемы |
+| TC-W-01-04 | [W-01](../04-delivery/90-optional-wallet/tasks/W-01.md) | Блокировка аккаунта |
+| TC-W-02-01 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Одновременные списания |
+| TC-W-02-02 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Повтор и конфликт ref |
+| TC-W-02-03 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Надгробие |
+| TC-W-02-04 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Пачка — всё или ничего |
+| TC-W-02-05 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Доступ |
+| TC-W-03-01 | [W-03](../04-delivery/90-optional-wallet/tasks/W-03.md) | Расхождение видно |
+| TC-W-03-02 | [W-03](../04-delivery/90-optional-wallet/tasks/W-03.md) | Команда оператора |
+| TC-W-03-03 | [W-03](../04-delivery/90-optional-wallet/tasks/W-03.md) | Права и свежесть токена |
+| TC-W-03-04 | [W-03](../04-delivery/90-optional-wallet/tasks/W-03.md) | Раздел админки |
+| TC-W-04-01 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | Одно зачисление |
+| TC-W-04-02 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | Return URL не зачисляет |
+| TC-W-04-03 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | Возврат и chargeback |
+| TC-W-04-04 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | Реальная покупка |
+| TC-W-04-05 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | GRM не уходит в провайдера |
+| TC-W-05-01 | [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md) | Покупка за грамблсы |
+| TC-W-05-02 | [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md) | Не хватает |
+| TC-W-05-03 | [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md) | Сбой grant |
+| TC-W-05-04 | [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md) | Двойной клик и уже купленное |
+| TC-W-06-01 | [W-06](../04-delivery/90-optional-wallet/tasks/W-06.md) | Тысяча команд |
+| TC-W-06-02 | [W-06](../04-delivery/90-optional-wallet/tasks/W-06.md) | Сверка после прогона |
+| TC-W-06-03 | [W-06](../04-delivery/90-optional-wallet/tasks/W-06.md) | Повтор всего прогона |
 | TC-A-05-01 | [A-05](../04-delivery/06-admin/tasks/A-05.md) | Preview |
 | TC-A-05-02 | [A-05](../04-delivery/06-admin/tasks/A-05.md) | Повтор job |
 | TC-A-05-03 | [A-05](../04-delivery/06-admin/tasks/A-05.md) | Запрет |
-| TC-W-02-01 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Дубль |
-| TC-W-02-02 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Return |
-| TC-W-02-03 | [W-02](../04-delivery/90-optional-wallet/tasks/W-02.md) | Mismatch |
 | TC-A-07-01 | [A-07](../04-delivery/06-admin/tasks/A-07.md) | Atomicity |
 | TC-A-07-02 | [A-07](../04-delivery/06-admin/tasks/A-07.md) | Projection down |
 | TC-A-07-03 | [A-07](../04-delivery/06-admin/tasks/A-07.md) | Redaction |
 | TC-A-07-04 | [A-07](../04-delivery/06-admin/tasks/A-07.md) | Denied |
-| TC-W-03-01 | [W-03](../04-delivery/90-optional-wallet/tasks/W-03.md) | Конкуренция |
-| TC-W-03-02 | [W-03](../04-delivery/90-optional-wallet/tasks/W-03.md) | Release |
-| TC-W-03-03 | [W-03](../04-delivery/90-optional-wallet/tasks/W-03.md) | Capture |
 | TC-OPS-08-01 | [OPS-08](../04-delivery/07-operations/tasks/OPS-08.md) | Нагрузка |
 | TC-OPS-08-02 | [OPS-08](../04-delivery/07-operations/tasks/OPS-08.md) | Agent pressure |
 | TC-OPS-08-03 | [OPS-08](../04-delivery/07-operations/tasks/OPS-08.md) | Rollout |
 | TC-R-01-01 | [R-01](../04-delivery/09-release/tasks/R-01.md) | Маршрут |
 | TC-R-01-02 | [R-01](../04-delivery/09-release/tasks/R-01.md) | Сессии |
 | TC-R-01-03 | [R-01](../04-delivery/09-release/tasks/R-01.md) | Пустой продукт |
-| TC-W-04-01 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | Потраченный top-up |
-| TC-W-04-02 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | Повтор reversal |
-| TC-W-04-03 | [W-04](../04-delivery/90-optional-wallet/tasks/W-04.md) | Другая валюта |
 | TC-R-02-01 | [R-02](../04-delivery/09-release/tasks/R-02.md) | Покупка |
 | TC-R-02-02 | [R-02](../04-delivery/09-release/tasks/R-02.md) | Fault |
 | TC-R-02-03 | [R-02](../04-delivery/09-release/tasks/R-02.md) | Hermes |
 | TC-R-02-04 | [R-02](../04-delivery/09-release/tasks/R-02.md) | Доказательство |
-| TC-W-05-01 | [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md) | Flag off |
-| TC-W-05-02 | [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md) | Adjustment |
-| TC-W-05-03 | [W-05](../04-delivery/90-optional-wallet/tasks/W-05.md) | Ownership |
 | TC-R-03-01 | [R-03](../04-delivery/09-release/tasks/R-03.md) | Блокер |
 | TC-R-03-02 | [R-03](../04-delivery/09-release/tasks/R-03.md) | Evidence |
 | TC-R-03-03 | [R-03](../04-delivery/09-release/tasks/R-03.md) | Sales |
-| TC-W-06-01 | [W-06](../04-delivery/90-optional-wallet/tasks/W-06.md) | Invariant |
-| TC-W-06-02 | [W-06](../04-delivery/90-optional-wallet/tasks/W-06.md) | Rebuild |
-| TC-W-06-03 | [W-06](../04-delivery/90-optional-wallet/tasks/W-06.md) | Restore |
 | TC-R-04-01 | [R-04](../04-delivery/09-release/tasks/R-04.md) | Deploy |
 | TC-R-04-02 | [R-04](../04-delivery/09-release/tasks/R-04.md) | Migration fail |
 | TC-R-04-03 | [R-04](../04-delivery/09-release/tasks/R-04.md) | Smoke |

@@ -56,7 +56,10 @@
       "same-status": "Nothing changed: the book already has this status.",
       "same-rule": "Nothing changed: this is already the book's access rule.",
       "free-chapters": "The book has fewer chapters than that: lower the number of free chapters.",
-      "rule-refused": "Education did not accept this access rule; nothing changed."
+      "rule-refused": "Education did not accept this access rule; nothing changed.",
+      "insufficient-funds": "The wallet holds less than that. Nothing was taken.",
+      "amount-too-large": "That is more than one command may move. Nothing was changed.",
+      "same-balance": "The wallet already holds that much. Nothing was changed."
     },
     "done": {
       "suspended": "Account suspended. All sessions were ended.",
@@ -82,7 +85,21 @@
       "bookPublished": "Book published.",
       "bookDrafted": "Book moved back to draft.",
       "bookArchived": "Book archived.",
-      "bookAccessChanged": "Access rule changed."
+      "bookAccessChanged": "Access rule changed.",
+      "grumblesGranted": "{count, plural, one {# grumble granted} other {# grumbles granted}}",
+      "grumblesTaken": "{count, plural, one {# grumble taken} other {# grumbles taken}}",
+      "balanceSet": "{count, plural, one {Balance set to # grumble} other {Balance set to # grumbles}}"
+    },
+    "grumbles": {
+      "amount": "Amount",
+      "amountHint": "Whole grumbles, from 1 to {max} at a time.",
+      "now": "The wallet holds {balance} now.",
+      "preview": "Balance after: {after}",
+      "previewShort": "Below zero: nothing would be taken",
+      "target": "New balance",
+      "targetHint": "Whole grumbles, 0 or more. The wallet grants or takes the difference.",
+      "previewSet": "{before} → {after}",
+      "unchanged": "The same balance: nothing would change"
     }
   },
   "idle": {
@@ -118,7 +135,8 @@
       "battleship": "Battleship",
       "education": "Education",
       "audit": "Audit",
-      "monitoring": "Monitoring"
+      "monitoring": "Monitoring",
+      "wallet": "Wallet"
     },
     "roles": {
       "owner": "Owner",
@@ -465,6 +483,49 @@
       "passkey_removed": "Passkey removed by the user",
       "passkey_revoked": "Passkey removed by an operator",
       "passkey_counter_regression": "Passkey sign-in refused: possible copy"
+    },
+    "txKind": {
+      "grant": "Grant",
+      "adjust": "Taken by operator",
+      "debit": "Debit",
+      "credit": "Credit",
+      "reversal": "Reversal"
+    },
+    "walletState": {
+      "active": "Active",
+      "restricted": "Restricted"
+    },
+    "walletReason": {
+      "account_suspended": "Account suspended",
+      "account_deleted": "Account deleted"
+    },
+    "walletIssue": {
+      "balance_drift": "Balance differs from the journal",
+      "chain_break": "Gap in the journal",
+      "system_drift": "System account differs",
+      "zero_sum": "Accounts do not sum to zero"
+    },
+    "walletIssueState": {
+      "open": "Open",
+      "resolved": "Resolved"
+    },
+    "systemAccount": {
+      "issued_bonus": "Issued as bonuses",
+      "issued_purchase": "Issued for purchases",
+      "spent": "Spent",
+      "adjust": "Taken by operators",
+      "expired": "Expired"
+    },
+    "runMode": {
+      "sample": "Sample",
+      "full": "Full"
+    },
+    "walletSource": {
+      "roulette": "Roulette",
+      "daily-bonus": "Daily bonus",
+      "battleship-shop": "Battleship shop",
+      "pay": "Pay",
+      "admin": "Console"
     }
   },
   "dashboard": {
@@ -488,7 +549,8 @@
         "notifications": "Notifications",
         "battleship": "Battleship",
         "payments": "Payments",
-        "education": "Education"
+        "education": "Education",
+        "wallet": "Wallet"
       },
       "unconfigured": "No address configured yet",
       "noAnswer": "No answer",
@@ -503,7 +565,8 @@
         "notifications": "Notifications",
         "battleship": "Battleship",
         "payments": "Payments",
-        "education": "Education"
+        "education": "Education",
+        "wallet": "Wallet"
       },
       "serviceDown": "{service} is down",
       "serviceDegraded": "{service} is degraded",
@@ -725,7 +788,8 @@
       "battleship": "Battleship",
       "education": "Education",
       "payments": "Payments",
-      "activity": "Activity"
+      "activity": "Activity",
+      "wallet": "Wallet"
     },
     "what": "users",
     "noMatchTitle": "No users match “{query}”",
@@ -967,6 +1031,12 @@
       "what": "activity",
       "emptyAbout": "Nobody has changed this account.",
       "emptyBy": "This user has not taken admin actions."
+    },
+    "wallet": {
+      "title": "Grumbles",
+      "open": "Open the wallet",
+      "what": "the wallet",
+      "service": "Wallet"
     }
   },
   "notifications": {
@@ -1885,6 +1955,128 @@
     "targets": {
       "library": "Education — every book",
       "book": "Education — {title}"
+    }
+  },
+  "wallet": {
+    "eyebrow": "Services",
+    "title": "Wallet",
+    "lead": "Grumbles: who holds how many, every operation before and after, and whether the accounts agree.",
+    "tabsLabel": "Wallet sections",
+    "tabs": {
+      "overview": "Overview",
+      "wallets": "Wallets",
+      "reconciliation": "Reconciliation"
+    },
+    "unit": "grumbles",
+    "overview": {
+      "now": "Grumbles now",
+      "onHand": "On players' wallets",
+      "wallets": "Wallets",
+      "restricted": "Restricted",
+      "openIssues": "Open issues",
+      "day": "Operations in 24 hours",
+      "system": "System accounts",
+      "systemNote": "The other leg of every operation. With all wallets they sum to zero.",
+      "colAccount": "Account",
+      "colBalance": "Balance",
+      "total": "All accounts together",
+      "lastPass": "Last reconciliation",
+      "never": "Not run yet",
+      "issuesLink": "Reconciliation",
+      "recent": "Recently changed wallets",
+      "allWallets": "All wallets",
+      "connection": "Connection",
+      "what": "the wallet",
+      "service": "Wallet",
+      "turnover": "The day by source",
+      "turnoverNote": "Grumbles in and out of players' wallets in 24 hours, by the service that moved them.",
+      "noTurnover": "No operations in 24 hours.",
+      "colSource": "Source",
+      "colOperations": "Operations",
+      "colCredited": "In",
+      "colDebited": "Out"
+    },
+    "wallets": {
+      "title": "Wallets",
+      "filters": "Wallet filters",
+      "state": "State",
+      "anyState": "Any state",
+      "user": "User ID",
+      "userPlaceholder": "UUID",
+      "colUser": "User",
+      "colBalance": "Balance",
+      "colState": "State",
+      "colOperations": "Operations",
+      "colUpdated": "Changed",
+      "empty": "No wallets",
+      "emptyBody": "A wallet appears with a player's first operation.",
+      "what": "wallets",
+      "service": "Wallet"
+    },
+    "card": {
+      "title": "Wallet",
+      "back": "All wallets",
+      "user": "User card",
+      "balance": "Balance",
+      "state": "State",
+      "operations": "Operations",
+      "opened": "Opened",
+      "updated": "Changed",
+      "noWallet": "No wallet yet: the balance is zero until the first operation.",
+      "journal": "Journal",
+      "journalNote": "Every operation with the balance before and after, who made it and why.",
+      "colWhen": "When",
+      "colKind": "Operation",
+      "colAmount": "Amount",
+      "colBalance": "Before → after",
+      "colWho": "Who and why",
+      "byService": "A service",
+      "empty": "No operations yet",
+      "what": "the wallet",
+      "filters": "Journal filters",
+      "source": "Source",
+      "anySource": "Any source"
+    },
+    "command": {
+      "grant": "Grant",
+      "grantTitle": "Grant grumbles",
+      "grantDescription": "Adds grumbles to this wallet: a bonus, a promo or compensation.",
+      "grantConfirm": "Grant",
+      "grantEffect": "The balance grows by the amount.",
+      "adjust": "Take",
+      "adjustTitle": "Take grumbles",
+      "adjustDescription": "Takes grumbles from this wallet, for example after a grant by mistake.",
+      "adjustConfirm": "Take",
+      "adjustEffect": "The balance shrinks by the amount; if the wallet holds less, nothing is taken.",
+      "restricted": "The account is restricted: purchases and stakes stay blocked.",
+      "once": "Sending this form twice applies it once.",
+      "audited": "Goes to the journal and the audit with your name and reason.",
+      "set": "Set balance",
+      "setTitle": "Set the balance",
+      "setDescription": "Brings the wallet to the balance you enter: the difference is granted or taken as one operation.",
+      "setConfirm": "Set balance",
+      "setEffect": "If a stake or a payout lands meanwhile, the wallet still ends at this balance."
+    },
+    "reconciliation": {
+      "issues": "Issues",
+      "issuesNote": "Found by the reconciliation worker: a sample every 5 minutes, everything once a night. It repairs nothing.",
+      "none": "No issues",
+      "noneBody": "Every cache equals the journal, and all accounts sum to zero.",
+      "colKind": "Issue",
+      "colSubject": "Where",
+      "colState": "State",
+      "colSeen": "Seen",
+      "colDetails": "Details",
+      "runs": "Recent passes",
+      "colMode": "Pass",
+      "colStarted": "Started",
+      "colChecked": "Wallets checked",
+      "colFound": "Issues found",
+      "running": "Running",
+      "noRuns": "No passes yet",
+      "what": "reconciliation",
+      "service": "Wallet",
+      "failed": "Failed"
     }
   }
 }

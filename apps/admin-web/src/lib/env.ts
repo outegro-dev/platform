@@ -20,6 +20,8 @@ export const env = z
     PAYMENTS_ADMIN_API_URL: optionalBaseUrl,
     /** edu-backend (textbooks at edu.outegro.dev); unset until it is deployed. */
     EDU_API_URL: optionalBaseUrl,
+    /** wallet-backend (grumbles); unset until it is deployed. */
+    WALLET_API_URL: optionalBaseUrl,
     /** Public origin of the identity frontend (sign-in). */
     ID_URL: baseUrl.default("http://localhost:3002"),
     /** Public origin of this console; the SSO callback lives under it. */

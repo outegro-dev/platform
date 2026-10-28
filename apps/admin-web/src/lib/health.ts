@@ -6,7 +6,13 @@
 export type HealthState = "up" | "degraded" | "down" | "unconfigured";
 
 export type ServiceHealth = {
-  key: "identity" | "notifications" | "battleship" | "payments" | "education";
+  key:
+    | "identity"
+    | "notifications"
+    | "battleship"
+    | "payments"
+    | "education"
+    | "wallet";
   state: HealthState;
   latencyMs: number | null;
   /** Dependencies reported by the service (postgres, valkey, rabbitmq…). */

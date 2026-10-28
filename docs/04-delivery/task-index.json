@@ -2259,15 +2259,15 @@
     },
     {
       "id": "W-01",
-      "title": "Схема wallet и double-entry ledger",
+      "title": "Сервис wallet-backend: схема, журнал и гарантии БД",
       "stage": "90-optional-wallet",
-      "status": "deferred",
+      "status": "review",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-01.md",
       "dependencies": [
-        "PAY-05",
-        "PAY-09",
-        "PAY-10"
+        "BE-05",
+        "BE-07",
+        "ID-06"
       ],
       "external": [
         "WALLET-DECISION"
@@ -2275,9 +2275,10 @@
       "required_docs": [
         "docs/00-start-here/project-context.md",
         "docs/00-start-here/execution-protocol.md",
-        "docs/02-contracts/billing.md",
+        "docs/02-contracts/wallet.md",
         "docs/02-contracts/http-errors.md",
-        "docs/02-contracts/events.md"
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/invariants.md"
       ],
       "chapter_refs": [
         "docs/01-specification/chapters/06-payments-subscriptions.md",
@@ -2286,7 +2287,8 @@
       "test_case_ids": [
         "TC-W-01-01",
         "TC-W-01-02",
-        "TC-W-01-03"
+        "TC-W-01-03",
+        "TC-W-01-04"
       ]
     },
     {
@@ -2321,22 +2323,19 @@
     },
     {
       "id": "W-02",
-      "title": "Подтверждённое пополнение",
+      "title": "Операции, идемпотентность по ref и API",
       "stage": "90-optional-wallet",
-      "status": "deferred",
+      "status": "review",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-02.md",
       "dependencies": [
-        "W-01",
-        "PAY-03"
+        "W-01"
       ],
-      "external": [
-        "WALLET-DECISION"
-      ],
+      "external": [],
       "required_docs": [
         "docs/00-start-here/project-context.md",
         "docs/00-start-here/execution-protocol.md",
-        "docs/02-contracts/billing.md",
+        "docs/02-contracts/wallet.md",
         "docs/02-contracts/http-errors.md",
         "docs/02-contracts/events.md"
       ],
@@ -2347,7 +2346,9 @@
       "test_case_ids": [
         "TC-W-02-01",
         "TC-W-02-02",
-        "TC-W-02-03"
+        "TC-W-02-03",
+        "TC-W-02-04",
+        "TC-W-02-05"
       ]
     },
     {
@@ -2386,24 +2387,25 @@
     },
     {
       "id": "W-03",
-      "title": "Reserve, capture и release",
+      "title": "Сверка, метрики и раздел «Кошелёк» в админке",
       "stage": "90-optional-wallet",
-      "status": "deferred",
+      "status": "review",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-03.md",
       "dependencies": [
         "W-02",
-        "PAY-06"
+        "A-03",
+        "OPS-04",
+        "DS-04"
       ],
-      "external": [
-        "WALLET-DECISION"
-      ],
+      "external": [],
       "required_docs": [
         "docs/00-start-here/project-context.md",
         "docs/00-start-here/execution-protocol.md",
-        "docs/02-contracts/billing.md",
+        "docs/02-contracts/wallet.md",
         "docs/02-contracts/http-errors.md",
-        "docs/02-contracts/events.md"
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/identity-access.md"
       ],
       "chapter_refs": [
         "docs/01-specification/chapters/06-payments-subscriptions.md",
@@ -2412,7 +2414,8 @@
       "test_case_ids": [
         "TC-W-03-01",
         "TC-W-03-02",
-        "TC-W-03-03"
+        "TC-W-03-03",
+        "TC-W-03-04"
       ]
     },
     {
@@ -2483,24 +2486,27 @@
     },
     {
       "id": "W-04",
-      "title": "Возвраты, reversal и debt",
+      "title": "Пополнение пакетами через pay",
       "stage": "90-optional-wallet",
       "status": "deferred",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-04.md",
       "dependencies": [
-        "W-03",
+        "W-06",
+        "PAY-03",
+        "PAY-05",
         "PAY-09"
       ],
       "external": [
-        "WALLET-DECISION"
+        "GRUMBLE-PACKS"
       ],
       "required_docs": [
         "docs/00-start-here/project-context.md",
         "docs/00-start-here/execution-protocol.md",
-        "docs/02-contracts/billing.md",
+        "docs/02-contracts/wallet.md",
         "docs/02-contracts/http-errors.md",
-        "docs/02-contracts/events.md"
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/billing.md"
       ],
       "chapter_refs": [
         "docs/01-specification/chapters/06-payments-subscriptions.md",
@@ -2509,7 +2515,9 @@
       "test_case_ids": [
         "TC-W-04-01",
         "TC-W-04-02",
-        "TC-W-04-03"
+        "TC-W-04-03",
+        "TC-W-04-04",
+        "TC-W-04-05"
       ]
     },
     {
@@ -2546,25 +2554,25 @@
     },
     {
       "id": "W-05",
-      "title": "Wallet UI и admin commands",
+      "title": "Покупки за грамблсы: скины Battleship",
       "stage": "90-optional-wallet",
       "status": "deferred",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-05.md",
       "dependencies": [
         "W-04",
-        "A-03",
-        "DS-04"
+        "PAY-06"
       ],
       "external": [
-        "WALLET-DECISION"
+        "GRUMBLE-PRICES"
       ],
       "required_docs": [
         "docs/00-start-here/project-context.md",
         "docs/00-start-here/execution-protocol.md",
-        "docs/02-contracts/billing.md",
+        "docs/02-contracts/wallet.md",
         "docs/02-contracts/http-errors.md",
-        "docs/02-contracts/events.md"
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/billing.md"
       ],
       "chapter_refs": [
         "docs/01-specification/chapters/06-payments-subscriptions.md",
@@ -2573,7 +2581,8 @@
       "test_case_ids": [
         "TC-W-05-01",
         "TC-W-05-02",
-        "TC-W-05-03"
+        "TC-W-05-03",
+        "TC-W-05-04"
       ]
     },
     {
@@ -2607,23 +2616,22 @@
     },
     {
       "id": "W-06",
-      "title": "Wallet concurrency и reconciliation acceptance",
+      "title": "Приёмка этапа 1: инварианты на случайных командах",
       "stage": "90-optional-wallet",
-      "status": "deferred",
+      "status": "review",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-06.md",
       "dependencies": [
-        "W-05"
+        "W-03"
       ],
-      "external": [
-        "WALLET-DECISION"
-      ],
+      "external": [],
       "required_docs": [
         "docs/00-start-here/project-context.md",
         "docs/00-start-here/execution-protocol.md",
-        "docs/02-contracts/billing.md",
+        "docs/02-contracts/wallet.md",
         "docs/02-contracts/http-errors.md",
-        "docs/02-contracts/events.md"
+        "docs/02-contracts/events.md",
+        "docs/02-contracts/invariants.md"
       ],
       "chapter_refs": [
         "docs/01-specification/chapters/06-payments-subscriptions.md",

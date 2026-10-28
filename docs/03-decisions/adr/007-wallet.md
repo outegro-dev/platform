@@ -1,6 +1,6 @@
 # ADR-007: wallet scope
 
-Status: deferred до решения владельца.
+Status: superseded by [ADR-011](011-wallet-grumbles.md) (28.10.2026): владелец выбрал отдельный сервис wallet-backend с одной внутренней валютой «грамблсы» (`GRM`) вместо денежного баланса по валютам. Текст ниже — история решения.
 
 Базовый выпуск содержит direct payments/subscriptions и immutable financial journal. Админка показывает историю по валютам, не тратимый balance. W-01…06 подробно описаны, но не выполняются автоматически.
 

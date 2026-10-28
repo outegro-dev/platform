@@ -574,6 +574,8 @@
   --spot-pink: #f28fb1;
   --tape: #f3e7a9b3;
   --halftone: #1b191524;
+  /* the grumble coin's offset shadow (GrumbleIcon): ink on paper */
+  --coin-shadow: var(--ink);
 
   --background: var(--paper);
   --surface: var(--paper-white);
@@ -658,6 +660,7 @@
   --info-soft: #373938;
   --shadow-soft: 5px 5px 0 var(--spot-red);
   --shadow-hard: 4px 4px 0 var(--spot-red);
+  --coin-shadow: var(--spot-red);
   --halftone: #efe4c61f;
 }
 

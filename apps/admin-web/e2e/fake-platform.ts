@@ -9,6 +9,7 @@
  *   /battleship/...       battleship-backend admin API (shape assumed by the adapter)
  *   /payments/...         payments-backend admin API and public catalog
  *   /edu/...              edu-backend admin API (@outegro/contracts/edu)
+ *   /wallet/...           wallet-backend admin API (@outegro/contracts/wallet)
  *
  * Tokens are unsigned JWT-shaped strings carrying the persona; every admin
  * endpoint checks the persona's permissions like the real services do.
@@ -4514,6 +4515,420 @@ route("POST", "/payments/v1/admin/refunds/:id/match", (req, _res, [id]) => {
     createdAt: iso(Date.now()),
   });
   return { refund: refundView(refund), outcome: null };
+});
+
+// ── Wallet ──────────────────────────────────────────────────────────────
+// Grumbles (wallet-backend, @outegro/contracts/wallet). Seeded with its own
+// generator, so everything above stays exactly as it was.
+
+type WalletTxKind = "grant" | "adjust" | "debit" | "credit" | "reversal";
+type FakeWallet = {
+  userId: string;
+  unit: "GRM";
+  balance: bigint;
+  state: "active" | "restricted";
+  restrictedReason: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+};
+type WalletSourceKey =
+  | "roulette"
+  | "daily-bonus"
+  | "battleship-shop"
+  | "pay"
+  | "admin";
+type FakeWalletTx = {
+  id: string;
+  kind: WalletTxKind;
+  source: WalletSourceKey;
+  objectRef: string | null;
+  ref: string;
+  amount: bigint;
+  balanceBefore: bigint;
+  balanceAfter: bigint;
+  walletVersion: number;
+  counterAccount: string;
+  reason: string | null;
+  actorId: string | null;
+  meta: Record<string, unknown> | null;
+  correlationId: string | null;
+  createdAt: string;
+};
+const walletLegs: Record<WalletTxKind, { sign: 1n | -1n; counter: string }> = {
+  grant: { sign: 1n, counter: "issued_bonus" },
+  adjust: { sign: -1n, counter: "adjust" },
+  debit: { sign: -1n, counter: "spent" },
+  credit: { sign: 1n, counter: "spent" },
+  reversal: { sign: 1n, counter: "spent" },
+};
+const wallets = new Map<string, FakeWallet>();
+const walletJournal = new Map<string, FakeWalletTx[]>();
+const walletRefs = new Map<
+  string,
+  { userId: string; kind: WalletTxKind; amount: bigint; tx: FakeWalletTx }
+>();
+const systemAccounts = new Map<string, bigint>(
+  ["adjust", "expired", "issued_bonus", "issued_purchase", "spent"].map(
+    (code) => [code, 0n],
+  ),
+);
+
+function walletPost(
+  userId: string,
+  kind: WalletTxKind,
+  amount: bigint,
+  at: number,
+  extra: {
+    ref?: string;
+    source?: WalletSourceKey;
+    objectRef?: string | null;
+    reason?: string | null;
+    actorId?: string | null;
+    meta?: Record<string, unknown> | null;
+  } = {},
+): FakeWalletTx {
+  const wallet = wallets.get(userId) ?? {
+    userId,
+    unit: "GRM" as const,
+    balance: 0n,
+    state: "active" as const,
+    restrictedReason: null,
+    version: 0,
+    createdAt: iso(at),
+    updatedAt: iso(at),
+  };
+  const source = extra.source ?? "admin";
+  const leg =
+    kind === "credit" && source === "daily-bonus"
+      ? { sign: 1n as const, counter: "issued_bonus" }
+      : walletLegs[kind];
+  const after = wallet.balance + leg.sign * amount;
+  if (after < 0n) fail(402, "INSUFFICIENT_FUNDS");
+  const tx: FakeWalletTx = {
+    id: uuidFrom(walletRandom),
+    kind,
+    source,
+    objectRef: extra.objectRef ?? null,
+    ref: extra.ref ?? `${kind}:${uuidFrom(walletRandom)}`,
+    amount: leg.sign * amount,
+    balanceBefore: wallet.balance,
+    balanceAfter: after,
+    walletVersion: wallet.version + 1,
+    counterAccount: leg.counter,
+    reason: extra.reason ?? null,
+    actorId: extra.actorId ?? null,
+    meta: extra.meta ?? null,
+    correlationId: null,
+    createdAt: iso(at),
+  };
+  wallets.set(userId, {
+    ...wallet,
+    balance: after,
+    version: tx.walletVersion,
+    updatedAt: tx.createdAt,
+  });
+  walletJournal.set(userId, [...(walletJournal.get(userId) ?? []), tx]);
+  walletRefs.set(tx.ref, { userId, kind, amount, tx });
+  systemAccounts.set(
+    leg.counter,
+    (systemAccounts.get(leg.counter) ?? 0n) - tx.amount,
+  );
+  return tx;
+}
+
+const walletRandom = prngFor("wallet");
+{
+  const holders = [mira, oleg, priya, ...activeUsers.slice(3, 9)].filter(
+    (user, index, list): user is User =>
+      Boolean(user) && list.indexOf(user) === index,
+  );
+  holders.forEach((user, index) => {
+    let at = NOW - (30 - index * 2) * DAY;
+    walletPost(user.id, "grant", 1000n, at, {
+      reason: "Welcome bonus for early players",
+      actorId: personaIds.owner,
+    });
+    const rounds = 3 + Math.floor(walletRandom() * 6);
+    for (let round = 0; round < rounds; round++) {
+      at += Math.floor(walletRandom() * 30 * HOUR);
+      const stake = BigInt(10 + Math.floor(walletRandom() * 9) * 10);
+      const roundId = `r-${1200 + index * 10 + round}`;
+      const debit = walletPost(user.id, "debit", stake, at, {
+        ref: `stake:${uuidFrom(walletRandom)}`,
+        source: "roulette",
+        objectRef: `round:${roundId}`,
+        meta: { roundId, color: "red" },
+      });
+      if (walletRandom() < 0.4)
+        walletPost(user.id, "credit", stake * 2n, at + MINUTE, {
+          ref: `payout:${debit.ref.slice(6)}`,
+          source: "roulette",
+          objectRef: debit.objectRef,
+          meta: { roundId },
+        });
+      else if (walletRandom() < 0.15)
+        walletPost(user.id, "reversal", stake, at + MINUTE, {
+          ref: `rollback:${debit.ref}`,
+          source: "roulette",
+          objectRef: debit.objectRef,
+          reason: "round cancelled",
+          meta: { reverses: debit.id },
+        });
+    }
+  });
+  // Today's daily bonuses and stakes: the overview's day by source.
+  holders.slice(0, 4).forEach((user, index) => {
+    walletPost(user.id, "credit", 50n, NOW - (5 + index) * HOUR, {
+      ref: `daily:${user.id}:${index + 1}`,
+      source: "daily-bonus",
+    });
+    walletPost(user.id, "debit", 20n, NOW - (4 + index) * HOUR, {
+      ref: `stake:${uuidFrom(walletRandom)}`,
+      source: "roulette",
+      objectRef: `round:r-${1900 + index}`,
+      meta: { roundId: `r-${1900 + index}`, color: "black" },
+    });
+  });
+  // A grant by mistake, taken back by the operator.
+  walletPost(mira.id, "grant", 500n, NOW - 3 * DAY, {
+    reason: "Compensation for the 26.10 outage",
+    actorId: personaIds.owner,
+  });
+  walletPost(mira.id, "adjust", 400n, NOW - 3 * DAY + HOUR, {
+    reason: "Granted 500 instead of 100 by mistake",
+    actorId: personaIds.owner,
+  });
+  const suspended = users.find(
+    (user) => user.status === "suspended" && !wallets.has(user.id),
+  );
+  if (suspended) {
+    walletPost(suspended.id, "grant", 300n, NOW - 20 * DAY, {
+      reason: "Tournament prize",
+      actorId: personaIds.owner,
+    });
+    const wallet = wallets.get(suspended.id) as FakeWallet;
+    wallets.set(suspended.id, {
+      ...wallet,
+      state: "restricted",
+      restrictedReason: "account_suspended",
+    });
+  }
+}
+const walletRuns = Array.from({ length: 8 }, (_, i) => {
+  const startedAt = NOW - (i * 5 + 2) * MINUTE;
+  return {
+    id: uuidFrom(walletRandom),
+    mode: i === 7 ? ("full" as const) : ("sample" as const),
+    startedAt: iso(startedAt),
+    finishedAt: iso(startedAt + 400),
+    checkedWallets: i === 7 ? wallets.size : Math.min(wallets.size, 4),
+    issuesFound: 0,
+    failed: false,
+  };
+});
+const walletIssues = [
+  {
+    id: uuidFrom(walletRandom),
+    kind: "balance_drift" as const,
+    subject: `wallet:${oleg.id}:GRM`,
+    state: "resolved" as "open" | "resolved",
+    details: { cached: "905", journal: "900" },
+    firstSeenAt: iso(NOW - 2 * DAY),
+    lastSeenAt: iso(NOW - 2 * DAY + 10 * MINUTE),
+    resolvedAt: iso(NOW - 2 * DAY + 15 * MINUTE),
+  },
+];
+const walletCommands = new Map<string, FakeWalletTx>();
+
+const walletView = (wallet: FakeWallet) => ({
+  ...wallet,
+  balance: wallet.balance.toString(),
+  exists: true,
+});
+const walletTxView = (tx: FakeWalletTx) => ({
+  ...tx,
+  amount: tx.amount.toString(),
+  balanceBefore: tx.balanceBefore.toString(),
+  balanceAfter: tx.balanceAfter.toString(),
+});
+
+route("GET", "/wallet/health/deep", () =>
+  terminus(true, ["postgres", "valkey", "rabbitmq"]),
+);
+route("GET", "/wallet/v1/admin/overview", (req) => {
+  need(req, "wallet.read");
+  const all = [...wallets.values()];
+  const since = Date.now() - DAY;
+  const day = { grant: 0, adjust: 0, debit: 0, credit: 0, reversal: 0 };
+  const turnover = new Map<
+    WalletSourceKey,
+    { operations: number; credited: bigint; debited: bigint }
+  >();
+  for (const list of walletJournal.values())
+    for (const tx of list) {
+      if (Date.parse(tx.createdAt) < since) continue;
+      day[tx.kind]++;
+      const row = turnover.get(tx.source) ?? {
+        operations: 0,
+        credited: 0n,
+        debited: 0n,
+      };
+      row.operations++;
+      if (tx.amount > 0n) row.credited += tx.amount;
+      else row.debited -= tx.amount;
+      turnover.set(tx.source, row);
+    }
+  return {
+    unit: "GRM",
+    onHand: all.reduce((sum, w) => sum + w.balance, 0n).toString(),
+    wallets: all.length,
+    restricted: all.filter((w) => w.state === "restricted").length,
+    operations24h: day,
+    systemAccounts: [...systemAccounts].map(([code, balance]) => ({
+      code,
+      balance: balance.toString(),
+    })),
+    turnover24h: [...turnover]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([source, row]) => ({
+        source,
+        operations: row.operations,
+        credited: row.credited.toString(),
+        debited: row.debited.toString(),
+      })),
+    openIssues: walletIssues.filter((i) => i.state === "open").length,
+    lastReconciliation: walletRuns[0],
+  };
+});
+route("GET", "/wallet/v1/admin/wallets", (req) => {
+  need(req, "wallet.read");
+  const state = req.query.get("state");
+  const userId = req.query.get("userId");
+  const list = [...wallets.values()]
+    .filter(
+      (w) => (!state || w.state === state) && (!userId || w.userId === userId),
+    )
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const page = paginate(list, req.query);
+  return { ...page, items: page.items.map(walletView) };
+});
+route("GET", "/wallet/v1/admin/wallets/:userId", (req, _res, [userId]) => {
+  need(req, "wallet.read");
+  const id = userId as string;
+  const wallet = wallets.get(id);
+  const source = req.query.get("source");
+  const journal = [...(walletJournal.get(id) ?? [])]
+    .filter((tx) => !source || tx.source === source)
+    .reverse();
+  const page = paginate(journal, req.query);
+  return {
+    wallet: wallet
+      ? walletView(wallet)
+      : {
+          userId: id,
+          unit: "GRM",
+          balance: "0",
+          state: "active",
+          restrictedReason: null,
+          version: 0,
+          exists: false,
+          createdAt: null,
+          updatedAt: null,
+        },
+    history: { ...page, items: page.items.map(walletTxView) },
+  };
+});
+for (const kind of ["grant", "adjust"] as const)
+  route(
+    "POST",
+    `/wallet/v1/admin/wallets/:userId/${kind}`,
+    (req, _res, [userId]) => {
+      const persona = need(req, "wallet.adjust");
+      const reason = reasonOf(req.body);
+      const body = req.body as { amount?: unknown; commandId?: unknown };
+      const amount =
+        typeof body?.amount === "string" && /^[1-9]\d{0,14}$/.test(body.amount)
+          ? BigInt(body.amount)
+          : fail(400, "VALIDATION_FAILED", { amount: ["invalid"] });
+      if (amount > 1_000_000n)
+        fail(400, "VALIDATION_FAILED", { amount: ["too_large"] });
+      const ref = `${kind}:${String(body?.commandId)}`;
+      const done = walletCommands.get(ref);
+      const tx =
+        done ??
+        walletPost(userId as string, kind, amount, Date.now(), {
+          ref,
+          reason,
+          actorId: actorOf(persona),
+        });
+      walletCommands.set(ref, tx);
+      return {
+        txId: tx.id,
+        ref: tx.ref,
+        userId,
+        unit: "GRM",
+        kind: tx.kind,
+        source: tx.source,
+        objectRef: tx.objectRef,
+        amount: tx.amount.toString(),
+        balanceBefore: tx.balanceBefore.toString(),
+        balanceAfter: tx.balanceAfter.toString(),
+        createdAt: tx.createdAt,
+        replayed: Boolean(done),
+      };
+    },
+  );
+route(
+  "POST",
+  "/wallet/v1/admin/wallets/:userId/set-balance",
+  (req, _res, [userId]) => {
+    const persona = need(req, "wallet.adjust");
+    const reason = reasonOf(req.body);
+    const body = req.body as { balance?: unknown; commandId?: unknown };
+    const target =
+      typeof body?.balance === "string" &&
+      /^(0|[1-9]\d{0,14})$/.test(body.balance)
+        ? BigInt(body.balance)
+        : fail(400, "VALIDATION_FAILED", { balance: ["invalid"] });
+    const ref = `set:${String(body?.commandId)}`;
+    let tx = walletCommands.get(ref);
+    const replayed = Boolean(tx);
+    if (!tx) {
+      const current = wallets.get(userId as string)?.balance ?? 0n;
+      const diff = target - current;
+      if (diff === 0n) fail(422, "UNPROCESSABLE", { balance: ["unchanged"] });
+      const amount = diff > 0n ? diff : -diff;
+      if (amount > 1_000_000n)
+        fail(400, "VALIDATION_FAILED", { amount: ["too_large"] });
+      tx = walletPost(
+        userId as string,
+        diff > 0n ? "grant" : "adjust",
+        amount,
+        Date.now(),
+        { ref, reason, actorId: actorOf(persona) },
+      );
+      walletCommands.set(ref, tx);
+    }
+    return {
+      txId: tx.id,
+      ref: tx.ref,
+      userId,
+      unit: "GRM",
+      kind: tx.kind,
+      source: tx.source,
+      objectRef: tx.objectRef,
+      amount: tx.amount.toString(),
+      balanceBefore: tx.balanceBefore.toString(),
+      balanceAfter: tx.balanceAfter.toString(),
+      createdAt: tx.createdAt,
+      replayed,
+    };
+  },
+);
+route("GET", "/wallet/v1/admin/reconciliation", (req) => {
+  need(req, "wallet.read");
+  return { issues: walletIssues, runs: walletRuns };
 });
 
 // ── Server ──────────────────────────────────────────────────────────────

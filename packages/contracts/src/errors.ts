@@ -3,6 +3,8 @@ import { z } from "zod";
 /** Stable machine-readable error codes (HTTP contract v1). */
 export const errorCodes = {
   VALIDATION_FAILED: 400,
+  /** A grumbles debit larger than the wallet's balance (wallet contract). */
+  INSUFFICIENT_FUNDS: 402,
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
@@ -12,6 +14,8 @@ export const errorCodes = {
   UNPROCESSABLE: 422,
   /** Checkout of a one-time item the buyer owns, or of a live subscription. */
   ALREADY_OWNED: 422,
+  /** A debit through the internal API from a restricted wallet (account suspended or deleted). */
+  WALLET_RESTRICTED: 423,
   RATE_LIMITED: 429,
   INTERNAL: 500,
   DEPENDENCY_UNAVAILABLE: 503,

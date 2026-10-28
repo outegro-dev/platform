@@ -7,6 +7,7 @@ export type NavKey =
   | "payments"
   | "battleship"
   | "education"
+  | "wallet"
   | "audit"
   | "monitoring";
 
@@ -17,6 +18,7 @@ export const navHref: Record<NavKey, string> = {
   payments: "/payments",
   battleship: "/battleship",
   education: "/education",
+  wallet: "/wallet",
   audit: "/audit",
   // Grafana on this host, outside the console app (a full page load).
   monitoring: "/grafana/",

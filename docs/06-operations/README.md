@@ -4,6 +4,7 @@
 
 - [Production: сервер, выпуск, секреты](production.md)
 - [Обучение: первая выкатка edu.outegro.dev](edu-rollout.md)
+- [Кошелёк: первая выкатка wallet-backend](wallet-rollout.md)
 - [Ротация ключа подписи access-токенов](signing-keys.md)
 - [Passkeys: RP, выкатка, потеря устройства](passkeys.md)
 - [Метрики, логи и correlation сервисов](observability.md)

@@ -52,7 +52,10 @@ export type ActionCode =
   | "same-status"
   | "same-rule"
   | "free-chapters"
-  | "rule-refused";
+  | "rule-refused"
+  | "insufficient-funds"
+  | "amount-too-large"
+  | "same-balance";
 
 export type ActionResult =
   | { status: "idle" }

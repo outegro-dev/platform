@@ -23,6 +23,7 @@ variable "APPS" {
     "payments-backend",
     "battleship-backend",
     "edu-backend",
+    "wallet-backend",
   ]
 }
 

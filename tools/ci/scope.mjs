@@ -18,6 +18,7 @@ const APPS = [
   "payments-backend",
   "battleship-backend",
   "edu-backend",
+  "wallet-backend",
 ];
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();
