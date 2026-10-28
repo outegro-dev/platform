@@ -67,6 +67,7 @@ export const caseStates = [
   "open",
 ] as const;
 export const severities = ["low", "medium", "high"] as const;
+export const walletOrderStatuses = ["pending", "paid", "failed"] as const;
 
 /**
  * Buyer contact projection from Identity events. Lava needs the email for
@@ -348,6 +349,45 @@ export const billingPeriods = pgTable(
       t.periodStart,
     ),
     check("billing_periods_order", sql`${t.periodEnd} > ${t.periodStart}`),
+  ],
+);
+
+/**
+ * A purchase paid with grumbles (wallet phase 3), apart from `orders`:
+ * no money moves, so nothing here reaches the provider or the money
+ * journal. The wallet holds the debit (ref `order:{id}`); the grant's
+ * source is this row (`purchase`, `id`), so ownership and
+ * billing.grant.changed work as for money.
+ */
+export const walletOrders = pgTable(
+  "wallet_orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    productKey: text("product_key")
+      .notNull()
+      .references(() => products.key),
+    service: text("service").notNull(),
+    feature: text("feature").notNull(),
+    title: jsonb("title").$type<LocalizedText>().notNull(),
+    grumbles: bigint("grumbles", { mode: "bigint" }).notNull(),
+    status: text("status", { enum: walletOrderStatuses })
+      .notNull()
+      .default("pending"),
+    /** Why it failed: insufficient_funds, restricted, already_owned, wallet_unavailable. */
+    failure: text("failure"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    balanceAfter: bigint("balance_after", { mode: "bigint" }),
+    correlationId: text("correlation_id").notNull(),
+    paidAt: at("paid_at"),
+    createdAt: at("created_at").notNull(),
+    updatedAt: at("updated_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("wallet_orders_key_uq").on(t.userId, t.idempotencyKey),
+    index("wallet_orders_user_idx").on(t.userId, t.createdAt),
+    check("wallet_orders_grumbles_positive", sql`${t.grumbles} > 0`),
   ],
 );
 

@@ -18,6 +18,7 @@ export type GrantRow = typeof schema.grants.$inferSelect;
 export type ProviderEventRow = typeof schema.providerEvents.$inferSelect;
 export type RefundRow = typeof schema.refunds.$inferSelect;
 export type CustomerRow = typeof schema.customers.$inferSelect;
+export type WalletOrderRow = typeof schema.walletOrders.$inferSelect;
 
 /** PostgreSQL unique_violation, optionally for one constraint. */
 export function isUniqueViolation(error: unknown, constraint?: string) {

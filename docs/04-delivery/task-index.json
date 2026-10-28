@@ -2556,7 +2556,7 @@
       "id": "W-05",
       "title": "Покупки за грамблсы: скины Battleship",
       "stage": "90-optional-wallet",
-      "status": "deferred",
+      "status": "blocked",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-05.md",
       "dependencies": [

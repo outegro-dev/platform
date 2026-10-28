@@ -1,6 +1,7 @@
 import { Controller, Get, Inject } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import { Public } from "@outegro/nest-common";
+import { GrumbleCheckoutService } from "../checkout/grumble-checkout.service.js";
 import { checkoutConfig } from "../config/config.js";
 import { PAYMENT_PROVIDER, type PaymentProvider } from "../lava/provider.js";
 import { CatalogService } from "./catalog.service.js";
@@ -14,13 +15,18 @@ export class CatalogController {
     @Inject(checkoutConfig.KEY)
     private readonly config: ConfigType<typeof checkoutConfig>,
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
+    private readonly grumbles: GrumbleCheckoutService,
   ) {}
 
   @Get()
   async list() {
     return {
       checkoutEnabled: this.config.enabled && this.provider.configured,
-      products: await this.catalog.list(),
+      // A price in grumbles only while purchases with grumbles are on.
+      products: (await this.catalog.list()).map((product) => ({
+        ...product,
+        priceGrumbles: this.grumbles.priceOf(product.key)?.toString() ?? null,
+      })),
     };
   }
 }

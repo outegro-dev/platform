@@ -542,6 +542,9 @@ function catalogView(persona: Persona | null) {
         version: 1,
         money: money(p, currency),
       })),
+      // Catalog "packs" also sells the Silver Fleet for grumbles (phase 3).
+      priceGrumbles:
+        mode === "packs" && p.key === "battleship-silver-fleet" ? "500" : null,
     })),
   };
 }
@@ -987,7 +990,11 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
       return error(res, 503, "DEPENDENCY_UNAVAILABLE");
     return send(res, 200, catalogView(persona));
   }
-  if (!path.startsWith("/v1/me/") && path !== "/v1/checkout")
+  if (
+    !path.startsWith("/v1/me/") &&
+    path !== "/v1/checkout" &&
+    path !== "/v1/checkout/grumbles"
+  )
     return error(res, 404, "NOT_FOUND");
 
   const persona = personaFromToken(req);
@@ -1036,6 +1043,19 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
       }
     }
     return send(res, 200, subscriptionView(sub));
+  }
+  // Wallet phase 3: this wallet holds 100 grumbles, short of any price.
+  if (path === "/v1/checkout/grumbles" && method === "POST") {
+    const body = await readBody(req);
+    const productKey = isRecord(body) ? String(body.productKey) : "";
+    return send(res, 200, {
+      status: "short",
+      productKey,
+      grumbles: "500",
+      balance: "100",
+      shortfall: "400",
+      pack: { key: "grumbles-1000", grumbles: "1000" },
+    });
   }
   if (path === "/v1/checkout" && method === "POST") {
     const key = String(req.headers["idempotency-key"] ?? "");
