@@ -2,7 +2,7 @@
 
 92 отдельные карточки: **85 для базового выпуска**, **1 для будущего ТЗ игры**, **6 условных wallet-задач**. По сравнению с 82 исходными пунктами добавлены 4 задачи подготовки, а ранее перечисленный одной строкой wallet вынесен в 6 карточек. Число карточек не означает завершённый код.
 
-Ещё 30 карточек есть только на [доске](https://github.com/orgs/outegro-dev/projects/1): BS-01…04 (Морской бой) и этап 11-zine (ZN-01…20, EDU-B1, MNT-01…05). В task-index.json у них URL issue вместо пути к карточке. Состояние на 11.10.2026 (сверено с доской): из 122 задач 96 done, 14 in_progress, 6 planned (H-06, H-08…H-11, ZN-20), 6 deferred (wallet).
+Ещё 47 карточек есть только на [доске](https://github.com/orgs/outegro-dev/projects/1): BS-01…04 (Морской бой), этап 11-zine (ZN-01…20, EDU-B1, MNT-01…10) и этап 12-roulette (RL-01…12). В task-index.json у них URL issue вместо пути к карточке. Состояние на 28.10.2026 (сверено с доской): из 139 задач 107 done, 16 in_progress, 14 planned, 2 deferred (W-04, W-05 — этапы 2 и 3 кошелька).
 
 У каждой карточки context, dependency links, required docs, область файлов, четыре предметных шага, checkpoints, конкретные test cases, DoD и rollback. [Machine index](task-index.json) содержит граф и статусы. [Каталог тестов](../05-quality/test-catalog.md) связывает все TC с задачами.
 
@@ -32,7 +32,9 @@
 
 - [Журнальная тема и сопровождение](https://github.com/outegro-dev/platform/issues?q=label%3Astage%2F11-zine): лендинг как журнальный номер (тема zine), тихий вход SSO, тема zine для остальных приложений, учебники Обучения, обновления зависимостей и follow-up. Карточки только на доске.
 
-- [Условный этап wallet](90-optional-wallet/README.md): Не выполнять до явного выбора владельца и проверки merchant. Расширяет базовый scope и оценку.
+- [Рулетка](https://github.com/outegro-dev/platform/issues?q=label%3Astage%2F12-roulette): roulette.outegro.dev на грамблсах ([ADR-012](../03-decisions/adr/012-roulette.md), [контракт](../02-contracts/roulette.md), [выкатка](../06-operations/roulette-rollout.md)). Карточки только на доске.
+
+- [Кошелёк](90-optional-wallet/README.md): грамблсы ([ADR-011](../03-decisions/adr/011-wallet-grumbles.md)). Этап 1 (W-01, W-02, W-03, W-06) в production с 28.10.2026; этапы 2 и 3 (W-04, W-05) — черновики PR за флагами, ждут решений владельца.
 
 ## Порядок без циклов
 
