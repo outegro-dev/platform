@@ -17,6 +17,14 @@ export type Persona =
   | "editor"
   | "nobody";
 
+/** A tablet in portrait: 820 px wide (iPad Air), touch. */
+export const tablet = {
+  viewport: { width: 820, height: 1180 },
+  deviceScaleFactor: 2,
+  isMobile: true,
+  hasTouch: true,
+};
+
 /** A phone: 390 px wide, touch, retina screenshots. */
 export const phone = {
   viewport: { width: 390, height: 844 },
@@ -233,6 +241,23 @@ export async function expectNoSideScroll(page: Page) {
       document.documentElement.clientWidth,
   );
   expect(overflow, "horizontal page overflow in px").toBeLessThanOrEqual(0);
+  // A table stacked into cards on a phone must fit its frame: a value too
+  // wide would stretch every card, and the frame would hide it off the edge.
+  const cut = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>(".table[data-stack]")]
+      .filter((table) => {
+        const head = table.querySelector("thead");
+        const frame = table.closest<HTMLElement>(".table-wrap");
+        return (
+          head !== null &&
+          frame !== null &&
+          getComputedStyle(head).display === "none" &&
+          frame.scrollWidth - frame.clientWidth > 1
+        );
+      })
+      .map((table) => table.closest(".table-wrap")?.ariaLabel ?? "table"),
+  );
+  expect(cut, "stacked tables wider than their frame").toEqual([]);
 }
 
 export async function screenshot(page: Page, name: string) {

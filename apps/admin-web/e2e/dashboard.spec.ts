@@ -20,9 +20,10 @@ test("everything on one page", async ({ page }) => {
     "Battleship",
     "Payments",
     "Education",
+    "Wallet",
   ])
     await expect(health.getByText(service, { exact: true })).toBeVisible();
-  await expect(health.getByText("Healthy")).toHaveCount(5);
+  await expect(health.getByText("Healthy")).toHaveCount(6);
   const attention = page.getByRole("region", { name: "What to look at now" });
   await expect(attention).toContainText("deliveries failed");
   // Education's AI assistant answers today (37 of its 500 calls).

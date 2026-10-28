@@ -4,7 +4,8 @@
 # Targets: landing-web, id-web, pay-web, admin-web, battleship-web, edu-web,
 #          roulette-web, auth-backend, notifications-backend,
 #          payments-backend, battleship-backend, edu-backend,
-#          roulette-backend, fair-roll-backend, daily-bonus-backend.
+#          wallet-backend, roulette-backend, fair-roll-backend,
+#          daily-bonus-backend.
 
 FROM node:24-bookworm-slim AS base
 ENV CI=1 \
@@ -23,11 +24,11 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 # CI builds only the apps a change affects (docker-bake BUILD_APPS); a plain
 # build still builds all of them.
-ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web roulette-web auth-backend notifications-backend payments-backend battleship-backend edu-backend roulette-backend fair-roll-backend daily-bonus-backend"
+ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web roulette-web auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend roulette-backend fair-roll-backend daily-bonus-backend"
 RUN pnpm turbo run build $(for app in $BUILD_APPS; do printf -- '--filter=@outegro/%s ' "$app"; done)
 # Backends: production dependencies only, plus build output and migrations
 # (and content/, the books edu-backend imports with its migrations).
-RUN for app in auth-backend notifications-backend payments-backend battleship-backend edu-backend roulette-backend fair-roll-backend daily-bonus-backend; do \
+RUN for app in auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend roulette-backend fair-roll-backend daily-bonus-backend; do \
       case " $BUILD_APPS " in *" $app "*) ;; *) continue ;; esac; \
       pnpm --filter "@outegro/$app" deploy --prod "/out/$app" && \
       cp -r "apps/$app/dist" "apps/$app/drizzle" "/out/$app/" && \
@@ -126,6 +127,12 @@ FROM service AS edu-backend
 COPY --from=build --chown=node:node /out/edu-backend ./
 ENV PORT=4005
 EXPOSE 4005
+CMD ["node", "dist/main.js"]
+
+FROM service AS wallet-backend
+COPY --from=build --chown=node:node /out/wallet-backend ./
+ENV PORT=4007
+EXPOSE 4007
 CMD ["node", "dist/main.js"]
 
 FROM service AS roulette-backend

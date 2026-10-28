@@ -22,6 +22,8 @@
 
 | Code | HTTP | Когда | Клиент |
 |---|---|---|---|
+| `INSUFFICIENT_FUNDS` | 402 | Списание грамблсов больше баланса (`POST /v1/internal/debit`, команда «Списать» админки); `retryable: false` | Вызывающий показывает нехватку; отказ не сохраняется, тот же ref можно повторить после пополнения ([wallet](wallet.md)) |
+| `WALLET_RESTRICTED` | 423 | Списание по внутреннему API из кошелька в `restricted` (аккаунт заблокирован или удалён) | Не повторять до снятия ограничения |
 | `ALREADY_OWNED` | 422 | `POST /v1/checkout` продукта, который у покупателя уже есть: активная разовая покупка или подписка, которую Lava ещё может продлить (active, past_due, cancel_requested). `fieldErrors.productKey`: `already owned` или `already subscribed`; `retryable: false` | pay-web и магазин Battleship показывают EN/RU «это у вас уже есть», новый заказ не создаётся |
 
 ## IDs, даты и денежные значения
@@ -76,6 +78,10 @@ Cursor opaque, page size default 25/max 100 как инженерный default.
 | Payments | POST /v1/admin/grants, /v1/admin/grants/{id}/revoke | userId/service/feature/validUntil?, reason | grants.assign, audit; отзыв grant подписки отменяет и продление в Lava, отзыв стоит при любом ответе Lava |
 | Payments | POST /v1/admin/subscriptions/{id}/cancel | reason | subscriptions.cancel, audit; пока Lava не подтвердила отмену, повтор отправляет её снова |
 | Payments | POST /v1/admin/payments/{id}/refund-request, /v1/admin/refunds/{id}/match | reason (+paymentId) | refunds.request, audit |
+| Wallet | POST /v1/internal/debit, /v1/internal/credit-batch, /v1/internal/rollback | сервисный токен; ref, userId, unit, amount (строка), meta? | операция «было → стало»; повтор ref — тот же ответ, другие данные — 409; нехватка 402, `restricted` 423 ([wallet](wallet.md)) |
+| Wallet | GET /v1/me/wallet, GET /v1/me/wallet/history | unit?, cursor | свой баланс и история без причин и ref |
+| Wallet | GET /v1/admin/{overview,wallets,wallets/{userId},reconciliation,audit} | `wallet.read`, cursor | обзор, кошельки, журнал, сверка, аудит |
+| Wallet | POST /v1/admin/wallets/{userId}/grant, /adjust | `wallet.adjust`; unit, amount, reason, commandId, preview? | предпросмотр без записи или операция; аудит в той же транзакции |
 | Education | GET /v1/books, GET /v1/books/{slug} | токен необязателен | библиотека и оглавление с доступом вызывающего; черновик и архив — 404 всем, кроме `edu.read` |
 | Education | GET /v1/books/{slug}/chapters/{n}, /preface | токен по правилу книги | глава, вводная; 401 — нужен вход, 403 — нет гранта, suspended/deleted → 403 |
 | Education | GET /v1/books/{slug}/cards | токен необязателен | карточки открытых вызывающему глав и число закрытых (без 401/403 за закрытые главы); suspended/deleted → 403 |

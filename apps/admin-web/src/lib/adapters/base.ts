@@ -86,6 +86,7 @@ export abstract class OptionalServiceAdapter {
       | "battleship"
       | "payments"
       | "education"
+      | "wallet"
       | "roulette"
       | "daily",
     protected readonly transport: Transport | null,

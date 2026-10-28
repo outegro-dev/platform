@@ -16,7 +16,9 @@
 | CHATGPT-OAUTH | Личный вход Plus и billing controls | Никаких paid API keys | H-01/03/05 |
 | HERMES-TELEGRAM | Bot token, owner userId, chat/topic IDs | Не регистрировать неизвестного owner автоматически | H-04/07 |
 | MARKETPLACE-TARGET | Destination и разрешение bot posting | Draft/manual-ready | H-10 |
-| WALLET-DECISION | Нужен ли кошелёк в первом выпуске, merchant support | Wallet выключен, W deferred | W-01…06 |
+| WALLET-DECISION | Нужен ли кошелёк в первом выпуске, merchant support | Решено 28.10.2026 ([ADR-011](adr/011-wallet-grumbles.md)): отдельный wallet-backend, грамблсы `GRM`, этап 1 без денег | W-01…06 |
+| GRUMBLE-PACKS | Пакеты грамблсов (1 000, 10 000 …), их цены в RUB/USD/EUR, офферы Lava на каждый пакет и команда начать этап 2 | Пакетов нет, продаж грамблсов нет | W-04 |
+| GRUMBLE-PRICES | Цены скинов Battleship в грамблсах, выбор для Premium (подписка Lava плюс «Premium на 30 дней» за грамблсы или подписка из кошелька) и команда начать этап 3 | За грамблсы ничего не продаётся | W-05 |
 | DEPLOYMENT-AUTHORIZATION | Конкретное поручение выпустить готовый candidate на новый target | Только manifests/rehearsal | R-04 |
 
 Подписка ChatGPT Plus, личный характер Hermes, group topics и сценарий вещей уже подтверждены. Не спрашивать их заново. Не нужны сейчас подробная биография, перенос старых баз и ТЗ игры.

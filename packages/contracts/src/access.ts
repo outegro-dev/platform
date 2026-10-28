@@ -42,6 +42,10 @@ export const permissions = [
    * an owner opens it as Admin, anyone else with this permission as Viewer.
    */
   "monitoring.read",
+  /** Wallet: grumbles on hand, wallets, the journal (before → after), reconciliation, audit. */
+  "wallet.read",
+  /** Wallet: grant or take grumbles from a player, with a reason and a per-operation cap. */
+  "wallet.adjust",
 ] as const;
 export type Permission = (typeof permissions)[number];
 

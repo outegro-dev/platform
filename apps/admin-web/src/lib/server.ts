@@ -11,6 +11,7 @@ import { IdentityAdmin, type Operator } from "./adapters/identity";
 import { NotificationsAdmin } from "./adapters/notifications";
 import { PaymentsAdmin } from "./adapters/payments";
 import { RouletteAdmin } from "./adapters/roulette";
+import { WalletAdmin } from "./adapters/wallet";
 import { env } from "./env";
 import { type Loaded, load } from "./result";
 
@@ -34,6 +35,7 @@ const clients = {
     ? client(env.PAYMENTS_ADMIN_API_URL)
     : null,
   edu: env.EDU_API_URL ? client(env.EDU_API_URL) : null,
+  wallet: env.WALLET_API_URL ? client(env.WALLET_API_URL) : null,
   roulette: env.ROULETTE_API_URL ? client(env.ROULETTE_API_URL) : null,
   daily: env.DAILY_API_URL ? client(env.DAILY_API_URL) : null,
 };
@@ -60,6 +62,10 @@ export function createServices(
     education: new EduAdmin(
       "education",
       clients.edu ? transport(clients.edu) : null,
+    ),
+    wallet: new WalletAdmin(
+      "wallet",
+      clients.wallet ? transport(clients.wallet) : null,
     ),
     roulette: new RouletteAdmin(
       "roulette",

@@ -53,6 +53,9 @@ export type ActionCode =
   | "same-rule"
   | "free-chapters"
   | "rule-refused"
+  | "insufficient-funds"
+  | "amount-too-large"
+  | "same-balance"
   | "round-closed";
 
 export type ActionResult =

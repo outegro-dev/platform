@@ -18,3 +18,5 @@ CREATE ROLE fair_roll LOGIN PASSWORD 'fair_roll';
 CREATE DATABASE fair_roll OWNER fair_roll;
 CREATE ROLE daily LOGIN PASSWORD 'daily';
 CREATE DATABASE daily OWNER daily;
+CREATE ROLE wallet LOGIN PASSWORD 'wallet';
+CREATE DATABASE wallet OWNER wallet;

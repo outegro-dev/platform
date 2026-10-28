@@ -58,6 +58,10 @@ export const educationOverview = cache(() =>
 );
 
 /** Every book (there are few): titles for tables, filters and grant targets. */
+export const walletOverview = cache(() =>
+  load(() => services().wallet.overview()),
+);
+
 export const educationBooks = cache(() =>
   load(() => services().education.books()),
 );
@@ -93,6 +97,7 @@ export const serviceHealth = cache(async () => {
     probe("battleship", env.BATTLESHIP_API_URL, { headers }),
     probe("payments", env.PAYMENTS_ADMIN_API_URL, { headers }),
     probe("education", env.EDU_API_URL, { headers }),
+    probe("wallet", env.WALLET_API_URL, { headers }),
   ]);
 });
 

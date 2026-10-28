@@ -24,6 +24,7 @@ variable "APPS" {
     "payments-backend",
     "battleship-backend",
     "edu-backend",
+    "wallet-backend",
     "roulette-backend",
     "fair-roll-backend",
     "daily-bonus-backend",

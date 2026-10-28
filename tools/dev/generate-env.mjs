@@ -20,6 +20,7 @@ const apps = [
   { dir: "apps/fair-roll-backend", file: ".env" },
   { dir: "apps/roulette-backend", file: ".env" },
   { dir: "apps/daily-bonus-backend", file: ".env" },
+  { dir: "apps/wallet-backend", file: ".env" },
   { dir: "apps/id-web", file: ".env.local" },
   { dir: "apps/battleship-web", file: ".env.local" },
   { dir: "apps/edu-web", file: ".env.local" },

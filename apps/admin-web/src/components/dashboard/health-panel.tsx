@@ -69,6 +69,7 @@ export async function HealthSkeleton() {
           "battleship",
           "payments",
           "education",
+          "wallet",
         ].map((key) => (
           <div key={key} className="health">
             <Skeleton width="70%" height={16} />
