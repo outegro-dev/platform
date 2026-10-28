@@ -87,9 +87,17 @@ describe("fair roll", () => {
     const rounds = 150_000;
     const seeds = chain(Buffer.alloc(32, 42), rounds);
     const counts = new Array<number>(SECTORS).fill(0);
-    for (let k = 1; k <= rounds; k++) {
-      const n = await roll(seeds[k] ?? "", "drand:1234567", k);
-      counts[n] = (counts[n] ?? 0) + 1;
+    // In batches: WebCrypto works on the thread pool, and one await at a time
+    // takes minutes on a CI runner.
+    const batch = 5_000;
+    for (let from = 1; from <= rounds; from += batch) {
+      const size = Math.min(batch, rounds - from + 1);
+      const numbers = await Promise.all(
+        Array.from({ length: size }, (_, i) =>
+          roll(seeds[from + i] ?? "", "drand:1234567", from + i),
+        ),
+      );
+      for (const n of numbers) counts[n] = (counts[n] ?? 0) + 1;
     }
     for (const count of counts) expect(count).toBeGreaterThanOrEqual(9_500);
     for (const count of counts) expect(count).toBeLessThanOrEqual(10_500);
