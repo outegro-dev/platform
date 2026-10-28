@@ -16,3 +16,5 @@ CREATE ROLE roulette LOGIN PASSWORD 'roulette';
 CREATE DATABASE roulette OWNER roulette;
 CREATE ROLE fair_roll LOGIN PASSWORD 'fair_roll';
 CREATE DATABASE fair_roll OWNER fair_roll;
+CREATE ROLE daily LOGIN PASSWORD 'daily';
+CREATE DATABASE daily OWNER daily;

@@ -19,6 +19,7 @@ const apps = [
   { dir: "apps/edu-backend", file: ".env" },
   { dir: "apps/fair-roll-backend", file: ".env" },
   { dir: "apps/roulette-backend", file: ".env" },
+  { dir: "apps/daily-bonus-backend", file: ".env" },
   { dir: "apps/id-web", file: ".env.local" },
   { dir: "apps/battleship-web", file: ".env.local" },
   { dir: "apps/edu-web", file: ".env.local" },
@@ -35,6 +36,8 @@ const shared = {
   LAVA_WEBHOOK_SECRET: secret(),
   // The root of the local seed chain (fair-roll); production keeps its own in a Sealed Secret.
   FAIR_ROLL_ROOT: randomBytes(32).toString("hex"),
+  // Peppers the daily bonus's hashes of client addresses and device ids.
+  DAILY_HASH_PEPPER: secret(),
 };
 
 const variable = /^([A-Z][A-Z0-9_]*)=/;
