@@ -152,6 +152,7 @@ describe("roles and permissions", () => {
       locale: "en",
       status: "active",
       accessVersion: expect.any(Number),
+      createdAt: expect.any(String),
       version: 1,
     });
     await lookup(internal, randomUUID()).expect(404);

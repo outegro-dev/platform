@@ -256,6 +256,51 @@ const screens: Screen[] = [
     path: "/wallet",
     userAgent: withFailure("fake-down=wallet"),
   },
+  // The live table reads itself again every few seconds: its numbers may
+  // change under the stability check, never the layout.
+  { name: "roulette", path: "/roulette" },
+  { name: "roulette-rounds", path: "/roulette/rounds" },
+  { name: "roulette-round", path: "/roulette/rounds/184" },
+  { name: "roulette-players", path: "/roulette/players" },
+  {
+    name: "roulette-player",
+    path: "/roulette/players?q=kraken",
+    steps: openFirstRow,
+  },
+  { name: "roulette-table", path: "/roulette/table" },
+  {
+    name: "roulette-table-dialog",
+    englishOnly: true,
+    path: "/roulette/table",
+    skipStability: true,
+    steps: async (page) => {
+      await page.getByRole("button", { name: "Change settings" }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Maximum bet").fill("20000");
+      await dialog
+        .getByLabel("Reason")
+        .fill("Smaller bets for the launch week");
+      await dialog.getByRole("button", { name: "Preview" }).click();
+      await dialog.getByRole("heading", { name: "What will change" }).waitFor();
+    },
+  },
+  { name: "roulette-daily", path: "/roulette/daily" },
+  {
+    name: "roulette-daily-dialog",
+    englishOnly: true,
+    path: "/roulette/daily",
+    skipStability: true,
+    steps: async (page) => {
+      await page.getByRole("button", { name: "Change the bonus" }).click();
+    },
+  },
+  { name: "roulette-services", path: "/roulette/services" },
+  { name: "roulette-audit", path: "/roulette/audit" },
+  {
+    name: "roulette-not-connected",
+    path: "/roulette",
+    userAgent: withFailure("fake-down=roulette"),
+  },
   { name: "audit", path: "/audit" },
   {
     name: "dashboard-degraded",

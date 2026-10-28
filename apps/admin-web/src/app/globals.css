@@ -2493,6 +2493,206 @@
   }
 }
 
+@layer components {
+  /* ── Roulette ────────────────────────────────────────────── */
+  /* A colour of the wheel: a square swatch in the print's inks (the deep
+     red, the ink, the green of the felt darkened for its paper number),
+     with the number on it when there is one, and the colour's name. */
+  .rl-color {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .rl-swatch {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    min-width: 22px;
+    height: 22px;
+    padding-inline: 3px;
+    border: 1.5px solid var(--border);
+    background: var(--ink);
+    color: var(--paper-white);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .rl-swatch[data-color="red"] {
+    background: var(--spot-red-deep);
+  }
+  .rl-swatch[data-color="green"] {
+    background: color-mix(in oklab, var(--spot-green) 72%, var(--ink));
+  }
+  .rl-unit {
+    font-size: 0.82em;
+    color: var(--muted-foreground);
+    letter-spacing: 0.02em;
+  }
+  /* A result: what the house kept, or a player's gain, in the state inks. */
+  [data-result="up"] {
+    color: var(--ok);
+  }
+  [data-result="down"] {
+    color: var(--danger);
+  }
+  [data-result] .rl-unit {
+    color: inherit;
+  }
+  .rl-time-left {
+    display: inline-block;
+    min-width: 3.5ch;
+  }
+  /* Exposure per colour: the value column may carry a warning badge. */
+  .rl-exposure {
+    grid-template-columns: fit-content(40%) minmax(48px, 1fr) auto;
+  }
+  .rl-exposure-value {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px 8px;
+    color: var(--foreground);
+  }
+  .rl-house {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  @media (max-width: 519px) {
+    .rl-house {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .rl-exposure {
+      grid-template-columns: fit-content(45%) minmax(32px, 1fr);
+    }
+    .rl-exposure .bar-value {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+    }
+  }
+  .rl-health {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  @media (max-width: 1180px) {
+    .rl-health {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 519px) {
+    .rl-health {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .rl-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  /* Command forms: fields two by two, switches, the prize editor. */
+  .rl-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+  }
+  @media (max-width: 519px) {
+    .rl-fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .rl-check {
+    background: var(--surface);
+  }
+  .rl-editor {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .rl-editor-rows {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rl-editor-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 10px;
+  }
+  .rl-editor [data-tone="bad"] {
+    color: var(--danger);
+  }
+  .rl-expected {
+    padding: 12px 14px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  /* The service's preview of a command: what it would change. */
+  .command-preview {
+    display: grid;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+  .command-preview-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .command-preview-title:focus {
+    outline: none;
+  }
+  .rl-diff {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+  }
+  .rl-diff li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+  }
+  .rl-diff-field {
+    color: var(--muted-foreground);
+  }
+  .rl-diff-values {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rl-diff-values svg {
+    width: 14px;
+    height: 14px;
+  }
+  .rl-diff-after {
+    font-weight: 700;
+  }
+  .rl-prizes {
+    font-size: 13.5px;
+  }
+  .rl-prizes-caption {
+    padding-bottom: 6px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    text-align: start;
+  }
+}
+
 /*
  * ─── Over the theme ───
  * The zine theme is unlayered, so it outranks the layers above whatever

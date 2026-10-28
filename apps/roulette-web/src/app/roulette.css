@@ -1,0 +1,884 @@
+/*
+ * The game, after the mock in the roulette plan (§ 1): timer, strip,
+ * history, amount and three colour columns, in the dark tone of zine-calm.
+ * Panels and text take the tone's tokens; the tiles keep a small game
+ * palette (red, black, green) like Battleship's board keeps its own.
+ */
+
+@layer components {
+  .rl {
+    --rl-panel: var(--surface);
+    --rl-panel2: var(--muted);
+    --rl-line: color-mix(in srgb, var(--foreground) 18%, transparent);
+    --rl-soft: var(--muted-foreground);
+    --rl-y: var(--spot-yellow);
+    --rl-win: var(--ok);
+    --rl-red: var(--spot-red);
+    --rl-black: #3a352c;
+    --rl-green: var(--spot-green);
+    --rl-tile-ink: #efe4c6;
+    position: relative;
+    overflow: hidden;
+    background: var(--background);
+    color: var(--foreground);
+    border: 2px solid #0c0b09;
+    border-radius: var(--radius-sm);
+    box-shadow: 5px 5px 0 var(--spot-red);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .rl-red {
+    background: var(--rl-red);
+  }
+  /* A number in its colour, as in the history row (also on /fair). */
+  .pf-n {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    color: #efe4c6;
+    font-family: var(--font-sign);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pf-n.rl-red {
+    background: var(--spot-red);
+  }
+  .pf-n.rl-black {
+    background: #3a352c;
+  }
+  .pf-n.rl-green {
+    background: var(--spot-green);
+  }
+  .rl-black {
+    background: var(--rl-black);
+  }
+  .rl-green {
+    background: var(--rl-green);
+  }
+
+  .rl-conn {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 14px;
+    margin: 12px 14px 0;
+    padding: 10px 12px;
+    background: var(--warn-soft);
+    border-left: 3px solid var(--warn);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Phase bar */
+  .rl-timer {
+    position: relative;
+    height: 38px;
+    margin: 12px 14px 0;
+    background: var(--rl-panel2);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .rl-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--spot-red-deep);
+    transform-origin: left center;
+    transition: transform 0.1s linear;
+  }
+  .rl-timer.is-red .rl-fill {
+    background: var(--rl-red);
+  }
+  .rl-timer.is-black .rl-fill {
+    background: #4a443a;
+  }
+  .rl-timer.is-green .rl-fill {
+    background: var(--rl-green);
+  }
+  .rl-timer.is-void .rl-fill {
+    background: transparent;
+  }
+  .rl-timer-t {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    font-family: var(--font-sign);
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  /* Strip */
+  .rl-stage {
+    position: relative;
+  }
+  .rl-view {
+    position: relative;
+    margin: 10px 14px 0;
+    height: 78px;
+    overflow: hidden;
+    background: #0d0c0a;
+    border-radius: var(--radius-sm);
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 9%,
+      #000 91%,
+      transparent
+    );
+  }
+  .rl-strip {
+    display: flex;
+    gap: 3px;
+    height: 100%;
+    align-items: center;
+    will-change: transform;
+  }
+  .rl-tile {
+    flex: 0 0 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    color: var(--rl-tile-ink);
+    font-family: var(--font-sign);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .rl-marker {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 3px;
+    margin-left: -1.5px;
+    background: var(--rl-y);
+    box-shadow: 0 0 0 1px #0d0c0a;
+  }
+  .rl-marker::before,
+  .rl-marker::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    margin-left: -7px;
+    border: 7px solid transparent;
+  }
+  .rl-marker::before {
+    top: 0;
+    border-top-color: var(--rl-y);
+  }
+  .rl-marker::after {
+    bottom: 0;
+    border-bottom-color: var(--rl-y);
+  }
+
+  /* Mega spin: speed lines over the strip while it runs. */
+  .rl-speed {
+    position: absolute;
+    z-index: 3;
+    inset: 0 14px;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0 22px,
+      color-mix(in srgb, var(--rl-y) 35%, transparent) 22px 24px,
+      transparent 24px 61px
+    );
+    mix-blend-mode: screen;
+    animation: rl-speed 0.35s linear infinite;
+    opacity: 0.7;
+  }
+  .rl-stage[data-shake] .rl-view {
+    animation: rl-shake 0.45s ease-out 1;
+  }
+
+  /* Stamps on the stop: the zine's tilted rubber stamp. */
+  .rl-stamps {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+  }
+  .rl-stamp {
+    display: inline-block;
+    padding: 4px 14px 2px;
+    border: 3px solid currentColor;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--background) 70%, transparent);
+    font-family: var(--font-stamp);
+    font-size: clamp(22px, 5vw, 34px);
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+    rotate: -6deg;
+    animation: rl-stamp 0.32s cubic-bezier(0.2, 1.6, 0.5, 1) 1 both;
+  }
+  .rl-stamp-mega {
+    color: var(--rl-y);
+  }
+  .rl-stamp-green {
+    color: #8fd694;
+    rotate: 4deg;
+  }
+
+  /* Green: a flash of the whole table and grumbles raining over it. */
+  .rl-flash {
+    position: absolute;
+    z-index: 5;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at 50% 30%,
+      color-mix(in srgb, var(--rl-green) 70%, transparent),
+      transparent 70%
+    );
+    animation: rl-flash 0.9s ease-out 1 both;
+  }
+  .rl-rain {
+    position: absolute;
+    z-index: 6;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .rl-drop {
+    position: absolute;
+    top: -40px;
+    animation-name: rl-fall;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.8, 1);
+    animation-fill-mode: both;
+    animation-iteration-count: 1;
+  }
+
+  /* History */
+  .rl-histbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 14px;
+    margin: 10px 14px 0;
+    padding: 10px;
+    background: var(--rl-panel);
+    border-radius: var(--radius-sm);
+  }
+  .rl-hist {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .rl-dot {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--rl-tile-ink);
+    font-family: var(--font-sign);
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .rl-last {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    font-family: var(--font-type);
+    font-size: 12px;
+    color: var(--rl-soft);
+  }
+  .rl-last > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .rl-mini {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  /* Amount */
+  .rl-betbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 14px 0;
+    padding: 10px;
+    background: var(--rl-panel);
+    border-radius: var(--radius-sm);
+  }
+  .rl-amount {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 200px;
+    min-width: 0;
+    padding: 0 10px;
+    background: var(--background);
+    border: 1px solid var(--rl-line);
+    border-radius: var(--radius-sm);
+  }
+  .rl-amount input {
+    flex: 1;
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 0;
+    background: transparent;
+    border: 0;
+    color: var(--foreground);
+    font: 700 15px var(--font-body);
+    font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+  .rl-amount:focus-within {
+    outline: 2px solid var(--rl-y);
+    outline-offset: 1px;
+  }
+  .rl-amount input::placeholder {
+    color: var(--rl-soft);
+    font-weight: 500;
+  }
+  .rl-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .rl-q {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 8px 9px;
+    background: var(--rl-panel2);
+    border: 1px solid var(--rl-line);
+    border-radius: var(--radius-sm);
+    color: var(--foreground);
+    font-family: var(--font-type);
+    font-size: 12.5px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .rl-q:hover {
+    border-color: var(--rl-soft);
+  }
+  .rl-q:focus-visible,
+  .rl-colbtn:focus-visible,
+  .daily-btn:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .rl-sound {
+    display: inline-grid;
+    place-items: center;
+  }
+  .rl-sound svg {
+    width: 18px;
+    height: 18px;
+  }
+  .rl-msg {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 1.4em;
+    font-size: 13px;
+    color: var(--rl-soft);
+  }
+  .rl-msg[data-kind="refused"] {
+    color: var(--danger);
+  }
+  .rl-msg[data-kind="won"] {
+    color: var(--rl-win);
+    font-weight: 700;
+  }
+  .rl-msg-coin {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Columns */
+  .rl-cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 10px 14px 14px;
+  }
+  .rl-col {
+    min-width: 0;
+    background: var(--rl-panel);
+    border-radius: var(--radius-sm);
+    transition:
+      opacity 0.3s,
+      box-shadow 0.3s;
+  }
+  .rl-col.dim {
+    opacity: 0.42;
+  }
+  .rl-col.green-win {
+    box-shadow:
+      0 0 0 2px var(--rl-green),
+      0 0 24px color-mix(in srgb, var(--rl-green) 55%, transparent);
+  }
+  .rl-colbtn {
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    color: var(--rl-tile-ink);
+    font-family: var(--font-sign);
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+  .rl-colbtn.red {
+    background: var(--rl-red);
+  }
+  .rl-colbtn.black {
+    background: var(--rl-black);
+  }
+  .rl-colbtn.green {
+    background: var(--rl-green);
+  }
+  .rl-colbtn:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+  .rl-colbtn:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.6) brightness(0.8);
+  }
+  .rl-colbtn small {
+    padding: 4px 6px;
+    background: rgb(0 0 0 / 0.28);
+    border-radius: 2px;
+    font-family: var(--font-type);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .rl-sum {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--rl-line);
+    font-family: var(--font-type);
+    font-size: 12px;
+    color: var(--rl-soft);
+  }
+  .rl-sum b {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .rl-list {
+    min-height: 236px;
+    padding: 6px 8px 8px;
+  }
+  .rl-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 4px;
+    border-radius: 2px;
+    font-size: 13px;
+  }
+  .rl-list li.me {
+    background: color-mix(in srgb, var(--rl-y) 12%, transparent);
+    box-shadow: inset 2px 0 0 var(--rl-y);
+  }
+  .rl-av {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    background: var(--rl-panel2);
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .me .rl-av {
+    background: var(--rl-y);
+    color: var(--ink);
+  }
+  .rl-nm {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rl-am {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .rl-am.win {
+    color: var(--rl-win);
+  }
+  .green-win .rl-list li:not(.rl-more):not(.rl-empty) {
+    background: color-mix(in srgb, var(--rl-green) 22%, transparent);
+  }
+  .rl-list li.rl-more,
+  .rl-empty {
+    font-family: var(--font-type);
+    font-size: 12px;
+    color: var(--rl-soft);
+  }
+  .rl-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--rl-line);
+    font-family: var(--font-type);
+    font-size: 12px;
+    color: var(--rl-soft);
+  }
+  .rl-foot a {
+    color: var(--rl-y);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* Signed out */
+  .rl-intro {
+    display: grid;
+    justify-items: start;
+    gap: 12px;
+    padding: 20px 18px 6px;
+  }
+  .rl-intro h1 {
+    font-family: var(--font-tabloid);
+    font-size: clamp(28px, 4.5vw, 40px);
+    line-height: 1.1;
+  }
+  .rl-intro p {
+    max-width: 60ch;
+    color: var(--rl-soft);
+  }
+  .rl-subtitle {
+    margin: 14px 14px 0;
+    font-family: var(--font-type);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rl-soft);
+  }
+  .rl-gap-bottom {
+    height: 14px;
+  }
+
+  /* ─── Daily bonus: the corner button and the box ─────── */
+  .daily-btn {
+    position: fixed;
+    z-index: 40;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 10px 16px;
+    background: var(--surface);
+    color: var(--foreground);
+    border: 2px solid var(--foreground);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-hard);
+    font-family: var(--font-sign);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+  .daily-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+  .daily-btn[data-ready] {
+    background: var(--spot-yellow);
+    color: var(--ink);
+    border-color: var(--ink);
+    animation: daily-alive 1.6s ease-in-out infinite;
+  }
+  /* The page itself (paper, border, shadow) comes from the kit's calm dialog. */
+  .daily-dialog {
+    padding: 24px 20px 20px;
+    width: min(640px, calc(100vw - 32px));
+    max-width: min(640px, calc(100vw - 32px));
+  }
+  .daily-title {
+    font-family: var(--font-sign);
+    font-size: 20px;
+    letter-spacing: 0.02em;
+  }
+  .daily-lead {
+    font-size: 14px;
+  }
+  .daily-body {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+  /* Ink on a yellow label: readable on the paper page of the dialog. */
+  .daily-streak {
+    justify-self: start;
+    padding: 3px 8px;
+    background: var(--spot-yellow);
+    color: var(--ink);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-type);
+    font-size: 12.5px;
+  }
+  .daily-view {
+    position: relative;
+    height: 104px;
+    overflow: hidden;
+    background: #0d0c0a;
+    border-radius: var(--radius-sm);
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 10%,
+      #000 90%,
+      transparent
+    );
+  }
+  .daily-view .rl-marker {
+    --rl-y: var(--spot-yellow);
+  }
+  .daily-strip {
+    display: flex;
+    gap: 4px;
+    height: 100%;
+    align-items: center;
+    will-change: transform;
+  }
+  .daily-prize {
+    flex: 0 0 88px;
+    height: 86px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--muted);
+    border-top: 5px solid;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sign);
+    font-size: 16px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .daily-odds h3 {
+    margin-bottom: 6px;
+    font-family: var(--font-type);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  .daily-odds ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .daily-odds li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--muted);
+    border-radius: 2px;
+    font-family: var(--font-type);
+    font-size: 12px;
+  }
+  .daily-odds li span {
+    color: var(--muted-foreground);
+  }
+  .daily-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+  }
+  .daily-msg {
+    font-size: 14px;
+  }
+
+  @media (max-width: 760px) {
+    .rl-cols {
+      grid-template-columns: 1fr;
+      margin-inline: 8px;
+    }
+    .rl-list {
+      min-height: 0;
+    }
+    .rl-tile {
+      flex-basis: 52px;
+      height: 52px;
+      font-size: 16px;
+    }
+    .rl-view {
+      height: 64px;
+      margin-inline: 8px;
+    }
+    .rl-timer,
+    .rl-histbar,
+    .rl-betbar,
+    .rl-conn {
+      margin-inline: 8px;
+    }
+    .rl-speed {
+      inset-inline: 8px;
+    }
+  }
+
+  /* Phones: the amount with the sound switch beside it, quick buttons in an even 4 × 2 grid. */
+  @media (max-width: 559px) {
+    .rl-betbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .rl-amount {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .rl-sound {
+      grid-column: 2;
+      grid-row: 1;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .rl-quick {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .rl-quick .rl-q {
+      min-width: 0;
+      padding-inline: 4px;
+    }
+    .rl-msg {
+      grid-column: 1 / -1;
+      grid-row: 3;
+    }
+  }
+}
+
+@keyframes rl-speed {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: -61px;
+  }
+}
+@keyframes rl-shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  20% {
+    translate: -4px 1px;
+  }
+  40% {
+    translate: 4px -1px;
+  }
+  60% {
+    translate: -3px 0;
+  }
+  80% {
+    translate: 2px 1px;
+  }
+}
+@keyframes rl-stamp {
+  from {
+    opacity: 0;
+    scale: 1.8;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes rl-flash {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes rl-fall {
+  from {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(520px) rotate(300deg);
+    opacity: 0.2;
+  }
+}
+@keyframes daily-alive {
+  0%,
+  100% {
+    translate: 0 0;
+    box-shadow: var(--shadow-hard);
+  }
+  50% {
+    translate: 0 -3px;
+    box-shadow: 4px 7px 0 var(--spot-red);
+  }
+}
+
+/* Reduced motion: no shake, no rain, no flash, no streaks; the stamps
+   appear without the punch and the corner button stops bouncing. */
+@media (prefers-reduced-motion: reduce) {
+  .rl-stage[data-shake] .rl-view,
+  .rl-stamp,
+  .daily-btn[data-ready] {
+    animation: none;
+  }
+  .rl-speed,
+  .rl-rain,
+  .rl-flash {
+    display: none;
+  }
+  .rl-fill {
+    transition: none;
+  }
+}
