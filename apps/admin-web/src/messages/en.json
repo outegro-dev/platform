@@ -489,7 +489,9 @@
       "adjust": "Taken by operator",
       "debit": "Debit",
       "credit": "Credit",
-      "reversal": "Reversal"
+      "reversal": "Reversal",
+      "purchase": "Pack bought",
+      "clawback": "Pack taken back"
     },
     "walletState": {
       "active": "Active",
@@ -497,13 +499,15 @@
     },
     "walletReason": {
       "account_suspended": "Account suspended",
-      "account_deleted": "Account deleted"
+      "account_deleted": "Account deleted",
+      "debt": "Owes for a refunded pack"
     },
     "walletIssue": {
       "balance_drift": "Balance differs from the journal",
       "chain_break": "Gap in the journal",
       "system_drift": "System account differs",
-      "zero_sum": "Accounts do not sum to zero"
+      "zero_sum": "Accounts do not sum to zero",
+      "debt_drift": "Debt differs from the refunds"
     },
     "walletIssueState": {
       "open": "Open",
@@ -2020,6 +2024,7 @@
       "balance": "Balance",
       "state": "State",
       "operations": "Operations",
+      "debt": "Debt",
       "opened": "Opened",
       "updated": "Changed",
       "noWallet": "No wallet yet: the balance is zero until the first operation.",

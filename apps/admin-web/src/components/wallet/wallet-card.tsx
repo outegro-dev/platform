@@ -98,6 +98,16 @@ export async function WalletCard({
               label: t("operations"),
               value: <span className="num">{wallet.version}</span>,
             },
+            // A refunded pack the wallet no longer held (phase 2).
+            ...(wallet.debt === "0"
+              ? []
+              : [
+                  {
+                    key: "debt",
+                    label: t("debt"),
+                    value: <Grumbles amount={wallet.debt} />,
+                  },
+                ]),
             {
               key: "updated",
               label: t("updated"),

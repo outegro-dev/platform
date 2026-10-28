@@ -9,7 +9,7 @@ export type PersonaOptions = {
   scenario?: "empty" | "rich" | "returning" | "states" | "many";
   payments?: "up" | "down";
   /** future: also products of apps pay-web knows less about (fake-platform.ts). */
-  catalog?: "normal" | "empty" | "closed" | "down" | "future";
+  catalog?: "normal" | "empty" | "closed" | "down" | "future" | "packs";
   cancelMode?: "confirm" | "pending";
   checkoutMode?: "ready" | "preparing" | "failed" | "offsite";
   accessTtlSec?: number;

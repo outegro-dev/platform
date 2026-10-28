@@ -290,6 +290,7 @@
   "kinds": {
     "subscription": "Subscription",
     "one_time": "One-time purchase",
+    "grumble_pack": "Grumbles",
     "unknown": "Purchase"
   },
   "periods": {
@@ -310,7 +311,8 @@
   },
   "services": {
     "battleship": "Battleship",
-    "edu": "Education"
+    "edu": "Education",
+    "wallet": "Wallet"
   },
   "auth": {
     "errorMetaTitle": "Sign-in",

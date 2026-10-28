@@ -15,6 +15,13 @@
       "when": 1793148282232,
       "tag": "0001_journal_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793153665144,
+      "tag": "0002_packs",
+      "breakpoints": true
     }
   ]
 }

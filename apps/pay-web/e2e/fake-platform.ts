@@ -35,7 +35,7 @@ type Product = {
   key: string;
   service: string;
   feature: string;
-  kind: "subscription" | "one_time";
+  kind: "subscription" | "one_time" | "grumble_pack";
   /** WEEKLY: a period pay-web has no words for (catalog "future"). */
   periodicity: "MONTHLY" | "ONE_TIME" | "WEEKLY";
   graceDays: number;
@@ -111,8 +111,29 @@ const futureProducts: Product[] = [
     prices: { EUR: "52", RUB: "5000", USD: "59" },
   },
 ];
+/**
+ * Catalog "packs": packs of grumbles for the wallet (phase 2), after the
+ * real products. The prices are a test's own, not the owner's.
+ */
+const packProducts: Product[] = [1000, 10_000].map((grumbles) => ({
+  key: `grumbles-${grumbles}`,
+  service: "wallet",
+  feature: "grumbles",
+  kind: "grumble_pack",
+  periodicity: "ONE_TIME",
+  graceDays: 0,
+  title: {
+    en: `${grumbles.toLocaleString("en-US")} grumbles`,
+    ru: `${grumbles.toLocaleString("ru-RU").replace(/\s/g, " ")} грамблсов`,
+  },
+  description: {
+    en: "Grumbles go to your outegro.dev wallet and pay for what is sold for grumbles. A one-time purchase.",
+    ru: "Грамблсы зачисляются на кошелёк outegro.dev и тратятся на то, что продаётся за грамблсы. Разовая покупка.",
+  },
+  prices: { EUR: "52", RUB: "5000", USD: "59" },
+}));
 const priceIds = new Map(
-  [...products, ...futureProducts].flatMap((p) =>
+  [...products, ...futureProducts, ...packProducts].flatMap((p) =>
     (Object.keys(p.prices) as Currency[]).map((c) => [
       `${p.key}:${c}`,
       randomUUID(),
@@ -187,7 +208,7 @@ type Persona = {
   createdAt: number;
   ip: string | null;
   payments: "up" | "down";
-  catalog: "normal" | "empty" | "closed" | "down" | "future";
+  catalog: "normal" | "empty" | "closed" | "down" | "future" | "packs";
   cancelMode: "confirm" | "pending";
   checkoutMode: "ready" | "preparing" | "failed" | "offsite";
   accessTtlSec: number;
@@ -502,7 +523,9 @@ function catalogView(persona: Persona | null) {
       ? []
       : mode === "future"
         ? [...products, ...futureProducts]
-        : products;
+        : mode === "packs"
+          ? [...products, ...packProducts]
+          : products;
   return {
     checkoutEnabled: mode !== "closed",
     products: listed.map((p) => ({
@@ -725,7 +748,7 @@ function createPersona(input: Record<string, unknown>) {
     ip: typeof input.ip === "string" ? input.ip : null,
     payments: input.payments === "down" ? "down" : "up",
     catalog:
-      (["empty", "closed", "down", "future"] as const).find(
+      (["empty", "closed", "down", "future", "packs"] as const).find(
         (m) => m === input.catalog,
       ) ?? "normal",
     cancelMode: input.cancelMode === "pending" ? "pending" : "confirm",
@@ -809,7 +832,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
         if (body.payments === "up" || body.payments === "down")
           persona.payments = body.payments;
         const catalog = (
-          ["normal", "empty", "closed", "down", "future"] as const
+          ["normal", "empty", "closed", "down", "future", "packs"] as const
         ).find((m) => m === body.catalog);
         if (catalog) persona.catalog = catalog;
         if (body.cancelMode === "confirm" || body.cancelMode === "pending")

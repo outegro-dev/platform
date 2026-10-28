@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ManualClock } from "@outegro/nest-common";
-import { catalog } from "../domain/catalog.js";
+import { type CatalogProduct, catalog } from "../domain/catalog.js";
 import {
   type CreatedInvoice,
   type CreateInvoiceInput,
@@ -37,6 +37,9 @@ export class FakeLava implements PaymentProvider {
   cancelCalls: { parentContractId: string; email: string }[] = [];
   cancelMode: "ok" | "timeout" | "not_found" | "reject" = "ok";
 
+  /** Offers beyond the code catalog a test has synced (packs of grumbles). */
+  extraProducts: CatalogProduct[] = [];
+
   constructor(private readonly clock: ManualClock) {}
 
   reset() {
@@ -51,7 +54,9 @@ export class FakeLava implements PaymentProvider {
     if (this.mode === "reject") throw new ProviderRejectedError("lava_400");
     if (this.mode === "refused")
       throw new ProviderUnavailableError("ECONNREFUSED", false);
-    const product = catalog.find((p) => p.providerOfferId === input.offerId);
+    const product = [...catalog, ...this.extraProducts].find(
+      (p) => p.providerOfferId === input.offerId,
+    );
     const id = randomUUID();
     const invoice: FakeInvoice = {
       id,

@@ -5,6 +5,7 @@ import { AdminController } from "./admin/admin.controller.js";
 import { AdminService } from "./admin/admin.service.js";
 import { CurrentAccessGuard } from "./admin/current-access.guard.js";
 import { WalletMetrics } from "./common/metrics.js";
+import { BillingConsumer } from "./events/billing.consumer.js";
 import { IdentityConsumer } from "./events/identity.consumer.js";
 import { InternalController } from "./internal/internal.controller.js";
 import { WalletLedger } from "./ledger/ledger.js";
@@ -20,6 +21,7 @@ import { ReconciliationWorker } from "./reconciliation/reconciliation.worker.js"
     AdminService,
     CurrentAccessGuard,
     IdentityConsumer,
+    BillingConsumer,
     ReconciliationService,
     ReconciliationWorker,
   ],

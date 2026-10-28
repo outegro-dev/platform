@@ -124,6 +124,7 @@ export class CheckoutService {
           graceDays: offer.product.graceDays,
           providerOfferId: offer.product.providerOfferId,
           title: offer.product.title,
+          grumbles: offer.product.grumbles,
           currency: offer.price.currency,
           amountMinor: offer.price.amountMinor,
           correlationId: requestId ?? orderId,

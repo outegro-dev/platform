@@ -1,6 +1,6 @@
 # Wallet: грамблсы
 
-Контракт сервиса `wallet-backend` ([ADR-011](../03-decisions/adr/011-wallet-grumbles.md)). Этап 1: без денег. Меняется только вместе с кодом и тестами `apps/wallet-backend`.
+Контракт сервиса `wallet-backend` ([ADR-011](../03-decisions/adr/011-wallet-grumbles.md)). Этап 1: без денег, в production с 28.10.2026. Этап 2 (пакеты за деньги через pay) написан и выключен флагом payments `GRUMBLE_PACKS_ENABLED`, пока владелец не даст пакеты и офферы (GRUMBLE-PACKS). Меняется только вместе с кодом и тестами `apps/wallet-backend`.
 
 ## Единица и суммы
 
@@ -13,11 +13,13 @@
 
 | Таблица | Что хранит | Гарантии |
 |---|---|---|
-| `wallets` | user_id + unit (PK), balance, state (`active` / `restricted`), restricted_reason, version, created_at, updated_at | `balance >= 0`; кэш журнала, меняется только операцией в той же транзакции |
+| `wallets` | user_id + unit (PK), balance, state (`active` / `restricted`), restricted_reason, debt, version, created_at, updated_at | `balance >= 0`, `debt >= 0`; кэш журнала, меняется только операцией в той же транзакции |
 | `wallet_tx` | id, user_id, unit, kind, source, object_ref, ref, amount со знаком, balance_before, balance_after, wallet_version, counter_account, reason, actor_id, meta, correlation_id, created_at | только INSERT: у роли приложения нет UPDATE, DELETE и TRUNCATE, триггер отклоняет их у любой роли; `balance_after = balance_before + amount`, `balance_after >= 0`, unique (user_id, unit, wallet_version) |
 | `wallet_refs` | ref (PK), operation, tx_id, request_fingerprint, created_at | идемпотентность и надгробия; только INSERT; отдельно от журнала, чтобы журнал можно было резать на партиции |
 | `system_accounts` | code + unit (PK), balance | вторая нога каждой операции |
 | `users` | user_id, status, status_version, access_version | проекция Identity для блокировки и команд админки |
+| `wallet_lots` | payment_id (PK), user_id, unit, order_id, product_key, grumbles, money_minor, currency, scale, tx_id, paid_at | этап 2: пакет за деньги, по одному на платёж; только INSERT |
+| `wallet_lot_reversals` | case_id (PK), payment_id, user_id, unit, kind (`refund` / `chargeback`), grumbles, taken, debt, money, tx_id, occurred_at | этап 2: возврат или chargeback пакета, по одному на кейс payments; `taken + debt = grumbles`; только INSERT |
 | `reconciliation_issues`, `reconciliation_runs`, `audit_log` | расхождения сверки, проходы сверки, команды операторов | — |
 
 Строка `wallet_tx` — нога игрока; вторая нога — системный счёт `counter_account` с суммой `−amount`, его баланс меняется в той же транзакции. Поэтому для каждой единицы сумма балансов всех кошельков и всех системных счетов равна нулю.
@@ -33,14 +35,17 @@
 | Зачисление по внутреннему API: выплаты рулетки, возвраты | `credit` | задаёт вызывающий | +N | `spent` −N |
 | Зачисление ежедневного бонуса (`source: daily-bonus`) | `credit` | `daily:{userId}:{claimNo}` | +N | `issued_bonus` −N |
 | Откат списания | `reversal` | `rollback:{ref}` | +N | счёт списания (`spent`) −N |
+| Пакет, оплаченный деньгами (этап 2, из события payments) | `purchase` | `pack:payment:{paymentId}` | +N | `issued_purchase` −N |
+| Возврат или chargeback пакета (этап 2) | `clawback` | `pack:case:{caseId}` | −сколько есть, до N | `issued_purchase` +то же |
+| Погашение долга следующим пакетом (этап 2) | `clawback` | `pack:repay:{paymentId}` | −min(долг, баланс) | `issued_purchase` +то же |
 
-`issued_purchase` (этап 2: пакеты приходят через inbox, не через внутренний API; зачисление по API с `source: pay` — возврат, его вторая нога `spent`) и `expired` (сгорание бонусов, если владелец его введёт) заведены сразу и пока не двигаются. Списание по API не проходит, если кошелёк `restricted`; начисление, зачисление, откат и списание оператором проходят в любом состоянии.
+`issued_purchase` двигают только пакеты этапа 2: они приходят через inbox, не через внутренний API (зачисление по API с `source: pay` — возврат, его вторая нога `spent`). `expired` (сгорание бонусов, если владелец его введёт) заведён сразу и пока не двигается. Списание по API не проходит, если кошелёк `restricted`; начисление, зачисление, откат и списание оператором проходят в любом состоянии.
 
 Порядок блокировок: строки кошельков в порядке (user_id, unit), затем строки системных счетов в порядке code. Операция — одна транзакция PostgreSQL READ COMMITTED.
 
 ## Идемпотентность по ref
 
-- `ref`: 1–200 символов `[A-Za-z0-9._:-]`. Префиксы `grant:`, `adjust:`, `set:` и `rollback:` ставит сам сервис; во внутреннем API они дают 400.
+- `ref`: 1–200 символов `[A-Za-z0-9._:-]`. Префиксы `grant:`, `adjust:`, `set:`, `rollback:` и `pack:` ставит сам сервис; во внутреннем API они дают 400.
 - Отпечаток запроса — sha256 от операции, игрока, единицы, суммы (у установки — целевого баланса) и источника. Причина, `objectRef`, `meta` и `correlationId` в него не входят: повтор с другим текстом причины — тот же запрос.
 - Операция сначала занимает ref в `wallet_refs` (отпечаток и id будущей строки журнала), потом проводит, всё в одной транзакции. Сохранённый ответ — строка журнала, на которую указывает ref: она не меняется. Повтор с тем же отпечатком возвращает её с `replayed: true` и ничего не пишет; одновременный повтор ждёт коммита первого. Тот же ref с другим отпечатком или другой операцией — 409 `IDEMPOTENCY_CONFLICT`, `fieldErrors.ref: ["conflict"]`.
 - Отказ (402, 423, 400) не сохраняется: после пополнения тот же ref можно повторить.
@@ -102,10 +107,10 @@
 
 - Слушает (очередь `wallet.identity-events`): `identity.user.status.changed.v1` — `suspended` и `deleted` переводят кошельки пользователя в `restricted` с причиной `account_suspended` / `account_deleted`, `active` снимает только эти причины; `identity.role.binding.changed.v1` — accessVersion для команд. Статус старше сохранённого ничего не меняет. Баланс и журнал удалённого аккаунта сохраняются.
 - Публикует: ничего, пока нет потребителя. Первым станет `wallet.credited.v1` (уведомление «начислено N грамблсов»), когда notifications получит шаблон.
-- Этап 2: inbox `billing.grumbles-purchased.v1` (зачисление пакета, ref `pack:payment:{paymentId}`) и `billing.grumbles-reversed.v1`.
+- Этап 2 (очередь `wallet.billing-events`): `billing.grumbles-purchased.v1` зачисляет пакет один раз (`purchase`, ref `pack:payment:{paymentId}`) и записывает лот с его денежной стоимостью; повтор события, тот же платёж под другим eventId и гонка доставок ничего не добавляют. `billing.grumbles-reversed.v1` — возврат (весь или часть) или chargeback: кошелёк отдаёт сколько есть, до запрошенного (`clawback`, ref `pack:case:{caseId}`), остаток становится долгом `debt`, и кошелёк получает `restricted` с причиной `debt` (ограничение аккаунта сохраняет свою причину). Все кейсы одного пакета вместе не забирают больше, чем он принёс. Кейс, пришедший раньше своей покупки, ретраится, пока покупка не придёт. Следующий купленный пакет сначала гасит долг (`clawback`, ref `pack:repay:{paymentId}`); погашенный долг снимает своё ограничение, возвращённый в `active` аккаунт должника остаётся `restricted` с причиной `debt`. Деньги пакета в журнал кошелька не попадают: лот хранит их только для возвратов и отчёта.
 
 ## Сверка и метрики
 
 - Проход каждые 5 минут (`RECONCILE_INTERVAL_MS`): кошельки, изменённые после начала прошлого успешного прохода (с запасом 2 минуты на поздний коммит), плюс 100 случайных; все системные счета; нулевая сумма по единице. Раз в сутки после `RECONCILE_FULL_HOUR_UTC` (default 2) — все кошельки.
-- Виды расхождений: `balance_drift` — кэш кошелька не равен сумме журнала; `chain_break` — `balance_before` не равен `balance_after` предыдущей операции или версии идут с пропуском; `system_drift` — баланс системного счёта не равен минус сумме его ног; `zero_sum` — сумма всех счетов единицы не ноль. Одна открытая строка на (вид, subject); проход, нашедший subject чистым, закрывает её. Сверка ничего не чинит. Проход, упавший с ошибкой, записывается с `failed` и не считается успешным; метрика последнего успеха после перезапуска берётся из последнего успешного прохода.
+- Виды расхождений: `balance_drift` — кэш кошелька не равен сумме журнала; `chain_break` — `balance_before` не равен `balance_after` предыдущей операции или версии идут с пропуском; `system_drift` — баланс системного счёта не равен минус сумме его ног; `zero_sum` — сумма всех счетов единицы не ноль; `debt_drift` (этап 2) — долг кошелька не равен долгам его возвратов минус погашения `pack:repay:`. Одна открытая строка на (вид, subject); проход, нашедший subject чистым, закрывает её. Сверка ничего не чинит. Проход, упавший с ошибкой, записывается с `failed` и не считается успешным; метрика последнего успеха после перезапуска берётся из последнего успешного прохода.
 - Метрики (порт 9467): `wallet_operations_total{kind,result}` (`kind` — вид операции или `set`), `wallet_operation_duration_seconds{kind}`, `wallet_idempotent_replays_total{kind}`, `wallet_balance_total{unit}`, `wallet_reconciliation_issues{type}`, `wallet_reconciliation_last_success_timestamp_seconds`. Алерт — открытые расхождения больше нуля или сверка молчит дольше 30 минут.

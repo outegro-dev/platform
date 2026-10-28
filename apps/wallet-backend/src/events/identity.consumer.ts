@@ -18,7 +18,7 @@ import {
   Messaging,
   PermanentError,
 } from "@outegro/nest-common";
-import { and, eq, isNotNull, like, or } from "drizzle-orm";
+import { and, eq, isNotNull, like, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { WalletDatabase, WalletTx } from "../common/database.js";
 import { users, wallets } from "../db/schema.js";
@@ -119,9 +119,14 @@ export class IdentityConsumer implements OnApplicationBootstrap {
     now: Date,
   ) {
     if (status === "active") {
+      // A debt (phase 2) outlives the account's restriction.
       await tx
         .update(wallets)
-        .set({ state: "active", restrictedReason: null, updatedAt: now })
+        .set({
+          state: sql`case when ${wallets.debt} > 0 then 'restricted' else 'active' end`,
+          restrictedReason: sql`case when ${wallets.debt} > 0 then 'debt' end`,
+          updatedAt: now,
+        })
         .where(
           and(
             eq(wallets.userId, userId),

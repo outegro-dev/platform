@@ -44,6 +44,8 @@ Grant может прийти впервые сразу в state `revoked` (aggr
 | billing.subscription.changed.v1 | Payments | subscriptionId, userId, state, paidUntil, autoRenew | Notifications/Admin |
 | billing.grant.changed.v1 | Payments | См. пример | Identity/Admin/Battleship (`service = battleship`)/Education (`service = edu`, очередь `edu.billing-grants`) |
 | billing.refund.recorded.v1 | Payments | refundId, paymentId nullable until match, money, state | Admin/Notifications после verified match |
+| billing.grumbles-purchased.v1 | Payments (этап 2, за флагом) | paymentId, orderId, userId, productKey, grumbles, money, paidAt | Wallet (очередь `wallet.billing-events`, ref `pack:payment:{paymentId}`) |
+| billing.grumbles-reversed.v1 | Payments (этап 2, за флагом) | caseId, paymentId, userId, kind (`refund` / `chargeback`), grumbles, money, occurredAt | Wallet (`pack:case:{caseId}`, остаток — долг) |
 | billing.reconciliation.issue.v1 | Payments | issueId, kind, severity, relatedIds | Admin/ops |
 | notifications.delivery.changed.v1 | Notifications | deliveryId, intentId, userId, channel, state | Admin |
 

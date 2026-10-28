@@ -244,6 +244,17 @@ const screens: Screen[] = [
     },
   },
   {
+    // Packs of grumbles (phase 2), shown once payments enables them.
+    name: "catalog-packs",
+    persona: { scenario: "empty", catalog: "packs" },
+    ru: true,
+    open: async (page) => {
+      await page.goto("/catalog");
+      await expect(page.locator(".product-card")).toHaveCount(4);
+      await expect(page.locator("#service-wallet")).toBeVisible();
+    },
+  },
+  {
     name: "catalog-owned",
     open: async (page) => {
       await page.goto("/catalog");

@@ -33,24 +33,36 @@ export const walletRefSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,200}$/);
  * such as `rollback:` + a caller's 200 characters.
  */
 export const storedRefSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,209}$/);
-/** Refs the wallet builds itself; the internal API refuses them. */
+/**
+ * Refs the wallet builds itself; the internal API refuses them. `pack:`
+ * refs come from payments' events: `pack:payment:{paymentId}` credits a
+ * pack bought with money, `pack:case:{caseId}` takes it back (phase 2).
+ */
 export const reservedRefPrefixes = [
   "grant:",
   "adjust:",
   "set:",
   "rollback:",
+  "pack:",
 ] as const;
 const callerRefSchema = walletRefSchema.refine(
   (ref) => !reservedRefPrefixes.some((prefix) => ref.startsWith(prefix)),
   { message: "reserved prefix" },
 );
 
+/**
+ * `purchase` is a pack of grumbles bought with money and `clawback` its
+ * refund or chargeback taken back (phase 2, from payments' events; the
+ * internal API never makes them).
+ */
 export const txKinds = [
   "grant",
   "adjust",
   "debit",
   "credit",
   "reversal",
+  "purchase",
+  "clawback",
 ] as const;
 export type TxKind = (typeof txKinds)[number];
 
@@ -253,8 +265,10 @@ export const adminWalletSchema = z.object({
   unit: walletUnitSchema,
   balance: signedAmountSchema,
   state: z.enum(walletStates),
-  /** account_suspended, account_deleted; null while active. */
+  /** account_suspended, account_deleted, debt; null while active. */
   restrictedReason: z.string().nullable(),
+  /** Grumbles of refunded packs the wallet no longer held (phase 2). */
+  debt: signedAmountSchema,
   version: z.number().int().nonnegative(),
   exists: z.boolean(),
   createdAt: isoDateTime.nullable(),
@@ -323,6 +337,7 @@ export const reconciliationIssueKinds = [
   "chain_break",
   "system_drift",
   "zero_sum",
+  "debt_drift",
 ] as const;
 export type ReconciliationIssueKind = (typeof reconciliationIssueKinds)[number];
 

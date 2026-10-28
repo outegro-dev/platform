@@ -59,6 +59,7 @@ export class ReconciliationService {
           : await this.sample(options.since ?? null, options.sampleSize ?? 100);
       const found: Found[] = [];
       const checked = await this.checkWallets(userIds, found);
+      await this.checkDebts(userIds, found);
       await this.checkSystemAccounts(found);
       await this.checkZeroSum(found);
       await this.record(found, mode, checked.subjects);
@@ -182,6 +183,43 @@ export class ReconciliationService {
         });
     }
     return { count: result.rows.length, subjects };
+  }
+
+  /**
+   * A wallet's debt (phase 2) is what its packs' refunds and chargebacks
+   * left unpaid, less what later packs paid off (`pack:repay:` clawbacks).
+   */
+  private async checkDebts(userIds: string[] | null, found: Found[]) {
+    if (userIds !== null && userIds.length === 0) return;
+    const only =
+      userIds === null
+        ? sql`true`
+        : sql`user_id = any(${`{${userIds.join(",")}}`}::uuid[])`;
+    const result = await this.database.db.execute<{
+      user_id: string;
+      unit: string;
+      cached: string;
+      journal: string;
+    }>(sql`
+      select w.user_id, w.unit, w.debt::text as cached,
+        (coalesce((select sum(r.debt) from wallet_lot_reversals r
+            where r.user_id = w.user_id and r.unit = w.unit), 0)
+          + coalesce((select sum(t.amount) from wallet_tx t
+            where t.user_id = w.user_id and t.unit = w.unit
+              and t.kind = 'clawback' and t.ref like 'pack:repay:%'), 0)
+        )::text as journal
+      from wallets w
+      where ${only}
+        and (w.debt <> 0 or exists (select 1 from wallet_lot_reversals r
+          where r.user_id = w.user_id and r.unit = w.unit))
+    `);
+    for (const row of result.rows)
+      if (BigInt(row.cached) !== BigInt(row.journal))
+        found.push({
+          kind: "debt_drift",
+          subject: walletSubject(row.user_id, row.unit),
+          details: { cached: row.cached, journal: row.journal },
+        });
   }
 
   /** A system account equals minus the sum of the legs it took. */

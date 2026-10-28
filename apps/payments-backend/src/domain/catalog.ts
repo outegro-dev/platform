@@ -2,7 +2,8 @@ import type { Currency } from "./money.js";
 import type { Periodicity } from "./periods.js";
 
 export type LocalizedText = { en: string; ru: string };
-export type ProductKind = "subscription" | "one_time";
+/** `grumble_pack`: grumbles for the wallet (phase 2), no access of its own. */
+export type ProductKind = "subscription" | "one_time" | "grumble_pack";
 
 export type CatalogProduct = {
   /** Our product key; clients buy by it. */
@@ -20,6 +21,8 @@ export type CatalogProduct = {
   description: LocalizedText;
   /** Decimal strings per currency, as configured in the Lava offer. */
   prices: Partial<Record<Currency, string>>;
+  /** A grumble pack's grumbles; nothing else has them. */
+  grumbles?: number;
 };
 
 /**

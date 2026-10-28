@@ -10,6 +10,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { type Actor, audit } from "../common/audit.js";
 import type {
   Executor,
+  OrderRow,
   PaymentRow,
   PaymentsDatabase,
   RefundRow,
@@ -29,7 +30,7 @@ import { toMinor } from "../domain/money.js";
 import { GrantLedger } from "./grants.js";
 import { IssueRegistry } from "./issues.js";
 import { BillingNotices } from "./notices.js";
-import { subscriptionChanged } from "./outbox-events.js";
+import { grumblesReversed, subscriptionChanged } from "./outbox-events.js";
 import type { Outcome } from "./outcome.js";
 
 const PROVIDER = "lava";
@@ -209,6 +210,10 @@ export class RefundService {
         .set({ state: "disputed", updatedAt: now })
         .where(eq(payments.id, payment.id));
     }
+    // A pack's grumbles cannot wait for the outcome: they are spent in
+    // seconds. The wallet takes back what is left of them at once; if the
+    // dispute is won, an operator grants them again.
+    if (payment) await this.chargePackBack(tx, row, payment, now);
     await this.issues.open(
       tx,
       {
@@ -228,6 +233,156 @@ export class RefundService {
       refundId: row.id,
       paymentId: payment?.id ?? null,
     };
+  }
+
+  /**
+   * A refund of a grumble pack (phase 2), whole or in part, applies by
+   * itself: the money goes to the journal and the wallet takes back the
+   * grumbles it paid for, rounded down in the buyer's favour. Each case
+   * counts the money refunded before it, so parts never take back more
+   * than the whole pack; the last part refunds the payment and the order.
+   */
+  private async applyToPack(
+    tx: Executor,
+    caseRow: RefundRow,
+    payment: PaymentRow,
+    order: OrderRow,
+    now: Date,
+    review: (why: string) => Promise<Outcome>,
+  ): Promise<Outcome> {
+    const ids = {
+      refundId: caseRow.id,
+      paymentId: payment.id,
+      orderId: order.id,
+    };
+    const amount = caseRow.amountMinor ?? 0n;
+    const before = await this.refundedMinor(tx, payment.id);
+    if (amount <= 0n) return review("refund without an amount");
+    if (before + amount > payment.amountMinor)
+      return review("refund exceeds the payment");
+    const total = before + amount;
+    const full = total === payment.amountMinor;
+    const grumbles =
+      this.packGrumbles(order, payment, total) -
+      this.packGrumbles(order, payment, before);
+
+    await tx
+      .update(refunds)
+      .set({ state: "recorded", updatedAt: now })
+      .where(eq(refunds.id, caseRow.id));
+    await tx.insert(financialEntries).values({
+      type: "refund",
+      sourceRef: `refund:${caseRow.id}`,
+      paymentId: payment.id,
+      refundId: caseRow.id,
+      userId: payment.userId,
+      currency: payment.currency,
+      amountMinor: -amount,
+      occurredAt: now,
+      createdAt: now,
+    });
+    if (full) {
+      await tx
+        .update(payments)
+        .set({ state: "refunded", updatedAt: now })
+        .where(eq(payments.id, payment.id));
+      await tx
+        .update(orders)
+        .set({
+          status: "refunded",
+          updatedAt: now,
+          version: sql`${orders.version} + 1`,
+        })
+        .where(eq(orders.id, order.id));
+      await this.issues.resolve(
+        tx,
+        `payment:${payment.id}`,
+        { actorId: null, resolution: "payment refunded" },
+        now,
+      );
+    }
+    if (grumbles > 0n)
+      await grumblesReversed(
+        tx,
+        {
+          caseId: caseRow.id,
+          payment,
+          kind: "refund",
+          grumbles,
+          amountMinor: amount,
+          currency: payment.currency,
+        },
+        now,
+        order.correlationId,
+      );
+    await this.notices.refundRecorded(
+      tx,
+      { refund: caseRow, payment, grant: null },
+      now,
+      order.correlationId,
+    );
+    return {
+      status: "processed",
+      note: full ? "grumble pack refunded" : "grumble pack refunded in part",
+      ...ids,
+    };
+  }
+
+  /**
+   * A chargeback of a grumble pack: the wallet is asked for the pack's
+   * grumbles that no refund took back yet. Nothing for other products.
+   */
+  private async chargePackBack(
+    tx: Executor,
+    caseRow: RefundRow,
+    payment: PaymentRow,
+    now: Date,
+  ) {
+    const [order] = await tx
+      .select()
+      .from(orders)
+      .where(eq(orders.id, payment.orderId));
+    if (order?.kind !== "grumble_pack") return;
+    const refunded = await this.refundedMinor(tx, payment.id);
+    const grumbles =
+      this.packGrumbles(order, payment, payment.amountMinor) -
+      this.packGrumbles(order, payment, refunded);
+    if (grumbles <= 0n) return;
+    await grumblesReversed(
+      tx,
+      {
+        caseId: caseRow.id,
+        payment,
+        kind: "chargeback",
+        grumbles,
+        amountMinor: caseRow.amountMinor ?? payment.amountMinor,
+        currency: payment.currency,
+      },
+      now,
+      order.correlationId,
+    );
+  }
+
+  /** The grumbles `minor` of the pack's money paid for, rounded down. */
+  private packGrumbles(order: OrderRow, payment: PaymentRow, minor: bigint) {
+    if (order.grumbles === null) throw new Error("pack order without grumbles");
+    return (minor * order.grumbles) / payment.amountMinor;
+  }
+
+  /** Money of a payment refunded so far, from the journal. */
+  private async refundedMinor(tx: Executor, paymentId: string) {
+    const [row] = await tx
+      .select({
+        total: sql<string>`coalesce(-sum(${financialEntries.amountMinor}), 0)`,
+      })
+      .from(financialEntries)
+      .where(
+        and(
+          eq(financialEntries.paymentId, paymentId),
+          eq(financialEntries.type, "refund"),
+        ),
+      );
+    return BigInt(row?.total ?? "0");
   }
 
   /** Operator marks that a refund was started in the Lava cabinet (no refund API). */
@@ -410,6 +565,15 @@ export class RefundService {
     if (payment.state === "refunded") return review("payment already refunded");
     if (caseRow.currency !== payment.currency)
       return review("currency differs");
+    if (payment.kind === "purchase") {
+      const [order] = await tx
+        .select()
+        .from(orders)
+        .where(eq(orders.id, payment.orderId))
+        .for("update");
+      if (order?.kind === "grumble_pack")
+        return this.applyToPack(tx, caseRow, payment, order, now, review);
+    }
     if (caseRow.refundType === "partial" || amount < payment.amountMinor)
       return review("partial refund needs an item decision");
     if (amount > payment.amountMinor)

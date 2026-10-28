@@ -1,3 +1,4 @@
+import { GrumbleIcon } from "@outegro/ui/grumble-icon";
 import {
   AnchorIcon,
   BookOpenTextIcon,
@@ -17,6 +18,13 @@ export function ServiceMark({
   service: string | null;
   size?: "lg";
 }) {
+  // Packs of grumbles (phase 2) show the coin itself.
+  if (service === "wallet")
+    return (
+      <span className="service-mark" data-size={size} aria-hidden="true">
+        <GrumbleIcon />
+      </span>
+    );
   // Own keys only: an unknown service (even "constructor") gets the package.
   const Icon =
     service && Object.hasOwn(icons, service) ? icons[service] : PackageIcon;

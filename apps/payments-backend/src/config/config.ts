@@ -40,6 +40,12 @@ export const checkoutConfig = registerAs("checkout", () => {
   };
 });
 
+/** Packs of grumbles (phase 2): in the catalog only while enabled. */
+export const grumblePacksConfig = registerAs("grumblePacks", () => ({
+  enabled: env().GRUMBLE_PACKS_ENABLED,
+  packs: env().GRUMBLE_PACKS,
+}));
+
 /** pay-web: the pages that messages to buyers link to. */
 export const payWebConfig = registerAs("payWeb", () => ({
   url: env().PAY_WEB_URL,

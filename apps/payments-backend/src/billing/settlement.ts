@@ -28,7 +28,11 @@ import { paidInterval, type RecurringPeriodicity } from "../domain/periods.js";
 import { GrantLedger } from "./grants.js";
 import { IssueRegistry } from "./issues.js";
 import { BillingNotices } from "./notices.js";
-import { paymentConfirmed, subscriptionChanged } from "./outbox-events.js";
+import {
+  grumblesPurchased,
+  paymentConfirmed,
+  subscriptionChanged,
+} from "./outbox-events.js";
 import { notAfter, type Outcome } from "./outcome.js";
 import { alreadyHeld, lockBuyer } from "./ownership.js";
 
@@ -205,6 +209,20 @@ export class SettlementService {
       paidAt,
       now,
     });
+
+    // A pack of grumbles opens no access: the wallet credits it instead of
+    // a grant (phase 2). No receipt yet: Notifications has no template.
+    if (order.kind === "grumble_pack") {
+      await paymentConfirmed(tx, payment, now, order.correlationId);
+      await grumblesPurchased(tx, order, payment, now);
+      return {
+        status: "processed",
+        note: "grumble pack paid",
+        ...ids,
+        subscriptionId: null,
+        paymentId: payment.id,
+      };
+    }
 
     if (subscription && interval) {
       await tx.insert(billingPeriods).values({

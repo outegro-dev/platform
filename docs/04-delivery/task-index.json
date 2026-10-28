@@ -2488,7 +2488,7 @@
       "id": "W-04",
       "title": "Пополнение пакетами через pay",
       "stage": "90-optional-wallet",
-      "status": "deferred",
+      "status": "blocked",
       "scope": "optional-wallet",
       "path": "docs/04-delivery/90-optional-wallet/tasks/W-04.md",
       "dependencies": [

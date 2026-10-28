@@ -10,7 +10,13 @@ import type {
   WalletSource,
   WalletUnit,
 } from "@outegro/contracts/wallet";
-import { AppError, CLOCK, type Clock, DATABASE } from "@outegro/nest-common";
+import {
+  AppError,
+  CLOCK,
+  type Clock,
+  DATABASE,
+  PermanentError,
+} from "@outegro/nest-common";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import type {
   RefRow,
@@ -24,6 +30,8 @@ import {
   type refOperations,
   systemAccounts,
   users,
+  walletLotReversals,
+  walletLots,
   walletRefs,
   wallets,
   walletTx,
@@ -36,6 +44,40 @@ type Claim = { txId: string; replay?: Operation };
 
 /** Who acts: an operator (admin command) or a service over the internal API. */
 export type Actor = { userId: string; requestId: string | null };
+
+type Money = { minor: bigint; currency: string; scale: number };
+
+/** A pack bought with money, as payments reported it (phase 2). */
+export type PackPurchase = {
+  paymentId: string;
+  orderId: string;
+  userId: string;
+  unit: WalletUnit;
+  productKey: string;
+  grumbles: bigint;
+  money: Money;
+  paidAt: Date;
+  correlationId: string | null;
+};
+
+/** Money of a pack given back: a refund or a chargeback (phase 2). */
+export type PackReversal = {
+  caseId: string;
+  paymentId: string;
+  userId: string;
+  unit: WalletUnit;
+  kind: "refund" | "chargeback";
+  grumbles: bigint;
+  money: Money;
+  occurredAt: Date;
+  correlationId: string | null;
+};
+
+const moneyMeta = (money: Money) => ({
+  minor: money.minor.toString(),
+  currency: money.currency,
+  scale: money.scale,
+});
 
 type Posting = {
   ref: string;
@@ -60,12 +102,14 @@ const LEGS: Record<TxKind, { sign: 1n | -1n; counter: SystemAccountCode }> = {
   debit: { sign: -1n, counter: "spent" },
   credit: { sign: 1n, counter: "spent" },
   reversal: { sign: 1n, counter: "spent" },
+  purchase: { sign: 1n, counter: "issued_purchase" },
+  clawback: { sign: -1n, counter: "issued_purchase" },
 };
 
 /**
  * Credits by source: a daily bonus is issued, anything else (a payout, a
  * return) gives back what was spent. Packs bought with money (phase 2)
- * arrive through the inbox with their own leg, not through this API.
+ * arrive through the inbox as `purchase`, not through this API.
  */
 const CREDIT_COUNTER: Partial<Record<WalletSource, SystemAccountCode>> = {
   "daily-bonus": "issued_bonus",
@@ -435,13 +479,241 @@ export class WalletLedger {
   }
 
   /**
+   * Payments' event: credits a pack bought with money once
+   * (`pack:payment:{paymentId}`, against `issued_purchase`) and records
+   * its lot. A debt left by an earlier refund or chargeback is paid off
+   * from it first. Runs in the inbox's transaction; false when this
+   * payment was credited before.
+   */
+  purchase(tx: WalletTx, pack: PackPurchase): Promise<boolean> {
+    return this.metrics.time("purchase", async () => {
+      const [known] = await tx
+        .select({ paymentId: walletLots.paymentId })
+        .from(walletLots)
+        .where(eq(walletLots.paymentId, pack.paymentId));
+      if (known) {
+        this.metrics.replay("purchase");
+        return false;
+      }
+      const posting: Posting = {
+        ref: `pack:payment:${pack.paymentId}`,
+        userId: pack.userId,
+        unit: pack.unit,
+        amount: pack.grumbles,
+        source: "pay",
+        objectRef: `order:${pack.orderId}`,
+        meta: {
+          paymentId: pack.paymentId,
+          productKey: pack.productKey,
+          money: moneyMeta(pack.money),
+        },
+        correlationId: pack.correlationId,
+      };
+      const claimed = await this.claim(tx, "purchase", posting);
+      if (claimed.replay) return false;
+      await this.lockWallets(tx, [posting]);
+      const row = await this.give(tx, "purchase", posting, claimed.txId);
+      await this.moveSystem(
+        tx,
+        counterOf("purchase", posting),
+        pack.unit,
+        -row.amount,
+      );
+      await tx.insert(walletLots).values({
+        paymentId: pack.paymentId,
+        userId: pack.userId,
+        unit: pack.unit,
+        orderId: pack.orderId,
+        productKey: pack.productKey,
+        grumbles: pack.grumbles,
+        moneyMinor: pack.money.minor,
+        currency: pack.money.currency,
+        scale: pack.money.scale,
+        txId: row.id,
+        paidAt: pack.paidAt,
+        createdAt: row.createdAt,
+      });
+      await this.repayDebt(tx, pack);
+      return true;
+    });
+  }
+
+  /**
+   * Payments' event: takes back a refunded or charged-back pack once per
+   * case (`pack:case:{caseId}`). The wallet gives what it holds, up to the
+   * grumbles asked; the rest becomes debt and restricts it (an account's
+   * own restriction keeps its reason). Never more than the pack brought,
+   * over all its cases. False when the case was applied before or the
+   * pack had nothing left to give back.
+   */
+  clawback(tx: WalletTx, reversal: PackReversal): Promise<boolean> {
+    return this.metrics.time("clawback", async () => {
+      const [lot] = await tx
+        .select()
+        .from(walletLots)
+        .where(eq(walletLots.paymentId, reversal.paymentId));
+      // The purchase may still be on its way: a retry finds it.
+      if (!lot) throw new Error(`no pack for payment ${reversal.paymentId}`);
+      if (lot.userId !== reversal.userId || lot.unit !== reversal.unit)
+        throw new PermanentError(
+          `case ${reversal.caseId} names another wallet than its pack`,
+        );
+      // Lots never change; the wallet's lock puts the cases of one pack
+      // one after another, so together they never ask more than it brought.
+      await this.lockWallets(tx, [reversal]);
+      const [known] = await tx
+        .select({ caseId: walletLotReversals.caseId })
+        .from(walletLotReversals)
+        .where(eq(walletLotReversals.caseId, reversal.caseId));
+      if (known) {
+        this.metrics.replay("clawback");
+        return false;
+      }
+      const [asked] = await tx
+        .select({
+          total: sql<string>`coalesce(sum(${walletLotReversals.grumbles}), 0)`,
+        })
+        .from(walletLotReversals)
+        .where(eq(walletLotReversals.paymentId, lot.paymentId));
+      const left = lot.grumbles - BigInt(asked?.total ?? "0");
+      const grumbles = reversal.grumbles < left ? reversal.grumbles : left;
+      if (grumbles <= 0n) return false;
+      const where = and(
+        eq(wallets.userId, reversal.userId),
+        eq(wallets.unit, reversal.unit),
+      );
+      const [wallet] = await tx
+        .select({ balance: wallets.balance, state: wallets.state })
+        .from(wallets)
+        .where(where);
+      if (!wallet) throw new Error(`wallet ${reversal.userId} was not created`);
+      const taken = grumbles < wallet.balance ? grumbles : wallet.balance;
+      const debt = grumbles - taken;
+      let txId: string | null = null;
+      if (taken > 0n) {
+        const posting: Posting = {
+          ref: `pack:case:${reversal.caseId}`,
+          userId: reversal.userId,
+          unit: reversal.unit,
+          amount: taken,
+          source: "pay",
+          objectRef: `payment:${reversal.paymentId}`,
+          reason:
+            reversal.kind === "refund" ? "pack refunded" : "pack charged back",
+          meta: {
+            caseId: reversal.caseId,
+            kind: reversal.kind,
+            money: moneyMeta(reversal.money),
+            ...(debt > 0n ? { debt: debt.toString() } : {}),
+          },
+          correlationId: reversal.correlationId,
+        };
+        const claimed = await this.claim(tx, "clawback", posting);
+        if (claimed.replay) return false;
+        const row = await this.take(
+          tx,
+          "clawback",
+          posting,
+          claimed.txId,
+          false,
+        );
+        txId = row.id;
+      }
+      const now = this.clock.now();
+      await tx.insert(walletLotReversals).values({
+        caseId: reversal.caseId,
+        paymentId: reversal.paymentId,
+        userId: reversal.userId,
+        unit: reversal.unit,
+        kind: reversal.kind,
+        grumbles,
+        taken,
+        debt,
+        moneyMinor: reversal.money.minor,
+        currency: reversal.money.currency,
+        scale: reversal.money.scale,
+        txId,
+        occurredAt: reversal.occurredAt,
+        createdAt: now,
+      });
+      if (debt > 0n)
+        await tx
+          .update(wallets)
+          .set({
+            debt: sql`${wallets.debt} + ${debt.toString()}::bigint`,
+            ...(wallet.state === "active"
+              ? { state: "restricted" as const, restrictedReason: "debt" }
+              : {}),
+            updatedAt: now,
+          })
+          .where(where);
+      return true;
+    });
+  }
+
+  /**
+   * Pays a debt off from the balance a pack just brought (one `clawback`,
+   * `pack:repay:{paymentId}`); a paid-off debt lifts its own restriction.
+   */
+  private async repayDebt(tx: WalletTx, pack: PackPurchase) {
+    const where = and(
+      eq(wallets.userId, pack.userId),
+      eq(wallets.unit, pack.unit),
+    );
+    const [wallet] = await tx
+      .select({
+        balance: wallets.balance,
+        debt: wallets.debt,
+        restrictedReason: wallets.restrictedReason,
+      })
+      .from(wallets)
+      .where(where);
+    if (!wallet || wallet.debt === 0n) return;
+    const amount = wallet.debt < wallet.balance ? wallet.debt : wallet.balance;
+    if (amount > 0n) {
+      const posting: Posting = {
+        ref: `pack:repay:${pack.paymentId}`,
+        userId: pack.userId,
+        unit: pack.unit,
+        amount,
+        source: "pay",
+        objectRef: `payment:${pack.paymentId}`,
+        reason: "debt repaid",
+        meta: { debtBefore: wallet.debt.toString() },
+        correlationId: pack.correlationId,
+      };
+      const claimed = await this.claim(tx, "clawback", posting);
+      if (!claimed.replay)
+        await this.take(tx, "clawback", posting, claimed.txId, false);
+    }
+    const left = wallet.debt - amount;
+    await tx
+      .update(wallets)
+      .set({
+        debt: left,
+        ...(left === 0n && wallet.restrictedReason === "debt"
+          ? { state: "active" as const, restrictedReason: null }
+          : {}),
+        updatedAt: this.clock.now(),
+      })
+      .where(where);
+  }
+
+  /**
    * Claims the ref for this request, or finds what holds it: the same
    * request (its journal row is the answer), another request (409) or a
    * rollback that came first (409 rolled_back).
    */
   private async claim(
     tx: WalletTx,
-    operation: "grant" | "adjust" | "set" | "debit" | "credit",
+    operation:
+      | "grant"
+      | "adjust"
+      | "set"
+      | "debit"
+      | "credit"
+      | "purchase"
+      | "clawback",
     input: Posting,
   ): Promise<Claim> {
     const txId = randomUUID();
@@ -495,7 +767,7 @@ export class WalletLedger {
    */
   private async take(
     tx: WalletTx,
-    kind: "debit" | "adjust",
+    kind: "debit" | "adjust" | "clawback",
     input: Posting,
     txId: string,
     activeOnly: boolean,
@@ -560,7 +832,7 @@ export class WalletLedger {
   /** Adds `amount` to a wallet locked by lockWallets (or a debit's wallet). */
   private async give(
     tx: WalletTx,
-    kind: "grant" | "credit" | "reversal",
+    kind: "grant" | "credit" | "reversal" | "purchase",
     input: Posting,
     txId: string,
     measured: TxKind | "set" = kind,

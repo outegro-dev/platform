@@ -4744,6 +4744,7 @@ const walletCommands = new Map<string, FakeWalletTx>();
 const walletView = (wallet: FakeWallet) => ({
   ...wallet,
   balance: wallet.balance.toString(),
+  debt: "0",
   exists: true,
 });
 const walletTxView = (tx: FakeWalletTx) => ({
@@ -4831,6 +4832,7 @@ route("GET", "/wallet/v1/admin/wallets/:userId", (req, _res, [userId]) => {
           balance: "0",
           state: "active",
           restrictedReason: null,
+          debt: "0",
           version: 0,
           exists: false,
           createdAt: null,
