@@ -2,7 +2,7 @@
 /**
  * Finds vacancies and starts CV builds for the best of them.
  *
- *   node dist/tools/run-batch.js --discover 10 [--exclude-file <path>]... [--min-score 55]
+ *   node dist/tools/run-batch.js --discover 10 [--exclude-file <path>]... [--min-score 55] [--home <words>]
  *   node dist/tools/run-batch.js --urls urls.txt [--user <uuid|owner>] [--dry-run]
  *
  * --discover N: wantapply and hirify listings, plus the ATS boards
@@ -54,11 +54,18 @@ const titleFits = (title: string) =>
     title,
   );
 
+// --home "country,city": the owner's own place also counts as remote-friendly.
+const home = (args.get("home") ?? "")
+  .split(",")
+  .map((word) => word.trim().toLowerCase())
+  .filter(Boolean);
+
 const remoteFriendly = (location: string | null, remote: boolean | null) =>
   remote === true ||
-  /remote|anywhere|worldwide|global|emea|europe|georgia|tbilisi|cet|utc/i.test(
+  /remote|anywhere|worldwide|global|emea|europe|cet|utc/i.test(
     location ?? "",
-  );
+  ) ||
+  home.some((word) => (location ?? "").toLowerCase().includes(word));
 
 const formAtsKinds = ["ashby", "lever", "greenhouse", "workable"];
 

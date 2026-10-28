@@ -1,4 +1,5 @@
 import { type Profile, profileSchema } from "@outegro/contracts/atelier";
+import { z } from "zod";
 import type { ParsedContent } from "./content-tex.js";
 import type { Voice } from "./voice.js";
 
@@ -11,41 +12,32 @@ export const companyIdOf = (name: string) =>
     .replace(/[^a-z0-9]+/g, "")
     .slice(0, 40) || "company";
 
-/** The owner's CV order and bullet quotas (target/min), general and AI template. */
-export const ownerCompanies = {
-  order: ["toggle", "printify", "kommo", "fridaytech", "advicesolution"],
-  quotas: {
-    printify: { general: { target: 8, min: 6 }, ai: { target: 7, min: 5 } },
-    kommo: { general: { target: 5, min: 4 }, ai: { target: 4, min: 3 } },
-    fridaytech: { general: { target: 4, min: 3 }, ai: { target: 3, min: 2 } },
-    toggle: { general: { target: 4, min: 3 }, ai: { target: 6, min: 4 } },
-  } as Record<
-    string,
-    {
-      general: { target: number; min: number };
-      ai: { target: number; min: number };
-    }
-  >,
-} as const;
+const quotaSchema = z.object({
+  target: z.number().int().min(0).max(20),
+  min: z.number().int().min(0).max(20),
+});
 
-/** Form answers, mode and layout of the owner's profile. */
-export const ownerSettings = {
-  form: {
-    location: "Tbilisi, Georgia",
-    timezone: "GMT+4",
-    workFormat: "Remote",
-    contract: "B2B contractor (Georgian individual entrepreneur)",
-    relocation: false,
-    needsSponsorship: false,
-    salaryFrom: { amount: 4000, currency: "USD", period: "month" as const },
-    noticeWeeks: 2,
-    eeo: "decline" as const,
-  },
-  factsMode: "free" as const,
-  font: "plex" as const,
-  maxPages: 2 as const,
-  baseYears: 6,
-};
+/**
+ * What the CV files do not say: the company order and bullet quotas
+ * (general and AI template), form answers, mode and layout. Personal, so it
+ * lives next to the bank (`atelier-settings.json` in the Work Finder
+ * folder), never in this repo.
+ */
+export const profileSettingsSchema = z.object({
+  companies: z.object({
+    order: z.array(z.string().min(1)).max(20),
+    quotas: z.record(
+      z.string(),
+      z.object({ general: quotaSchema, ai: quotaSchema }),
+    ),
+  }),
+  form: profileSchema.shape.form,
+  factsMode: profileSchema.shape.factsMode,
+  font: profileSchema.shape.font,
+  maxPages: profileSchema.shape.maxPages,
+  baseYears: profileSchema.shape.baseYears,
+});
+export type ProfileSettings = z.infer<typeof profileSettingsSchema>;
 
 type BankFile = {
   bankVersion: number;
@@ -68,14 +60,17 @@ function splitName(name: string) {
 
 /**
  * A Profile from the bank (cases keep their ids, company → companyId), the
- * parsed content.tex and the voice file; validated with profileSchema.
+ * parsed content.tex, the voice file and the owner's settings; validated
+ * with profileSchema.
  */
 export function buildProfile(input: {
   bank: BankFile;
   content: ParsedContent;
   voice: Voice;
+  settings: ProfileSettings;
 }): Profile {
-  const { bank, content, voice } = input;
+  const { bank, content, voice, settings } = input;
+  const { companies: layout, ...options } = settings;
   const links = content.links;
   const email = links
     .find((link) => link.url.startsWith("mailto:"))
@@ -89,11 +84,11 @@ export function buildProfile(input: {
           link.url,
         ),
     )?.url ?? null;
-  const order = ownerCompanies.order as readonly string[];
+  const order = layout.order;
   const companies = content.jobs.map((job, index) => {
     const id = companyIdOf(job.company);
     const position = order.indexOf(id);
-    const quota = ownerCompanies.quotas[id];
+    const quota = layout.quotas[id];
     return {
       id,
       name: clip(job.company, 120),
@@ -145,7 +140,7 @@ export function buildProfile(input: {
     companies,
     education: content.education,
     languages: content.languages,
-    ...ownerSettings,
+    ...options,
     voice,
     bank: {
       bankVersion: bank.bankVersion,

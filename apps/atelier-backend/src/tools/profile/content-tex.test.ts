@@ -207,6 +207,32 @@ describe("content.tex", () => {
       bank: { bankVersion: 3, cases: [bankCase("F1", "FirstCo")] },
       content: parseContentTex(sample),
       voice: parseVoice(voiceSample),
+      settings: {
+        companies: {
+          order: ["firstco"],
+          quotas: {
+            firstco: {
+              general: { target: 6, min: 4 },
+              ai: { target: 5, min: 3 },
+            },
+          },
+        },
+        form: {
+          location: "Lisbon, Portugal",
+          timezone: "GMT+0",
+          workFormat: "Remote",
+          contract: "B2B contractor",
+          relocation: false,
+          needsSponsorship: false,
+          salaryFrom: { amount: 3500, currency: "EUR", period: "month" },
+          noticeWeeks: 4,
+          eeo: "decline",
+        },
+        factsMode: "free",
+        font: "plex",
+        maxPages: 2,
+        baseYears: 6,
+      },
     });
     expect(profile.person).toMatchObject({
       firstName: "Alex",
@@ -226,9 +252,14 @@ describe("content.tex", () => {
     );
     expect(second?.quota.general).toEqual({ target: 0, min: 0 });
     expect(second?.fixedBullets).toHaveLength(2);
+    expect(profile.companies.find((c) => c.id === "firstco")).toMatchObject({
+      order: 0,
+      quota: { general: { target: 6, min: 4 } },
+      fixedBullets: [],
+    });
     expect(profile.form.salaryFrom).toEqual({
-      amount: 4000,
-      currency: "USD",
+      amount: 3500,
+      currency: "EUR",
       period: "month",
     });
     expect(profile).toMatchObject({

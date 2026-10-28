@@ -45,7 +45,7 @@ ssh outegro-prod 'sudo k3s kubectl -n outegro get database atelier'
 
 ## Шаг 4. Профиль владельца
 
-Профиль собирается локально из Work Finder и попадает в базу через под, файл в репозиторий не попадает:
+Профиль собирается локально из Work Finder и попадает в базу через под, файл в репозиторий не попадает. Порядок компаний, квоты буллетов и ответы для анкет (локация, формат работы, зарплата, срок уведомления) лежат рядом с банком в `atelier-settings.json` папки Work Finder (схема — `profileSettingsSchema` в `apps/atelier-backend/src/tools/profile/build-profile.ts`); другой файл — `--settings <путь>`:
 
 ```text
 pnpm --filter @outegro/atelier-backend build

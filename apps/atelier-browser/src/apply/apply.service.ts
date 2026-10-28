@@ -91,7 +91,7 @@ export class ApplyService {
     let timer: NodeJS.Timeout | undefined;
     let result: BrowserApplyResponse;
     try {
-      context = await this.pool.newContext();
+      context = await this.pool.newContext(req.timezone);
       const open = context;
       timer = setTimeout(() => {
         timedOut = true;

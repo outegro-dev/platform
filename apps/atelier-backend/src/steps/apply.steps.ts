@@ -300,6 +300,7 @@ export const sendStep: StepHandler<SendInput> = {
       answers: answers.map(({ question, answer }) => ({ question, answer })),
       cv: { fileName: input.cv.fileName, base64: file.body.toString("base64") },
       coverLetter: input.coverLetter,
+      timezone: input.profile.form.timezone,
     });
     const prepared = await ctx.browser.apply(request("prepare", []));
     if (prepared.status === "needs_human" || prepared.status === "failed")

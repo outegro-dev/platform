@@ -8,8 +8,10 @@
  *
  * From Work Finder: assets/profile/achievement-bank.v2.json (cases keep
  * their ids), templates/cv/content.tex (person, links, summary, skills,
- * jobs, education, languages) and 08_VOICE_ABOUT_ME_AND_MESSAGES.md. The
- * personal data stays in those files and the database, never in the repo.
+ * jobs, education, languages), 08_VOICE_ABOUT_ME_AND_MESSAGES.md and
+ * atelier-settings.json (company order and quotas, form answers, mode and
+ * layout; `--settings <file>` reads another one). The personal data stays
+ * in those files and the database, never in the repo.
  * `--user owner` stores it for the owner's account before its id is known;
  * the first sign-in with atelier.use adopts it.
  */
@@ -19,7 +21,10 @@ import { type Profile, profileSchema } from "@outegro/contracts/atelier";
 import { sql } from "drizzle-orm";
 import { profiles } from "../db/schema.js";
 import { fail, openDatabase, parseArgs, userKey } from "./cli.js";
-import { buildProfile } from "./profile/build-profile.js";
+import {
+  buildProfile,
+  profileSettingsSchema,
+} from "./profile/build-profile.js";
 import { parseContentTex } from "./profile/content-tex.js";
 import { parseVoice } from "./profile/voice.js";
 
@@ -31,12 +36,22 @@ async function readStdin() {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function fromWorkFinder(dir: string): Profile {
+function fromWorkFinder(dir: string, settingsFile?: string): Profile {
   const read = (path: string) => readFileSync(join(dir, path), "utf8");
+  const settings = profileSettingsSchema.safeParse(
+    JSON.parse(
+      settingsFile
+        ? readFileSync(settingsFile, "utf8")
+        : read("atelier-settings.json"),
+    ),
+  );
+  if (!settings.success)
+    throw new Error(`atelier-settings.json: ${settings.error.message}`);
   return buildProfile({
     bank: JSON.parse(read("assets/profile/achievement-bank.v2.json")),
     content: parseContentTex(read("templates/cv/content.tex")),
     voice: parseVoice(read("08_VOICE_ABOUT_ME_AND_MESSAGES.md")),
+    settings: settings.data,
   });
 }
 
@@ -60,13 +75,13 @@ if (args.has("stdin")) {
   profile = parsed.data;
 } else if (dir) {
   try {
-    profile = fromWorkFinder(dir);
+    profile = fromWorkFinder(dir, args.get("settings"));
   } catch (error) {
     fail(`could not build the profile: ${(error as Error).message}`);
   }
 } else {
   fail(
-    "usage: import-profile (--work-finder <dir> | --stdin) (--user <uuid|owner> | --out <file>)",
+    "usage: import-profile (--work-finder <dir> [--settings <file>] | --stdin) (--user <uuid|owner> | --out <file>)",
   );
 }
 

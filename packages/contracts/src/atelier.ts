@@ -589,6 +589,8 @@ export const browserApplyRequestSchema = z.object({
     base64: z.string().min(1),
   }),
   coverLetter: z.string().max(10_000).nullable(),
+  /** The profile's timezone ("GMT+4", "UTC-3" or an IANA name); UTC without it. */
+  timezone: z.string().max(64).nullish(),
 });
 export type BrowserApplyRequest = z.infer<typeof browserApplyRequestSchema>;
 

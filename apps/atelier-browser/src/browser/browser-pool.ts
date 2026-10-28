@@ -11,11 +11,33 @@ import { browserConfig } from "../config/config.js";
 /** Context settings of every request: one fresh context, nothing shared. */
 export const CONTEXT_OPTIONS = {
   locale: "en-US",
-  timezoneId: "Asia/Tbilisi",
+  timezoneId: "UTC",
   viewport: { width: 1280, height: 900 },
   deviceScaleFactor: 1,
   acceptDownloads: false,
 } as const;
+
+/**
+ * An IANA zone for the profile's timezone: "GMT+4" → "Etc/GMT-4" (POSIX
+ * signs are reversed), an IANA name as is, anything else (or a half-hour
+ * offset) → UTC.
+ */
+export function timezoneOf(value: string | null | undefined): string {
+  const text = value?.trim() ?? "";
+  const offset = /^(?:gmt|utc)\s*([+-])\s*(\d{1,2})(?::?00)?$/i.exec(text);
+  if (offset) {
+    const hours = Number(offset[2]);
+    if (hours === 0) return "UTC";
+    if (hours <= 14) return `Etc/GMT${offset[1] === "+" ? "-" : "+"}${hours}`;
+  }
+  if (/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)+$/.test(text)) {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: text });
+      return text;
+    } catch {}
+  }
+  return "UTC";
+}
 
 /**
  * One headless Chromium for the process (plain Playwright, no stealth
@@ -47,10 +69,13 @@ export class BrowserPool implements OnApplicationShutdown {
     return launching;
   }
 
-  async newContext(): Promise<BrowserContext> {
+  async newContext(timezone?: string | null): Promise<BrowserContext> {
     this.browser ??= this.launch();
     const browser = await this.browser;
-    return browser.newContext(CONTEXT_OPTIONS);
+    return browser.newContext({
+      ...CONTEXT_OPTIONS,
+      timezoneId: timezoneOf(timezone),
+    });
   }
 
   async onApplicationShutdown() {
