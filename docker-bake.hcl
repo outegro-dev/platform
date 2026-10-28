@@ -19,6 +19,7 @@ variable "APPS" {
     "battleship-web",
     "edu-web",
     "roulette-web",
+    "atelier-web",
     "auth-backend",
     "notifications-backend",
     "payments-backend",
@@ -28,6 +29,10 @@ variable "APPS" {
     "roulette-backend",
     "fair-roll-backend",
     "daily-bonus-backend",
+    "atelier-backend",
+    "llm-gateway",
+    "atelier-tex",
+    "atelier-browser",
   ]
 }
 

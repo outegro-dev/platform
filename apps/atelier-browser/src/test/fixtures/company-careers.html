@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Careers at Acme (embedded Greenhouse fixture)</title>
+</head>
+<body>
+<h1>Backend Engineer</h1>
+<p>Join Acme. Apply below.</p>
+<div id="grnhse_app"></div>
+<script>
+  // What Greenhouse's embed script does: an iframe with the hosted form.
+  setTimeout(() => {
+    const jobId = new URLSearchParams(location.search).get("gh_jid");
+    const frame = document.createElement("iframe");
+    frame.id = "grnhse_iframe";
+    frame.width = "100%";
+    frame.height = "1500";
+    frame.src = `/greenhouse/embed/job_app?for=acme&token=${jobId}`;
+    document.getElementById("grnhse_app").appendChild(frame);
+  }, 200);
+</script>
+</body>
+</html>

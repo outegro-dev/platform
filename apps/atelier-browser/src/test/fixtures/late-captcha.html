@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Acme - Apply (captcha on submit fixture)</title>
+<style>
+  body { font-family: sans-serif; max-width: 760px; margin: 24px auto; }
+  .challenge { position: fixed; top: 40px; left: 40px; width: 400px; height: 580px; background: #fff; z-index: 5; }
+</style>
+</head>
+<body>
+<form id="application-form">
+  <ul>
+    <li><label><div>Full name<span class="required">✱</span></div><input type="text" name="name" required></label></li>
+    <li><label><div>Email<span class="required">✱</span></div><input type="email" name="email" required></label></li>
+  </ul>
+  <!-- Invisible until submit, like an invisible hCaptcha that decides to challenge. -->
+  <div class="h-captcha"><iframe title="Widget containing checkbox for hCaptcha security challenge" src="about:blank#frame=checkbox-invisible&amp;hcaptcha" style="display:none"></iframe></div>
+  <button id="btn-submit" type="button">Submit application</button>
+</form>
+<script>
+  window.submitCount = 0;
+  document.getElementById("btn-submit").addEventListener("click", () => {
+    window.submitCount++;
+    window.atelierFixtureReport?.("submitCount", window.submitCount);
+    const box = document.createElement("div");
+    box.className = "challenge";
+    box.innerHTML = '<iframe title="Main content of the hCaptcha challenge" src="/captcha-frame.html#frame=challenge&amp;id=0late&amp;host=localhost" width="400" height="580" frameborder="0"></iframe>';
+    document.body.appendChild(box);
+  });
+</script>
+</body>
+</html>

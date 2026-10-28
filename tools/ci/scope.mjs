@@ -14,6 +14,7 @@ const APPS = [
   "battleship-web",
   "edu-web",
   "roulette-web",
+  "atelier-web",
   "auth-backend",
   "notifications-backend",
   "payments-backend",
@@ -23,6 +24,10 @@ const APPS = [
   "roulette-backend",
   "fair-roll-backend",
   "daily-bonus-backend",
+  "atelier-backend",
+  "llm-gateway",
+  "atelier-tex",
+  "atelier-browser",
 ];
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();

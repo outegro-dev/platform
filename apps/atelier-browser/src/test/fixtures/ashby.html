@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Software Engineer @ Acme (Ashby fixture)</title>
+<style>
+  body { font-family: sans-serif; max-width: 760px; margin: 24px auto; }
+  .ashby-application-form-field-entry, fieldset { margin: 14px 0; border: 0; padding: 0; }
+  label { display: block; font-weight: 600; }
+  ._required_f7cvd_91::after { content: "*"; color: #c00; }
+  input[type=text], input[type=email], textarea, [role=combobox] { width: 100%; padding: 6px; }
+  .file-input { display: none; }
+  .yesno button[aria-pressed=true] { background: #5b4ee8; color: #fff; }
+  [role=listbox] { border: 1px solid #999; }
+  [role=option] { padding: 4px; cursor: pointer; }
+  .grecaptcha-badge { position: fixed; bottom: 14px; right: 0; width: 256px; height: 60px; }
+</style>
+</head>
+<body>
+<h1>Software Engineer</h1>
+<div class="ashby-job-posting-right-pane">
+  <div class="ashby-application-form-autofill-uploader">
+    <h3>Autofill from resume</h3>
+    <input type="file" class="file-input" id="autofill-input">
+    <button type="button" onclick="document.getElementById('autofill-input').click()">Upload file</button>
+  </div>
+  <div class="ashby-application-form-container" id="form">
+    <div class="ashby-application-form-field-entry" data-field-path="_systemfield_name">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="_systemfield_name">Name</label>
+      <div><input placeholder="Type here..." name="_systemfield_name" id="_systemfield_name" type="text" required></div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="_systemfield_email">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="_systemfield_email">Email</label>
+      <div><input placeholder="hello@example.com..." name="_systemfield_email" id="_systemfield_email" type="email" required></div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="_systemfield_resume">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="_systemfield_resume">Resume</label>
+      <div class="ashby-application-form-input-file">
+        <input type="file" class="file-input" id="_systemfield_resume" accept="application/pdf,.pdf" tabindex="-1">
+        <button type="button" onclick="document.getElementById('_systemfield_resume').click()">Upload File</button>
+        <span id="resume-name"></span>
+      </div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="2f73c135">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="2f73c135">LinkedIn Profile</label>
+      <div><input placeholder="Type here..." name="2f73c135" id="2f73c135" type="text" required></div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="c96f681c">
+      <label class="_heading_f7cvd_52 ashby-application-form-question-title" for="c96f681c">Do you currently live in the EMEA timezone? If not, please explain why you're applying to this role</label>
+      <div><p>We unfortunately won't hire folks in APAC.</p></div>
+      <div><input placeholder="Type here..." name="c96f681c" id="c96f681c" type="text"></div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="_systemfield_location">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="_systemfield_location">Which country do you intend to work from?</label>
+      <div><p>Please list your city and country.</p></div>
+      <div class="input-container">
+        <input class="ashby-application-form-input-autocomplete" id="location-input" placeholder="Start typing..." aria-autocomplete="list" aria-expanded="false" aria-haspopup="listbox" role="combobox" aria-controls="location-list">
+        <button type="button" aria-label="Toggle"></button>
+      </div>
+      <div id="location-list" role="listbox"></div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="9dbddae8">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="9dbddae8">Will you now or in the future require sponsorship for employment visa status to work in this location?</label>
+      <div class="yesno" data-question="sponsorship">
+        <button type="button" aria-pressed="false" data-option="yes">Yes</button>
+        <button type="button" aria-pressed="false" data-option="no">No</button>
+        <input type="checkbox" tabindex="-1" name="9dbddae8" style="display:none">
+      </div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="ts-q">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="ts-q">Have you worked with TypeScript in production?</label>
+      <div class="yesno" data-question="typescript">
+        <button type="button" aria-pressed="false" data-option="yes">Yes</button>
+        <button type="button" aria-pressed="false" data-option="no">No</button>
+        <input type="checkbox" tabindex="-1" name="ts-q" style="display:none">
+      </div>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="ts-years" id="ts-years-entry" hidden>
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="ts-years">How many years of TypeScript experience do you have?</label>
+      <textarea placeholder="Type here..." name="ts-years" id="ts-years" rows="2" required></textarea>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="f890254e">
+      <label class="_heading_f7cvd_52 _required_f7cvd_91 ashby-application-form-question-title" for="f890254e">What's the most recent thing you've built or shipped? Walk us through what it was and why you did it.</label>
+      <div><p>We're looking for evidence that you're still hands-on.</p></div>
+      <textarea placeholder="Type here..." required name="f890254e" id="f890254e" rows="4"></textarea>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="hear">
+      <fieldset>
+        <label class="_heading_f7cvd_52 ashby-application-form-question-title" for="hear">How did you hear about this role?</label>
+        <div><span><input type="radio" id="hear-0" name="hear"></span><label for="hear-0">LinkedIn</label></div>
+        <div><span><input type="radio" id="hear-1" name="hear"></span><label for="hear-1">A friend</label></div>
+        <div><span><input type="radio" id="hear-2" name="hear"></span><label for="hear-2">Job board</label></div>
+      </fieldset>
+    </div>
+
+    <h2 class="ashby-application-form-section-header-title">Diversity Survey</h2>
+    <p>This optional survey helps us evaluate our diversity and inclusion efforts.</p>
+    <div class="ashby-application-form-field-entry" data-field-path="gender">
+      <fieldset>
+        <label class="_heading_f7cvd_52 ashby-application-form-question-title" for="gender">What is your gender identity?</label>
+        <div><span><input type="radio" id="gender-0" name="gender"></span><label for="gender-0">Man</label></div>
+        <div><span><input type="radio" id="gender-1" name="gender"></span><label for="gender-1">Woman</label></div>
+        <div><span><input type="radio" id="gender-2" name="gender"></span><label for="gender-2">Non-Binary</label></div>
+        <div><span><input type="radio" id="gender-3" name="gender"></span><label for="gender-3">I prefer not to answer</label></div>
+      </fieldset>
+    </div>
+    <div class="ashby-application-form-field-entry" data-field-path="ethnicity">
+      <fieldset>
+        <label class="_heading_f7cvd_52 ashby-application-form-question-title" for="ethnicity">Which ethnicity(ies) do you identify with? Please select all that apply.</label>
+        <div><span><input type="checkbox" id="eth-0" name="Asian"></span><label for="eth-0">Asian</label></div>
+        <div><span><input type="checkbox" id="eth-1" name="Black or African American"></span><label for="eth-1">Black or African American</label></div>
+        <div><span><input type="checkbox" id="eth-2" name="White"></span><label for="eth-2">White</label></div>
+        <div><span><input type="checkbox" id="eth-3" name="I prefer not to answer"></span><label for="eth-3">I prefer not to answer</label></div>
+      </fieldset>
+    </div>
+  </div>
+  <div id="errors" role="alert"></div>
+  <button type="button" class="ashby-application-form-submit-button" id="submit">Submit Application</button>
+  <div class="ashby-application-form-success-container" hidden>
+    <h2>Success</h2>
+    <p>Thanks for applying! Your application was successfully submitted.</p>
+  </div>
+</div>
+<div class="grecaptcha-badge">
+  <iframe title="reCAPTCHA" src="about:blank#recaptcha/enterprise/anchor?size=invisible" width="256" height="60"></iframe>
+</div>
+<script>
+  window.submitted = null;
+  document.getElementById("_systemfield_resume").addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    document.getElementById("resume-name").textContent = file ? file.name : "";
+  });
+  for (const group of document.querySelectorAll(".yesno")) {
+    for (const button of group.querySelectorAll("button")) {
+      button.addEventListener("click", () => {
+        for (const other of group.querySelectorAll("button")) other.setAttribute("aria-pressed", "false");
+        button.setAttribute("aria-pressed", "true");
+        group.querySelector("input").checked = button.dataset.option === "yes";
+        if (group.dataset.question === "typescript")
+          document.getElementById("ts-years-entry").hidden = button.dataset.option !== "yes";
+      });
+    }
+  }
+  const places = ["Tbilisi, Georgia", "Tbilisi Sea, Tbilisi, Georgia", "Berlin, Germany", "Batumi, Georgia"];
+  const input = document.getElementById("location-input");
+  const list = document.getElementById("location-list");
+  let timer = null;
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    list.innerHTML = "";
+    const query = input.value.trim().toLowerCase();
+    if (!query) return;
+    timer = setTimeout(() => {
+      for (const place of places.filter((p) => p.toLowerCase().includes(query))) {
+        const option = document.createElement("div");
+        option.setAttribute("role", "option");
+        option.textContent = place;
+        option.addEventListener("click", () => {
+          input.value = place;
+          list.innerHTML = "";
+          input.setAttribute("aria-expanded", "false");
+        });
+        list.appendChild(option);
+      }
+      input.setAttribute("aria-expanded", "true");
+    }, 300);
+  });
+  const pressed = (question) => {
+    const button = document.querySelector(`.yesno[data-question=${question}] button[aria-pressed=true]`);
+    return button ? button.textContent : null;
+  };
+  document.getElementById("submit").addEventListener("click", () => {
+    const errors = [];
+    const value = (id) => document.getElementById(id).value.trim();
+    if (!value("_systemfield_name")) errors.push("Name is required");
+    if (!value("_systemfield_email")) errors.push("Email is required");
+    if (!document.getElementById("_systemfield_resume").files.length) errors.push("Resume is required");
+    if (!value("location-input")) errors.push("Location is required");
+    if (!pressed("sponsorship")) errors.push("Sponsorship is required");
+    if (!value("f890254e")) errors.push("Recent work is required");
+    if (errors.length) {
+      document.getElementById("errors").textContent = errors.join(". ");
+      return;
+    }
+    window.submitted = {
+      name: value("_systemfield_name"),
+      email: value("_systemfield_email"),
+      resume: document.getElementById("_systemfield_resume").files[0].name,
+      location: value("location-input"),
+      sponsorship: pressed("sponsorship"),
+      gender: document.querySelector("input[name=gender]:checked")?.id ?? null,
+      ethnicity: [...document.querySelectorAll("[data-field-path=ethnicity] input:checked")].map((box) => box.id),
+      tsYears: value("ts-years"),
+    };
+    window.atelierFixtureReport?.("submitted", window.submitted);
+    document.getElementById("form").hidden = true;
+    document.getElementById("submit").hidden = true;
+    document.querySelector(".ashby-application-form-success-container").hidden = false;
+  });
+</script>
+</body>
+</html>

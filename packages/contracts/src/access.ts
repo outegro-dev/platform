@@ -46,6 +46,11 @@ export const permissions = [
   "wallet.read",
   /** Wallet: grant or take grumbles from a player, with a reason and a per-operation cap. */
   "wallet.adjust",
+  /**
+   * Atelier (atelier.outegro.dev): the owner's own job search, CVs and
+   * applications. Owner-only until it becomes a product with grants.
+   */
+  "atelier.use",
 ] as const;
 export type Permission = (typeof permissions)[number];
 

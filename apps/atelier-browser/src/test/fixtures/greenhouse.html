@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Job Application for Backend Engineer at Acme (Greenhouse fixture)</title>
+<style>
+  body { font-family: sans-serif; max-width: 760px; margin: 24px auto; }
+  .field-wrapper, .select, .file-upload, .checkbox { margin: 14px 0; }
+  label, .upload-label { display: block; font-weight: 600; }
+  input.input, textarea { width: 100%; padding: 6px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .select__control { border: 1px solid #999; padding: 6px; display: flex; }
+  .select__input { border: 0; outline: 0; width: 100%; }
+  .select__menu { border: 1px solid #555; }
+  .select__option { padding: 4px; cursor: pointer; }
+  .helper-text--error { color: #c00; }
+</style>
+</head>
+<body>
+<h1>Backend Engineer</h1>
+<form id="application-form" class="application--form" novalidate>
+  <div class="application--questions">
+    <div class="field-wrapper"><label id="first_name-label" for="first_name">First Name<span aria-hidden="true">*</span></label>
+      <input id="first_name" class="input" aria-label="First Name" aria-required="true" type="text" autocomplete="given-name"></div>
+    <div class="field-wrapper"><label id="last_name-label" for="last_name">Last Name<span aria-hidden="true">*</span></label>
+      <input id="last_name" class="input" aria-label="Last Name" aria-required="true" type="text" autocomplete="family-name"></div>
+    <div class="field-wrapper"><label id="email-label" for="email">Email<span aria-hidden="true">*</span></label>
+      <input id="email" class="input" aria-label="Email" aria-required="true" type="text" autocomplete="email"></div>
+    <fieldset class="phone-input" style="border:0;padding:0">
+      <div class="select" data-id="country" data-label="Country" data-required="true" data-options='["Georgia +995","Germany +49","United States +1"]'></div>
+      <div class="field-wrapper"><label for="phone">Phone<span aria-hidden="true">*</span></label>
+        <input id="phone" class="input" aria-label="Phone" aria-required="true" type="tel" autocomplete="off"></div>
+    </fieldset>
+    <div class="select" data-id="candidate-location" data-label="Location (City)" data-required="true" data-async="true"></div>
+    <div class="file-upload" role="group" aria-labelledby="upload-label-resume" aria-required="true" data-name="resume">
+      <div id="upload-label-resume" class="label upload-label">Resume/CV<span>*</span></div>
+      <div class="file-upload__wrapper"><div class="button-container">
+        <div class="secondary-button"><button type="button" class="btn">Attach</button><label for="resume" class="visually-hidden">Attach</label><input id="resume" class="visually-hidden" type="file" accept=".pdf,.doc,.docx,.txt"></div>
+        <button type="button" class="btn">Dropbox</button>
+        <button type="button" class="btn">Enter manually</button>
+      </div></div>
+    </div>
+    <div class="file-upload" role="group" aria-labelledby="upload-label-cover_letter" aria-required="false" data-name="cover_letter">
+      <div id="upload-label-cover_letter" class="label upload-label">Cover Letter</div>
+      <div class="file-upload__wrapper"><div class="button-container">
+        <div class="secondary-button"><button type="button" class="btn">Attach</button><label for="cover_letter" class="visually-hidden">Attach</label><input id="cover_letter" class="visually-hidden" type="file" accept=".pdf,.doc,.docx,.txt"></div>
+        <button type="button" class="btn">Enter manually</button>
+      </div></div>
+    </div>
+    <div class="field-wrapper"><label id="question_1-label" for="question_1">Why do you want to work at Acme?<span aria-hidden="true">*</span></label>
+      <textarea id="question_1" aria-label="Why do you want to work at Acme?" aria-required="true" rows="4"></textarea>
+      <div id="question_1-error" class="helper-text helper-text--error"></div></div>
+    <div class="field-wrapper"><label for="question_2">LinkedIn Profile</label>
+      <input id="question_2" class="input" aria-label="LinkedIn Profile" aria-required="false" type="text"></div>
+    <div class="field-wrapper"><label for="question_3">How did you hear about this job?</label>
+      <input id="question_3" class="input" aria-label="How did you hear about this job?" aria-required="false" type="text"></div>
+    <div class="select" data-id="question_4" data-label="Are you legally authorized to work in Germany for our Company?" data-required="true" data-options='["Yes","No"]'></div>
+    <div class="select" data-id="question_5" data-label="Will you now or in the future require visa sponsorship?" data-required="true" data-options='["Yes","No"]'></div>
+    <div class="checkbox"><input type="checkbox" id="gdpr_consent" aria-required="true"><label for="gdpr_consent">I consent to the processing of my personal data as described in the Acme Candidate Privacy Policy.</label></div>
+    <div class="checkbox"><input type="checkbox" id="talent_pool"><label for="talent_pool">Please keep me in mind for future opportunities and add me to the talent community.</label></div>
+  </div>
+  <div class="demographic--container">
+    <h3 class="section-header">Voluntary Self Identification</h3>
+    <p>Acme is an equal opportunity employer. Providing this information is optional.</p>
+    <div class="select" data-id="4001" data-label="Gender" data-required="false" data-options='["Male","Female","Decline To Self Identify"]'></div>
+    <div class="select" data-id="4002" data-label="Veteran Status" data-required="false" data-options='["I am not a protected veteran","I identify as one or more of the classifications of protected veteran","I don&#39;t wish to answer"]'></div>
+    <div class="select" data-id="4003" data-label="Disability Status" data-required="false" data-options='["Yes, I have a disability, or have had one in the past","No, I do not have a disability and have not had one in the past","I do not want to answer"]'></div>
+  </div>
+  <div id="form-errors" role="alert"></div>
+  <button type="submit" class="btn btn--rounded">Submit application</button>
+</form>
+<div id="confirmation" hidden>
+  <h1>Thank you for applying.</h1>
+  <p>Your application has been received. We will review it right away.</p>
+</div>
+<script>
+  // A small stand-in for react-select: input[role=combobox] + listbox of [role=option].
+  const places = ["Tbilisi, Tbilisi, Georgia", "Tbilisi Sea, Georgia", "Berlin, Germany"];
+  window.selects = {};
+  for (const shell of document.querySelectorAll(".select")) {
+    const id = shell.dataset.id;
+    const required = shell.dataset.required === "true";
+    shell.innerHTML = `
+      <label id="${id}-label" for="${id}">${shell.dataset.label}${required ? '<span aria-hidden="true">*</span>' : ""}</label>
+      <div class="select__control">
+        <div class="select__value-container">
+          <div class="select__placeholder">Select...</div>
+          <div class="select__input-container"><input class="select__input" id="${id}" role="combobox" type="text" autocomplete="off"
+            aria-autocomplete="list" aria-expanded="false" aria-haspopup="true" aria-labelledby="${id}-label" aria-required="${required}"></div>
+        </div>
+      </div>
+      <input required tabindex="-1" aria-hidden="true" class="requiredInput" value="">`;
+    const input = shell.querySelector("input.select__input");
+    const valueBox = shell.querySelector(".select__value-container");
+    const hidden = shell.querySelector(".requiredInput");
+    let menu = null;
+    const close = () => { menu?.remove(); menu = null; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-controls"); };
+    const render = (items) => {
+      close();
+      menu = document.createElement("div");
+      menu.className = "select__menu";
+      menu.id = `react-select-${id}-listbox`;
+      menu.setAttribute("role", "listbox");
+      if (!items.length) menu.innerHTML = '<div class="select__menu-notice">No options</div>';
+      for (const text of items) {
+        const option = document.createElement("div");
+        option.className = "select__option";
+        option.setAttribute("role", "option");
+        option.textContent = text;
+        option.addEventListener("mousedown", (event) => event.preventDefault());
+        option.addEventListener("click", () => {
+          valueBox.querySelector(".select__single-value")?.remove();
+          const single = document.createElement("div");
+          single.className = "select__single-value";
+          single.textContent = text;
+          valueBox.prepend(single);
+          valueBox.querySelector(".select__placeholder").hidden = true;
+          hidden.value = text;
+          input.value = "";
+          window.selects[id] = text;
+          close();
+        });
+        menu.appendChild(option);
+      }
+      shell.appendChild(menu);
+      input.setAttribute("aria-expanded", "true");
+      input.setAttribute("aria-controls", menu.id);
+    };
+    const all = shell.dataset.async ? null : JSON.parse(shell.dataset.options);
+    let timer = null;
+    const update = () => {
+      const query = input.value.trim().toLowerCase();
+      if (all) return render(all.filter((text) => text.toLowerCase().includes(query)));
+      clearTimeout(timer);
+      close();
+      if (query.length < 2) return;
+      timer = setTimeout(() => render(places.filter((text) => text.toLowerCase().includes(query))), 400);
+    };
+    input.addEventListener("focus", update);
+    input.addEventListener("input", update);
+    input.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
+    input.addEventListener("blur", () => setTimeout(close, 150));
+  }
+  // Greenhouse swaps the attach buttons for a chip with the file name.
+  for (const group of document.querySelectorAll(".file-upload")) {
+    const input = group.querySelector("input[type=file]");
+    input.addEventListener("change", () => {
+      const name = input.files[0]?.name;
+      if (!name) return;
+      window.uploads = { ...(window.uploads ?? {}), [group.dataset.name]: name };
+      group.querySelector(".file-upload__wrapper").innerHTML = `<div class="chip">${name} <button type="button" aria-label="Remove file">x</button></div>`;
+    });
+  }
+  document.getElementById("application-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const missing = [];
+    for (const id of ["first_name", "last_name", "email", "phone"])
+      if (!document.getElementById(id).value.trim()) missing.push(id);
+    if (!window.uploads?.resume) missing.push("resume");
+    if (!document.getElementById("question_1").value.trim()) {
+      missing.push("question_1");
+      document.getElementById("question_1-error").textContent = "This field is required.";
+    }
+    for (const id of ["country", "candidate-location", "question_4", "question_5"])
+      if (!window.selects[id]) missing.push(id);
+    if (!document.getElementById("gdpr_consent").checked) missing.push("gdpr");
+    if (missing.length) {
+      document.getElementById("form-errors").textContent = `Please complete: ${missing.join(", ")}`;
+      return;
+    }
+    window.submitted = {
+      selects: window.selects,
+      uploads: window.uploads,
+      gdpr: document.getElementById("gdpr_consent").checked,
+      talentPool: document.getElementById("talent_pool").checked,
+      phone: document.getElementById("phone").value,
+    };
+    window.atelierFixtureReport?.("submitted", window.submitted);
+    history.pushState({}, "", `${location.pathname}/confirmation`);
+    document.getElementById("application-form").hidden = true;
+    document.getElementById("confirmation").hidden = false;
+  });
+</script>
+</body>
+</html>

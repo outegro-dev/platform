@@ -6,6 +6,7 @@
 - [Обучение: первая выкатка edu.outegro.dev](edu-rollout.md)
 - [Кошелёк: первая выкатка wallet-backend](wallet-rollout.md)
 - [Рулетка: первая выкатка roulette.outegro.dev](roulette-rollout.md) и [журнал сезонов](roulette-seasons.md)
+- [Atelier: первая выкатка atelier.outegro.dev и cv.outegro.dev](atelier-rollout.md)
 - [Ротация ключа подписи access-токенов](signing-keys.md)
 - [Passkeys: RP, выкатка, потеря устройства](passkeys.md)
 - [Метрики, логи и correlation сервисов](observability.md)

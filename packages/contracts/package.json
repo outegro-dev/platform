@@ -31,6 +31,10 @@
     "./wallet": {
       "types": "./dist/wallet.d.ts",
       "default": "./dist/wallet.js"
+    },
+    "./atelier": {
+      "types": "./dist/atelier.d.ts",
+      "default": "./dist/atelier.js"
     }
   },
   "files": [

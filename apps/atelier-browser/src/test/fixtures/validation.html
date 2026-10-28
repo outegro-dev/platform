@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Acme - Apply (validation fixture)</title>
+<style>.error-message { color: #c00; }</style>
+</head>
+<body>
+<form id="application-form" class="application-form" novalidate>
+  <ul>
+    <li><label><div>Full name<span class="required">✱</span></div><input type="text" name="name" required></label></li>
+    <li><label><div>Email<span class="required">✱</span></div><input type="email" name="email" required></label></li>
+    <li><label><div>Phone</div><input type="text" name="phone" id="phone"></label></li>
+  </ul>
+  <div id="phone-error" class="error-message" role="alert"></div>
+  <button id="btn-submit" type="submit">Submit application</button>
+</form>
+<script>
+  window.submitCount = 0;
+  document.getElementById("application-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    window.submitCount++;
+    window.atelierFixtureReport?.("submitCount", window.submitCount);
+    // The server rejects the number; the form stays and shows why.
+    document.getElementById("phone").setAttribute("aria-invalid", "true");
+    document.getElementById("phone-error").textContent = "Please enter a valid phone number.";
+  });
+</script>
+</body>
+</html>

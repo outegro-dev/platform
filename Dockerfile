@@ -2,10 +2,11 @@
 # One build for every app; each target copies only what its runtime needs.
 #   docker build --target landing-web -t outegro/landing-web:<tag> .
 # Targets: landing-web, id-web, pay-web, admin-web, battleship-web, edu-web,
-#          roulette-web, auth-backend, notifications-backend,
+#          roulette-web, atelier-web, auth-backend, notifications-backend,
 #          payments-backend, battleship-backend, edu-backend,
 #          wallet-backend, roulette-backend, fair-roll-backend,
-#          daily-bonus-backend.
+#          daily-bonus-backend, atelier-backend, llm-gateway, atelier-tex,
+#          atelier-browser.
 
 FROM node:24-bookworm-slim AS base
 ENV CI=1 \
@@ -19,20 +20,25 @@ WORKDIR /repo
 FROM base AS build
 COPY . .
 # Git keeps no empty folders; the runtime stages copy public/ unconditionally.
-RUN mkdir -p apps/landing-web/public apps/edu-web/public
+RUN mkdir -p apps/landing-web/public apps/edu-web/public apps/atelier-web/public
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 # CI builds only the apps a change affects (docker-bake BUILD_APPS); a plain
 # build still builds all of them.
-ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web roulette-web auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend roulette-backend fair-roll-backend daily-bonus-backend"
+ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web roulette-web atelier-web auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend roulette-backend fair-roll-backend daily-bonus-backend atelier-backend llm-gateway atelier-tex atelier-browser"
 RUN pnpm turbo run build $(for app in $BUILD_APPS; do printf -- '--filter=@outegro/%s ' "$app"; done)
 # Backends: production dependencies only, plus build output and migrations
-# (and content/, the books edu-backend imports with its migrations).
-RUN for app in auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend roulette-backend fair-roll-backend daily-bonus-backend; do \
+# (and content/, the books edu-backend imports with its migrations; config/,
+# templates/ and fonts/ of the Atelier services).
+RUN for app in auth-backend notifications-backend payments-backend battleship-backend edu-backend wallet-backend \
+      roulette-backend fair-roll-backend daily-bonus-backend \
+      atelier-backend llm-gateway atelier-tex atelier-browser; do \
       case " $BUILD_APPS " in *" $app "*) ;; *) continue ;; esac; \
       pnpm --filter "@outegro/$app" deploy --prod "/out/$app" && \
-      cp -r "apps/$app/dist" "apps/$app/drizzle" "/out/$app/" && \
-      if [ -d "apps/$app/content" ]; then cp -r "apps/$app/content" "/out/$app/"; fi; \
+      cp -r "apps/$app/dist" "/out/$app/" && \
+      for dir in drizzle content config templates fonts; do \
+        if [ -d "apps/$app/$dir" ]; then mkdir -p "/out/$app/$dir" && cp -r "apps/$app/$dir/." "/out/$app/$dir/"; fi; \
+      done; \
     done
 
 FROM node:24-bookworm-slim AS web
@@ -94,6 +100,14 @@ ENV PORT=3007
 EXPOSE 3007
 CMD ["node", "apps/roulette-web/server.js"]
 
+FROM web AS atelier-web
+COPY --from=build --chown=node:node /repo/apps/atelier-web/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/atelier-web/.next/static ./apps/atelier-web/.next/static
+COPY --from=build --chown=node:node /repo/apps/atelier-web/public ./apps/atelier-web/public
+ENV PORT=3008
+EXPOSE 3008
+CMD ["node", "apps/atelier-web/server.js"]
+
 FROM node:24-bookworm-slim AS service
 ENV NODE_ENV=production
 WORKDIR /app
@@ -151,4 +165,64 @@ FROM service AS daily-bonus-backend
 COPY --from=build --chown=node:node /out/daily-bonus-backend ./
 ENV PORT=4101
 EXPOSE 4101
+CMD ["node", "dist/main.js"]
+
+FROM service AS atelier-backend
+COPY --from=build --chown=node:node /out/atelier-backend ./
+ENV PORT=4008
+EXPOSE 4008
+CMD ["node", "dist/main.js"]
+
+# Codex CLI and Claude Code, pinned; no self-updates. CODEX_HOME is a volume.
+FROM node:24-bookworm-slim AS llm-gateway
+ENV NODE_ENV=production \
+    DISABLE_UPDATES=1 \
+    DISABLE_AUTOUPDATER=1 \
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends ca-certificates ripgrep && \
+    rm -rf /var/lib/apt/lists/* && \
+    npm install -g @openai/codex@0.159.1 @anthropic-ai/claude-code@2.1.304 && \
+    npm cache clean --force && \
+    codex --version && claude --version
+WORKDIR /app
+COPY --from=build --chown=node:node /out/llm-gateway ./
+USER 1000:1000
+ENV PORT=4009
+EXPOSE 4009
+CMD ["node", "dist/main.js"]
+
+# XeLaTeX and poppler for the "Minimal violet" CV (the template and its fonts
+# come with the app). TeX Live from Debian: Alpine's is larger and patchier.
+FROM node:24-bookworm-slim AS atelier-tex
+ENV NODE_ENV=production
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+    texlive-xetex texlive-latex-extra texlive-fonts-recommended texlive-lang-cyrillic \
+    poppler-utils fontconfig && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=build --chown=node:node /out/atelier-tex ./
+RUN xelatex -version >/dev/null && command -v pdftotext pdfinfo pdffonts >/dev/null
+USER 1000:1000
+ENV PORT=4010
+EXPOSE 4010
+CMD ["node", "dist/main.js"]
+
+# Chromium's headless shell for ATS forms (Playwright needs glibc); tini reaps
+# the browser processes.
+FROM node:24-bookworm-slim AS atelier-browser
+ENV NODE_ENV=production \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+WORKDIR /app
+COPY --from=build --chown=node:node /out/atelier-browser ./
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends tini && \
+    node node_modules/playwright/cli.js install --with-deps --only-shell chromium && \
+    chmod -R a+rX /ms-playwright && \
+    rm -rf /var/lib/apt/lists/*
+USER 1000:1000
+ENV PORT=4011
+EXPOSE 4011
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "dist/main.js"]

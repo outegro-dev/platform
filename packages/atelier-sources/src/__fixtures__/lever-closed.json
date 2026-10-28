@@ -1,0 +1,17 @@
+{
+  "https://jobs.lever.co/swingdev/94ec789f-dd5a-433e-b6ee-45b5a3054bd9/thanks": {
+    "status": 404,
+    "url": "https://jobs.lever.co/swingdev/94ec789f-dd5a-433e-b6ee-45b5a3054bd9/thanks",
+    "text": "<!DOCTYPE html><meta charset=\"utf-8\"><title>Not found – 404 error</title><style>@font-face {font-family: 'Meta';src: url(\"https://cdn.lever.co/fonts/Meta/metaboldlf-webfont-2017.woff\") format('woff');font-weight: 600;font-style: normal;}@font-face {font-family: 'Meta';src: url(\"https://cdn.lever.co/"
+  },
+  "https://api.lever.co/v0/postings/swingdev/94ec789f-dd5a-433e-b6ee-45b5a3054bd9": {
+    "status": 404,
+    "url": "https://api.lever.co/v0/postings/swingdev/94ec789f-dd5a-433e-b6ee-45b5a3054bd9",
+    "text": "{\"ok\":false,\"error\":\"Document not found\"}"
+  },
+  "https://jobs.lever.co/swingdev/94ec789f-dd5a-433e-b6ee-45b5a3054bd9": {
+    "status": 404,
+    "url": "https://jobs.lever.co/swingdev/94ec789f-dd5a-433e-b6ee-45b5a3054bd9",
+    "text": "<!DOCTYPE html><meta charset=\"utf-8\"><title>Not found – 404 error</title><style>@font-face {font-family: 'Meta';src: url(\"https://cdn.lever.co/fonts/Meta/metaboldlf-webfont-2017.woff\") format('woff');font-weight: 600;font-style: normal;}@font-face {font-family: 'Meta';src: url(\"https://cdn.lever.co/"
+  }
+}

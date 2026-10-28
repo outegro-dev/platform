@@ -47,7 +47,13 @@
   },
   "overrides": [
     {
-      "includes": ["packages/nest-common/**", "apps/*-backend/**"],
+      "includes": [
+        "packages/nest-common/**",
+        "apps/*-backend/**",
+        "apps/llm-gateway/**",
+        "apps/atelier-tex/**",
+        "apps/atelier-browser/**"
+      ],
       "linter": {
         "rules": {
           "style": { "useImportType": "off" },

@@ -20,3 +20,5 @@ CREATE ROLE daily LOGIN PASSWORD 'daily';
 CREATE DATABASE daily OWNER daily;
 CREATE ROLE wallet LOGIN PASSWORD 'wallet';
 CREATE DATABASE wallet OWNER wallet;
+CREATE ROLE atelier LOGIN PASSWORD 'atelier';
+CREATE DATABASE atelier OWNER atelier;
