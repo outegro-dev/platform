@@ -61,7 +61,9 @@ jobs:
         working-directory: apps/atelier-browser
         run: pnpm exec playwright install --with-deps --only-shell chromium
       # Integration tests start PostgreSQL, Valkey and RabbitMQ in Docker.
-      - run: pnpm turbo run test ${{ steps.scope.outputs.filter }}
+      # Four at a time on the 4-core runner: ten at once made timing tests
+      # (wallet, battleship, roulette) fail on full runs (MNT-11).
+      - run: pnpm turbo run test --concurrency=4 ${{ steps.scope.outputs.filter }}
       - run: pnpm turbo run build ${{ steps.scope.outputs.filter }}
 
   images:
