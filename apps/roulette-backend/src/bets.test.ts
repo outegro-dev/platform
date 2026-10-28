@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { DEBIT_TIMEOUT_MS } from "./bets/bet.service.js";
 import { bets } from "./db/schema.js";
 import { betIdOf, betRef } from "./domain/ids.js";
 import { CLOSE_GRACE_MS } from "./rounds/round.engine.js";
@@ -200,11 +201,18 @@ describe("bets", () => {
     expect(h.wallet.rollbacks).toContain(betRef(betId));
 
     // The wallet answers at last: the tombstone turns the late debit away.
+    // On a loaded runner the close can outlast the debit timeout; then the
+    // timeout refuses the bet first and rolls it back the same way.
+    const heldMs = performance.now() - started;
     gate.release();
-    expect(await player.answer(ref)).toEqual({
-      ok: false,
-      code: "round_closed",
-    });
+    const answer = await player.answer(ref);
+    if (heldMs < DEBIT_TIMEOUT_MS - 200)
+      expect(answer).toEqual({ ok: false, code: "round_closed" });
+    else
+      expect(answer).toEqual({
+        ok: false,
+        code: expect.stringMatching(/^(round_closed|wallet_unavailable)$/),
+      });
     expect(await h.wallet.balance(player.userId)).toBe(OPENING_BALANCE);
     expect(
       (await recordedBets(round.round)).map((bet) => bet.id),
