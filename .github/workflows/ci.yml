@@ -55,6 +55,11 @@ jobs:
         run: node tools/ci/scope.mjs
       - run: pnpm lint
       - run: pnpm turbo run typecheck ${{ steps.scope.outputs.filter }}
+      # atelier-browser tests drive a real headless Chromium against local
+      # fixture pages; the browser build follows the playwright package.
+      - if: contains(steps.scope.outputs.apps, 'atelier-browser')
+        working-directory: apps/atelier-browser
+        run: pnpm exec playwright install --with-deps --only-shell chromium
       # Integration tests start PostgreSQL, Valkey and RabbitMQ in Docker.
       - run: pnpm turbo run test ${{ steps.scope.outputs.filter }}
       - run: pnpm turbo run build ${{ steps.scope.outputs.filter }}
