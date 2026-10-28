@@ -3,8 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Hermetic e2e: the production build (standalone server.js, as in the
  * container) against a fake platform that plays Identity, Notifications,
- * Battleship, Payments and Education. Needs
- * `pnpm --filter @outegro/admin-web build`.
+ * Battleship, Payments, Education, Wallet, Roulette and its bonus of the day.
+ * Needs `pnpm --filter @outegro/admin-web build`.
  */
 const APP = "http://localhost:3196";
 const FAKE = "http://localhost:4196";
@@ -51,6 +51,9 @@ export default defineConfig({
         BATTLESHIP_API_URL: `${FAKE}/battleship`,
         PAYMENTS_ADMIN_API_URL: `${FAKE}/payments`,
         EDU_API_URL: `${FAKE}/edu`,
+        WALLET_API_URL: `${FAKE}/wallet`,
+        ROULETTE_API_URL: `${FAKE}/roulette`,
+        DAILY_API_URL: `${FAKE}/daily`,
         ID_URL: FAKE,
         APP_URL: APP,
         CLIENT_IP_SOURCE: "x-forwarded-for",

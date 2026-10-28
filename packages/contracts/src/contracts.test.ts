@@ -174,6 +174,15 @@ describe("access", () => {
     expect(withPasskeys.sort()).toEqual(["owner", "support"]);
   });
 
+  it("keeps the wallet to owners until a role is given it on purpose", () => {
+    for (const permission of ["wallet.read", "wallet.adjust"] as const) {
+      const holders = Object.keys(platformRoles).filter((role) =>
+        permissionsOf([role]).has(permission),
+      );
+      expect(holders, permission).toEqual(["owner"]);
+    }
+  });
+
   it("tells whether someone holds a platform role (admin console link)", () => {
     for (const role of Object.keys(platformRoles))
       expect(hasPlatformRole([role]), role).toBe(true);
@@ -194,6 +203,9 @@ describe("errors", () => {
       "errors.idempotencyConflict",
     );
     expect(messageKeyFor("ALREADY_OWNED")).toBe("errors.alreadyOwned");
+    expect(messageKeyFor("INSUFFICIENT_FUNDS")).toBe(
+      "errors.insufficientFunds",
+    );
   });
 });
 

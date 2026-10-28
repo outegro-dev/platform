@@ -21,7 +21,7 @@
 | `apps/admin-web` (3004) | операторская консоль; пустые состояния внутри карточек; вход в Grafana (`/api/grafana/auth`, право `monitoring.read`: owner — Admin, остальные — Viewer) | 125 unit + 154 e2e |
 | `apps/edu-backend` (4005) | Обучение ([глава 17](../01-specification/chapters/17-education.md), [ADR-010](../03-decisions/adr/010-education.md)): книги как документы, импорт в Job миграций, доступ по правилу книги и грантам `edu`, прогресс читателя (результат упражнения решает сервер), ИИ-помощник на MiniMax, admin API; в production с 06.10 | 146 тестов |
 | `apps/edu-web` (3006) | читалка: библиотека, главы, интерактив (квизы, порядок, раскладка, карточки, колода, симулятор event loop, SQL-песочница в Web Worker), ИИ-помощник, MobX-сторы, EN/RU-оболочка; правила — `packages/edu-engine`; edu.outegro.dev с 06.10 | 154 unit + 107 e2e |
-| Production | outegro.dev, id., battleship., pay., admin., edu., hooks. — K3s за Cloudflare; Argo CD; бэкапы в R2 (восстановление проверено: 81 с); Prometheus, Loki, Grafana (`admin.outegro.dev/grafana`); watchdog с алертами в Telegram; Hermes под управляемой политикой | CI → GHCR → gitops → Argo |
+| Production | outegro.dev, id., battleship., pay., admin., edu., roulette., hooks.; внутренние wallet-backend, fair-roll-backend, daily-bonus-backend — K3s за Cloudflare; Argo CD; бэкапы в R2 (восстановление проверено: 81 с); Prometheus, Loki, Grafana (`admin.outegro.dev/grafana`); watchdog с алертами в Telegram; Hermes под управляемой политикой | CI → GHCR → gitops → Argo |
 
 ## Развернуть на новой машине
 
@@ -100,6 +100,22 @@
 - Проверено: smoke 30/30 с Обучением, пробы watchdog без сбоев, цель edu-backend в Prometheus up, админка видит edu-backend, MiniMax из пода отвечает 200, MemAvailable 1,6 ГиБ.
 - Инциденты по ходу: CI на master упал на нестабильном системном тесте (`grant-owner failed` в TC-R-02-01), повтор прошёл; 05.10 примерно 22:45–23:55 UTC сервер был недоступен по сети (Cloudflare 522 на всех сайтах, SSH не отвечал), при этом не перезагружался и поды работали — сбой на стороне провайдера; затем инцидент GitHub не пускал Argo по SSH-ключу gitops, после него Argo синхронизировался сам.
 
+## Сделано 28.10: Кошелёк, этап 1
+
+- Решение владельца — [ADR-011](../03-decisions/adr/011-wallet-grumbles.md): отдельный сервис `wallet-backend` с одной внутренней валютой «грамблсы» (`GRM`, EN grumble / grumbles), значок `GrumbleIcon` в ките. Рулетка ставит те же грамблсы через внутренний API.
+- `apps/wallet-backend` (порт 4007, БД `wallet`): журнал только дописывается (REVOKE и триггер), идемпотентность по `ref`, начислить / списать / установить баланс из админки, debit, credit-batch, rollback с надгробием и чтение балансов для сервисов, источник и объект у каждой операции, сверка раз в 5 минут и ночью, метрики; [контракт](../02-contracts/wallet.md), [отчёт](../09-evidence/wallet-phase1/report.md).
+- Админка: раздел «Кошелёк» и вкладка в карточке пользователя; права `wallet.read` / `wallet.adjust` только у owner.
+- Выкатка — [wallet-rollout.md](../06-operations/wallet-rollout.md): сделана 28.10.2026 по команде владельца, wallet-backend в production, админка показывает раздел «Кошелёк». Владельцу осталось проверить раздел под своим входом: начислить себе 1 грамблс с причиной «проверка выкатки» и списать обратно.
+- Этапы 2 (пакеты через pay) и 3 (скины за грамблсы) пишутся кодом за выключенными флагами в отдельных PR без слияния; включение ждёт цен, офферов Lava и решения по Premium.
+- Этап 2 — черновик [#147](https://github.com/outegro-dev/platform/pull/147), этап 3 — черновик [#149](https://github.com/outegro-dev/platform/pull/149), CI зелёный. В этапе 3 не сделаны кнопка покупки в battleship-web и намерение покупки с TTL ([W-05](https://github.com/outegro-dev/platform/issues/87)).
+
+## Сделано 28.10: Рулетка
+
+- Решение — [ADR-012](../03-decisions/adr/012-roulette.md), контракт — [roulette](../02-contracts/roulette.md). Учебный проект на грамблсах: ставки и выигрыши — операции кошелька (`roulette:bet:…`, `roulette:win:…`). Решения владельца: ставка 10–100 000, три ставки за раунд, выплата на цвет до 1 000 000, всё на NestJS (Rust не используем), бонус дня раз в 24 часа от момента получения, серия дней до +60 %.
+- Код — [#145](https://github.com/outegro-dev/platform/pull/145): `packages/roulette-engine`, `apps/fair-roll-backend` (4100, БД `fair_roll`), `apps/roulette-backend` (4006, БД `roulette`, свой Valkey), `apps/daily-bonus-backend` (4101, БД `daily`), `apps/roulette-web` (3007), раздел «Рулетка» в админке. Карточки RL-01…07 закрыты.
+- Выкатка — [roulette-rollout.md](../06-operations/roulette-rollout.md), карточка [RL-08](https://github.com/outegro-dev/platform/issues/159): 28.10 сделаны все шаги (секреты, outegro-dev/gitops#4, образы, outegro-dev/gitops#9). Сезон 1 объявлен в [#151](https://github.com/outegro-dev/platform/pull/151) до раунда drand, публичный сид — в [журнале сезонов](../06-operations/roulette-seasons.md). roulette.outegro.dev в production с 11:10 UTC: миграции трёх баз применены, лидер движка выбран, коммит цепочки в fair-roll совпал с объявленным, `/health`, `/` и `/fair` — 200, smoke 32/32, MemAvailable после включения 1,7 ГиБ.
+- Не начато: нагрузка и отказы ([RL-09](https://github.com/outegro-dev/platform/issues/160)), fanout и столы ([RL-10](https://github.com/outegro-dev/platform/issues/161)), чат и топ ([RL-11](https://github.com/outegro-dev/platform/issues/162)), Telegram Mini App ([RL-12](https://github.com/outegro-dev/platform/issues/163)).
+
 ## Найдено по ходу (follow-up)
 
 - ~~nest-common: слишком большое тело запроса отвечает 500 во всех сервисах; ожидаемые 503 пишутся как ошибки.~~ Исправлено 11.10 (MNT-03): 413 в формате контракта, 503 — warn. Осталось: свой код ошибки для 413 в контракте (сейчас `VALIDATION_FAILED`).
@@ -108,11 +124,16 @@
 - ~~admin-web: гранты Payments показывали записанное состояние; у `passkey.revoked` не было подписи; `ActionDialog` терял причину без сети.~~ Исправлено 11.10 (MNT-03): фаза гранта сейчас (запланирован с датой, действует, истёк, отозван), подписи всех действий аудита с тестом, диалог и кнопка действия хранят текст без сети и предлагают повтор.
 - ~~edu-backend: старые ответы в `assist_cache` не удаляются.~~ Исправлено 11.10 (MNT-03): очистка при старте и раз в сутки.
 - ~~system-tests: TC-R-02-01 изредка падает на `grant-owner failed`.~~ Исправлено 11.10 (MNT-03): CLI открывал своё соединение с RabbitMQ и падал при закрытии во время настройки канала уже после выдачи роли; теперь CLI работает только с БД, а `Messaging` слушает ошибки каналов. `grantOwner` печатает вывод CLI.
+- Общий релиз 28.10: миграции стартовали разом, нагрузка до 130, Postgres перезапустился (исправлено в outegro-dev/gitops#8 — миграции по две); около 10:47 UTC узел уходил в NotReady, все поды перезапустились. Запас памяти и решение по VPS — [MNT-09](https://github.com/outegro-dev/platform/issues/167).
+- Next.js 16.4.0 с критическими уязвимостями — [#146](https://github.com/outegro-dev/platform/pull/146) поднимает до 16.4.3 ([MNT-06](https://github.com/outegro-dev/platform/issues/164)); остальное из `pnpm audit` — [MNT-07](https://github.com/outegro-dev/platform/issues/165).
+- Нестабильный тест battleship-backend `game.test.ts` (быстрый подбор) — [MNT-08](https://github.com/outegro-dev/platform/issues/166). Firefox и WebKit для Playwright на машине разработки не установлены — [MNT-10](https://github.com/outegro-dev/platform/issues/168).
 - Сеть VPS 05.10 ≈22:45–23:55 UTC: сайты отдавали 522, сервер при этом работал — узнать у провайдера причину; внешний мониторинг (UptimeRobot, OPS-05) поймал бы это сразу.
 - Обучение: дашборд админки («Требует внимания») теперь показывает паузу помощника по общему лимиту (исправлено 11.10); удалённые аккаунты выпадали из сегодняшнего счёта общего лимита (исправлено 11.10: суточная таблица `assist_days`); читатель, обрывающий ответы до первого текста, не тратит свой лимит (общий лимит это ограничивает).
 
 ## Нужно от владельца
 
+- Кошелёк: проверить раздел «Кошелёк» под своим входом (начислить себе 1 грамблс и списать обратно); офферы пакетов на Lava (GRUMBLE-PACKS, этап 2); цены скинов в грамблсах и решение по Premium (GRUMBLE-PRICES, этап 3).
+- Рулетка: после включения — проверить игру, бонус дня и раздел «Рулетка» под своим входом; решить по RL-09…12 и по ёмкости VPS (MNT-09).
 - Обучение: решение о продаже учебников (цена, период, оффер Lava); первая проверка ИИ-помощника на edu.outegro.dev под своим аккаунтом (агент войти не может).
 - UptimeRobot (бесплатно): 5 мониторов на `/health` сайтов (OPS-05).
 - Lava: возврат на реальном аккаунте (PAY-12); отмена подписки проверена 01.10 — Lava подтвердила, доступ до 29.10.

@@ -28,6 +28,10 @@
     "reasonPlaceholder": "Why are you doing this? It goes to the audit log.",
     "reasonHint": "Required, 3–500 characters. Saved in the audit log with your name.",
     "cancel": "Cancel",
+    "edit": "Back to editing",
+    "previewNothing": "Nothing would change, so there is nothing to confirm.",
+    "previewTitle": "What will change",
+    "preview": "Preview",
     "offline": "You are offline, so nothing was sent. Your reason is kept: try again once you are back online.",
     "backOnline": "You are back online. Your reason is kept: try again.",
     "failed": "The console's server did not answer. Your reason is kept: try again.",
@@ -56,7 +60,11 @@
       "same-status": "Nothing changed: the book already has this status.",
       "same-rule": "Nothing changed: this is already the book's access rule.",
       "free-chapters": "The book has fewer chapters than that: lower the number of free chapters.",
-      "rule-refused": "Education did not accept this access rule; nothing changed."
+      "rule-refused": "Education did not accept this access rule; nothing changed.",
+      "insufficient-funds": "The wallet holds less than that. Nothing was taken.",
+      "amount-too-large": "That is more than one command may move. Nothing was changed.",
+      "same-balance": "The wallet already holds that much. Nothing was changed.",
+      "round-closed": "This round is already paid out or voided: there is nothing to return. The page shows it as it is now."
     },
     "done": {
       "suspended": "Account suspended. All sessions were ended.",
@@ -82,7 +90,24 @@
       "bookPublished": "Book published.",
       "bookDrafted": "Book moved back to draft.",
       "bookArchived": "Book archived.",
-      "bookAccessChanged": "Access rule changed."
+      "bookAccessChanged": "Access rule changed.",
+      "roundVoided": "Round {round} voided: {count, plural, =0 {no bets to return} one {# bet returned} other {# bets returned}}.",
+      "tableChanged": "Table settings changed.",
+      "dailyChanged": "Bonus of the day changed.",
+      "grumblesGranted": "{count, plural, one {# grumble granted} other {# grumbles granted}}",
+      "grumblesTaken": "{count, plural, one {# grumble taken} other {# grumbles taken}}",
+      "balanceSet": "{count, plural, one {Balance set to # grumble} other {Balance set to # grumbles}}"
+    },
+    "grumbles": {
+      "amount": "Amount",
+      "amountHint": "Whole grumbles, from 1 to {max} at a time.",
+      "now": "The wallet holds {balance} now.",
+      "preview": "Balance after: {after}",
+      "previewShort": "Below zero: nothing would be taken",
+      "target": "New balance",
+      "targetHint": "Whole grumbles, 0 or more. The wallet grants or takes the difference.",
+      "previewSet": "{before} → {after}",
+      "unchanged": "The same balance: nothing would change"
     }
   },
   "idle": {
@@ -117,8 +142,10 @@
       "payments": "Payments",
       "battleship": "Battleship",
       "education": "Education",
+      "roulette": "Roulette",
       "audit": "Audit",
-      "monitoring": "Monitoring"
+      "monitoring": "Monitoring",
+      "wallet": "Wallet"
     },
     "roles": {
       "owner": "Owner",
@@ -422,6 +449,24 @@
       "preview": "Free chapters only",
       "locked": "No access"
     },
+    "roulettePhase": {
+      "betting": "Taking bets",
+      "locked": "Bets closed",
+      "rolling": "Rolling",
+      "settled": "Settled",
+      "voided": "Voided"
+    },
+    "rouletteColor": {
+      "red": "Red",
+      "black": "Black",
+      "green": "Green"
+    },
+    "rouletteBet": {
+      "accepted": "Accepted",
+      "won": "Won",
+      "lost": "Lost",
+      "refunded": "Returned"
+    },
     "target": {
       "user": "User",
       "delivery": "Delivery",
@@ -433,10 +478,14 @@
       "subscription": "Subscription",
       "payment": "Payment",
       "refund": "Refund",
-      "book": "Book"
+      "book": "Book",
+      "round": "Round",
+      "subject": "Subject"
     },
     "settingsTarget": {
-      "channels": "Channel switches"
+      "channels": "Channel switches",
+      "table": "Roulette table",
+      "daily": "Bonus of the day"
     },
     "action": {
       "role_granted": "Role granted",
@@ -464,7 +513,52 @@
       "passkey_renamed": "Passkey renamed",
       "passkey_removed": "Passkey removed by the user",
       "passkey_revoked": "Passkey removed by an operator",
-      "passkey_counter_regression": "Passkey sign-in refused: possible copy"
+      "passkey_counter_regression": "Passkey sign-in refused: possible copy",
+      "table_update": "Table settings changed",
+      "round_void": "Round voided"
+    },
+    "txKind": {
+      "grant": "Grant",
+      "adjust": "Taken by operator",
+      "debit": "Debit",
+      "credit": "Credit",
+      "reversal": "Reversal"
+    },
+    "walletState": {
+      "active": "Active",
+      "restricted": "Restricted"
+    },
+    "walletReason": {
+      "account_suspended": "Account suspended",
+      "account_deleted": "Account deleted"
+    },
+    "walletIssue": {
+      "balance_drift": "Balance differs from the journal",
+      "chain_break": "Gap in the journal",
+      "system_drift": "System account differs",
+      "zero_sum": "Accounts do not sum to zero"
+    },
+    "walletIssueState": {
+      "open": "Open",
+      "resolved": "Resolved"
+    },
+    "systemAccount": {
+      "issued_bonus": "Issued as bonuses",
+      "issued_purchase": "Issued for purchases",
+      "spent": "Spent",
+      "adjust": "Taken by operators",
+      "expired": "Expired"
+    },
+    "runMode": {
+      "sample": "Sample",
+      "full": "Full"
+    },
+    "walletSource": {
+      "roulette": "Roulette",
+      "daily-bonus": "Daily bonus",
+      "battleship-shop": "Battleship shop",
+      "pay": "Pay",
+      "admin": "Console"
     }
   },
   "dashboard": {
@@ -488,7 +582,8 @@
         "notifications": "Notifications",
         "battleship": "Battleship",
         "payments": "Payments",
-        "education": "Education"
+        "education": "Education",
+        "wallet": "Wallet"
       },
       "unconfigured": "No address configured yet",
       "noAnswer": "No answer",
@@ -503,7 +598,8 @@
         "notifications": "Notifications",
         "battleship": "Battleship",
         "payments": "Payments",
-        "education": "Education"
+        "education": "Education",
+        "wallet": "Wallet"
       },
       "serviceDown": "{service} is down",
       "serviceDegraded": "{service} is degraded",
@@ -701,7 +797,8 @@
       "notifications": "Notifications",
       "battleship": "Battleship",
       "payments": "Payments",
-      "education": "Education"
+      "education": "Education",
+      "roulette": "Roulette"
     }
   },
   "users": {
@@ -725,7 +822,8 @@
       "battleship": "Battleship",
       "education": "Education",
       "payments": "Payments",
-      "activity": "Activity"
+      "activity": "Activity",
+      "wallet": "Wallet"
     },
     "what": "users",
     "noMatchTitle": "No users match “{query}”",
@@ -967,6 +1065,12 @@
       "what": "activity",
       "emptyAbout": "Nobody has changed this account.",
       "emptyBy": "This user has not taken admin actions."
+    },
+    "wallet": {
+      "title": "Grumbles",
+      "open": "Open the wallet",
+      "what": "the wallet",
+      "service": "Wallet"
     }
   },
   "notifications": {
@@ -1885,6 +1989,467 @@
     "targets": {
       "library": "Education — every book",
       "book": "Education — {title}"
+    }
+  },
+  "wallet": {
+    "eyebrow": "Services",
+    "title": "Wallet",
+    "lead": "Grumbles: who holds how many, every operation before and after, and whether the accounts agree.",
+    "tabsLabel": "Wallet sections",
+    "tabs": {
+      "overview": "Overview",
+      "wallets": "Wallets",
+      "reconciliation": "Reconciliation"
+    },
+    "unit": "grumbles",
+    "overview": {
+      "now": "Grumbles now",
+      "onHand": "On players' wallets",
+      "wallets": "Wallets",
+      "restricted": "Restricted",
+      "openIssues": "Open issues",
+      "day": "Operations in 24 hours",
+      "system": "System accounts",
+      "systemNote": "The other leg of every operation. With all wallets they sum to zero.",
+      "colAccount": "Account",
+      "colBalance": "Balance",
+      "total": "All accounts together",
+      "lastPass": "Last reconciliation",
+      "never": "Not run yet",
+      "issuesLink": "Reconciliation",
+      "recent": "Recently changed wallets",
+      "allWallets": "All wallets",
+      "connection": "Connection",
+      "what": "the wallet",
+      "service": "Wallet",
+      "turnover": "The day by source",
+      "turnoverNote": "Grumbles in and out of players' wallets in 24 hours, by the service that moved them.",
+      "noTurnover": "No operations in 24 hours.",
+      "colSource": "Source",
+      "colOperations": "Operations",
+      "colCredited": "In",
+      "colDebited": "Out"
+    },
+    "wallets": {
+      "title": "Wallets",
+      "filters": "Wallet filters",
+      "state": "State",
+      "anyState": "Any state",
+      "user": "User ID",
+      "userPlaceholder": "UUID",
+      "colUser": "User",
+      "colBalance": "Balance",
+      "colState": "State",
+      "colOperations": "Operations",
+      "colUpdated": "Changed",
+      "empty": "No wallets",
+      "emptyBody": "A wallet appears with a player's first operation.",
+      "what": "wallets",
+      "service": "Wallet"
+    },
+    "card": {
+      "title": "Wallet",
+      "back": "All wallets",
+      "user": "User card",
+      "balance": "Balance",
+      "state": "State",
+      "operations": "Operations",
+      "opened": "Opened",
+      "updated": "Changed",
+      "noWallet": "No wallet yet: the balance is zero until the first operation.",
+      "journal": "Journal",
+      "journalNote": "Every operation with the balance before and after, who made it and why.",
+      "colWhen": "When",
+      "colKind": "Operation",
+      "colAmount": "Amount",
+      "colBalance": "Before → after",
+      "colWho": "Who and why",
+      "byService": "A service",
+      "empty": "No operations yet",
+      "what": "the wallet",
+      "filters": "Journal filters",
+      "source": "Source",
+      "anySource": "Any source"
+    },
+    "command": {
+      "grant": "Grant",
+      "grantTitle": "Grant grumbles",
+      "grantDescription": "Adds grumbles to this wallet: a bonus, a promo or compensation.",
+      "grantConfirm": "Grant",
+      "grantEffect": "The balance grows by the amount.",
+      "adjust": "Take",
+      "adjustTitle": "Take grumbles",
+      "adjustDescription": "Takes grumbles from this wallet, for example after a grant by mistake.",
+      "adjustConfirm": "Take",
+      "adjustEffect": "The balance shrinks by the amount; if the wallet holds less, nothing is taken.",
+      "restricted": "The account is restricted: purchases and stakes stay blocked.",
+      "once": "Sending this form twice applies it once.",
+      "audited": "Goes to the journal and the audit with your name and reason.",
+      "set": "Set balance",
+      "setTitle": "Set the balance",
+      "setDescription": "Brings the wallet to the balance you enter: the difference is granted or taken as one operation.",
+      "setConfirm": "Set balance",
+      "setEffect": "If a stake or a payout lands meanwhile, the wallet still ends at this balance."
+    },
+    "reconciliation": {
+      "issues": "Issues",
+      "issuesNote": "Found by the reconciliation worker: a sample every 5 minutes, everything once a night. It repairs nothing.",
+      "none": "No issues",
+      "noneBody": "Every cache equals the journal, and all accounts sum to zero.",
+      "colKind": "Issue",
+      "colSubject": "Where",
+      "colState": "State",
+      "colSeen": "Seen",
+      "colDetails": "Details",
+      "runs": "Recent passes",
+      "colMode": "Pass",
+      "colStarted": "Started",
+      "colChecked": "Wallets checked",
+      "colFound": "Issues found",
+      "running": "Running",
+      "noRuns": "No passes yet",
+      "what": "reconciliation",
+      "service": "Wallet",
+      "failed": "Failed"
+    }
+  },
+  "roulette": {
+    "eyebrow": "Services",
+    "title": "Roulette",
+    "lead": "The roulette at roulette.outegro.dev: the table right now, its rounds and players, limits, the bonus of the day and the services behind them. Stakes are grumbles (GRM).",
+    "tabsLabel": "Roulette sections",
+    "tabs": {
+      "live": "Live",
+      "rounds": "Rounds",
+      "players": "Players",
+      "table": "Table",
+      "daily": "Bonus of the day",
+      "services": "Services",
+      "audit": "Audit"
+    },
+    "live": {
+      "title": "Live",
+      "connection": "Connection",
+      "what": "the live table",
+      "service": "Roulette",
+      "round": "Round {round}",
+      "noRound": "No round right now",
+      "updated": "{seconds, plural, =0 {Updated just now} one {Updated # second ago} other {Updated # seconds ago}}; refreshes every few seconds.",
+      "stale": "No answer from the roulette: these numbers are {seconds, plural, one {# second} other {# seconds}} old. Trying again.",
+      "sessionEnded": "Your session has ended, so the numbers stopped updating.",
+      "signInAgain": "Sign in again",
+      "forbidden": "Your role no longer opens the roulette, so the numbers stopped updating.",
+      "paused": "Bets paused",
+      "maintenance": "Maintenance",
+      "timeLeft": "Left in this phase",
+      "seconds": "{seconds} s",
+      "online": "Online",
+      "onlineHint": "Open connections over every replica",
+      "bets": "Bets this round",
+      "staked": "Staked this round",
+      "result": "Outcome",
+      "notYet": "Not yet",
+      "exposure": "Payout per colour against the limit",
+      "exposureNote": "What each colour would pay if it won now. The limit is {limit} GRM per colour.",
+      "share": "{percent}%",
+      "nearLimit": "Close to the limit",
+      "atLimit": "At the limit",
+      "house": "House result",
+      "houseNote": "Stakes minus payouts: what the house kept (negative when it lost).",
+      "day": "Last 24 hours",
+      "total": "Since the first round",
+      "rounds": "Rounds",
+      "betsCount": "Bets",
+      "stakedTotal": "Staked",
+      "paidOut": "Paid out"
+    },
+    "rounds": {
+      "title": "Rounds",
+      "listTitle": "Rounds",
+      "lead": "Newest first. House: stakes minus payouts.",
+      "what": "rounds",
+      "service": "Roulette",
+      "tableLabel": "Rounds",
+      "empty": "No rounds yet",
+      "emptyBody": "Rounds appear once the table starts spinning.",
+      "colRound": "Round",
+      "colOutcome": "Outcome",
+      "colBets": "Bets",
+      "colStaked": "Staked",
+      "colPaidOut": "Paid out",
+      "colHouse": "House",
+      "colOpened": "Opened",
+      "roundNo": "No. {round}"
+    },
+    "round": {
+      "title": "Round",
+      "back": "Rounds",
+      "what": "this round",
+      "service": "Roulette",
+      "kicker": "Round",
+      "roundNo": "Round {round}",
+      "opened": "Opened",
+      "bets": "Bets",
+      "staked": "Staked",
+      "paidOut": "Paid out",
+      "house": "House",
+      "houseHint": "Stakes minus payouts",
+      "topBets": "Biggest bets",
+      "fairness": "Fairness",
+      "fairnessNote": "Each round's seed hashes (SHA-256) to the previous round's seed, back to the commit published before the first round.",
+      "link": "Chain link",
+      "linkOk": "Verified",
+      "linkBroken": "Does not match",
+      "linkPending": "Not checked yet",
+      "seed": "Seed",
+      "seedHidden": "Revealed when the round spins",
+      "previousSeed": "Previous seed",
+      "noPrevious": "Not known yet",
+      "commit": "Commit",
+      "publicSeed": "Public seed",
+      "copySeed": "Copy"
+    },
+    "bets": {
+      "empty": "No bets",
+      "colPlayer": "Player",
+      "colRound": "Round",
+      "colColor": "Colour",
+      "colAmount": "Stake",
+      "colStatus": "Status",
+      "colPayout": "Payout",
+      "colAt": "Placed",
+      "roundNo": "No. {round}"
+    },
+    "void": {
+      "trigger": "Void round",
+      "title": "Void round {round}?",
+      "description": "The round is cancelled and every bet goes back to its player.",
+      "effectBets": "Each bet of this round is returned by its reference: the player gets the stake back, nothing is paid out.",
+      "effectWallet": "The grumbles go back to the players' wallets; the round shows as voided everywhere, the fairness page included.",
+      "audited": "Recorded in the roulette's audit with your reason.",
+      "confirm": "Void round",
+      "previewBets": "Bets returned",
+      "previewRefunded": "Grumbles returned"
+    },
+    "players": {
+      "title": "Players",
+      "lead": "Everyone who has bet, by turnover. Result: payouts minus stakes, from the player's side.",
+      "what": "players",
+      "service": "Roulette",
+      "searchLabel": "Find a player",
+      "searchField": "Nickname",
+      "searchPlaceholder": "Part of a nickname",
+      "listTitle": "Players by turnover",
+      "resultsFor": "Players matching “{query}”",
+      "tableLabel": "Players",
+      "empty": "No players yet",
+      "emptyBody": "Players appear after their first bet.",
+      "noMatch": "No player matches “{query}”",
+      "colPlayer": "Player",
+      "colBets": "Bets",
+      "colStaked": "Turnover",
+      "colPaidOut": "Paid out",
+      "colResult": "Result",
+      "colStatus": "Account",
+      "colLastBet": "Last bet"
+    },
+    "player": {
+      "title": "Player",
+      "back": "Players",
+      "what": "this player",
+      "service": "Roulette",
+      "kicker": "Player",
+      "account": "User card",
+      "bets": "Bets",
+      "staked": "Turnover",
+      "stakedHint": "Everything staked",
+      "paidOut": "Paid out",
+      "result": "Result",
+      "resultHint": "Payouts minus stakes",
+      "lastBet": "Last bet",
+      "lastBets": "Last bets"
+    },
+    "table": {
+      "title": "Table",
+      "lead": "Limits apply from the next bet. The multipliers ×2 and ×14 are fixed: changing them changes the return to players and goes through an ADR.",
+      "what": "the table settings",
+      "service": "Roulette",
+      "betsOpen": "Bets open",
+      "betsPaused": "Bets paused",
+      "inMaintenance": "Maintenance",
+      "on": "On",
+      "off": "Off",
+      "version": "Version",
+      "readOnly": "Changing the table needs the roulette.manage permission.",
+      "changes": "What changes",
+      "was": "was",
+      "now": "now",
+      "fields": {
+        "minBet": "Minimum bet",
+        "maxBet": "Maximum bet",
+        "betsPerRound": "Bets per player per round",
+        "payoutLimitPerColor": "Payout limit per colour",
+        "paused": "Bets paused",
+        "maintenance": "Maintenance"
+      },
+      "hints": {
+        "minBet": "Whole grumbles, not above the maximum.",
+        "maxBet": "Whole grumbles per bet.",
+        "betsPerRound": "From 1 to 20.",
+        "payoutLimitPerColor": "The most one colour may pay in a round; bets past it are refused.",
+        "paused": "Bets are refused; rounds keep spinning.",
+        "maintenance": "No new round starts after the current one."
+      },
+      "wholeNumbers": "Every limit is a whole number above zero.",
+      "minAboveMax": "The minimum bet is above the maximum.",
+      "tooManyBets": "At most 20 bets per player per round.",
+      "edit": "Change settings",
+      "editTitle": "Change the table settings",
+      "editDescription": "Limits and switches of the roulette table.",
+      "effectNext": "New limits apply to the next bet; bets already placed stay as they are.",
+      "multipliers": "The multipliers ×2 and ×14 are not changed here.",
+      "audited": "Recorded in the roulette's audit with your reason.",
+      "confirm": "Change settings",
+      "pausedOn": {
+        "trigger": "Pause bets",
+        "title": "Pause bets?",
+        "description": "Players cannot place bets until you resume them.",
+        "effect": "Rounds keep spinning; bets already placed are paid out as usual.",
+        "confirm": "Pause bets"
+      },
+      "pausedOff": {
+        "trigger": "Resume bets",
+        "title": "Resume bets?",
+        "description": "Players can bet again from the next betting phase.",
+        "effect": "The table's limits stay as they are.",
+        "confirm": "Resume bets"
+      },
+      "maintenanceOn": {
+        "trigger": "Start maintenance",
+        "title": "Start maintenance?",
+        "description": "The current round finishes; no new round starts.",
+        "effect": "Players see the table closed for maintenance until you end it.",
+        "confirm": "Start maintenance"
+      },
+      "maintenanceOff": {
+        "trigger": "End maintenance",
+        "title": "End maintenance?",
+        "description": "Rounds start again.",
+        "effect": "The next round takes bets as usual.",
+        "confirm": "End maintenance"
+      }
+    },
+    "daily": {
+      "title": "Bonus of the day",
+      "lead": "Grumbles once every 24 hours, counted from the player's last claim, credited through the wallet.",
+      "what": "the bonus of the day",
+      "service": "Bonus of the day",
+      "enabled": "On",
+      "disabled": "Off",
+      "streaksOn": "Streaks on",
+      "streaksOff": "Streaks off",
+      "expectedPrize": "Expected prize",
+      "expectedHint": "The table's average, before streak bonuses",
+      "claims24h": "Claims in 24 h",
+      "granted24h": "Granted in 24 h",
+      "suspicionsCount": "Suspicions",
+      "version": "Version",
+      "readOnly": "Changing the bonus needs the roulette.manage permission.",
+      "suspicions": "Possible multi-accounts",
+      "suspicionsNote": "Several claiming accounts behind one IP address or one device. Both are shown as hashes.",
+      "noSuspicions": "Nothing suspicious",
+      "noSuspicionsBody": "No IP address or device was shared by several claiming accounts.",
+      "colKind": "Shared",
+      "colUsers": "Accounts",
+      "colClaims": "Claims",
+      "colLast": "Last claim",
+      "kinds": {
+        "shared_ip": "IP address",
+        "shared_device": "Device"
+      },
+      "prizes": "Prize table",
+      "prizesNote": "Each claim draws one line; the chances sum to 100%.",
+      "colAmount": "Prize",
+      "colChance": "Chance",
+      "edit": "Change the bonus",
+      "editTitle": "Change the bonus of the day",
+      "editDescription": "On or off, streaks and the prize table.",
+      "effectNext": "Applies from the next claim; claims already made stay as they are.",
+      "audited": "Your reason goes to the service with the change.",
+      "confirm": "Change the bonus",
+      "fields": {
+        "enabled": "Bonus on",
+        "streaksEnabled": "Streaks"
+      },
+      "hints": {
+        "enabled": "Off, players are told the bonus is not offered.",
+        "streaksEnabled": "Days in a row add to the prize."
+      },
+      "on": "On",
+      "off": "Off",
+      "changes": "What changes",
+      "was": "was",
+      "now": "now",
+      "amountN": "Prize {n}, GRM",
+      "chanceN": "Chance {n}, %",
+      "removeN": "Remove line {n}",
+      "addRow": "Add a line",
+      "sum": "Chances add up to {sum}%",
+      "expectedNow": "Expected prize now",
+      "expectedAfter": "Expected prize after",
+      "prizesBefore": "Prize table now",
+      "prizesAfter": "Prize table after",
+      "problems": {
+        "empty": "Add at least one line.",
+        "too-many": "At most 20 lines.",
+        "amount": "Every prize is a whole number of grumbles above zero.",
+        "chance": "Every chance is above 0 and at most 100.",
+        "sum": "The chances must add up to exactly 100%."
+      }
+    },
+    "services": {
+      "title": "Services",
+      "titleDown": "{count, plural, one {# service down} other {# services down}}",
+      "lead": "As roulette-backend sees them right now.",
+      "what": "the services",
+      "service": "Roulette",
+      "checkAgain": "Check again",
+      "names": {
+        "roulette-backend": "Roulette",
+        "fair-roll": "Fair roll",
+        "daily-bonus": "Bonus of the day",
+        "wallet": "Wallet"
+      },
+      "status": {
+        "up": "Up",
+        "down": "Down",
+        "unknown": "Unknown"
+      },
+      "noAnswer": "No answer",
+      "latency": "{ms} ms",
+      "engine": "Round engine",
+      "engineNote": "One replica holds the engine's lease and runs the rounds; the others pass its frames on.",
+      "leader": "Leader",
+      "noLeader": "No leader",
+      "lease": "Lease left",
+      "leaseExpired": "Expired",
+      "tick": "Last frame",
+      "tickAge": "{ms} ms ago",
+      "noTick": "No frames yet",
+      "wallet": "Wallet",
+      "walletModes": {
+        "http": "wallet-backend",
+        "memory": "In memory"
+      },
+      "walletMemory": "The wallet runs in memory: balances are not real and vanish on restart. Never in production."
+    },
+    "audit": {
+      "title": "Roulette audit",
+      "lead": "Table changes and voided rounds, each with its operator and reason.",
+      "what": "the roulette audit",
+      "service": "Roulette",
+      "empty": "No commands yet",
+      "emptyBody": "Table changes and voided rounds appear here."
     }
   }
 }

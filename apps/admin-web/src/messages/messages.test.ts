@@ -1,5 +1,6 @@
 import { platformRoles } from "@outegro/contracts";
 import { matchAbortReasonSchema } from "@outegro/contracts/battleship";
+import { dailyOverviewSchema } from "@outegro/contracts/daily-bonus";
 import {
   accessRuleSchema,
   adminGrantSchema,
@@ -7,6 +8,13 @@ import {
   eduAuditActionSchema,
   readerAccessSchema,
 } from "@outegro/contracts/edu";
+import {
+  adminBetSchema,
+  adminServicesSchema,
+  rouletteColorSchema,
+  roulettePhaseSchema,
+  serviceHealthSchema,
+} from "@outegro/contracts/roulette";
 import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 import { issueKinds } from "@/lib/adapters/payments";
@@ -15,6 +23,7 @@ import { accessModes, assistStates, featurePresets } from "@/lib/education";
 import { formatNumber } from "@/lib/format";
 import { grantPhases } from "@/lib/grants";
 import { labelKey } from "@/lib/labels";
+import { tableFields } from "@/lib/roulette";
 import { toneOf } from "@/lib/tones";
 import en from "./en.json";
 import ru from "./ru.json";
@@ -260,6 +269,47 @@ describe("messages", () => {
             at(messages as Tree, `${place}.${role}`),
             `${place}.${role}`,
           ).toBeTruthy();
+  });
+
+  it("name every roulette phase, colour, bet state, service and wallet mode", () => {
+    const named = {
+      "labels.roulettePhase": roulettePhaseSchema.options,
+      "labels.rouletteColor": rouletteColorSchema.options,
+      "labels.rouletteBet": adminBetSchema.shape.status.options,
+      "roulette.services.names": serviceHealthSchema.shape.name.options,
+      "roulette.services.status": serviceHealthSchema.shape.status.options,
+      "roulette.services.walletModes": adminServicesSchema.shape.wallet.options,
+      "roulette.daily.kinds":
+        dailyOverviewSchema.shape.suspicions.element.shape.kind.options,
+      "roulette.table.fields": tableFields,
+      "roulette.table.hints": tableFields,
+    } as const;
+    for (const messages of [en, ru])
+      for (const [place, values] of Object.entries(named))
+        for (const value of values)
+          expect(
+            at(messages as Tree, `${place}.${value}`),
+            `${place}.${value}`,
+          ).toBeTruthy();
+    // Every state reads in Russian words, not the English ones.
+    for (const value of roulettePhaseSchema.options)
+      expect(ru.labels.roulettePhase[value]).not.toBe(
+        en.labels.roulettePhase[value],
+      );
+  });
+
+  it("write a voided round's refunds with the right Russian plural", () => {
+    const done = (locale: "en" | "ru", count: number) =>
+      createTranslator({
+        locale,
+        messages: locale === "ru" ? ru : en,
+        namespace: "actions.done",
+      })("roundVoided", { round: 184, count });
+    expect(done("en", 0)).toBe("Round 184 voided: no bets to return.");
+    expect(done("en", 1)).toBe("Round 184 voided: 1 bet returned.");
+    expect(done("ru", 1)).toBe("Раунд 184 аннулирован: возвращена 1 ставка.");
+    expect(done("ru", 3)).toBe("Раунд 184 аннулирован: возвращены 3 ставки.");
+    expect(done("ru", 11)).toBe("Раунд 184 аннулирован: возвращено 11 ставок.");
   });
 
   it("name every payment issue kind in both languages", () => {

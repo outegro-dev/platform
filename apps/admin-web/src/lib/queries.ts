@@ -58,6 +58,10 @@ export const educationOverview = cache(() =>
 );
 
 /** Every book (there are few): titles for tables, filters and grant targets. */
+export const walletOverview = cache(() =>
+  load(() => services().wallet.overview()),
+);
+
 export const educationBooks = cache(() =>
   load(() => services().education.books()),
 );
@@ -93,6 +97,7 @@ export const serviceHealth = cache(async () => {
     probe("battleship", env.BATTLESHIP_API_URL, { headers }),
     probe("payments", env.PAYMENTS_ADMIN_API_URL, { headers }),
     probe("education", env.EDU_API_URL, { headers }),
+    probe("wallet", env.WALLET_API_URL, { headers }),
   ]);
 });
 
@@ -177,6 +182,29 @@ export function auditFetchers(
       });
       return {
         items: page.items.map(tag("education")),
+        nextCursor: page.nextCursor,
+      };
+    };
+  }
+  // Roulette's feed knows rounds and its settings only: a filter by another
+  // target (a user, a book) never matches it.
+  const rouletteTarget =
+    !filter.targetId ||
+    /^\d+$/.test(filter.targetId) ||
+    filter.targetId === "table" ||
+    filter.targetId === "daily";
+  if (
+    granted.has("roulette.read") &&
+    svc.roulette.configured &&
+    rouletteTarget
+  ) {
+    sources.roulette = async (cursor, limit) => {
+      const page = await svc.roulette.audit({
+        cursor: cursor ?? undefined,
+        limit,
+      });
+      return {
+        items: page.items.map(tag("roulette")),
         nextCursor: page.nextCursor,
       };
     };

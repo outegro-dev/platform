@@ -10,9 +10,11 @@
 | [004](adr/004-sso-refresh.md) | SSO library и rotation | accepted: refresh-ротация; SSO wire — proposed | ID-03 готово, ID-04 открыто |
 | [005](adr/005-provider-contract.md) | Lava adapter и неопределённые операции | proposed: validated per capability | PAY-01/12 |
 | [006](adr/006-hermes-plus.md) | Hermes Plus/topics/catalog | accepted: цель; route проверяется | H-01/05 |
-| [007](adr/007-wallet.md) | Внутренний wallet | deferred: user decision | W-01 только после выбора; варианты и вопросы владельцу — [wallet-proposal.md](wallet-proposal.md) (11.10.2026) |
+| [007](adr/007-wallet.md) | Внутренний wallet | superseded by 011 | Варианты и вопросы владельцу — [wallet-proposal.md](wallet-proposal.md) (11.10.2026) |
 | [008](adr/008-notification-auth-path.md) | Приватная доставка login code | accepted: внутренний HTTP-вызов | N-02 |
 | [009](adr/009-backend-stack.md) | Стек backend: TS 6, Nest 12, Zod, Drizzle, Valkey, pino | accepted: owner 28.09.2026 | BE-01…BE-07 |
 | [010](adr/010-education.md) | Обучение: учебники как типизированные документы, доступ по грантам | accepted: owner 03.10.2026; продажа — open input | [глава 17](../01-specification/chapters/17-education.md) |
+| [011](adr/011-wallet-grumbles.md) | Кошелёк: отдельный сервис, грамблсы (`GRM`) | accepted: owner 28.10.2026; этапы 2–3 ждут команды | [W-01…W-06](../04-delivery/90-optional-wallet/README.md), [контракт](../02-contracts/wallet.md) |
+| [012](adr/012-roulette.md) | Рулетка: ставки грамблсами, раунд с лидером, честность по цепочке сидов, бонус дня, админка, всё на NestJS | accepted: owner 28.10.2026 | [контракт рулетки](../02-contracts/roulette.md) |
 
 Новые решения именовать последовательно, использовать [шаблон ADR](../07-templates/adr.md). [Открытые inputs](open-inputs.md) — единственный список того, что понадобится от владельца/внешнего провайдера.

@@ -19,12 +19,14 @@ import {
   EducationTab,
   NotificationsTab,
   PaymentsTab,
+  WalletTab,
 } from "@/components/users/service-tabs";
 import { UserActions } from "@/components/users/user-actions";
 import { pageAccess } from "@/lib/access";
+import { walletSources } from "@/lib/adapters/wallet";
 import { maskEmail, shortId } from "@/lib/format";
 import { getLabels } from "@/lib/labels";
-import { oneOf, type Params, type SearchParams } from "@/lib/params";
+import { one, oneOf, type Params, type SearchParams } from "@/lib/params";
 import { type UserTab, userTabsFor } from "@/lib/permissions";
 import { userDetail } from "@/lib/queries";
 import { toneOf } from "@/lib/tones";
@@ -157,6 +159,14 @@ export default async function UserPage({
         {tab === "battleship" && <BattleshipTab userId={user.id} />}
         {tab === "education" && <EducationTab userId={user.id} />}
         {tab === "payments" && <PaymentsTab userId={user.id} />}
+        {tab === "wallet" && (
+          <WalletTab
+            userId={user.id}
+            granted={granted}
+            cursor={one(query, "cursor")}
+            source={oneOf(query, "source", walletSources)}
+          />
+        )}
         {tab === "activity" && <ActivityTab userId={user.id} />}
       </Suspense>
     </div>

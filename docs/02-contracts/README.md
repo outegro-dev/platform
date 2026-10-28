@@ -6,11 +6,13 @@
 - [События, outbox и inbox](events.md)
 - [Identity, сессии и permissions](identity-access.md)
 - [Оплаты, деньги и состояния](billing.md)
+- [Кошелёк: грамблсы](wallet.md)
 - [Уведомления](notifications.md)
 - [Дизайн и i18n](design-i18n.md)
 - [Hermes, темы и каталог](assistant.md)
 - [Развёртывание и ресурсы](deployment.md)
 - [Глобальные инварианты](invariants.md)
+- [Рулетка: HTTP, WebSocket, fair-roll, кошелёк, бонус дня и админка](roulette.md)
 
 Имена полей ниже — стабильные проектные defaults. Не копировать их в provider request без mapping. Неизвестные внешние поля/статусы требуют fixtures или решения, а не свободного изобретения модели.
 

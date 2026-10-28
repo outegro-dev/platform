@@ -10,6 +10,7 @@ import {
   screenshot,
   settle,
   signIn,
+  tablet,
   test,
   useRussian,
   visit,
@@ -200,6 +201,106 @@ const screens: Screen[] = [
     path: "/education",
     userAgent: withFailure("fake-down=edu"),
   },
+  { name: "wallet", path: "/wallet" },
+  { name: "wallets", path: "/wallet/wallets" },
+  {
+    name: "wallet-card",
+    path: "/wallet/wallets?state=active",
+    steps: async (page) => {
+      await page.locator("table a.link").first().click();
+      await settle(page);
+    },
+  },
+  {
+    name: "wallet-grant-dialog",
+    englishOnly: true,
+    path: "/wallet/wallets?state=active",
+    skipStability: true,
+    steps: async (page) => {
+      await page.locator("table a.link").first().click();
+      await settle(page);
+      await page.getByRole("button", { name: "Grant", exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Amount").fill("250");
+      await dialog.getByLabel("Reason").fill("Compensation for the outage");
+    },
+  },
+  {
+    name: "wallet-set-dialog",
+    englishOnly: true,
+    path: "/wallet/wallets?state=active",
+    skipStability: true,
+    steps: async (page) => {
+      await page.locator("table a.link").first().click();
+      await settle(page);
+      await page
+        .getByRole("button", { name: "Set balance", exact: true })
+        .click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("New balance").fill("500");
+      await dialog.getByLabel("Reason").fill("Season reset");
+    },
+  },
+  { name: "wallet-reconciliation", path: "/wallet/reconciliation" },
+  {
+    name: "user-wallet",
+    englishOnly: true,
+    path: "/users?query=mira",
+    steps: async (page) => {
+      await openFirstRow(page);
+      await openTab("Wallet")(page);
+    },
+  },
+  {
+    name: "wallet-not-connected",
+    path: "/wallet",
+    userAgent: withFailure("fake-down=wallet"),
+  },
+  // The live table reads itself again every few seconds: its numbers may
+  // change under the stability check, never the layout.
+  { name: "roulette", path: "/roulette" },
+  { name: "roulette-rounds", path: "/roulette/rounds" },
+  { name: "roulette-round", path: "/roulette/rounds/184" },
+  { name: "roulette-players", path: "/roulette/players" },
+  {
+    name: "roulette-player",
+    path: "/roulette/players?q=kraken",
+    steps: openFirstRow,
+  },
+  { name: "roulette-table", path: "/roulette/table" },
+  {
+    name: "roulette-table-dialog",
+    englishOnly: true,
+    path: "/roulette/table",
+    skipStability: true,
+    steps: async (page) => {
+      await page.getByRole("button", { name: "Change settings" }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Maximum bet").fill("20000");
+      await dialog
+        .getByLabel("Reason")
+        .fill("Smaller bets for the launch week");
+      await dialog.getByRole("button", { name: "Preview" }).click();
+      await dialog.getByRole("heading", { name: "What will change" }).waitFor();
+    },
+  },
+  { name: "roulette-daily", path: "/roulette/daily" },
+  {
+    name: "roulette-daily-dialog",
+    englishOnly: true,
+    path: "/roulette/daily",
+    skipStability: true,
+    steps: async (page) => {
+      await page.getByRole("button", { name: "Change the bonus" }).click();
+    },
+  },
+  { name: "roulette-services", path: "/roulette/services" },
+  { name: "roulette-audit", path: "/roulette/audit" },
+  {
+    name: "roulette-not-connected",
+    path: "/roulette",
+    userAgent: withFailure("fake-down=roulette"),
+  },
   { name: "audit", path: "/audit" },
   {
     name: "dashboard-degraded",
@@ -281,6 +382,21 @@ test.describe("phone, English", () => {
       path: `${__dirname}/screenshots/navigation-sheet-mobile-en.png`,
     });
   });
+});
+
+// The wallet's screens on a tablet too: wide tables, dialogs and the
+// filter rows sit between the phone's cards and the desktop's columns.
+test.describe("tablet, English", () => {
+  test.use(tablet);
+  for (const screen of screens.filter((item) => item.name.includes("wallet"))) {
+    test.describe(screen.name, () => {
+      if (screen.userAgent)
+        test.use({ userAgent: `${screen.userAgent} Mobile` });
+      test(`${screen.name}`, async ({ page }) => {
+        await capture(page, screen, "tablet-en");
+      });
+    });
+  }
 });
 
 test.describe("desktop, Russian", () => {

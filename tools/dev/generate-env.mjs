@@ -1,5 +1,6 @@
 // Writes local env files from each app's .env.example with fresh local
-// secrets (ES256 key, pepper, shared service token, Lava webhook secret).
+// secrets (ES256 key, pepper, shared service token, Lava webhook secret,
+// fair-roll chain root).
 // Local development only.
 //   pnpm env:local            create missing files; add variables that appeared
 //                             in .env.example to existing ones, keeping secrets
@@ -16,9 +17,14 @@ const apps = [
   { dir: "apps/payments-backend", file: ".env" },
   { dir: "apps/battleship-backend", file: ".env" },
   { dir: "apps/edu-backend", file: ".env" },
+  { dir: "apps/fair-roll-backend", file: ".env" },
+  { dir: "apps/roulette-backend", file: ".env" },
+  { dir: "apps/daily-bonus-backend", file: ".env" },
+  { dir: "apps/wallet-backend", file: ".env" },
   { dir: "apps/id-web", file: ".env.local" },
   { dir: "apps/battleship-web", file: ".env.local" },
   { dir: "apps/edu-web", file: ".env.local" },
+  { dir: "apps/roulette-web", file: ".env.local" },
   { dir: "apps/admin-web", file: ".env.local" },
   { dir: "apps/landing-web", file: ".env.local" },
 ];
@@ -30,6 +36,10 @@ const shared = {
   INTERNAL_API_TOKEN: secret(),
   // What a local Lava webhook sender puts in X-Api-Key; never the API key itself.
   LAVA_WEBHOOK_SECRET: secret(),
+  // The root of the local seed chain (fair-roll); production keeps its own in a Sealed Secret.
+  FAIR_ROLL_ROOT: randomBytes(32).toString("hex"),
+  // Peppers the daily bonus's hashes of client addresses and device ids.
+  DAILY_HASH_PEPPER: secret(),
 };
 
 const variable = /^([A-Z][A-Z0-9_]*)=/;
