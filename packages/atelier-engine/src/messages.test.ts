@@ -252,6 +252,31 @@ describe("answerForm", () => {
     ).toBe("Remote");
   });
 
+  it("picks the profile's English level, not a native one it does not claim", () => {
+    const c1 = {
+      ...profile,
+      languages: [
+        { name: "English", level: "C1, Full Professional Proficiency" },
+      ],
+    };
+    const basic = "Basic - Limited working proficiency";
+    const fluentNative = "Fluent/Native - Full proficiency in all contexts";
+    const options = [
+      basic,
+      "Advanced - Professional working proficiency",
+      fluentNative,
+    ];
+    const level = (list: string[]) =>
+      answerForm(
+        "How would you describe your English proficiency?",
+        list,
+        c1,
+        fields,
+      ).answer;
+    expect(level(options)).toBe("Advanced - Professional working proficiency");
+    expect(level([basic, fluentNative])).toBe(fluentNative);
+  });
+
   it("declines demographic questions, skips pronouns and names the current job", () => {
     expect(
       ask("Gender", ["Male", "Female", "Decline to self-identify"]).answer,

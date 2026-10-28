@@ -361,12 +361,16 @@ export function answerForm(
     );
     if (!english) return unknown;
     if (list?.length) {
+      const native = /c2|native/i.test(english.level);
+      // C1 is not "native": an option that claims it is only a last resort.
+      const fluent = list.filter((option) =>
+        /\bc1\b|advanced|fluent|full professional/i.test(option),
+      );
       const advanced =
-        optionWith(list, /\bc2\b|native|bilingual/i) &&
-        /c2|native/i.test(english.level)
-          ? optionWith(list, /\bc2\b|native|bilingual/i)
-          : (optionWith(list, /\bc1\b|advanced|fluent|full professional/i) ??
-            optionWith(list, /professional|proficient|business/i));
+        (native ? optionWith(list, /\bc2\b|native|bilingual/i) : null) ??
+        fluent.find((option) => !/native|\bc2\b|bilingual/i.test(option)) ??
+        optionWith(list, /professional|proficient|business/i) ??
+        fluent[0];
       if (advanced) return answered(advanced, 0.85, "english");
       return answered(yesNo(list, true), 0.85, "english");
     }
