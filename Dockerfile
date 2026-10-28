@@ -2,8 +2,9 @@
 # One build for every app; each target copies only what its runtime needs.
 #   docker build --target landing-web -t outegro/landing-web:<tag> .
 # Targets: landing-web, id-web, pay-web, admin-web, battleship-web, edu-web,
-#          auth-backend, notifications-backend, payments-backend,
-#          battleship-backend, edu-backend.
+#          roulette-web, auth-backend, notifications-backend,
+#          payments-backend, battleship-backend, edu-backend,
+#          roulette-backend, fair-roll-backend, daily-bonus-backend.
 
 FROM node:24-bookworm-slim AS base
 ENV CI=1 \
@@ -22,11 +23,11 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 # CI builds only the apps a change affects (docker-bake BUILD_APPS); a plain
 # build still builds all of them.
-ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web auth-backend notifications-backend payments-backend battleship-backend edu-backend"
+ARG BUILD_APPS="landing-web id-web pay-web admin-web battleship-web edu-web roulette-web auth-backend notifications-backend payments-backend battleship-backend edu-backend roulette-backend fair-roll-backend daily-bonus-backend"
 RUN pnpm turbo run build $(for app in $BUILD_APPS; do printf -- '--filter=@outegro/%s ' "$app"; done)
 # Backends: production dependencies only, plus build output and migrations
 # (and content/, the books edu-backend imports with its migrations).
-RUN for app in auth-backend notifications-backend payments-backend battleship-backend edu-backend; do \
+RUN for app in auth-backend notifications-backend payments-backend battleship-backend edu-backend roulette-backend fair-roll-backend daily-bonus-backend; do \
       case " $BUILD_APPS " in *" $app "*) ;; *) continue ;; esac; \
       pnpm --filter "@outegro/$app" deploy --prod "/out/$app" && \
       cp -r "apps/$app/dist" "apps/$app/drizzle" "/out/$app/" && \
@@ -85,6 +86,13 @@ ENV PORT=3006
 EXPOSE 3006
 CMD ["node", "apps/edu-web/server.js"]
 
+FROM web AS roulette-web
+COPY --from=build --chown=node:node /repo/apps/roulette-web/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/roulette-web/.next/static ./apps/roulette-web/.next/static
+ENV PORT=3007
+EXPOSE 3007
+CMD ["node", "apps/roulette-web/server.js"]
+
 FROM node:24-bookworm-slim AS service
 ENV NODE_ENV=production
 WORKDIR /app
@@ -118,4 +126,22 @@ FROM service AS edu-backend
 COPY --from=build --chown=node:node /out/edu-backend ./
 ENV PORT=4005
 EXPOSE 4005
+CMD ["node", "dist/main.js"]
+
+FROM service AS roulette-backend
+COPY --from=build --chown=node:node /out/roulette-backend ./
+ENV PORT=4006
+EXPOSE 4006
+CMD ["node", "dist/main.js"]
+
+FROM service AS fair-roll-backend
+COPY --from=build --chown=node:node /out/fair-roll-backend ./
+ENV PORT=4100
+EXPOSE 4100
+CMD ["node", "dist/main.js"]
+
+FROM service AS daily-bonus-backend
+COPY --from=build --chown=node:node /out/daily-bonus-backend ./
+ENV PORT=4101
+EXPOSE 4101
 CMD ["node", "dist/main.js"]
