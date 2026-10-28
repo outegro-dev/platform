@@ -13,12 +13,17 @@ const APPS = [
   "admin-web",
   "battleship-web",
   "edu-web",
+  "atelier-web",
   "auth-backend",
   "notifications-backend",
   "payments-backend",
   "battleship-backend",
   "edu-backend",
   "wallet-backend",
+  "atelier-backend",
+  "llm-gateway",
+  "atelier-tex",
+  "atelier-browser",
 ];
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();

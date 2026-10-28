@@ -1,0 +1,136 @@
+# Local Atelier services. Postgres, RabbitMQ and Valkey come from outegro-local
+# (compose.yaml); atelier-backend and atelier-web run on the host with pnpm dev.
+# Start: docker compose -f infra/local/atelier.compose.yaml up -d --build
+# Each service owns its block; keep them in this order.
+name: outegro-atelier
+
+services:
+  # atelier-tex: XeLaTeX + poppler CV renderer (POST /v1/render, GET /health).
+  # The image is ~1.4 GB (TeX Live); the token comes from apps/atelier-tex/.env.
+  atelier-tex:
+    build:
+      context: ../..
+      dockerfile: apps/atelier-tex/Dockerfile
+    image: outegro/atelier-tex:dev
+    env_file:
+      - path: ../../apps/atelier-tex/.env
+        required: true
+    environment:
+      NODE_ENV: production
+      PORT: "4010"
+      LOG_LEVEL: info
+      METRICS_PORT: "9464"
+    ports:
+      - "4010:4010"
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4010/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    mem_limit: 1g
+    restart: unless-stopped
+
+  # llm-gateway: Codex CLI (primary), Claude Code and MiniMax behind one API
+  # (POST /v1/generate, GET /v1/providers, GET /health); token and keys in
+  # apps/llm-gateway/.env. The Codex login is the external volume
+  # work-finder_codex_auth, shared with Work Finder (whose files are root's):
+  # llm-gateway-codex-owner hands it to the gateway's user 1000 on every start
+  # (root, i.e. Work Finder, keeps full access). Its contents are never read.
+  llm-gateway-codex-owner:
+    image: node:24-alpine
+    user: "0:0"
+    entrypoint: ["chown", "-R", "1000:1000", "/codex-auth"]
+    volumes:
+      - codex_auth:/codex-auth
+    restart: "no"
+
+  llm-gateway:
+    build:
+      context: ../..
+      dockerfile: apps/llm-gateway/Dockerfile
+    image: outegro/llm-gateway:dev
+    env_file:
+      - path: ../../apps/llm-gateway/.env
+        required: true
+    environment:
+      NODE_ENV: production
+      PORT: "4009"
+      CODEX_HOME: /codex-auth
+    ports:
+      - "4009:4009"
+    volumes:
+      - codex_auth:/codex-auth
+    # Per-call Codex and Claude folders; nothing of a call reaches the disk.
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    depends_on:
+      llm-gateway-codex-owner:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4009/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    mem_limit: 2g
+    restart: unless-stopped
+
+  # minio: S3 for atelier-backend's CV files (STORAGE_DRIVER=s3 locally;
+  # production keeps them in Postgres until R2). The official minio/minio
+  # images are gone from Docker Hub and quay.io; bitnamilegacy is the frozen
+  # Bitnami build (no alpine variant exists). API :9000, console :9001.
+  minio:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    environment:
+      MINIO_ROOT_USER: atelier
+      MINIO_ROOT_PASSWORD: atelier-local-secret
+      MINIO_BROWSER: "on"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 10
+    mem_limit: 256m
+    restart: unless-stopped
+
+  # minio-bucket: one-shot, creates the `atelier` bucket (private) and exits.
+  minio-bucket:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        mc alias set local http://minio:9000 atelier atelier-local-secret &&
+        mc mb --ignore-existing local/atelier &&
+        mc anonymous set none local/atelier
+    environment:
+      MC_CONFIG_DIR: /tmp/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  # llm-gateway: the owner's Codex login (codex login --device-auth), created by Work Finder.
+  codex_auth:
+    external: true
+    name: work-finder_codex_auth
+  # minio: atelier-backend's CV files.
+  minio_data:
